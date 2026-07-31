@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="AISEL 도구">
+<title>AISEL 도구</title>
+<!-- 이 파일은 docs/tools.json 을 읽어 자동으로 만듭니다. 직접 고치지 마세요. -->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    background: #F7F7F5; color: #1A1A1A; min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 40px 20px 60px;
+  }
+  .brand { text-align: center; margin-bottom: 34px; }
+  .brand .logo { font-size: 30px; font-weight: 800; letter-spacing: 0.28em; padding-left: 0.28em; }
+  .brand .sub { margin-top: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; color: #A69B85; text-transform: uppercase; }
+  .cards { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 16px; }
+  .card {
+    display: flex; align-items: center; gap: 16px; text-decoration: none; color: inherit;
+    background: #fff; border-radius: 18px; padding: 22px 22px; border: 1px solid #ECEAE4;
+    box-shadow: 0 2px 10px rgba(20,20,25,0.05); transition: transform .12s, box-shadow .12s;
+  }
+  .card:active { transform: scale(0.985); box-shadow: 0 1px 5px rgba(20,20,25,0.06); }
+  .card .ico {
+    flex-shrink: 0; width: 54px; height: 54px; border-radius: 14px; display: flex;
+    align-items: center; justify-content: center; font-size: 26px;
+  }
+  .card.wo .ico { background: #EAF1FD; }
+  .card.cc .ico { background: #F3EEE4; }
+  .card.of .ico { background: #EAF5EE; }
+  .card .txt { flex: 1; }
+  .card .txt h2 { font-size: 17px; font-weight: 700; }
+  .card .txt p { margin-top: 4px; font-size: 13px; color: #8A8578; line-height: 1.5; }
+  .card .arw { color: #C7C2B6; font-size: 22px; font-weight: 300; }
+  .foot { margin-top: 32px; font-size: 11px; color: #B4AF9F; text-align: center; line-height: 1.7; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <div class="logo">AISEL</div>
+    <div class="sub">Design Tools</div>
+  </div>
+
+  <div class="cards">
+    <a class="card wo" href="work-order.html">
+      <div class="ico">🧵</div>
+      <div class="txt">
+        <h2>작업지시서</h2>
+        <p>품번 자동 · 원가 계산 · 사진 첨부 · PDF 저장</p>
+      </div>
+      <div class="arw">&rsaquo;</div>
+    </a>
+    <a class="card cc" href="cost-calculator.html">
+      <div class="ico">🧮</div>
+      <div class="txt">
+        <h2>원가계산기</h2>
+        <p>원단·부자재·공임 입력 → 타겟원가 대비 확인</p>
+      </div>
+      <div class="arw">&rsaquo;</div>
+    </a>
+    <a class="card of" href="order-form.html">
+      <div class="ico">📋</div>
+      <div class="txt">
+        <h2>발주서</h2>
+        <p>컬러·사이즈별 수량 입력 → 공장 발주서 작성</p>
+      </div>
+      <div class="arw">&rsaquo;</div>
+    </a>
+  </div>
+
+  <div class="foot">
+    아이패드에서 홈 화면에 추가하면 앱처럼 쓸 수 있어요<br>
+    공유 버튼 &rarr; &ldquo;홈 화면에 추가&rdquo;
+  </div>
+</body>
+</html>

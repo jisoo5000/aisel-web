@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AISEL 발주서</title>
+<style>
+  :root{
+    --navy:#16324F;
+    --navy-deep:#0C1E30;
+    --paper:#FAF7F0;
+    --line:#DDD5C7;
+    --accent:#C4622D;
+    --ok:#2F6B3A;
+    --text:#1C1C1C;
+    --muted:#6B6459;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+    color:var(--text);
+    padding:0 0 60px;
+  }
+  header{
+    background:var(--navy-deep);
+    color:#fff;
+    padding:28px 20px 24px;
+  }
+  header .eyebrow{
+    font-size:12px;
+    letter-spacing:.14em;
+    color:#B8CBD8;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  header h1{
+    margin:0;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:8px 0 0;
+    font-size:13px;
+    color:#C9D6DD;
+    line-height:1.5;
+  }
+  main{
+    max-width:520px;
+    margin:0 auto;
+    padding:20px;
+  }
+  .card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+  .field{
+    margin-bottom:16px;
+  }
+  .field:last-child{margin-bottom:0;}
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--navy);
+  }
+  label .req{color:var(--accent); margin-left:2px;}
+  input[type=text], input[type=date], select, textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-size:15px;
+    font-family:inherit;
+    background:#fff;
+    color:var(--text);
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--navy);
+    box-shadow:0 0 0 3px rgba(22,50,79,0.1);
+  }
+  .seg{
+    display:flex;
+    gap:8px;
+  }
+  .seg button{
+    flex:1;
+    padding:11px 8px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:7px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--muted);
+    cursor:pointer;
+  }
+  .seg button.active{
+    background:var(--navy);
+    border-color:var(--navy);
+    color:#fff;
+  }
+  .size-row{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:8px;
+    margin-bottom:8px;
+    align-items:center;
+  }
+  .size-row input{padding:9px 10px; font-size:14px;}
+  .size-row button{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    padding:4px 8px;
+  }
+  .add-size{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:none;
+    border:1px dashed var(--line);
+    color:var(--navy);
+    font-size:13px;
+    font-weight:600;
+    padding:9px 14px;
+    border-radius:7px;
+    cursor:pointer;
+    margin-top:4px;
+  }
+  .color-block{
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:14px;
+    margin-bottom:10px;
+    background:#FBFAF6;
+  }
+  .color-block-head{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .color-block-head input{flex:1;}
+  .color-block-head .removeColor{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:20px;
+    line-height:1;
+    cursor:pointer;
+    padding:4px 8px;
+    flex-shrink:0;
+  }
+  .hint{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:6px;
+    line-height:1.5;
+  }
+  .submit-btn{
+    width:100%;
+    padding:15px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:9px;
+    font-size:16px;
+    font-weight:700;
+    cursor:pointer;
+    letter-spacing:-0.01em;
+  }
+  .submit-btn:disabled{
+    background:#C9BFAE;
+    cursor:not-allowed;
+  }
+  .status{
+    margin-top:14px;
+    padding:13px 14px;
+    border-radius:8px;
+    font-size:14px;
+    display:none;
+    line-height:1.5;
+  }
+  .status.show{display:block;}
+  .status.ok{background:#E9F2E9; color:var(--ok); border:1px solid #BFDCC0;}
+  .status.err{background:#FBEAE3; color:#A03B1E; border:1px solid #EFC3AF;}
+  .status.pending{background:#F0EEE7; color:var(--muted); border:1px solid var(--line);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">AISEL · Order Intake</div>
+  <h1>발주서</h1>
+  <p>여기에 입력하고 제출하면 구글시트에 자동 기록되고 슬랙으로 알림이 갑니다.</p>
+</header>
+
+<main>
+  <form id="orderForm">
+    <div class="card">
+      <div class="field">
+        <label>발주 구분<span class="req">*</span></label>
+        <div class="seg" id="orderType">
+          <button type="button" data-value="초기발주" class="active">초기발주</button>
+          <button type="button" data-value="리오더">리오더</button>
+        </div>
+        <div class="hint" id="qtyHint">사이즈당 기본 10장이 채워집니다. 다르면 그 칸만 고치세요.</div>
+      </div>
+
+      <div class="field">
+        <label>공장 / 원단처명<span class="req">*</span></label>
+        <input type="text" id="factory" placeholder="예) 애플 은영사 실루엣" required>
+      </div>
+
+      <div class="field">
+        <label>품목명<span class="req">*</span></label>
+        <input type="text" id="itemName" placeholder="예) 르네 보트넥 블라우스" required>
+      </div>
+
+      <div class="field">
+        <label>컬러별 사이즈·수량<span class="req">*</span></label>
+        <div id="colorBlocks"></div>
+        <button type="button" class="add-size" id="addColor">+ 컬러 추가</button>
+        <div class="hint">컬러마다 블록을 하나씩 추가하고 그 안에서 사이즈를 늘리세요. 숫자만 입력하면 "번"이 자동으로 붙고(예) 1 → 1번), S M L 같은 문자는 대문자로 그대로 저장됩니다. 수량 칸에는 숫자만 입력하세요.</div>
+      </div>
+
+      <div class="field">
+        <label>비고 (선택)</label>
+        <textarea id="memo" rows="2" placeholder="특이사항이 있으면 적어주세요"></textarea>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">발주 제출</button>
+    <div class="status" id="statusBox"></div>
+  </form>
+</main>
+
+<script>
+// 배포한 구글 앱스 스크립트 웹앱 URL로 교체해야 합니다
+const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2H-GGzAPMytgXTyGMHi5zGfWi4SNz1jmvzfWlpmQebtng2c-Md2AcLw/exec";
+
+function formatSizeLabel_(raw){
+  const s = raw.trim();
+  if(/^\d+$/.test(s)){ return s + '번'; }
+  if(s.endsWith('번')){ return s; }
+  return s.toUpperCase();
+}
+
+function formatQty_(raw){
+  return raw.trim().replace(/장+$/,'').trim();
+}
+
+const colorBlocks = document.getElementById('colorBlocks');
+let colorBlockSeq = 0;
+
+function currentDefaultQty(){
+  return '10';
+}
+
+function addSizeRowTo(sizeRowsEl){
+  const row = document.createElement('div');
+  row.className = 'size-row';
+  const defQty = currentDefaultQty();
+  row.innerHTML = `
+    <input type="text" class="sizeLabel" placeholder="사이즈 예) 1번, S">
+    <input type="text" class="sizeQty" placeholder="수량 예) 15" value="${defQty}" data-auto="${defQty}">
+    <button type="button" class="removeSize">×</button>
+  `;
+  row.querySelector('.removeSize').addEventListener('click', ()=>{
+    if(sizeRowsEl.children.length > 1){ row.remove(); }
+  });
+  // 사람이 직접 수량을 고치면 자동값 표시를 해제해서 이후 발주구분 전환에도 안 덮어씀
+  row.querySelector('.sizeQty').addEventListener('input', (e)=>{
+    e.target.dataset.auto = '';
+  });
+  sizeRowsEl.appendChild(row);
+}
+
+function refreshAutoQty(){
+  const defQty = currentDefaultQty();
+  document.querySelectorAll('.sizeQty').forEach(input=>{
+    if(input.dataset.auto !== ''){
+      input.value = defQty;
+      input.dataset.auto = defQty;
+    }
+  });
+}
+
+function addColorBlock(){
+  colorBlockSeq++;
+  const block = document.createElement('div');
+  block.className = 'color-block';
+  block.innerHTML = `
+    <div class="color-block-head">
+      <input type="text" class="colorName" placeholder="컬러 예) 블랙">
+      <button type="button" class="removeColor">×</button>
+    </div>
+    <div class="sizeRows"></div>
+    <button type="button" class="add-size addSizeInBlock">+ 사이즈 추가</button>
+  `;
+  const sizeRowsEl = block.querySelector('.sizeRows');
+  block.querySelector('.removeColor').addEventListener('click', ()=>{
+    if(colorBlocks.children.length > 1){ block.remove(); }
+  });
+  block.querySelector('.addSizeInBlock').addEventListener('click', ()=>{
+    addSizeRowTo(sizeRowsEl);
+  });
+  addSizeRowTo(sizeRowsEl);
+  addSizeRowTo(sizeRowsEl);
+  colorBlocks.appendChild(block);
+}
+
+const orderTypeSeg = document.getElementById('orderType');
+let orderType = '초기발주';
+orderTypeSeg.querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    orderTypeSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    orderType = btn.dataset.value;
+    refreshAutoQty();
+  });
+});
+
+addColorBlock();
+document.getElementById('addColor').addEventListener('click', ()=>addColorBlock());
+
+const form = document.getElementById('orderForm');
+const statusBox = document.getElementById('statusBox');
+const submitBtn = document.getElementById('submitBtn');
+
+function setStatus(kind, msg){
+  statusBox.className = 'status show ' + kind;
+  statusBox.textContent = msg;
+}
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+
+  const factory = document.getElementById('factory').value.trim();
+  const itemName = document.getElementById('itemName').value.trim();
+  const memo = document.getElementById('memo').value.trim();
+
+  const orders = [];
+  let hasError = false;
+
+  colorBlocks.querySelectorAll('.color-block').forEach(block=>{
+    const colorName = block.querySelector('.colorName').value.trim();
+    const sizeRows = block.querySelectorAll('.size-row');
+    let blockHasAnySize = false;
+    sizeRows.forEach(row=>{
+      const s = row.querySelector('.sizeLabel').value.trim();
+      const q = row.querySelector('.sizeQty').value.trim();
+      if(s && q){
+        blockHasAnySize = true;
+        orders.push({
+          orderType: orderType,
+          factory: factory,
+          itemName: itemName,
+          color: colorName,
+          size: formatSizeLabel_(s),
+          qty: formatQty_(q),
+          memo: memo
+        });
+      }
+    });
+    if(!colorName && blockHasAnySize){ hasError = true; }
+    if(colorName && !blockHasAnySize){ hasError = true; }
+  });
+
+  if(orders.length === 0){
+    setStatus('err', '컬러와 사이즈별 수량을 최소 한 블록 입력해주세요.');
+    return;
+  }
+  if(hasError){
+    setStatus('err', '컬러명과 사이즈 수량을 모두 채워주세요. 일부만 입력된 블록이 있습니다.');
+    return;
+  }
+
+  const payload = { orders: orders };
+
+  if(WEBAPP_URL.indexOf('PASTE_YOUR') === 0){
+    setStatus('err', '아직 연결이 안 된 화면입니다. 관리자에게 문의해주세요.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  setStatus('pending', '제출하는 중입니다...');
+
+  try{
+    await fetch(WEBAPP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    setStatus('ok', '발주가 접수됐습니다. 시트와 슬랙에 자동으로 올라갑니다.');
+    form.reset();
+    colorBlocks.innerHTML = '';
+    addColorBlock();
+    orderTypeSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    orderTypeSeg.querySelector('button').classList.add('active');
+    orderType = '초기발주';
+  }catch(err){
+    setStatus('err', '제출 중 문제가 생겼습니다. 다시 시도하거나 관리자에게 알려주세요.');
+  }finally{
+    submitBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

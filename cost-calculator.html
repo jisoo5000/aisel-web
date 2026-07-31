@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AISEL 원가">
+<title>AISEL 원가계산기</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, 'Apple SD Gothic Neo', sans-serif; background: #F7F7F5; min-height: 100vh; padding-bottom: 40px; }
+  .top-bar { background: #1A1A1A; color: #fff; padding: 16px 20px 12px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  .top-bar h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.08em; }
+  .top-bar .code-badge { font-size: 18px; font-weight: 700; color: #C8B89A; letter-spacing: 0.05em; }
+  .section { background: #fff; margin: 12px 16px; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .section-title { padding: 14px 16px 10px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: #999; text-transform: uppercase; border-bottom: 1px solid #F0F0F0; }
+  .row { display: flex; align-items: center; padding: 0 16px; border-bottom: 1px solid #F5F5F5; min-height: 52px; }
+  .row:last-child { border-bottom: none; }
+  .row label { font-size: 13px; color: #555; width: 110px; flex-shrink: 0; }
+  .row .val { flex: 1; text-align: right; }
+  input, select { font-size: 15px; font-family: inherit; border: none; outline: none; background: transparent; color: #1A1A1A; text-align: right; width: 100%; padding: 14px 0; }
+  select { -webkit-appearance: none; appearance: none; cursor: pointer; }
+  .auto-val { font-size: 15px; color: #1A1A1A; font-weight: 500; }
+  textarea { font-size: 13px; font-family: inherit; border: none; outline: none; background: transparent; color: #1A1A1A; width: 100%; padding: 14px 0; resize: none; line-height: 1.6; }
+  .target-bar { margin: 0 16px 12px; padding: 16px 18px; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; }
+  .target-bar.ok { background: #EBF7EE; }
+  .target-bar.ng { background: #FDECEA; }
+  .target-bar .t-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; }
+  .target-bar.ok .t-label { color: #2E7D32; }
+  .target-bar.ng .t-label { color: #C62828; }
+  .target-bar .t-val { font-size: 22px; font-weight: 700; }
+  .target-bar.ok .t-val { color: #2E7D32; }
+  .target-bar.ng .t-val { color: #C62828; }
+  .target-bar .t-target { font-size: 12px; color: #888; margin-top: 2px; }
+  .save-btn { display: block; margin: 16px; padding: 18px; background: #1A1A1A; color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; font-family: inherit; width: calc(100% - 32px); cursor: pointer; letter-spacing: 0.03em; transition: opacity 0.15s; }
+  .save-btn:active { opacity: 0.8; }
+  .save-btn.loading { background: #666; }
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #1A1A1A; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; z-index: 999; }
+  .toast.show { opacity: 1; }
+  .status-sel { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px; }
+  .status-chip { padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s; }
+  .status-chip.active { border-color: #1A1A1A; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>AISEL 원가계산기</h1>
+  <div class="code-badge" id="codeDisplay">—</div>
+</div>
+
+<!-- 품번 -->
+<div class="section" style="margin-top:16px;">
+  <div class="section-title">품번 자동생성</div>
+  <div class="row">
+    <label>년도 · 시즌</label>
+    <div class="val" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">
+      <input type="text" id="yearInput" value="2026" maxlength="4" inputmode="numeric" onInput="genCode()" style="width:60px;text-align:center;padding:14px 4px;" />
+      <select id="season" onchange="genCode()" style="width:72px;">
+        <option value="SS">S/S</option>
+        <option value="FW" selected>F/W</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <label>카테고리</label>
+    <div class="val">
+      <select id="category" onchange="genCode()">
+        <option value="BL">블라우스 · BL</option>
+        <option value="SH">셔츠 · SH</option>
+        <option value="KN">니트/다이마루 · KN</option>
+        <option value="TP">탑 · TP</option>
+        <option value="PT">팬츠 · PT</option>
+        <option value="SK">스커트 · SK</option>
+        <option value="OP">원피스 · OP</option>
+        <option value="DR">드레스 · DR</option>
+        <option value="ST">셋업 · ST</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <label>순번</label>
+    <div class="val" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;">
+      <button onclick="prevNum()" style="background:none;border:1px solid #ddd;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#555;">−</button>
+      <span id="numDisplay" style="font-size:20px;font-weight:700;min-width:40px;text-align:center;">001</span>
+      <button onclick="nextNum()" style="background:none;border:1px solid #ddd;border-radius:8px;width:32px;height:32px;font-size:18px;cursor:pointer;color:#555;">+</button>
+    </div>
+  </div>
+  <div class="row">
+    <label>품목명</label>
+    <div class="val"><input type="text" id="itemName" placeholder="예) 핑크 타이 블라우스" /></div>
+  </div>
+</div>
+
+<!-- 원단 -->
+<div class="section">
+  <div class="section-title">원단</div>
+  <div class="row">
+    <label>원단가 (yard)</label>
+    <div class="val"><input type="number" id="fabricPrice" placeholder="0" onInput="calc()" inputmode="numeric" /></div>
+  </div>
+  <div class="row">
+    <label>야드</label>
+    <div class="val"><input type="number" id="yards" placeholder="0.0" step="0.1" onInput="calc()" inputmode="decimal" /></div>
+  </div>
+  <div class="row">
+    <label>원단비</label>
+    <div class="val"><span class="auto-val" id="fabricCost">—</span></div>
+  </div>
+</div>
+
+<!-- 부자재 -->
+<div class="section">
+  <div class="section-title">부자재</div>
+  <div class="row" style="align-items:flex-start;padding-top:12px;padding-bottom:12px;">
+    <label style="padding-top:4px;">메모</label>
+    <div class="val">
+      <textarea id="materialMemo" rows="3" placeholder="단추40×10=400&#10;지퍼 800&#10;심지 200" onInput="calc()"></textarea>
+    </div>
+  </div>
+  <div class="row">
+    <label>부자재 합계</label>
+    <div class="val"><input type="number" id="materialTotal" placeholder="0" onInput="calc()" inputmode="numeric" /></div>
+  </div>
+</div>
+
+<!-- 공임/시야게 -->
+<div class="section">
+  <div class="section-title">공임 · 시야게</div>
+  <div class="row">
+    <label>공임</label>
+    <div class="val"><input type="number" id="labor" placeholder="0" onInput="calc()" inputmode="numeric" /></div>
+  </div>
+  <div class="row">
+    <label>시야게</label>
+    <div class="val"><input type="number" id="siyage" placeholder="0" onInput="calc()" inputmode="numeric" /></div>
+  </div>
+  <div class="row">
+    <label>로스분</label>
+    <div class="val"><span class="auto-val">1,000</span></div>
+  </div>
+</div>
+
+<!-- 원가 결과 -->
+<div id="resultTarget" class="target-bar ok" style="display:none;">
+  <div>
+    <div class="t-label" id="resultLabel">예상 원가</div>
+    <div class="t-target" id="resultTargetTxt"></div>
+  </div>
+  <div class="t-val" id="resultCost">—</div>
+</div>
+
+<!-- 타겟원가 -->
+<div class="section">
+  <div class="section-title">타겟원가</div>
+  <div class="row">
+    <label>타겟원가</label>
+    <div class="val"><input type="number" id="targetCost" placeholder="직접 입력" onInput="calc()" inputmode="numeric" /></div>
+  </div>
+</div>
+
+<!-- 상태 -->
+<div class="section">
+  <div class="section-title">상태</div>
+  <div class="status-sel" id="statusSel">
+    <div class="status-chip active" data-status="예정" onclick="setStatus(this)" style="background:#EAD1DC;color:#4C1130;">예정</div>
+    <div class="status-chip" data-status="샘플중" onclick="setStatus(this)" style="background:#D9EAD3;color:#274E13;">샘플중</div>
+    <div class="status-chip" data-status="재샘플" onclick="setStatus(this)" style="background:#FCE5CD;color:#783F04;">재샘플</div>
+    <div class="status-chip" data-status="발주" onclick="setStatus(this)" style="background:#CFE2F3;color:#1C4587;">발주</div>
+    <div class="status-chip" data-status="생산완료" onclick="setStatus(this)" style="background:#D9D9D9;color:#434343;">생산완료</div>
+    <div class="status-chip" data-status="판매중" onclick="setStatus(this)" style="background:#FFF2CC;color:#7F6000;">판매중</div>
+    <div class="status-chip" data-status="드랍/보류" onclick="setStatus(this)" style="background:#F4CCCC;color:#660000;">드랍/보류</div>
+  </div>
+</div>
+
+<!-- 저장 -->
+<button class="save-btn" id="saveBtn" onclick="saveToSheet()">구글 시트에 저장</button>
+<div class="toast" id="toast"></div>
+
+<script>
+const SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwOhMWHpNB56ugu_upMQ9iWHD1h5RrDPQ9RIkwF9uFRMMSoKY4b1Hk7GMjZpGRzXYJv/exec';
+
+let currentNum = 1;
+let selectedStatus = '예정';
+
+function genCode() {
+  const yr = (document.getElementById('yearInput').value.trim() || '2026').slice(-2);
+  const s = document.getElementById('season').value;
+  const c = document.getElementById('category').value;
+  const n = String(currentNum).padStart(3, '0');
+  document.getElementById('codeDisplay').textContent = `${yr}${s}-${c}-${n}`;
+}
+
+function nextNum() { currentNum = Math.min(currentNum + 1, 999); document.getElementById('numDisplay').textContent = String(currentNum).padStart(3,'0'); genCode(); }
+function prevNum() { currentNum = Math.max(currentNum - 1, 1); document.getElementById('numDisplay').textContent = String(currentNum).padStart(3,'0'); genCode(); }
+
+function calc() {
+  const fp = parseFloat(document.getElementById('fabricPrice').value) || 0;
+  const yd = parseFloat(document.getElementById('yards').value) || 0;
+  const mt = parseFloat(document.getElementById('materialTotal').value) || 0;
+  const lb = parseFloat(document.getElementById('labor').value) || 0;
+  const sy = parseFloat(document.getElementById('siyage').value) || 0;
+  const fabricCost = Math.round(fp * yd);
+  const total = fabricCost + mt + lb + sy + 1000;
+
+  document.getElementById('fabricCost').textContent = fabricCost > 0 ? fabricCost.toLocaleString() + '원' : '—';
+
+  const target = parseFloat(document.getElementById('targetCost').value) || 0;
+  const resultEl = document.getElementById('resultTarget');
+  if (total > 1000) {
+    resultEl.style.display = 'flex';
+    document.getElementById('resultCost').textContent = total.toLocaleString() + '원';
+    if (target > 0) {
+      const ok = total <= target;
+      resultEl.className = 'target-bar ' + (ok ? 'ok' : 'ng');
+      document.getElementById('resultLabel').textContent = ok ? '✓ 타겟 달성' : '✕ 타겟 초과';
+      document.getElementById('resultTargetTxt').textContent = '타겟 ' + target.toLocaleString() + '원';
+    } else {
+      resultEl.className = 'target-bar ok';
+      document.getElementById('resultLabel').textContent = '예상 원가';
+      document.getElementById('resultTargetTxt').textContent = '타겟원가 입력하면 달성 여부 표시';
+    }
+  }
+}
+
+function setStatus(el) {
+  document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  selectedStatus = el.dataset.status;
+}
+
+async function saveToSheet() {
+  const code = document.getElementById('codeDisplay').textContent;
+  const name = document.getElementById('itemName').value.trim();
+  const fp = parseFloat(document.getElementById('fabricPrice').value) || 0;
+  const yd = parseFloat(document.getElementById('yards').value) || 0;
+  const mt = parseFloat(document.getElementById('materialTotal').value) || 0;
+  const memo = document.getElementById('materialMemo').value.trim();
+  const lb = parseFloat(document.getElementById('labor').value) || 0;
+  const sy = parseFloat(document.getElementById('siyage').value) || 0;
+  const target = parseFloat(document.getElementById('targetCost').value) || 0;
+  const fabricCost = Math.round(fp * yd);
+  const total = fabricCost + mt + lb + sy + 1000;
+
+  if (!name) { showToast('품목명을 입력해주세요'); return; }
+
+  const data = { 품목명: name, 품번: code, 타겟원가: target, 실제원가: total,
+    원단가: fp, 야드: yd, 원단비: fabricCost, 부자재메모: memo,
+    부자재합계: mt, 공임: lb, 시야게: sy, 로스분: 1000,
+    상태: selectedStatus, 저장시각: new Date().toLocaleString('ko-KR') };
+
+  if (!SHEET_WEBAPP_URL) {
+    showToast('✓ 데이터 준비됨 — Apps Script URL 설정 후 자동 저장');
+    return;
+  }
+
+  const btn = document.getElementById('saveBtn');
+  btn.textContent = '저장 중...';
+  btn.classList.add('loading');
+  try {
+    await fetch(SHEET_WEBAPP_URL, { method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    showToast('✓ 구글 시트에 저장됐어요');
+    currentNum++;
+    document.getElementById('numDisplay').textContent = String(currentNum).padStart(3,'0');
+    genCode();
+  } catch(e) {
+    showToast('저장 실패 — 연결 확인해주세요');
+  } finally {
+    btn.textContent = '구글 시트에 저장';
+    btn.classList.remove('loading');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+genCode();
+</script>
+</body>
+</html>
