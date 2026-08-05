@@ -86,6 +86,15 @@
   .gallery-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
   .gallery-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
   .gallery-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .gallery-search { display: flex; gap: 8px; margin-bottom: 16px; }
+  .gallery-search select {
+    border: 1.5px solid var(--line); border-radius: 9px; padding: 9px 10px; font-size: 13px;
+    background: #fff; flex-shrink: 0;
+  }
+  .gallery-search input {
+    flex: 1; border: 1.5px solid var(--line); border-radius: 9px; padding: 9px 12px; font-size: 13px;
+  }
+  .gallery-search input:focus, .gallery-search select:focus { outline: none; border-color: var(--accent); }
   .gtab {
     background: var(--sheet); border: 1.4px solid var(--hair); color: var(--muted);
     border-radius: 20px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
@@ -93,6 +102,7 @@
   .gtab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (orientation: landscape) { .gallery-grid { grid-template-columns: repeat(5, 1fr); } }
+  @media (max-width: 480px) and (orientation: portrait) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
   .gcard {
     background: var(--sheet); border: 1.4px solid var(--hair); border-radius: 10px; overflow: hidden;
     cursor: pointer; display: flex; flex-direction: column;
@@ -148,7 +158,7 @@
   .meta .k { font-weight: 700; color: var(--ink); font-size: 12px; white-space: nowrap; }
 
   /* 디자이너·연락처·아이템명·품번·품명·공장·혼용률 전체 통일 (테두리 1.4px 고정) */
-  #designer, #phone, .designer .code, #pumMyeong, #factory, #blend {
+  #designer, #phone, .designer .code, #pumMyeong, #factory, #fabricSupplierField, #fabricNameField {
     box-sizing: border-box; width: 100%; padding: 6px 9px; font-size: 14px; font-weight: 600; line-height: 1.3;
     border: 1.4px solid var(--line) !important; background: var(--field); color: #000 !important; border-radius: 5px;
   }
@@ -267,9 +277,36 @@
   .targetbox-result.blue { background: #E7F0FF; color: #1D5FD6; }
   .targetbox-result.pink { background: #FDE7F0; color: #D6266F; }
   .targetbox .ohint { margin-top: 10px; }
+  .price-quick { margin-top: 12px; }
+  .price-cat-row, .price-val-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .price-val-row { margin-top: 8px; min-height: 0; }
+  .price-cat, .price-btn {
+    padding: 8px 14px; border-radius: 9px; border: 1.4px solid var(--line);
+    background: #fff; cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--ink);
+  }
+  .price-cat.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .price-cat:hover, .price-btn:hover { border-color: var(--accent); }
+  .arrival-group {
+    background: #FAF9F6; border: 1.5px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; margin-top: 14px;
+  }
+  .arrival-group:first-of-type { margin-top: 14px; }
+  .arrival-group-title { font-size: 13px; font-weight: 800; color: var(--ink); margin-bottom: 12px; }
+  .arrival-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 16px; align-items: end; }
+  .arrival-row .flbl { font-size: 12px; margin-bottom: 6px; display: block; }
+  .arrival-row input[type="date"] { padding: 10px 11px; font-size: 14px; }
+  .delay-view {
+    font-size: 15px; font-weight: 800; padding: 11px 16px; border-radius: 10px;
+    background: #EFEDE7; color: var(--muted); min-width: 92px; text-align: center;
+  }
+  .delay-view.bad { background: #FBEAE3; color: #C0392B; }
+  .arrival-reason { margin-top: 12px; }
+  .arrival-reason .flbl { font-size: 12px; margin-bottom: 6px; display: block; }
+  .arrival-reason input[type="text"] { width: 100%; padding: 10px 11px; font-size: 13.5px; border: 1.4px solid var(--line); border-radius: 8px; }
 
   /* ---------- SIZE (원부자재 옆, 9cm 폭) ---------- */
   .sizespec .sec-title { margin-bottom: 8px; font-size: 13px; }
+  .cell.mat .sec-title { font-size: 13px; }
   .ss-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
   .ss-toggle-btn {
     flex: 1; padding: 7px 6px; border: 1px solid var(--field-line); background: var(--field);
@@ -311,7 +348,7 @@
   .sizespec .unit-note { font-size: 11px; color: var(--muted); margin-top: 7px; }
 
   /* ---------- 발주 (order-form.html 통합) ---------- */
-  .order { border-top: 1.5px solid var(--line); padding: 16px; }
+  .order { border-top: 1.5px solid var(--line); padding: 18px 16px; background: #FCFBF9; }
   .order .sec-title { margin-bottom: 12px; }
   .order .seg { display: flex; gap: 8px; margin-bottom: 14px; max-width: 320px; }
   .order .seg button {
@@ -382,7 +419,7 @@
     .sheet { box-shadow: none; max-width: 190mm !important; width: 190mm !important; border-width: 2px; margin: 0 !important; }
     @page { size: 210mm 297mm; margin-top: 10mm; margin-bottom: 8mm; margin-left: 10mm; margin-right: 10mm; }
     input, textarea, select { background: transparent !important; border-color: transparent !important; }
-    #pumMyeong, #factory, #blend, #designer, #phone {
+    #pumMyeong, #factory, #fabricSupplierField, #fabricNameField, #designer, #phone {
       background: transparent !important; color: #000 !important; -webkit-text-fill-color: #000 !important;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
@@ -417,6 +454,173 @@
     .ss-table-wrap { overflow: hidden !important; margin-top: 1mm !important; }
   }
 </style>
+<style>
+/* ---------- 상세페이지 카피 생성기 + 원단정보 인식 (통합, copygen- 접두사로 격리) ---------- */
+.copygen-scope{
+    --ink:#1c1c1a;
+    --paper:#faf9f6;
+    --line:#dcd8cf;
+    --accent:#8a6d3b;
+    --accent-soft:#f1e9d8;
+    --danger:#a3402f;
+    --pink:#f7e3e0;
+    --pink-line:#e3b9b3;
+    --pink-text:#7a3c34;
+  }
+.copygen-wrap{max-width:100%;margin:0;padding:18px 16px;border-top:1.5px solid #23262E;}
+.copygen-grid{display:block;}
+.copygen-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:16px;
+  }
+.copygen-card h2{font-size:14px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);}
+.copygen-card .copygen-sub{font-size:12px;color:#8a8878;margin:0 0 14px;}
+.copygen-label-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px;}
+.copygen-label-row:first-of-type{margin-top:0;}
+.copygen-scope label{display:block;font-size:12.5px;font-weight:600;color:#3d3c37;}
+.copygen-label-row label{margin:0;}
+.copygen-scope input[type=text],.copygen-scope textarea{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-size:14px;
+    font-family:inherit;
+    background:#fff;
+    color:var(--ink);
+  }
+.copygen-scope textarea{resize:vertical;min-height:64px;}
+.copygen-scope input:focus,.copygen-scope textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.copygen-hint{font-size:11.5px;color:#8a8878;margin-top:4px;}
+.copygen-scope button{
+    font-family:inherit;
+    font-size:13.5px;
+    font-weight:600;
+    border-radius:4px;
+    cursor:pointer;
+    border:1px solid var(--ink);
+  }
+.copygen-btn-primary{
+    background:var(--ink);color:#fff;padding:11px 18px;margin-top:14px;width:100%;
+  }
+.copygen-btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.copygen-btn-secondary{
+    background:#fff;color:var(--ink);padding:8px 14px;
+  }
+.copygen-btn-danger{
+    background:#fff;color:var(--danger);border-color:var(--danger);padding:5px 10px;font-size:12px;
+  }
+.copygen-btn-icon{
+    background:#fff;color:var(--ink);width:28px;height:28px;padding:0;
+    border-radius:6px;font-size:14px;line-height:1;
+  }
+.copygen-chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px;}
+.copygen-chip{
+    padding:7px 13px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:13px;
+    cursor:pointer;
+  }
+.copygen-chip:hover{border-color:var(--accent);}
+.copygen-chip.copygen-selected{
+    background:var(--ink);color:#fff;border-color:var(--ink);
+  }
+.copygen-chip.copygen-add-new{
+    border-style:dashed;color:var(--accent);border-color:var(--accent);
+  }
+.copygen-chip.copygen-pink{
+    background:var(--pink);border-color:var(--pink-line);color:var(--pink-text);
+  }
+.copygen-chip.copygen-pink.copygen-selected{
+    background:var(--pink-text);border-color:var(--pink-text);color:#fff;
+  }
+.copygen-name-preview{
+    font-size:17px;font-weight:700;padding:12px 14px;
+    background:var(--accent-soft);border-radius:4px;margin-top:16px;
+    min-height:22px;
+  }
+.copygen-name-preview.copygen-empty{color:#a8a495;font-weight:400;font-style:italic;font-size:14px;}
+.copygen-warn-box{
+    margin-top:8px;padding:8px 10px;border-radius:4px;font-size:12px;
+    background:#fdf1ea;border:1px solid #e8c9ad;color:#8a5a1f;display:none;
+  }
+.copygen-warn-box.copygen-show{display:block;}
+.copygen-inline-add{display:none;gap:6px;margin-top:8px;}
+.copygen-inline-add.copygen-open{display:flex;}
+.copygen-inline-add input{flex:1;}
+.copygen-name-list{
+    display:none;margin-top:10px;padding:10px 12px;background:#f5f3ee;border-radius:6px;
+    font-size:12.5px;max-height:180px;overflow-y:auto;
+  }
+.copygen-name-list.copygen-open{display:block;}
+.copygen-name-list div{padding:2px 0;}
+.copygen-swatch-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px;}
+
+  @media (max-width:560px){.copygen-swatch-grid{grid-template-columns:repeat(3,1fr);}}
+.copygen-swatch-btn{
+    height:52px;border-radius:8px;border:1px solid var(--line);
+    font-size:12.5px;cursor:pointer;
+  }
+.copygen-swatch-btn.copygen-selected-base{box-shadow:0 0 0 2px var(--ink);}
+.copygen-swatch-btn.copygen-add-color{
+    background:transparent;border-style:dashed;color:#8a8878;
+  }
+.copygen-variant-panel{
+    margin-top:10px;padding:10px 12px;background:#f5f3ee;border-radius:6px;
+  }
+.copygen-variant-panel .copygen-label{font-size:11.5px;color:#8a8878;margin-bottom:6px;}
+.copygen-selected-colors{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.copygen-color-chip{
+    display:flex;align-items:center;gap:6px;
+    padding:5px 6px 5px 12px;border-radius:8px;
+    background:#fff;border:1px solid var(--line);font-size:12.5px;
+  }
+.copygen-color-chip button{
+    border:none;background:none;color:#a8a495;cursor:pointer;font-size:14px;
+    padding:0 4px;line-height:1;
+  }
+.copygen-color-chip button:hover{color:var(--danger);}
+.copygen-output{
+    margin-top:10px;
+    border:1px dashed var(--line);
+    border-radius:4px;
+    padding:14px;
+    font-size:14px;
+    min-height:120px;
+    width:100%;
+    background:var(--accent-soft);
+    font-family:inherit;
+    color:var(--ink);
+    resize:vertical;
+    line-height:1.6;
+  }
+.copygen-output:focus{outline:2px solid var(--accent);outline-offset:1px;border-style:solid;}
+.copygen-output.copygen-empty{color:#a8a495;font-style:italic;}
+.copygen-output-actions{display:flex;gap:8px;margin-top:10px;}
+.copygen-status{font-size:12.5px;margin-top:8px;min-height:16px;}
+.copygen-status.copygen-err{color:var(--danger);}
+.copygen-status.copygen-ok{color:#3d6b3d;}
+.copygen-scope table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px;}
+.copygen-scope th,.copygen-scope td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+.copygen-scope th{background:var(--ink);color:#fff;font-size:11.5px;letter-spacing:.03em;text-transform:uppercase;}
+.copygen-scope td.copygen-desc{white-space:pre-wrap;max-width:320px;font-size:12.5px;}
+.copygen-scope tbody tr:nth-child(even){background:#f5f3ee;}
+.copygen-table-tools{display:flex;justify-content:space-between;align-items:center;margin:32px 0 10px;}
+.copygen-table-tools h2{font-size:14px;margin:0;text-transform:uppercase;letter-spacing:.06em;}
+.copygen-empty-state{
+    text-align:center;padding:36px 0;color:#a8a495;font-size:13px;border:1px dashed var(--line);border-radius:6px;margin-top:14px;
+  }
+.copygen-count-tag{
+    display:inline-block;background:var(--accent-soft);color:var(--accent);
+    font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;
+  }
+</style>
+
 
 <div class="gallery" id="galleryView">
   <div class="gallery-head">
@@ -430,6 +634,13 @@
     <button type="button" class="gtab" data-status="order">🏭 발주생산</button>
     <button type="button" class="gtab" data-status="pdp">🖼️ PDP</button>
     <button type="button" class="gtab" data-status="drop">⏸️ 드롭</button>
+  </div>
+  <div class="gallery-search" id="gallerySearchRow">
+    <select id="gallerySearchType">
+      <option value="pumMyeong">품명</option>
+      <option value="code">품번</option>
+    </select>
+    <input type="text" id="gallerySearchInput" placeholder="검색어 입력">
   </div>
   <div class="gallery-grid" id="galleryGrid"></div>
 </div>
@@ -471,12 +682,6 @@
     <div class="drop-list" id="dropList" style="display:none"></div>
   </div>
 
-  <div class="hint">
-    채우는 순서 → <b>①</b> 시즌·카테고리·순번 → <b>품번 생성</b> (이름 안 떠올라도 품번부터 확정)
-    · <b>②</b> 원단·품명 확인/수정 · <b>③</b> 사진 클릭·드래그·붙여넣기 · <b>④</b> <b>단가 × 수량</b> 입력하면 예상 제조원가 자동합산
-    · <b>⑤</b> PDF로 저장 → 구글드라이브 업로드. <b>판매가는 안 넣습니다.</b>
-  </div>
-
   <div class="statusbar noprint" id="statusBar">
     <button type="button" class="status-btn" data-status="planned">📅 예정</button>
     <button type="button" class="status-btn" data-status="sampling">🧵 샘플중</button>
@@ -484,6 +689,12 @@
     <button type="button" class="status-btn" data-status="order">🏭 발주생산</button>
     <button type="button" class="status-btn" data-status="pdp">🖼️ PDP</button>
     <button type="button" class="status-btn" data-status="drop">⏸️ 드롭</button>
+  </div>
+
+  <div class="hint">
+    채우는 순서 → <b>①</b> 시즌·카테고리·순번 → <b>품번 생성</b> (이름 안 떠올라도 품번부터 확정)
+    · <b>②</b> 원단·품명 확인/수정 · <b>③</b> 사진 클릭·드래그·붙여넣기 · <b>④</b> <b>단가 × 수량</b> 입력하면 예상 제조원가 자동합산
+    · <b>⑤</b> PDF로 저장 → 구글드라이브 업로드. <b>판매가는 안 넣습니다.</b>
   </div>
 
   <!-- SHEET -->
@@ -525,15 +736,16 @@
         </div>
       </div>
 
-      <!-- 우: 공장 + 혼용률 -->
+      <!-- 우: 공장 + 원단(원단처+원단명) -->
       <div class="cell">
         <div class="designer">
           <span class="k">공장 :</span>
           <input id="factory" placeholder="애플" />
         </div>
         <div class="designer">
-          <span class="k">혼용률 :</span>
-          <input id="blend" placeholder="예) 폴리 100%" />
+          <span class="k">원단 :</span>
+          <input id="fabricSupplierField" placeholder="원단처 예) 성현텍스" style="width:44%;">
+          <input id="fabricNameField" placeholder="원단명 예) 카스" style="width:44%;">
         </div>
       </div>
     </div>
@@ -582,7 +794,7 @@
     <!-- 봉제/재단시 주의사항 및 원부자재 | SIZE (나란히, 각 9cm) -->
     <div class="detail2">
       <div class="cell mat">
-        <div class="sec-title">&lt; 봉제/재단시 주의사항 및 원부자재 swatch &gt;</div>
+        <div class="sec-title">&lt; 봉제/재단시 주의사항 및 원부자재 swatch · 라벨 위치 &gt;</div>
         <textarea id="materials" placeholder="예)
 셀프 C/3270
 #A73 58-60&quot; @6,200 → @5,000
@@ -630,7 +842,65 @@
           <div class="targetbox-result" id="targetPriceView">0원</div>
         </div>
       </div>
-      <div class="ohint">기준값 이하면 파란색, 기준값 초과하면 핑크색으로 표시됩니다.</div>
+      <div class="price-quick" id="priceQuick">
+        <div class="price-cat-row" id="priceCatRow">
+          <button type="button" class="price-cat" data-cat="상의">상의</button>
+          <button type="button" class="price-cat" data-cat="하의">하의</button>
+          <button type="button" class="price-cat" data-cat="원피스">원피스</button>
+          <button type="button" class="price-cat" data-cat="재킷류">재킷류</button>
+        </div>
+        <div class="price-val-row" id="priceValRow"></div>
+      </div>
+      <div class="ohint">기준값 이하면 파란색, 기준값 초과하면 핑크색으로 표시됩니다. 위 버튼을 누르면 해당 카테고리 표준가로 바로 채워집니다.</div>
+    </div>
+
+    <!-- 제품 입고일 (인쇄 안 됨) -->
+    <div class="targetbox noprint" id="arrivalBox">
+      <div class="sec-title">&lt; 제품 입고일 &gt;</div>
+
+      <div class="arrival-group">
+        <div class="arrival-group-title">🧵 원단</div>
+        <div class="arrival-row">
+          <div class="targetbox-field">
+            <span class="flbl">예상입고일</span>
+            <input type="date" id="fabricExpectedArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">실제입고일</span>
+            <input type="date" id="fabricActualArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">지연</span>
+            <div class="delay-view" id="fabricDelayView">-</div>
+          </div>
+        </div>
+        <div class="arrival-reason">
+          <span class="flbl">사유</span>
+          <input type="text" id="fabricDelayReason" placeholder="예) 원단처 생산 지연">
+        </div>
+      </div>
+
+      <div class="arrival-group">
+        <div class="arrival-group-title">🏭 공장</div>
+        <div class="arrival-row">
+          <div class="targetbox-field">
+            <span class="flbl">예상출고일 (디자이너 예측)</span>
+            <input type="date" id="factoryExpectedShipDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">실제출고일</span>
+            <input type="date" id="factoryActualShipDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">지연</span>
+            <div class="delay-view" id="factoryDelayView">-</div>
+          </div>
+        </div>
+        <div class="arrival-reason">
+          <span class="flbl">사유</span>
+          <input type="text" id="factoryDelayReason" placeholder="예) 원단 늦게 도착해서 공장도 지연">
+        </div>
+      </div>
     </div>
 
     <!-- 발주 (order-form.html 통합) -->
@@ -666,6 +936,150 @@
       <div class="order-status" id="orderStatusBox"></div>
       <div class="ohint">품번·아이템명·공장 정보는 위 작업지시서 내용을 그대로 사용합니다. 제출하면 구글시트에 자동 기록되고 슬랙으로 알림이 갑니다.</div>
     </div>
+
+<div class="copygen-scope copygen-wrap noprint">
+<div class="sec-title">&lt; 상세페이지 카피 생성기 &gt;</div>
+<div class="field" style="margin-top:14px;">
+  <span class="flbl">이 작지에 연결된 상세설명 (자동 반영됨)</span>
+  <textarea id="detailCopy" rows="4" readonly style="width:100%;background:#f5f5f5;"></textarea>
+</div>
+<div class="copygen-grid">
+<div>
+<div class="copygen-card">
+<h2>1. 품명 만들기</h2>
+<div class="copygen-sub">고유명 → 원단·핏·디테일(중복선택 가능, 생략 가능) → 아이템명 순으로 클릭하면 자동 조합됩니다.</div>
+<div class="copygen-label-row">
+<label>고유명</label>
+<div style="display:flex;gap:6px;">
+<button class="copygen-btn-icon" id="shuffleName1" title="다음 묶음 보기">🔄</button>
+<button class="copygen-btn-secondary" id="toggleNameList" style="padding:4px 10px;font-size:11.5px;">전체 품명 목록 보기</button>
+</div>
+</div>
+<input id="name1Search" placeholder="검색 (예: 리, 벨, 아...)" style="margin-top:8px;" type="text"/>
+<div class="copygen-chip-group" id="chipsName1" style="flex-wrap:nowrap;overflow-x:auto;padding:2px 2px 8px;"></div>
+<div class="copygen-inline-add" id="addNameRow">
+<input id="newNameInput" placeholder="새 고유명 입력" type="text"/>
+<button class="copygen-btn-secondary" id="newNameConfirm">추가</button>
+</div>
+<div class="copygen-warn-box" id="dupWarn"></div>
+<div class="copygen-name-list" id="nameList"></div>
+<div class="copygen-label-row">
+<label>원단 · 핏 · 디테일 <span style="font-weight:400;font-size:12px;color:#8a8878;">(중복선택 가능)</span> <span style="font-size:15px;color:var(--danger);font-weight:700;">‼ 마케팅 ‼</span></label>
+</div>
+<div class="copygen-sub" style="margin:10px 0 0;font-weight:600;color:#5c5b56;">원단</div>
+<div class="copygen-chip-group" id="chipsFabric"></div>
+<div class="copygen-inline-add" id="addFabricRow">
+<input id="newFabricInput" placeholder="새 원단 입력" type="text"/>
+<button class="copygen-btn-secondary" id="newFabricConfirm">추가</button>
+</div>
+<div class="copygen-sub" style="margin:10px 0 0;font-weight:600;color:#5c5b56;">디테일</div>
+<div class="copygen-chip-group" id="chipsDetail"></div>
+<div class="copygen-inline-add" id="addDetailRow">
+<input id="newDetailInput" placeholder="새 디테일 입력" type="text"/>
+<button class="copygen-btn-secondary" id="newDetailConfirm">추가</button>
+</div>
+<div class="copygen-sub" style="margin:10px 0 0;font-weight:600;color:#5c5b56;">핏 · 기장</div>
+<div class="copygen-chip-group" id="chipsFit"></div>
+<div class="copygen-inline-add" id="addFitRow">
+<input id="newFitInput" placeholder="새 핏·기장 입력" type="text"/>
+<button class="copygen-btn-secondary" id="newFitConfirm">추가</button>
+</div>
+<label style="margin-top:16px;">아이템명</label>
+<div class="copygen-sub" style="margin:0 0 4px;font-weight:600;color:#5c5b56;">상의</div>
+<div class="copygen-chip-group" id="chipsItemTop"></div>
+<div class="copygen-sub" style="margin:10px 0 4px;font-weight:600;color:#5c5b56;">하의</div>
+<div class="copygen-chip-group" id="chipsItemBottom"></div>
+<div class="copygen-sub" style="margin:10px 0 4px;font-weight:600;color:#5c5b56;">스커트 · 원피스</div>
+<div class="copygen-chip-group" id="chipsItemSkirtDress"></div>
+<div class="copygen-sub" style="margin:10px 0 4px;font-weight:600;color:#5c5b56;">아우터</div>
+<div class="copygen-chip-group" id="chipsItemOuter"></div>
+<div class="copygen-name-preview copygen-empty" id="namePreview">위에서 선택하면 여기에 품명이 조립됩니다.</div>
+<label style="margin-top:14px;">품명 (직접 수정 가능)</label>
+<input id="name" placeholder="조합된 품명이 여기 채워집니다. 직접 수정도 가능합니다." type="text"/>
+</div>
+<div class="copygen-card">
+<h2>2. 컬러 고르기</h2>
+<div class="copygen-sub">기본 컬러를 클릭하면 AISEL/SIE 스타일 변형 5가지가 아래에 뜹니다. 여러 개 선택 가능합니다.</div>
+<div class="copygen-swatch-grid" id="colorSwatches"></div>
+<div class="copygen-inline-add" id="addColorRow">
+<input id="newColorInput" placeholder="직접 입력할 컬러명" type="text"/>
+<button class="copygen-btn-secondary" id="newColorConfirm">추가</button>
+</div>
+<div id="variantPanel"></div>
+<div class="copygen-selected-colors" id="selectedColors"></div>
+<input id="colors" style="display:none;" type="text"/>
+</div>
+</div>
+<div>
+<div class="copygen-card">
+<h2>3. 핵심 키워드 · 비고</h2>
+<label for="keywords">핵심 키워드 (핏 / 실루엣 / 기능 디테일 등)</label>
+<textarea id="keywords" placeholder="예: 오버핏, 사이드 슬릿, 하이웨이스트, 신축성"></textarea>
+<div class="copygen-hint">위에서 고른 원단·핏·디테일은 자동으로 여기 포함됩니다. 필요하면 더 추가해주세요.</div>
+<label for="note">비고 (선택)</label>
+<input id="note" placeholder="예: 신규 컬러, 품절 예정 등" type="text"/>
+<button class="copygen-btn-primary" id="copygenGenBtn" style="background:#1D5FD8;border-color:#1D5FD8;">AISEL 상세페이지</button>
+<div class="copygen-status" id="status"></div>
+</div>
+<div class="copygen-card">
+<div class="copygen-label-row">
+<h2 style="margin:0;">생성 결과</h2>
+<button class="copygen-btn-secondary" disabled="" id="regenBtnTop" style="padding:4px 10px;font-size:11.5px;">🔄 새로고침</button>
+</div>
+<textarea class="copygen-output copygen-empty" id="output" rows="8">아직 생성된 설명이 없습니다. 위에서 정보를 채우고 생성 버튼을 눌러주세요.</textarea>
+<div class="copygen-hint">생성 후에는 직접 클릭해서 단어 하나만 고치는 것도 가능합니다.</div>
+<div class="copygen-output-actions">
+<button class="copygen-btn-secondary" disabled="" id="copyBtn">복사</button>
+<button class="copygen-btn-secondary" disabled="" id="regenBtn">🔄 다시 생성</button>
+<button class="copygen-btn-primary" disabled="" id="addBtn" style="margin-top:0;width:auto;flex:1;">작업지시서에 추가</button>
+</div>
+</div>
+</div>
+</div>
+<div class="copygen-table-tools">
+<h2>작업지시서 <span class="copygen-count-tag" id="rowCount">0건</span></h2>
+<div style="display:flex;gap:8px;">
+<button class="copygen-btn-secondary" id="exportBtn">CSV로 내보내기</button>
+<button class="copygen-btn-secondary" id="clearBtn" style="color:var(--danger);border-color:var(--danger);">전체 삭제</button>
+</div>
+</div>
+<div id="tableWrap"></div>
+
+<div class="order noprint" style="border-top:none;">
+<div class="sec-title">&lt; 원단정보 인식 &gt;</div>
+<div class="field" style="margin-top:0;">
+<span class="flbl">원단 라벨 사진 인식</span>
+<input type="file" id="fabricPhotoInput" accept="image/*" capture="environment" style="width:100%;">
+<div class="ohint">사진 선택하면 아래 다섯 칸이 자동으로 채워집니다. 사진 없이 직접 입력하셔도 됩니다.</div>
+<div class="order-status" id="fabricVisionStatus"></div>
+</div>
+<div class="field">
+<span class="flbl">원단처명</span>
+<input type="text" id="fabricSupplier" placeholder="예) 성현텍스타일">
+</div>
+<div class="field">
+<span class="flbl">원단명</span>
+<input type="text" id="fabricName" placeholder="예) 카스">
+</div>
+<div class="field">
+<span class="flbl">야드가</span>
+<input type="text" id="fabricPrice" placeholder="예) 4500">
+</div>
+<div class="field">
+<span class="flbl">폭</span>
+<input type="text" id="fabricWidth" placeholder="예) 58-60인치">
+</div>
+<div class="field">
+<span class="flbl">혼용률</span>
+<input type="text" id="fabricBlend" placeholder="예) 폴리에스터82 레이온18">
+</div>
+<div class="field">
+<span class="flbl">네고가</span>
+<input type="text" id="fabricNegoPrice" placeholder="예) 4000" style="background:#FCE4EC;">
+</div>
+<button type="button" class="order-submit-btn" id="fabricSaveBtn" style="background:#1D5FD8;">원단정보 저장</button>
+<div class="order-status" id="fabricStatusBox"></div>
+</div>
   </div>
 </div>
 
@@ -813,8 +1227,65 @@
   }
   ["#gongim","#siyage","#targetThreshold"].forEach(s=> $(s).addEventListener("input", calc));
 
+  // ---------- 타겟 판매가 퀵버튼(카테고리 → 가격 2단계) ----------
+  const PRICE_BY_CATEGORY = {
+    "상의": ["59,000", "69,000", "79,000", "89,000"],
+    "하의": ["59,900", "69,000", "79,000", "89,000", "98,000"],
+    "원피스": ["98,000"],
+    "재킷류": ["89,000", "98,000"]
+  };
+  const priceValRow = $("#priceValRow");
+  function renderPriceValues_(cat){
+    const prices = PRICE_BY_CATEGORY[cat] || [];
+    priceValRow.innerHTML = prices.map(p=>
+      `<button type="button" class="price-btn" data-price="${p}">${p}</button>`
+    ).join("");
+    priceValRow.querySelectorAll(".price-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        $("#targetThreshold").value = btn.dataset.price;
+        calc();
+        save();
+      });
+    });
+  }
+  document.querySelectorAll(".price-cat").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".price-cat").forEach(b=>b.classList.remove("active"));
+      btn.classList.add("active");
+      renderPriceValues_(btn.dataset.cat);
+    });
+  });
+
+  // ---------- 제품 입고일: 지연 자동계산 ----------
+  function calcDelay_(expectedVal, actualVal){
+    if(!expectedVal) return { text: "-", bad: false };
+    const exp = new Date(expectedVal + "T00:00:00");
+    if(isNaN(exp)) return { text: "-", bad: false };
+    const compareVal = actualVal || new Date().toISOString().slice(0,10);
+    const cmp = new Date(compareVal + "T00:00:00");
+    if(isNaN(cmp)) return { text: "-", bad: false };
+    const diffDays = Math.round((cmp - exp) / 86400000);
+    if(diffDays > 0) return { text: "+" + diffDays + "일", bad: true };
+    return { text: "지연없음", bad: false };
+  }
+  function renderDelay_(expId, actId, viewId){
+    const exp = $(expId).value, act = $(actId).value;
+    const result = calcDelay_(exp, act);
+    const view = $(viewId);
+    view.textContent = result.text;
+    view.classList.toggle("bad", result.bad);
+  }
+  function refreshAllDelays_(){
+    renderDelay_("#fabricExpectedArrivalDate", "#fabricActualArrivalDate", "#fabricDelayView");
+    renderDelay_("#factoryExpectedShipDate", "#factoryActualShipDate", "#factoryDelayView");
+  }
+  ["#fabricExpectedArrivalDate","#fabricActualArrivalDate","#factoryExpectedShipDate","#factoryActualShipDate"].forEach(s=>{
+    $(s).addEventListener("input", refreshAllDelays_);
+  });
+
   // ---------- 사진 (클릭 / 드래그 / 붙여넣기) ----------
-  function makeThumbnail(dataURL, maxW, cb){
+  function makeThumbnail(dataURL, maxW, quality, cb){
+    if(typeof quality === "function"){ cb = quality; quality = 0.6; } // 예전 방식(3개 인자)도 계속 지원
     const img = new Image();
     img.onload = ()=>{
       const scale = Math.min(1, maxW / img.width);
@@ -823,7 +1294,7 @@
       const canvas = document.createElement("canvas");
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      try { cb(canvas.toDataURL("image/jpeg", 0.6)); } catch(e){ cb(""); }
+      try { cb(canvas.toDataURL("image/jpeg", quality)); } catch(e){ cb(""); }
     };
     img.onerror = ()=> cb("");
     img.src = dataURL;
@@ -832,8 +1303,12 @@
     if(!file || !file.type || !file.type.startsWith("image/")) return;
     const r = new FileReader();
     r.onload = e => {
-      box.querySelector("img").src = e.target.result; box.classList.add("filled");
-      makeThumbnail(e.target.result, 320, thumb=>{ box.dataset.thumb = thumb; setTimeout(save,150); });
+      // 원본을 그대로 안 쓰고 적당한 크기(가로 1000px, 화질 80%)로 한 번 압축해서 사용
+      // 폰 카메라 원본은 화면에 보기엔 과하게 크고 저장 용량도 많이 차지함
+      makeThumbnail(e.target.result, 1000, 0.8, medium => {
+        box.querySelector("img").src = medium; box.classList.add("filled");
+        makeThumbnail(e.target.result, 320, 0.6, thumb=>{ box.dataset.thumb = thumb; setTimeout(save,150); });
+      });
     };
     r.readAsDataURL(file);
   }
@@ -965,6 +1440,89 @@
 
   // ---------- 발주 (order-form.html 통합) ----------
   const ORDER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2H-GGzAPMytgXTyGMHi5zGfWi4SNz1jmvzfWlpmQebtng2c-Md2AcLw/exec";
+
+  // ---------- 작업지시서/사이즈 AISEL_공용 저장 ----------
+  function collectCostLines_(){
+    const lines = [];
+    linesWrap.querySelectorAll(".line").forEach(row=>{
+      const name = row.querySelector(".nm").value.trim();
+      const unit = row.querySelector(".unit").value.trim();
+      const qty = row.querySelector(".qty").value.trim();
+      const amt = row.dataset.amt || "0";
+      if(name){
+        lines.push({ name: name, unit: unit, qty: qty || "1", amt: amt });
+      }
+    });
+    return lines;
+  }
+
+  function costLinesToText_(lines){
+    // 원단(야드) 4,500×1.5=6,750 / 단추 30×3=90 / 로스 1,000×1=1,000 ...
+    return lines.map(l => `${l.name} ${l.unit || '-'}×${l.qty}=${comma(Number(l.amt)||0)}`).join(" / ");
+  }
+
+  function collectSizeSpecRows_(){
+    const rows = [];
+    const colInputs = [...sizeSpecHead.querySelectorAll(".colhead .ss-colname")];
+    const colNames = colInputs.map(inp => inp.value.trim());
+    sizeSpecRows.querySelectorAll("tr").forEach(tr=>{
+      const partInput = tr.querySelector(".ss-part");
+      const part = partInput ? partInput.value.trim() : "";
+      const valInputs = [...tr.querySelectorAll(".ss-val")];
+      valInputs.forEach((vi, idx)=>{
+        const val = vi.value.trim();
+        if(part && val){
+          rows.push({ size: colNames[idx] || "", part: part, value: val, unit: ssUnit });
+        }
+      });
+    });
+    return rows;
+  }
+
+  async function syncToAiselSheets_(){
+    const code = $("#codeView").textContent.replace("품번","").trim();
+    const pumMyeongVal = $("#pumMyeong").value.trim();
+    if(!code || !pumMyeongVal){
+      return { ok: false, message: "품번과 품명은 위에서 먼저 채워주세요." };
+    }
+
+    const costLines = collectCostLines_();
+    const payload = {
+      type: "workOrderInfo",
+      season: $("#season").value,
+      code: code,
+      pumMyeong: pumMyeongVal,
+      designer: $("#designer").value.trim(),
+      factory: $("#factory").value.trim(),
+      fabricSupplier: $("#fabricSupplierField").value.trim(),
+      fabricName: $("#fabricNameField").value.trim(),
+      detailCopy: (document.getElementById("detailCopy") ? document.getElementById("detailCopy").value.trim() : ""),
+      materials: (document.getElementById("materials") ? document.getElementById("materials").value.trim() : ""),
+      costDetail: costLinesToText_(costLines),
+      gongim: $("#gongim").value.trim(),
+      siyage: $("#siyage").value.trim(),
+      manufacturingCost: $("#totalView").textContent.trim(),
+      fabricExpectedArrivalDate: $("#fabricExpectedArrivalDate").value,
+      fabricActualArrivalDate: $("#fabricActualArrivalDate").value,
+      fabricDelayReason: $("#fabricDelayReason").value.trim(),
+      factoryExpectedShipDate: $("#factoryExpectedShipDate").value,
+      factoryActualShipDate: $("#factoryActualShipDate").value,
+      factoryDelayReason: $("#factoryDelayReason").value.trim(),
+      sizeRows: collectSizeSpecRows_()
+    };
+
+    try{
+      await fetch(ORDER_WEBAPP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      return { ok: true, message: "작업지시서·사이즈 탭에 저장됐습니다." };
+    }catch(err){
+      return { ok: false, message: "구글시트 저장 중 문제가 생겼습니다: " + err.message };
+    }
+  }
 
   function formatSizeLabel_(raw){
     const s = raw.trim();
@@ -1125,7 +1683,11 @@
   });
 
   // ---------- 자동저장 (Firebase 실시간 공유 저장소) ----------
-  const TXT_IDS = ["yy","mm","dd","designer","phone","factory","blend","gongim","siyage","seq","pumMyeong","targetThreshold"];
+  // 사진 원본을 Firebase에 같이 저장할지 여부. true(기본값)면 편집화면에서 고화질로 보임.
+  // 나중에 저장용량이 부담되면 false로 바꾸면 원본 없이 압축 썸네일만 저장됨(화질은 떨어짐)
+  const SAVE_ORIGINAL_PHOTO = true;
+
+  const TXT_IDS = ["yy","mm","dd","designer","phone","factory","fabricSupplierField","fabricNameField","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","detailCopy"];
   let loading = false;
   let lastSentJSON = null;   // 내가 방금 보낸 내용 (그대로 되돌아오면 다시 그릴 필요 없음)
   let pendingRemoteState = null; // 입력 중이라 잠깐 미뤄둔 다른 기기의 최신 내용
@@ -1160,7 +1722,9 @@
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
     st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
       nm:r.querySelector(".nm").value, unit:r.querySelector(".unit").value, qty:r.querySelector(".qty").value }));
-    st.p1 = document.querySelector("#ph1 img").getAttribute("src") || "";
+    // 원본은 작업지시서 편집화면 고화질용, 썸네일은 목록·제품조회 화면 가벼운 용도로 둘 다 저장
+    // (원본 저장을 끄고 싶으면 SAVE_ORIGINAL_PHOTO를 false로 바꾸면 됨 — 아래 상수 참고)
+    st.p1 = SAVE_ORIGINAL_PHOTO ? (document.querySelector("#ph1 img").getAttribute("src") || "") : "";
     st.p1Thumb = document.querySelector("#ph1").dataset.thumb || "";
     st.sizeSpecCols = [...sizeSpecHead.querySelectorAll(".ss-colname")].map(inp=> inp.value);
     st.sizeSpec = [...sizeSpecRows.querySelectorAll("tr")].map(r=>({
@@ -1186,10 +1750,20 @@
       woRef.set(st2).catch(()=>{ s.textContent="⚠ 저장 실패 (인터넷 확인)"; });
     });
   }
-  $("#saveBtn").addEventListener("click", ()=>{
+  $("#saveBtn").addEventListener("click", async ()=>{
+    const s = $("#saveBtn");
     save();
-    const s = $("#saveBtn"); s.textContent="💾 방금 저장함!";
-    setTimeout(()=> s.textContent="💾 저장됨 ✓", 1200);
+    s.textContent = "💾 저장 중...";
+    s.disabled = true;
+    const result = await syncToAiselSheets_();
+    s.disabled = false;
+    if(result.ok){
+      s.textContent = "💾 방금 저장함!";
+    } else {
+      s.textContent = "⚠ 시트 저장 실패";
+      alert("개인 작업 내용은 저장됐지만 구글시트 저장에 문제가 있었습니다: " + result.message);
+    }
+    setTimeout(()=> s.textContent="💾 저장됨 ✓", 1500);
   });
   function setPhoto(boxSel, src, thumb){
     const box = document.querySelector(boxSel);
@@ -1202,6 +1776,7 @@
     $("#season").value = st.season ?? "26F";
     catSel.value = st.cat ?? 4;
     TXT_IDS.forEach(id=>{ if(st[id]!==undefined) document.getElementById(id).value = st[id]; });
+    refreshAllDelays_();
     $("#materials").value = st.materials || "";
     pumInput.dataset.auto = st.pumAuto || "1";
     currentStatus = st.status || "planned";
@@ -1276,12 +1851,16 @@
     linesWrap.innerHTML="";
     [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
-    $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#blend").value="";
+    $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value="";
     $("#materials").value="";
+    $("#fabricExpectedArrivalDate").value=""; $("#fabricActualArrivalDate").value=""; $("#fabricDelayReason").value="";
+    $("#factoryExpectedShipDate").value=""; $("#factoryActualShipDate").value=""; $("#factoryDelayReason").value="";
     currentStatus = "planned"; updateStatusButtons();
-    setToday(); suggestSeq(); calc(); applySizeSpecDefault();
+    setToday(); suggestSeq(); calc(); applySizeSpecDefault(); refreshAllDelays_();
   }
   $("#galleryBtn").addEventListener("click", showGallery);
+  $("#gallerySearchInput").addEventListener("input", ()=> renderGallery());
+  $("#gallerySearchType").addEventListener("change", ()=> renderGallery());
   $("#newBtn").addEventListener("click", ()=>{
     bumpUsed(num($("#seq").value));   // 지금 번호를 '사용함'으로 기록 → 다음 작지는 +1
     startNewWorkOrder();
@@ -1304,6 +1883,13 @@
 
     Object.entries(allWorkOrders || {})
       .filter(([code, st])=> galleryFilter === "all" || (st.status || "planned") === galleryFilter)
+      .filter(([code, st])=>{
+        const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
+        if(!q) return true;
+        const type = $("#gallerySearchType").value;
+        const target = type === "code" ? code : (st.pumMyeong || "");
+        return target.toLowerCase().includes(q);
+      })
       .sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0))
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[st.status] || STATUS_MAP.planned;
@@ -1392,4 +1978,838 @@
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
   // 카드를 클릭하거나 "+ 새 작지"를 누를 때 그 시점에 준비됩니다.
+</script>
+
+<script>
+/* ---------- 상세페이지 카피 생성기 + 원단정보 인식 스크립트 (격리된 IIFE) ---------- */
+(function(){
+
+const $ = (id) => document.getElementById(id);
+
+// 클로드 API 배달원(구글 앱스 스크립트) 주소. CopygenRelay.gs 배포 후 여기에 붙여넣기
+const COPYGEN_RELAY_URL = "https://script.google.com/macros/s/AKfycbxHGBHi3878TPQEJAngnbaTYVPNAc1cQuT95DsqPazIKI6dUh7rCGwrg6q2iXOpnOKvZw/exec";
+
+/* ================= 작업지시서 저장소 (품명 중복 체크의 기준 데이터) ================= */
+const STORAGE_KEY = "aisel_work_order_rows";
+function loadRows(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch(e){ return []; }
+}
+function saveRows(r){ localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
+let rows = loadRows();
+
+/* ================= 품명 데이터 ================= */
+const NAME1_DEFAULT = ["오브","마론","모린","세실","헤일리","네아","모아","니스","로디","소브","케이드","몬드","글린","리엔","리젤","레인","에밀","르네","리에","켈리","멜라","벨린","벨","제인","루아","로하","베로","리제","리아","포지","에밀리","세인트","아이비","셀리","리안","일리","베안","밀로","센느","리오","르아","리앤","르보","린","모노","니아","루디","아벨","네티","루","르베","이젤","노엘","델리나","쥬에","틸리","앤","플린","리즐링","엠버","로네","벨라","비앙","리버","엘로","카렌","베나","트위들","데아","애니","아밀라","셀","아렌","보브","엘리브","아일리","슬로","로엘","소이","베르","카넬","모네","로이","프린","아일","네즈","썸","조안","루엔","아르","루나","아방","바인","앤디","마리","세르","미엘","리즈","벨로","루브","델라","조세핀","로에","앨런","데이","미아","보타","디안","소피","로나","로사","에피","레니","데이나","제나","제니","아딘","아넬리","제이","릴리아","버킨","알리나","엘리","에린","젠느","샌디","모엘","마렌","아르네","루빈","헤더","루엘","로즈","이안","디엔","델린","로렌","릴리","네프","다일라","앨리","리네","튤리","디어","페탈","글래시","글리밍","로젤린","슈어","릴","미뉴엣","노아","세레나","로엔","리스","올리비아","클래시","루이시","멜리","샬롯","로시","에델","페브","네스"];
+const NAME1_KEY = "aisel_custom_names";
+const NAME1_CHUNK = 12;
+
+const ITEM_GROUPS = {
+  top: ["니트 탑","블라우스","셔츠","티셔츠","슬리브리스"],
+  bottom: ["트라우저","슬랙스","컴포트팬츠","팬츠","진","데님","숏츠","하프"],
+  skirtDress: ["스커트","드레스"],
+  outer: ["재킷","가디건"]
+};
+
+// 원단 · 핏 · 디테일 3개 소분류 (별표 = 마케팅 소구력 있는 항목)
+const FABRIC_GROUPS_DEFAULT = {
+  fabric: [
+    {w:"시어", star:true},{w:"텍스쳐드", star:true},{w:"실키", star:true},{w:"크링클", star:false},
+    {w:"리브드", star:true},{w:"브러쉬드", star:false},{w:"워시드", star:false},{w:"홀가먼트", star:false},
+    {w:"시어서커", star:true},{w:"벨벳", star:false},{w:"새틴", star:false},{w:"저지", star:false},
+    {w:"코튼", star:false},{w:"린넨", star:true},{w:"골덴", star:true},{w:"기모", star:true},
+    {w:"울", star:false},{w:"플리츠", star:true}
+  ],
+  detail: [
+    {w:"슬릿", star:true},{w:"타이", star:true},{w:"랩", star:true},{w:"테일러드", star:false},
+    {w:"크롭", star:false},{w:"스트랩", star:true},{w:"보트넥", star:true},
+    {w:"스판", star:true},{w:"히든밴딩", star:true}
+  ],
+  fit: [
+    {w:"맥시", star:false},{w:"와이드", star:false},{w:"부츠컷", star:false},{w:"앵클", star:false},
+    {w:"스트레이트", star:false},{w:"카프리", star:false},{w:"버뮤다", star:false},
+    {w:"미니", star:false},{w:"하프", star:false}
+  ]
+};
+const FABRIC_KEYS = { fabric:"aisel_custom_fabric", detail:"aisel_custom_detail", fit:"aisel_custom_fit" };
+
+function loadCustomList(key){
+  try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; }
+}
+function saveCustomWord(key, word){
+  const list = loadCustomList(key);
+  if(!list.includes(word)) list.push(word);
+  localStorage.setItem(key, JSON.stringify(list));
+}
+
+function loadNameList(){
+  const custom = loadCustomList(NAME1_KEY);
+  const merged = [...NAME1_DEFAULT];
+  custom.forEach(c => { if(!merged.includes(c)) merged.push(c); });
+  return merged;
+}
+function loadFabricGroup(groupKey){
+  const custom = loadCustomList(FABRIC_KEYS[groupKey]);
+  const merged = [...FABRIC_GROUPS_DEFAULT[groupKey]];
+  custom.forEach(c => { if(!merged.some(m => m.w === c)) merged.push({w:c, star:false}); });
+  return merged;
+}
+
+let name1List = loadNameList();
+let fabricGroups = {
+  fabric: loadFabricGroup("fabric"),
+  detail: loadFabricGroup("detail"),
+  fit: loadFabricGroup("fit")
+};
+let sel1 = null;
+let sel2 = []; // 원단/디테일/핏 선택 (그룹 무관, 중복선택 가능)
+let sel3 = null;
+
+function checkDuplicateName(name){
+  if(!name) { $("dupWarn").classList.remove("copygen-show"); return; }
+  const matches = rows.filter(r => (r.name || "").trim().split(" ")[0] === name);
+  const box = $("dupWarn");
+  if(matches.length > 0){
+    box.textContent = `⚠️ '${name}'은(는) 이미 ${matches.length}개 품목에 사용됐습니다 — ` + matches.map(m => m.name).join(", ");
+    box.classList.add("copygen-show");
+  }else{
+    box.classList.remove("copygen-show");
+  }
+}
+
+let name1Filter = "";
+let name1ChunkStart = 0;
+
+function renderName1(){
+  const el = $("chipsName1");
+  el.innerHTML = "";
+  let toShow;
+  if(name1Filter){
+    toShow = name1List.filter(w => w.includes(name1Filter));
+  }else{
+    toShow = name1List.slice(name1ChunkStart, name1ChunkStart + NAME1_CHUNK);
+    if(toShow.length < NAME1_CHUNK){
+      toShow = toShow.concat(name1List.slice(0, NAME1_CHUNK - toShow.length));
+    }
+  }
+  if(toShow.length === 0){
+    const empty = document.createElement("div");
+    empty.style.cssText = "font-size:12.5px;color:#a8a495;padding:6px 2px;white-space:nowrap;";
+    empty.textContent = "일치하는 고유명이 없습니다. '+ 기타'로 새로 추가해보세요.";
+    el.appendChild(empty);
+  }
+  toShow.forEach(word => {
+    const btn = document.createElement("button");
+    btn.className = "copygen-chip" + (word === sel1 ? " copygen-selected" : "");
+    btn.style.flex = "0 0 auto";
+    btn.textContent = word;
+    btn.addEventListener("click", () => {
+      sel1 = (sel1 === word) ? null : word;
+      renderName1(); updatePreview(); checkDuplicateName(sel1);
+    });
+    el.appendChild(btn);
+  });
+  const addBtn = document.createElement("button");
+  addBtn.className = "copygen-chip copygen-add-new";
+  addBtn.style.flex = "0 0 auto";
+  addBtn.textContent = "+ 기타";
+  addBtn.addEventListener("click", () => {
+    $("addNameRow").classList.toggle("copygen-open");
+    $("newNameInput").focus();
+  });
+  el.appendChild(addBtn);
+}
+
+$("name1Search").addEventListener("input", (e) => {
+  name1Filter = e.target.value.trim();
+  renderName1();
+});
+
+$("shuffleName1").addEventListener("click", () => {
+  name1Filter = "";
+  $("name1Search").value = "";
+  name1ChunkStart += NAME1_CHUNK;
+  if(name1ChunkStart >= name1List.length) name1ChunkStart = 0;
+  renderName1();
+});
+
+$("newNameConfirm").addEventListener("click", () => {
+  const val = $("newNameInput").value.trim();
+  if(!val) return;
+  saveCustomWord(NAME1_KEY, val);
+  name1List = loadNameList();
+  sel1 = val;
+  renderName1(); updatePreview(); checkDuplicateName(sel1);
+  $("newNameInput").value = "";
+  $("addNameRow").classList.remove("copygen-open");
+});
+
+$("toggleNameList").addEventListener("click", () => {
+  const box = $("nameList");
+  box.classList.toggle("copygen-open");
+  if(box.classList.contains("copygen-open")){
+    if(rows.length === 0){
+      box.innerHTML = "<div>저장된 품명이 아직 없습니다.</div>";
+    }else{
+      box.innerHTML = rows.map(r => `<div>${escapeHtml(r.name)}</div>`).join("");
+    }
+  }
+});
+
+function renderFabricGroup(groupKey, containerId){
+  const el = $(containerId);
+  el.innerHTML = "";
+  fabricGroups[groupKey].forEach(item => {
+    const btn = document.createElement("button");
+    const isSel = sel2.includes(item.w);
+    btn.className = "copygen-chip copygen-pink" + (isSel ? " copygen-selected" : "");
+    btn.textContent = (item.star ? "⭐ " : "") + item.w;
+    btn.addEventListener("click", () => {
+      if(isSel){
+        sel2 = sel2.filter(w => w !== item.w);
+      }else{
+        sel2.push(item.w);
+      }
+      renderFabricGroup(groupKey, containerId); updatePreview(); syncKeywordsFromFabric();
+    });
+    el.appendChild(btn);
+  });
+  const addBtn = document.createElement("button");
+  addBtn.className = "copygen-chip copygen-add-new";
+  addBtn.textContent = "+ 기타";
+  const addRowId = { fabric:"addFabricRow", detail:"addDetailRow", fit:"addFitRow" }[groupKey];
+  const inputId = { fabric:"newFabricInput", detail:"newDetailInput", fit:"newFitInput" }[groupKey];
+  addBtn.addEventListener("click", () => {
+    $(addRowId).classList.toggle("copygen-open");
+    $(inputId).focus();
+  });
+  el.appendChild(addBtn);
+}
+
+function setupFabricGroupAdd(groupKey, confirmId, inputId, rowId){
+  $(confirmId).addEventListener("click", () => {
+    const val = $(inputId).value.trim();
+    if(!val) return;
+    saveCustomWord(FABRIC_KEYS[groupKey], val);
+    fabricGroups[groupKey] = loadFabricGroup(groupKey);
+    if(!sel2.includes(val)) sel2.push(val);
+    renderFabricGroup(groupKey, { fabric:"chipsFabric", detail:"chipsDetail", fit:"chipsFit" }[groupKey]);
+    updatePreview(); syncKeywordsFromFabric();
+    $(inputId).value = "";
+    $(rowId).classList.remove("copygen-open");
+  });
+}
+setupFabricGroupAdd("fabric", "newFabricConfirm", "newFabricInput", "addFabricRow");
+setupFabricGroupAdd("detail", "newDetailConfirm", "newDetailInput", "addDetailRow");
+setupFabricGroupAdd("fit", "newFitConfirm", "newFitInput", "addFitRow");
+
+function renderItemGroup(list, containerId){
+  const el = $(containerId);
+  el.innerHTML = "";
+  list.forEach(word => {
+    const btn = document.createElement("button");
+    btn.className = "copygen-chip" + (word === sel3 ? " copygen-selected" : "");
+    btn.textContent = word;
+    btn.addEventListener("click", () => {
+      sel3 = (sel3 === word) ? null : word;
+      renderAllItemGroups(); updatePreview();
+    });
+    el.appendChild(btn);
+  });
+}
+function renderAllItemGroups(){
+  renderItemGroup(ITEM_GROUPS.top, "chipsItemTop");
+  renderItemGroup(ITEM_GROUPS.bottom, "chipsItemBottom");
+  renderItemGroup(ITEM_GROUPS.skirtDress, "chipsItemSkirtDress");
+  renderItemGroup(ITEM_GROUPS.outer, "chipsItemOuter");
+}
+
+function updatePreview(){
+  const parts = [sel1, ...sel2, sel3].filter(Boolean);
+  const preview = $("namePreview");
+  if(parts.length === 0){
+    preview.textContent = "위에서 선택하면 여기에 품명이 조립됩니다.";
+    preview.classList.add("copygen-empty");
+  }else{
+    const combined = parts.join(" ");
+    preview.textContent = combined;
+    preview.classList.remove("copygen-empty");
+    $("name").value = combined;
+  }
+}
+
+function syncKeywordsFromFabric(){
+  if(sel2.length === 0) return;
+  const ta = $("keywords");
+  const current = ta.value.split(",").map(s => s.trim()).filter(Boolean);
+  sel2.forEach(w => { if(!current.includes(w)) current.push(w); });
+  ta.value = current.join(", ");
+}
+
+renderName1();
+renderFabricGroup("fabric", "chipsFabric");
+renderFabricGroup("detail", "chipsDetail");
+renderFabricGroup("fit", "chipsFit");
+renderAllItemGroups();
+
+/* ================= 컬러 데이터 ================= */
+const BASE_COLORS = [
+  { key:"블랙", hex:"#1a1a1a", text:"#ffffff" },
+  { key:"차콜", hex:"#3a3d40", text:"#ffffff" },
+  { key:"딥네이비", hex:"#22314f", text:"#ffffff" },
+  { key:"회소라", hex:"#a9b7c2", text:"#1a2530" },
+  { key:"라이트그레이", hex:"#cfcecb", text:"#33322f" },
+  { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
+  { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
+  { key:"베이지", hex:"#d9c6a8", text:"#4a3c26" },
+  { key:"그린", hex:"#7c8b6f", text:"#ffffff" },
+];
+const COLOR_VARIANTS = {
+  "블랙": ["딥 블랙","소프트 블랙","스모키 블랙","미드나잇 블랙","펄 블랙"],
+  "차콜": ["차콜 쉐도우","스모크 차콜","딥 차콜","애쉬 차콜","소프트 차콜"],
+  "딥네이비": ["미드나잇 네이비","인디고 네이비","다크 네이비","네이비 블루","스틸 네이비"],
+  "회소라": ["소라 그레이","페일 소라","더스티 소라","미스티 블루","소라 블루"],
+  "라이트그레이": ["라이트 그레이","페일 그레이","애쉬 그레이","미스트 그레이","실버 그레이"],
+  "블러쉬": ["블러쉬 핑크","더스티 핑크","로즈 블러쉬","페일 블러쉬","소프트 핑크"],
+  "크림": ["크림 베이지","웜 크림","펄리 크림","바닐라 크림","아이보리 크림"],
+  "베이지": ["로즈 베이지","샌드 베이지","웜 베이지","토프 베이지","스톤 베이지"],
+  "그린": ["세이지 그린","올리브 그린","민트 그린","카키 그린","포레스트 그린"],
+};
+
+let selectedColors = [];
+let openBase = null;
+
+function renderSwatches(){
+  const grid = $("colorSwatches");
+  grid.innerHTML = "";
+  BASE_COLORS.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "copygen-swatch-btn" + (openBase === c.key ? " copygen-selected-base" : "");
+    btn.style.background = c.hex;
+    btn.style.color = c.text;
+    btn.textContent = c.key;
+    btn.addEventListener("click", () => {
+      openBase = (openBase === c.key) ? null : c.key;
+      renderSwatches();
+      renderVariantPanel();
+    });
+    grid.appendChild(btn);
+  });
+  const addBtn = document.createElement("button");
+  addBtn.className = "copygen-swatch-btn copygen-add-color";
+  addBtn.textContent = "+ 기타";
+  addBtn.addEventListener("click", () => {
+    $("addColorRow").classList.toggle("copygen-open");
+    $("newColorInput").focus();
+  });
+  grid.appendChild(addBtn);
+}
+
+function renderVariantPanel(){
+  const panel = $("variantPanel");
+  panel.innerHTML = "";
+  if(!openBase) return;
+  const wrap = document.createElement("div");
+  wrap.className = "copygen-variant-panel";
+  const label = document.createElement("div");
+  label.className = "copygen-label";
+  label.textContent = openBase + " 계열 변형 — 클릭해서 추가 (이 자리에서만 쓰는 값, 저장되지 않음)";
+  wrap.appendChild(label);
+  const chipRow = document.createElement("div");
+  chipRow.className = "copygen-chip-group";
+  COLOR_VARIANTS[openBase].forEach(v => {
+    const chip = document.createElement("button");
+    chip.className = "copygen-chip" + (selectedColors.includes(v) ? " copygen-selected" : "");
+    chip.textContent = v;
+    chip.addEventListener("click", () => addColor(v));
+    chipRow.appendChild(chip);
+  });
+  wrap.appendChild(chipRow);
+  panel.appendChild(wrap);
+}
+
+function addColor(v){
+  if(!selectedColors.includes(v)) selectedColors.push(v);
+  renderSelectedColors();
+  renderVariantPanel();
+}
+function removeColor(v){
+  selectedColors = selectedColors.filter(c => c !== v);
+  renderSelectedColors();
+  renderVariantPanel();
+}
+function renderSelectedColors(){
+  const el = $("selectedColors");
+  el.innerHTML = "";
+  selectedColors.forEach(v => {
+    const chip = document.createElement("span");
+    chip.className = "copygen-color-chip";
+    chip.textContent = v;
+    const rm = document.createElement("button");
+    rm.textContent = "×";
+    rm.addEventListener("click", () => removeColor(v));
+    chip.appendChild(rm);
+    el.appendChild(chip);
+  });
+  $("colors").value = selectedColors.join(", ");
+}
+
+$("newColorConfirm").addEventListener("click", () => {
+  const val = $("newColorInput").value.trim();
+  if(!val) return;
+  addColor(val); // 비영구 — 이번 세션에서만 사용, localStorage에 저장하지 않음
+  $("newColorInput").value = "";
+  $("addColorRow").classList.remove("copygen-open");
+});
+
+renderSwatches();
+
+/* ================= 작업지시서 테이블 ================= */
+let lastGenerated = "";
+
+function renderTable(){
+  $("rowCount").textContent = rows.length + "건";
+  const wrap = $("tableWrap");
+  if(rows.length === 0){
+    wrap.innerHTML = '<div class="copygen-empty-state">아직 추가된 항목이 없습니다. 위에서 설명을 생성한 뒤 "작업지시서에 추가"를 눌러주세요.</div>';
+    return;
+  }
+  let html = '<table><thead><tr>' +
+    '<th style="width:16%">품명</th>' +
+    '<th style="width:16%">컬러명</th>' +
+    '<th style="width:18%">핵심 키워드</th>' +
+    '<th style="width:38%">완성 설명</th>' +
+    '<th style="width:8%">비고</th>' +
+    '<th style="width:4%"></th>' +
+    '</tr></thead><tbody>';
+  rows.forEach((r, i) => {
+    html += `<tr>
+      <td>${escapeHtml(r.name)}</td>
+      <td>${escapeHtml(r.colors)}</td>
+      <td>${escapeHtml(r.keywords)}</td>
+      <td class="copygen-desc">${escapeHtml(r.desc)}</td>
+      <td>${escapeHtml(r.note || "")}</td>
+      <td><button class="copygen-btn-danger" data-idx="${i}">삭제</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+  wrap.querySelectorAll(".copygen-btn-danger").forEach(btn => {
+    btn.addEventListener("click", () => {
+      rows.splice(Number(btn.dataset.idx), 1);
+      saveRows(rows);
+      renderTable();
+      checkDuplicateName(sel1);
+    });
+  });
+}
+
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function setStatus(msg, type){
+  const el = $("status");
+  el.textContent = msg || "";
+  el.className = "copygen-status" + (type ? " " + type : "");
+}
+
+const SYSTEM_PROMPT = `당신은 AISEL(에이슬)이라는 여성복 D2C 브랜드의 상세페이지 카피라이터입니다.
+AISEL은 SIE(시에)의 상세페이지 톤앤매너를 스타일 벤치마크로 삼고 있습니다.
+아래 규칙을 정확히 따라 한국어 상세페이지 설명을 작성하세요.
+
+[어체]
+- 전체 하십시오체로 통일합니다 (-습니다 / -ㅂ니다). 해요체는 절대 사용하지 않습니다.
+- "-하십시오" 직접 명령형은 절대 사용하지 않습니다 (예: "외출하십시오", "연출하십시오" 금지). SIE 원문에 이런 명령형은 존재하지 않습니다.
+- "-하시기 바랍니다"도 사용하지 않습니다. SIE 원문에 없는 표현입니다.
+
+[디테일 정직 원칙 — 가장 중요]
+- 입력된 핵심 키워드에 없는 디테일, 소재, 기능을 절대 지어내지 않습니다 (예: 키워드에 없는데 "스냅버튼", "히든밴딩" 같은 디테일을 임의로 추가하는 것 금지).
+- 키워드가 1-2개로 적으면, 그만큼 짧고 담백한 설명을 씁니다. 억지로 문장을 늘리기 위해 근거 없는 디테일을 만들어내지 않습니다.
+- "시그니처", "스테디셀러", "꾸준히 사랑받아 온", "오랫동안 사랑받은", "많은 분들께 선택받아 온" 같이 이 제품의 판매 이력·인기도를 구체적으로 주장하는 표현은 쓰지 않습니다. 이는 사실 여부를 이 도구가 알 수 없는 지위 주장입니다.
+- "매 시즌 사랑받는", "많은 사랑을 받는" 정도의 절제된 관용구는 SIE 업계 통상 표현이라 허용되지만, 그 이상으로 구체적인 판매 이력을 붙이지 않습니다.
+
+[구조 — 내용에 따라 유연하게 문단을 나눕니다]
+- 고정된 3단 형식이 아니라, 다루는 내용의 성격이 바뀔 때 빈 줄로 문단을 나눕니다. 키워드가 적으면 1-2문단으로 끝내도 됩니다.
+- 첫 문단: 정체성 선언. "~입니다"로 끝맺는 짧은 도입.
+- 이어지는 문단: 소재·핏의 근거를 "-며/-으며" 연결어미로 서술. 한 문장에는 특징을 최대 2개까지만 묶습니다. 키워드가 3개 이상이면 문장을 나눠 여러 문장으로 분리하세요 (한 문장에 다 욱여넣지 않습니다).
+- 마지막 문단(선택): 스타일링 제안. 아래 [스타일링 제안 종결어미 규칙]을 따릅니다.
+
+[스타일링 제안 종결어미 규칙]
+- 특정 짝꿍 제품명이 키워드나 비고에 주어진 경우에만 → "'○○'와 함께 착용하시는 것을 권장드립니다" 또는 "'○○'와 매치해 스타일을 완성해 보세요" 같은 권유형("-보세요"/"-권장드립니다")을 씁니다.
+- 특정 짝꿍 제품이 없는 일반적인 활용 범위를 말할 때는 → "다양하게 착용하실 수 있습니다", "다양한 스타일링을 즐길 수 있습니다", "취향에 따라 선택하실 수 있습니다" 처럼 하십시오체 평서형("-습니다"/"-실 수 있습니다")으로 끝맺습니다. 이 경우 권유형("-보세요")을 쓰지 않습니다.
+
+[용어 정확도 원칙]
+- 핵심 키워드에 적힌 소재·디테일 용어는 반드시 그 표현 그대로 사용합니다. 비슷한 느낌의 다른 단어로 바꾸지 않습니다 (예: 키워드가 "리브드"면 반드시 "리브드"라고 쓰고 "골지" "리브"처럼 비슷한 다른 말로 바꾸지 않습니다).
+
+[문장 보강 원칙 — 4문장 구조 (필수 요건)]
+- 주어진 핵심 키워드는 하나도 빠짐없이 전부 결과에 반영합니다. 일부만 골라서 쓰지 않습니다.
+- 키워드가 3개 이상이면 반드시 아래 4개 문장을 전부 씁니다. 하나라도 생략하지 않습니다.
+  1문장(정체성): "~입니다"로 끝나는 도입 문장
+  2문장(촉감·텍스처): 소재가 주는 촉감을 15자에서 30자 정도로 구체적으로 풀어씀
+  3문장(착용감): 신축성·핏 등이 주는 통상적 착용 느낌을 15자에서 30자 정도로 풀어씀 (사전적 특성까지만, 신체보정 효과 지어내지 않기)
+  4문장(활용 범위): 위 [스타일링 제안 종결어미 규칙] 그대로
+- 2문장과 3문장을 짧게("~좋습니다" 한 줄로 퉁치기) 끝내지 말고 각각 독립된 정보로 충분히 풀어씁니다.
+- 예외: 키워드가 1-2개뿐이면 이 4문장 구조를 적용하지 않고 짧게 끝내도 됩니다(위 [디테일 정직 원칙] 우선).
+- 문장을 늘릴 때는 새로운 소재·디테일·기능을 절대 추가하지 않습니다. 이미 주어진 키워드만 위 네 자리에 나눠 담습니다.
+- 착용감을 쓸 때 키워드에 없는 신체보정·체형 관련 효과(예: 다리가 길어 보인다, 체형이 보정된다, 라인이 살아난다 등)는 절대 지어내지 않습니다. 이는 [디테일 정직 원칙]의 연장입니다.
+
+[문장 구성 규칙 — 모바일 가독성, SIE 실제 사례 기준]
+- 조사·연결어미(-으로, -이, -며, -고, -는, -과 등) 뒤에서 줄바꿈(개행)할 수 있습니다. 한 문장에 절이 여러 개 이어지면(예: "-고" "-며"로 두 번 이어진 문장) 절 경계마다 끊어도 됩니다. 반드시 한 번만으로 제한하지 않습니다.
+- 다만 한 줄이 대략 25자를 넘지 않게, 그리고 너무 짧게(5자 이하) 뚝뚝 끊기지 않게 자연스러운 의미 단위로 끊습니다.
+- 어절 중간에서는 절대 끊지 않습니다.
+- 문장이 짧으면(20자 이내) 안 끊어도 됩니다.
+- 문장과 문장 사이(마침표 뒤)에는 빈 줄로 문단을 구분해도 됩니다.
+
+[어휘]
+- 실루엣/핏 계열: 실루엣, 라인, 핏, 밸런스, 비율
+- 소재/촉감 계열: 터치감, 텍스처, 결, 밀도감, 신축성
+- 질감 형용사: 부드러운, 산뜻한, 청량한, 은은한, 매끈한
+- 무드 형용사: 우아한, 세련된, 모던한, 차분한 (문장마다 절제된 형용사 1개만)
+- 효과 동사: 연출하다, 완성하다, 정돈하다, 잡아주다, 감싸다, 돋보이다
+- 위 목록에 없는 일반적인 형용사·부사(예: "손쉽게", "간편하게")는 꼭 필요한 경우가 아니면 피하고, 위 목록 단어로 대체할 수 있는지 먼저 검토합니다.
+- "캐주얼부터 세미포멀까지", "격식 있는 자리부터 데일리룩까지" 처럼 상황·격식 수준의 범위를 임의로 만들어내지 않습니다. 키워드에 없는 착용 상황(오피스룩, 세미포멀, 파티룩 등)을 지어내지 마세요. 활용 범위를 언급할 때는 "다양하게 착용하실 수 있습니다", "다양한 스타일링을 즐길 수 있습니다"처럼 구체적 상황을 명시하지 않는 일반적 표현을 씁니다.
+- 과장된 수식어(최고, 완벽, 무조건, 대박)는 절대 쓰지 않습니다.
+- 상세설명 본문에는 품명이나 컬러명을 직접 언급하지 않습니다.
+
+입력으로 핵심 키워드가 주어지면, 위 규칙에 맞춘 상세페이지 설명만 출력하세요. 다른 말은 하지 마세요.`;
+
+async function generateDescription(){
+  const keywords = $("keywords").value.trim();
+  const colors = $("colors").value.trim();
+
+  if(!keywords){
+    setStatus("핵심 키워드를 입력해주세요.", "copygen-err");
+    return;
+  }
+
+  const genBtn = $("copygenGenBtn");
+  const regenBtn = $("regenBtn");
+  const regenBtnTop = $("regenBtnTop");
+  genBtn.disabled = true;
+  regenBtn.disabled = true;
+  regenBtnTop.disabled = true;
+  setStatus("생성 중입니다...");
+  $("output").classList.add("copygen-empty");
+  $("output").value = "생성 중입니다...";
+
+  const note = $("note").value.trim();
+  const itemCategory = sel3 || "";
+
+  const userMsg = `아이템 카테고리: ${itemCategory || "(미지정)"}
+핵심 키워드: ${keywords}
+${colors ? "참고 컬러: " + colors : ""}
+${note ? "비고(짝꿍 제품이나 특이사항이 있으면 참고): " + note : ""}
+
+위 정보를 바탕으로 상세페이지 설명을 작성하세요. 첫 문장은 반드시 "아이템 카테고리"에 명시된 카테고리명으로 정확히 끝맺으세요 (예: 아이템 카테고리가 "스커트"면 "~스커트입니다"로, "팬츠"면 "~팬츠입니다"로). 아이템 카테고리가 미지정이면 키워드만으로 자연스럽게 작성하세요. 품명이나 컬러명은 본문에 언급하지 마세요. 비고에 구체적인 짝꿍 제품명이 없으면 일반 활용 범위로 마무리하세요.`;
+
+  if(COPYGEN_RELAY_URL.indexOf("PASTE_YOUR") === 0){
+    setStatus("아직 클로드 API 배달원 연결이 안 됐습니다. 그동안은 클로드 채팅창에 부탁해서 문장 받아 결과창에 붙여넣어 쓰세요.", "copygen-err");
+    genBtn.disabled = false;
+    regenBtn.disabled = !lastGenerated;
+    regenBtnTop.disabled = !lastGenerated;
+    return;
+  }
+
+  try{
+    const response = await fetch(COPYGEN_RELAY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        system: SYSTEM_PROMPT,
+        userMsg: userMsg
+      })
+    });
+
+    if(!response.ok){
+      throw new Error("배달원 응답 오류: " + response.status);
+    }
+
+    const data = await response.json();
+    if(data.error){
+      throw new Error(data.error);
+    }
+    const text = (data.text || "").trim();
+
+    if(!text){
+      throw new Error("빈 응답을 받았습니다.");
+    }
+
+    lastGenerated = text;
+    $("output").value = text;
+    $("output").classList.remove("copygen-empty");
+    $("copyBtn").disabled = false;
+    $("regenBtn").disabled = false;
+    $("regenBtnTop").disabled = false;
+    $("addBtn").disabled = false;
+    setStatus("생성 완료. 마음에 들면 작업지시서에 추가하세요. 단어 하나만 고칠 거면 결과창을 직접 클릭해서 수정할 수 있습니다.", "copygen-ok");
+
+  }catch(err){
+    console.error(err);
+    setStatus("생성에 실패했습니다: " + err.message, "copygen-err");
+    $("output").value = "생성에 실패했습니다. 다시 시도해주세요.";
+    $("output").classList.add("copygen-empty");
+  }finally{
+    genBtn.disabled = false;
+    regenBtn.disabled = !lastGenerated;
+    regenBtnTop.disabled = !lastGenerated;
+  }
+}
+
+$("copygenGenBtn").addEventListener("click", generateDescription);
+$("regenBtn").addEventListener("click", generateDescription);
+$("regenBtnTop").addEventListener("click", generateDescription);
+
+$("output").addEventListener("input", () => {
+  const val = $("output").value.trim();
+  if(val){
+    $("output").classList.remove("copygen-empty");
+    lastGenerated = $("output").value;
+    $("copyBtn").disabled = false;
+    $("addBtn").disabled = false;
+  } else {
+    $("output").classList.add("copygen-empty");
+    lastGenerated = "";
+  }
+});
+
+$("copyBtn").addEventListener("click", async () => {
+  if(!lastGenerated) return;
+  try{
+    await navigator.clipboard.writeText(lastGenerated);
+    setStatus("클립보드에 복사했습니다.", "copygen-ok");
+  }catch(e){
+    setStatus("복사에 실패했습니다. 직접 선택해 복사해주세요.", "copygen-err");
+  }
+});
+
+$("addBtn").addEventListener("click", () => {
+  if(!lastGenerated) return;
+  const finalName = $("name").value.trim() || "(품명 미입력)";
+  rows.push({
+    name: finalName,
+    colors: $("colors").value.trim(),
+    keywords: $("keywords").value.trim(),
+    desc: lastGenerated,
+    note: $("note").value.trim()
+  });
+  saveRows(rows);
+  renderTable();
+
+  // ---- 작업지시서 상단 품명 칸(#pumMyeong)에 자동 반영 ----
+  const pumMyeongInput = document.getElementById("pumMyeong");
+  if(pumMyeongInput){
+    pumMyeongInput.value = finalName;
+    pumMyeongInput.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  // ---- 상세설명 저장칸(#detailCopy)에 자동 반영 ----
+  const detailCopyField = document.getElementById("detailCopy");
+  if(detailCopyField){
+    detailCopyField.value = lastGenerated;
+    detailCopyField.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  setStatus("작업지시서에 추가했습니다. 위쪽 품명 칸에도 자동으로 반영됐습니다.", "copygen-ok");
+
+  // reset for next entry
+  sel1 = null; sel2 = []; sel3 = null;
+  selectedColors = [];
+  openBase = null;
+  renderName1();
+  renderFabricGroup("fabric", "chipsFabric");
+  renderFabricGroup("detail", "chipsDetail");
+  renderFabricGroup("fit", "chipsFit");
+  renderAllItemGroups();
+  updatePreview();
+  renderSwatches(); renderVariantPanel(); renderSelectedColors();
+  checkDuplicateName(null);
+  $("name").value = "";
+  $("keywords").value = "";
+  $("note").value = "";
+  $("output").value = "아직 생성된 설명이 없습니다. 위에서 정보를 채우고 생성 버튼을 눌러주세요.";
+  $("output").classList.add("copygen-empty");
+  $("copyBtn").disabled = true;
+  $("regenBtn").disabled = true;
+  $("regenBtnTop").disabled = true;
+  $("addBtn").disabled = true;
+  lastGenerated = "";
+});
+
+$("exportBtn").addEventListener("click", () => {
+  if(rows.length === 0){
+    setStatus("내보낼 항목이 없습니다.", "copygen-err");
+    return;
+  }
+  const headers = ["품명","컬러명","핵심키워드","완성설명","비고"];
+  const csvRows = [headers.join(",")];
+  rows.forEach(r => {
+    const line = [r.name, r.colors, r.keywords, r.desc, r.note || ""]
+      .map(v => '"' + String(v).replace(/"/g, '""').replace(/\n/g, " ") + '"')
+      .join(",");
+    csvRows.push(line);
+  });
+  const csvContent = "\uFEFF" + csvRows.join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,"");
+  a.href = url;
+  a.download = `aisel_work_order_${today}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+$("clearBtn").addEventListener("click", () => {
+  if(rows.length === 0) return;
+  if(confirm("작업지시서의 모든 항목을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")){
+    rows = [];
+    saveRows(rows);
+    renderTable();
+    checkDuplicateName(sel1);
+  }
+});
+
+renderTable();
+
+/* ================= 원단 라벨 사진 인식 및 저장 ================= */
+
+const FABRIC_SAVE_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2H-GGzAPMytgXTyGMHi5zGfWi4SNz1jmvzfWlpmQebtng2c-Md2AcLw/exec";
+
+const FABRIC_VISION_PROMPT = `당신은 원단 라벨 사진에서 정보를 정확히 읽어내는 어시스턴트입니다.
+사진에 실제로 보이는 글자만 근거로 답합니다. 안 보이거나 불확실한 항목은 빈 문자열("")로 둡니다. 절대 추측해서 채우지 않습니다.
+아래 JSON 형식으로만 답하세요. 다른 말은 절대 하지 마세요.
+{"supplier":"원단처명(로고나 회사명)","name":"원단명(스티커 안 첫 줄 이름)","price":"야드가(@ 뒤 숫자만, 콤마·원 표시 없이 숫자만)","width":"폭(인치 표시 그대로, 예 58-60인치)","blend":"혼용률(약자를 풀어서 씀, 예 P82 R18 이면 폴리에스터82 레이온18)"}`;
+
+function fileToResizedBase64_(file, maxDimension, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDimension){
+          h = Math.round(h * (maxDimension / w));
+          w = maxDimension;
+        } else if(h > maxDimension){
+          w = Math.round(w * (maxDimension / h));
+          h = maxDimension;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", quality);
+        resolve(dataUrl.split(",")[1]);
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function setFabricVisionStatus_(kind, msg){
+  const box = $("fabricVisionStatus");
+  box.className = "order-status show " + kind;
+  box.textContent = msg;
+}
+
+const fabricPhotoInput = $("fabricPhotoInput");
+if(fabricPhotoInput){
+  fabricPhotoInput.addEventListener("change", async () => {
+    const file = fabricPhotoInput.files[0];
+    if(!file) return;
+
+    if(COPYGEN_RELAY_URL.indexOf("PASTE_YOUR") === 0){
+      setFabricVisionStatus_("err", "아직 배달원 연결이 안 됐습니다. 다섯 칸에 직접 입력해주세요.");
+      return;
+    }
+
+    setFabricVisionStatus_("pending", "사진 읽는 중입니다...");
+    try{
+      const base64 = await fileToResizedBase64_(file, 1200, 0.85);
+      const response = await fetch(COPYGEN_RELAY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          system: FABRIC_VISION_PROMPT,
+          userMsg: "사진 속 원단 라벨 정보를 위 JSON 형식으로 읽어주세요.",
+          image: base64,
+          mediaType: "image/jpeg"
+        })
+      });
+      if(!response.ok){ throw new Error("배달원 응답 오류: " + response.status); }
+      const data = await response.json();
+      if(data.error){ throw new Error(data.error); }
+
+      let parsed;
+      try{
+        const raw = (data.text || "").trim();
+        const firstBrace = raw.indexOf("{");
+        const lastBrace = raw.lastIndexOf("}");
+        if(firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace){
+          throw new Error("no json braces found");
+        }
+        const jsonSlice = raw.slice(firstBrace, lastBrace + 1);
+        parsed = JSON.parse(jsonSlice);
+      }catch(e){
+        console.error("원단정보 JSON 파싱 실패, 원문:", data.text);
+        const preview = (data.text || "").trim().slice(0, 150);
+        throw new Error("읽은 결과를 정리하지 못했습니다. AI가 이렇게 답했습니다: \"" + preview + "\"");
+      }
+
+      $("fabricSupplier").value = parsed.supplier || "";
+      $("fabricName").value = parsed.name || "";
+      $("fabricPrice").value = parsed.price || "";
+      $("fabricWidth").value = parsed.width || "";
+      $("fabricBlend").value = parsed.blend || "";
+      setFabricVisionStatus_("ok", "다 읽었습니다. 틀린 칸 있으면 직접 고쳐주세요.");
+
+    }catch(err){
+      setFabricVisionStatus_("err", "인식에 실패했습니다: " + err.message + " 다섯 칸에 직접 입력해주세요.");
+    }
+  });
+}
+
+$("fabricSaveBtn").addEventListener("click", async () => {
+  const supplier = $("fabricSupplier").value.trim();
+  const name = $("fabricName").value.trim();
+  if(!supplier || !name){
+    setStatusBox_("fabricStatusBox", "err", "원단처명과 원단명은 꼭 입력해주세요.");
+    return;
+  }
+  const payload = {
+    type: "fabricInfo",
+    supplier: supplier,
+    name: name,
+    price: $("fabricPrice").value.trim(),
+    width: $("fabricWidth").value.trim(),
+    blend: $("fabricBlend").value.trim(),
+    negoPrice: $("fabricNegoPrice").value.trim()
+  };
+  try{
+    await fetch(FABRIC_SAVE_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    setStatusBox_("fabricStatusBox", "ok", "AISEL 공용 시트 원단정보 탭에 저장됐습니다.");
+  }catch(err){
+    setStatusBox_("fabricStatusBox", "err", "저장 중 문제가 생겼습니다: " + err.message);
+  }
+});
+
+function setStatusBox_(id, kind, msg){
+  const box = $(id);
+  box.className = "order-status show " + kind;
+  box.textContent = msg;
+}
+
+})();
 </script>
