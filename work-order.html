@@ -20,7 +20,13 @@
     --bad-soft: #FBE7E7;
     --radius: 8px;
     --kfont: "Pretendard", -apple-system, "Malgun Gothic", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    --btn-dark: #2F3B52;
   }
+  html { scrollbar-width: thin; scrollbar-color: #2F3B52 #E9ECF2; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: #E9ECF2; }
+  ::-webkit-scrollbar-thumb { background: #2F3B52; border-radius: 10px; border: 2px solid #E9ECF2; }
+  ::-webkit-scrollbar-thumb:hover { background: #1c2536; }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0D0F13; --sheet: #171A20; --ink: #E8EBF1; --muted: #99A0AC;
@@ -66,6 +72,7 @@
     padding: 8px 15px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: .01em;
   }
   .btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  .btn.nav-btn { color: #2F3B52; border-color: #2F3B52; }
   .btn.drop-btn { color: #A03B1E; border-color: #A03B1E; }
   .btn:active { transform: translateY(1px); }
   .hint { max-width: 820px; margin: 0 auto 18px; font-size: 12px; color: var(--muted); line-height: 1.6; }
@@ -82,8 +89,71 @@
   .status-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   /* ---------- 갤러리 (노션 갤러리 스타일 목록 화면) ---------- */
+  .scroll-fab-wrap { position: fixed; right: 18px; bottom: 22px; display: flex; flex-direction: column; gap: 8px; z-index: 500; }
+  .scroll-fab {
+    min-width: 42px; padding: 8px 15px; border-radius: 6px; border: 1px solid #2F3B52;
+    background: transparent; color: #2F3B52; font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  }
+  .scroll-fab:disabled { opacity: .35; cursor: default; }
+  .predict-panel {
+    max-width: 820px; margin: 14px auto 26px; padding: 12px 14px; background: #fff;
+    border: 1.4px solid var(--hair); border-radius: 12px;
+  }
+  .predict-row { display: grid; grid-template-columns: 92px 1fr 92px 1fr; gap: 8px 10px; align-items: center; margin-bottom: 8px; }
+  .predict-row label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .predict-row input {
+    box-sizing: border-box; width: 100%; padding: 6px 9px; font-size: 14px; font-weight: 600; line-height: 1.3;
+    border: 1.4px solid var(--line) !important; background: var(--field); color: #000 !important; border-radius: 5px;
+  }
+  .predict-row.single input { grid-column: 2 / span 3; }
+  .ref-link-row input { grid-column: 2 / span 2; }
+  .ref-link-open {
+    grid-column: 4; text-align: center; padding: 6px 9px; font-size: 12.5px; font-weight: 700;
+    color: #fff; background: #2F3B52; border-radius: 5px; text-decoration: none; white-space: nowrap;
+  }
+  .ref-link-open.disabled { pointer-events: none; opacity: .4; }
+  .mainbar { max-width: 1100px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 8px; }
+  .maintab {
+    flex: 1; padding: 10px 10px; border-radius: 6px; border: 1px solid var(--field-line);
+    background: var(--field); font-weight: 700; font-size: 14px; cursor: pointer; color: var(--muted);
+  }
+  .maintab.active { background: #2F3B52; border-color: #2F3B52; color: #fff; font-weight: 800; }
+  .editor-topfill {
+    display: none; max-width: 820px; margin: 10px auto -22px; height: 16px;
+    background: var(--sheet); border: none;
+    border-radius: var(--radius) var(--radius) 0 0; position: relative; z-index: 1;
+  }
+  #salesTabs { max-width: 320px; }
+  #salesTabs .gtab {
+    border-radius: 6px; border: 1px solid var(--field-line); background: var(--field);
+    color: var(--muted); font-weight: 700; padding: 10px 28px; min-width: 96px;
+  }
+  #salesTabs .gtab.active { background: #2F3B52; border-color: #2F3B52; color: #fff; }
+  .sales-empty { padding: 40px 0; text-align: center; color: var(--muted); }
+  .sales-table-wrap { overflow-x: auto; }
+  .sales-table { width: 100%; border-collapse: collapse; background: #fff; border: 1.4px solid var(--hair); border-radius: 12px; overflow: hidden; }
+  .sales-table th {
+    text-align: left; font-size: 13.5px; color: #2F3B52; font-weight: 800;
+    background: #F5F7FA; padding: 9px 10px; border-bottom: 1.4px solid var(--hair);
+  }
+  .sales-table td { padding: 8px 10px; border-bottom: 1px solid #EEF1F6; vertical-align: middle; }
+  .sales-table tr:last-child td { border-bottom: none; }
+  .sales-table tr.srow { cursor: pointer; }
+  .sales-table tr.srow:hover td { background: #FAFBFD; }
+  .srow-thumb { width: 52px; height: 52px; border-radius: 8px; overflow: hidden; background: #F2F4F8; display: flex; align-items: center; justify-content: center; }
+  .srow-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .srow-name { font-size: 13px; font-weight: 800; }
+  .srow-code { font-size: 10.5px; color: var(--muted); font-weight: 600; margin-top: 2px; }
+  .srow-num { font-size: 12.5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .srow-diff { font-size: 12.5px; font-weight: 800; white-space: nowrap; }
+  .srow-diff.good { color: #15803D; }
+  .srow-diff.mid { color: #B8860B; }
+  .srow-diff.bad { color: #64748B; }
+  .srow-diff.neutral { color: var(--muted); }
   .gallery { max-width: 1100px; margin: 0 auto; padding: 22px 16px 60px; }
-  .gallery-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .gallery-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
+  .gallery-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .gallery-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
   .gallery-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .gallery-search { display: flex; gap: 8px; margin-bottom: 16px; }
@@ -99,7 +169,7 @@
     background: var(--sheet); border: 1.4px solid var(--hair); color: var(--muted);
     border-radius: 20px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
   }
-  .gtab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .gtab.active { background: #2F3B52; border-color: #2F3B52; color: #fff; }
   .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (orientation: landscape) { .gallery-grid { grid-template-columns: repeat(5, 1fr); } }
   @media (max-width: 480px) and (orientation: portrait) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
@@ -158,7 +228,7 @@
   .meta .k { font-weight: 700; color: var(--ink); font-size: 12px; white-space: nowrap; }
 
   /* 디자이너·연락처·아이템명·품번·품명·공장·혼용률 전체 통일 (테두리 1.4px 고정) */
-  #designer, #phone, .designer .code, #pumMyeong, #factory, #fabricSupplierField, #fabricNameField {
+  #designer, #phone, .designer .code, #pumMyeong, #factory, #factoryPhone, #fabricSupplierField, #fabricNameField, #blend {
     box-sizing: border-box; width: 100%; padding: 6px 9px; font-size: 14px; font-weight: 600; line-height: 1.3;
     border: 1.4px solid var(--line) !important; background: var(--field); color: #000 !important; border-radius: 5px;
   }
@@ -224,6 +294,7 @@
   .cost .lines-scroll { flex: 1 1 auto; overflow-y: auto; min-height: 0; }
   .cost .cost-fixed { flex: 0 0 auto; margin-top: 6px; padding-top: 6px; }
   .sec-title { font-weight: 800; letter-spacing: .12em; font-size: 14.5px; margin-bottom: 10px; }
+  .sec-title-np { font-weight: 800; letter-spacing: .06em; font-size: 17px; margin-bottom: 10px; }
 
   /* 2번째 줄: 원부자재(9cm) | SIZE(9cm), 줄 전체 13cm 고정 */
   .detail2 { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; border-top: 1.5px solid var(--line); }
@@ -264,28 +335,49 @@
   .total-row.target .v { color: var(--accent); }
   .total-row .estv { width: 150px; text-align: right; font-weight: 800; font-size: 20px; color: var(--accent); padding: 4px 8px; }
 
+  /* .order 밖(카피생성기·원단정보 섹션)에서도 .field .flbl이 같은 여백을 갖게 하는 보조 규칙 */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field .flbl { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; display: block; }
+  .field input[type=text], .field input[type=date], .field textarea {
+    width: 100%; padding: 9px 10px; font-size: 14px;
+  }
+
+  .fabric-photo-row { display: flex; gap: 10px; margin-top: 4px; }
+  .fabric-photo-btn {
+    flex: 1; padding: 12px 10px; border-radius: 9px; border: 1.4px solid #2F3B52;
+    background: #fff; color: #2F3B52; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  }
+  .fabric-photo-btn:hover, .fabric-photo-btn:active { background: #2F3B52; color: #fff; }
+
   /* ---------- 타겟 판매가 ---------- */
-  .targetbox { border-top: 1.5px solid var(--line); padding: 14px 16px; }
+  .targetbox { border-top: 1.5px solid var(--line); padding: 18px 16px; background: #FCFBF9; }
   .targetbox .sec-title { margin-bottom: 10px; }
-  .targetbox-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+  .targetbox-card {
+    background: #FAF9F6; border: 1.5px solid var(--line); border-radius: 12px; padding: 16px 18px;
+  }
+  .targetbox-row {
+    display: flex; justify-content: flex-start; gap: 24px; flex-wrap: wrap; align-items: flex-end;
+    margin-top: 14px;
+  }
   .targetbox-field { display: flex; flex-direction: column; gap: 4px; }
-  .targetbox-field .flbl { font-size: 11px; font-weight: 700; color: var(--muted); }
+  .targetbox-field .flbl { font-size: 12px; font-weight: 700; color: var(--muted); }
   #targetThreshold { width: 140px; padding: 8px 10px; font-size: 15px; font-weight: 700; text-align: right; }
   .targetbox-result {
     font-size: 22px; font-weight: 800; padding: 6px 14px; border-radius: 6px; min-width: 130px; text-align: right;
   }
   .targetbox-result.blue { background: #E7F0FF; color: #1D5FD6; }
   .targetbox-result.pink { background: #FDE7F0; color: #D6266F; }
-  .targetbox .ohint { margin-top: 10px; }
-  .price-quick { margin-top: 12px; }
+  .targetbox .ohint { margin-top: 10px; font-size: 11px; }
+  .price-quick { margin-top: 0; }
   .price-cat-row, .price-val-row { display: flex; flex-wrap: wrap; gap: 8px; }
-  .price-val-row { margin-top: 8px; min-height: 0; }
+  .price-val-row { margin-top: 6px; min-height: 0; }
   .price-cat, .price-btn {
     padding: 8px 14px; border-radius: 9px; border: 1.4px solid var(--line);
-    background: #fff; cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--ink);
+    background: #fff; cursor: pointer; font-size: 13.5px; font-weight: 700; color: var(--ink);
   }
-  .price-cat.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .price-cat:hover, .price-btn:hover { border-color: var(--accent); }
+  .price-cat.active { background: #2F3B52; border-color: #2F3B52; color: #fff; }
+  .price-cat:hover, .price-btn:hover { border-color: #2F3B52; }
   .arrival-group {
     background: #FAF9F6; border: 1.5px solid var(--line); border-radius: 12px;
     padding: 16px 18px; margin-top: 14px;
@@ -303,6 +395,22 @@
   .arrival-reason { margin-top: 12px; }
   .arrival-reason .flbl { font-size: 12px; margin-bottom: 6px; display: block; }
   .arrival-reason input[type="text"] { width: 100%; padding: 10px 11px; font-size: 13.5px; border: 1.4px solid var(--line); border-radius: 8px; }
+
+  /* 좁은 화면(폰)에서는 제품입고일 원단/공장 카드, 발주 사이즈-수량 줄을 세로로 쌓음 */
+  /* 공장저장 버튼 누르면 잠깐 이 클래스가 body에 붙어서 원가계산서만 숨김 */
+  /* 박스 크기·위치는 그대로 두고 안의 내용만 안 보이게 처리 → 옆 사진 영역이 밀리지 않음 */
+  body.factory-print-mode #costCell .sec-title,
+  body.factory-print-mode #costCell .cost-table,
+  body.factory-print-mode #costCell .add,
+  body.factory-print-mode #costCell .cost-fixed { visibility: hidden !important; }
+  body.factory-print-mode #costCell { border-color: transparent !important; }
+
+  @media (max-width: 480px) {
+    .arrival-row { grid-template-columns: 1fr; }
+    .arrival-row .delay-view { width: 100%; }
+    .order .size-row { grid-template-columns: 1fr; }
+    .targetbox-row { justify-content: flex-start; }
+  }
 
   /* ---------- SIZE (원부자재 옆, 9cm 폭) ---------- */
   .sizespec .sec-title { margin-bottom: 8px; font-size: 13px; }
@@ -355,7 +463,7 @@
     flex: 1; padding: 9px 8px; border: 1px solid var(--field-line); background: var(--field);
     border-radius: 6px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer;
   }
-  .order .seg button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .order .seg button.active { background: #2F3B52; border-color: #2F3B52; color: #fff; }
   .order .field { margin-bottom: 14px; }
   .order .field:last-child { margin-bottom: 0; }
   .order .flbl { font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px; display: block; }
@@ -373,12 +481,12 @@
   .order .size-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 7px; align-items: center; }
   .order .size-row input { padding: 8px 9px; font-size: 13.5px; }
   .order .add-color, .order .addSizeInBlock {
-    display: inline-flex; align-items: center; gap: 6px; background: none; border: 1.4px dashed var(--accent);
-    color: var(--accent); font-size: 12.5px; font-weight: 700; padding: 8px 13px; border-radius: 6px; cursor: pointer; margin-top: 2px;
+    display: inline-flex; align-items: center; gap: 6px; background: none; border: 1.4px dashed #2F3B52;
+    color: #2F3B52; font-size: 12.5px; font-weight: 700; padding: 8px 13px; border-radius: 6px; cursor: pointer; margin-top: 2px;
   }
   .order .ohint { font-size: 11.5px; color: var(--muted); margin-top: 7px; line-height: 1.55; }
   .order-submit-btn {
-    width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none; border-radius: 7px;
+    width: 100%; padding: 13px; background: #2F3B52; color: #fff; border: none; border-radius: 7px;
     font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 4px;
   }
   .order-submit-btn:disabled { background: var(--hair); color: var(--muted); cursor: not-allowed; }
@@ -419,7 +527,7 @@
     .sheet { box-shadow: none; max-width: 190mm !important; width: 190mm !important; border-width: 2px; margin: 0 !important; }
     @page { size: 210mm 297mm; margin-top: 10mm; margin-bottom: 8mm; margin-left: 10mm; margin-right: 10mm; }
     input, textarea, select { background: transparent !important; border-color: transparent !important; }
-    #pumMyeong, #factory, #fabricSupplierField, #fabricNameField, #designer, #phone {
+    #pumMyeong, #factory, #factoryPhone, #fabricSupplierField, #fabricNameField, #blend, #designer, #phone {
       background: transparent !important; color: #000 !important; -webkit-text-fill-color: #000 !important;
       -webkit-print-color-adjust: exact; print-color-adjust: exact;
     }
@@ -480,7 +588,7 @@
 .copygen-card .copygen-sub{font-size:12px;color:#8a8878;margin:0 0 14px;}
 .copygen-label-row{display:flex;align-items:center;justify-content:space-between;margin:14px 0 6px;}
 .copygen-label-row:first-of-type{margin-top:0;}
-.copygen-scope label{display:block;font-size:12.5px;font-weight:600;color:#3d3c37;}
+.copygen-scope label{display:block;font-size:12.5px;font-weight:600;color:#3d3c37;margin-bottom:6px;}
 .copygen-label-row label{margin:0;}
 .copygen-scope input[type=text],.copygen-scope textarea{
     width:100%;
@@ -501,14 +609,14 @@
     font-weight:600;
     border-radius:4px;
     cursor:pointer;
-    border:1px solid var(--ink);
+    border:1px solid #2F3B52;
   }
 .copygen-btn-primary{
     background:var(--ink);color:#fff;padding:11px 18px;margin-top:14px;width:100%;
   }
 .copygen-btn-primary:disabled{opacity:.5;cursor:not-allowed;}
 .copygen-btn-secondary{
-    background:#fff;color:var(--ink);padding:8px 14px;
+    background:#fff;color:#2F3B52;padding:8px 14px;
   }
 .copygen-btn-danger{
     background:#fff;color:var(--danger);border-color:var(--danger);padding:5px 10px;font-size:12px;
@@ -601,6 +709,7 @@
   }
 .copygen-output:focus{outline:2px solid var(--accent);outline-offset:1px;border-style:solid;}
 .copygen-output.copygen-empty{color:#a8a495;font-style:italic;}
+.copygen-output::placeholder{color:#a8a495;font-style:italic;}
 .copygen-output-actions{display:flex;gap:8px;margin-top:10px;}
 .copygen-status{font-size:12.5px;margin-top:8px;min-height:16px;}
 .copygen-status.copygen-err{color:var(--danger);}
@@ -622,9 +731,40 @@
 </style>
 
 
-<div class="gallery" id="galleryView">
+<div class="scroll-fab-wrap noprint" id="scrollFabWrap">
+  <button type="button" class="scroll-fab" id="scrollTopBtn" title="맨 위로">▲</button>
+  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="맨 아래로">▼</button>
+</div>
+
+<div class="mainbar noprint" id="mainBar">
+  <button type="button" class="maintab active" data-main="sales">📈 판매현황</button>
+  <button type="button" class="maintab" data-main="orders">📋 작업지시서</button>
+  <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain">🧾 발주서</button>
+</div>
+
+<div class="editor-topfill noprint" id="editorTopFill"></div>
+
+<div class="gallery" id="salesView">
   <div class="gallery-head">
-    <h2>AISEL 작업지시서</h2>
+    <h2>📈 판매현황</h2>
+  </div>
+  <div class="gallery-tabs" id="salesTabs">
+    <button type="button" class="gtab active" data-sort="recent">최신순</button>
+    <button type="button" class="gtab" data-sort="steady">스테디셀러</button>
+  </div>
+  <div class="sales-table-wrap">
+    <table class="sales-table" id="salesTable">
+      <thead>
+        <tr><th>사진</th><th>제품</th><th>예상</th><th>실제</th><th>차이</th></tr>
+      </thead>
+      <tbody id="salesTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="gallery" id="galleryView" style="display:none">
+  <div class="gallery-head">
+    <h2>📋 작업지시서</h2>
   </div>
   <div class="gallery-tabs" id="galleryTabs">
     <button type="button" class="gtab active" data-status="all">전체</button>
@@ -667,19 +807,13 @@
     </div>
     <button class="btn" id="genBtn">다음 번호 ▷</button>
     <div style="flex-basis:100%; height:0;"></div>
-    <button class="btn ghost" id="galleryBtn">📋 목록</button>
-    <button class="btn ghost" id="newBtn">+ 새 작지</button>
-    <button class="btn ghost drop-btn" id="dropBtn">⛔ 드롭</button>
-    <button class="btn ghost" id="saveBtn">💾 저장됨 ✓</button>
-    <button class="btn ghost" id="printBtn">🖨 PDF로 저장 / 인쇄</button>
-  </div>
-
-  <div class="drop-panel noprint" id="dropPanel" style="display:none">
-    <div class="drop-panel-head">
-      <span id="dropListTitle">드롭 목록 (0건)</span>
-      <button type="button" id="dropListToggle">펼치기 ▾</button>
-    </div>
-    <div class="drop-list" id="dropList" style="display:none"></div>
+    <button class="btn ghost nav-btn" id="prevBtnEditor">◀</button>
+    <button class="btn ghost nav-btn" id="nextBtnEditor">▶</button>
+    <button class="btn ghost nav-btn" id="newBtn">+ 새 작지</button>
+    <button class="btn ghost drop-btn" id="deleteBtn">⛔ 삭제</button>
+    <button class="btn ghost nav-btn" id="saveBtn">💾 저장됨 ✓</button>
+    <button class="btn ghost nav-btn" id="factorySaveBtn">🏭 공장 저장/인쇄</button>
+    <button class="btn ghost nav-btn" id="printBtn">🖨 PDF로 저장 / 인쇄</button>
   </div>
 
   <div class="statusbar noprint" id="statusBar">
@@ -697,6 +831,49 @@
     · <b>⑤</b> PDF로 저장 → 구글드라이브 업로드. <b>판매가는 안 넣습니다.</b>
   </div>
 
+  <!-- 판매 예측/실적 (화면 전용, 인쇄 미노출) -->
+  <div class="predict-panel noprint" id="predictPanel">
+    <div class="sec-title-np">📊 판매 예측 / 실적</div>
+    <div class="predict-row">
+      <label>예상 판매량 (장)</label>
+      <input id="predExpectedQty" type="text" inputmode="numeric" placeholder="예) 300">
+      <label>예상 소진 기간 (일)</label>
+      <input id="predExpectedDays" type="text" inputmode="numeric" placeholder="예) 14">
+    </div>
+    <div class="predict-row single">
+      <label>예측 근거</label>
+      <input id="predNote" type="text" placeholder="왜 이 수치를 예측했는지 한 줄로">
+    </div>
+    <div class="predict-row">
+      <label>실제 판매량 (장)</label>
+      <input id="predActualQty" type="text" inputmode="numeric" placeholder="수동 입력">
+      <label>실제 소진 기간 (일)</label>
+      <input id="predActualDays" type="text" inputmode="numeric" placeholder="수동 입력">
+    </div>
+    <div class="predict-row single">
+      <label>반성 메모</label>
+      <input id="predReflection" type="text" placeholder="예측과 실제가 왜 차이났는지 한두 줄">
+    </div>
+  </div>
+
+  <!-- 레퍼런스 링크 (화면 전용, 인쇄 미노출) -->
+  <div class="predict-panel noprint" id="refPanel">
+    <div class="sec-title-np">🔗 레퍼런스</div>
+    <div class="predict-row single">
+      <label>제목</label>
+      <input id="refTitle" type="text" placeholder="레퍼런스 제목">
+    </div>
+    <div class="predict-row single ref-link-row">
+      <label>링크</label>
+      <input id="refLink" type="text" placeholder="https://...">
+      <a id="refLinkOpen" href="#" target="_blank" rel="noopener" class="ref-link-open">열기 ↗</a>
+    </div>
+    <div class="predict-row single">
+      <label>메모</label>
+      <input id="refMemo" type="text" placeholder="이 링크에 대해 자유롭게">
+    </div>
+  </div>
+
   <!-- SHEET -->
   <div class="sheet" id="sheet">
     <div class="title-row">
@@ -712,15 +889,17 @@
     </div>
 
     <div class="meta">
-      <!-- 좌: 디자이너 + 연락처 -->
+      <!-- 좌: 디자이너+연락처(한 줄) + 공장 -->
       <div class="cell">
         <div class="designer">
           <span class="k">디자이너 :</span>
-          <input id="designer" placeholder="이름" />
+          <input id="designer" placeholder="이름" style="width:26%;">
+          <input id="phone" placeholder="010-0000-0000" style="width:62%;">
         </div>
         <div class="designer">
-          <span class="k">연락처 :</span>
-          <input id="phone" placeholder="010-0000-0000" />
+          <span class="k">공장 :</span>
+          <input id="factory" placeholder="공장명" style="width:26%;">
+          <input id="factoryPhone" placeholder="010-0000-0000" style="width:62%;">
         </div>
       </div>
 
@@ -736,16 +915,16 @@
         </div>
       </div>
 
-      <!-- 우: 공장 + 원단(원단처+원단명) -->
+      <!-- 우: 원단(원단처+원단명) + 혼용률 -->
       <div class="cell">
         <div class="designer">
-          <span class="k">공장 :</span>
-          <input id="factory" placeholder="애플" />
+          <span class="k">원단 :</span>
+          <input id="fabricSupplierField" placeholder="원단처" style="width:44%;">
+          <input id="fabricNameField" placeholder="원단명" style="width:44%;">
         </div>
         <div class="designer">
-          <span class="k">원단 :</span>
-          <input id="fabricSupplierField" placeholder="원단처 예) 성현텍스" style="width:44%;">
-          <input id="fabricNameField" placeholder="원단명 예) 카스" style="width:44%;">
+          <span class="k">혼용률 :</span>
+          <input id="blend" placeholder="예) 폴리 100%" />
         </div>
       </div>
     </div>
@@ -761,7 +940,7 @@
       </div>
       <div class="photos-right">
         <!-- 원가계산서 -->
-        <div class="cell cost">
+        <div class="cell cost" id="costCell">
           <div class="sec-title">&lt; 원 가 계 산 서 &gt;</div>
           <div class="lines-scroll">
             <table class="cost-table">
@@ -831,32 +1010,34 @@
 
     <!-- 타겟 판매가 (인쇄 안 됨) -->
     <div class="targetbox noprint">
-      <div class="sec-title">&lt; 타겟 판매가 &gt;</div>
-      <div class="targetbox-row">
-        <div class="targetbox-field">
-          <span class="flbl">기준값 (직접 수정 가능)</span>
-          <input type="text" id="targetThreshold" class="won tnum" value="59,000" />
+      <div class="sec-title-np">타겟 판매가</div>
+      <div class="targetbox-card">
+        <div class="price-quick" id="priceQuick">
+          <div class="price-cat-row" id="priceCatRow">
+            <button type="button" class="price-cat" data-cat="상의">👚 상의</button>
+            <button type="button" class="price-cat" data-cat="하의">👖 하의</button>
+            <button type="button" class="price-cat" data-cat="원피스">👗 원피스</button>
+            <button type="button" class="price-cat" data-cat="아우터">🧥 아우터</button>
+          </div>
+          <div class="price-val-row" id="priceValRow"></div>
         </div>
-        <div class="targetbox-field">
-          <span class="flbl">계산값 (제조원가×4)</span>
-          <div class="targetbox-result" id="targetPriceView">0원</div>
+        <div class="targetbox-row">
+          <div class="targetbox-field">
+            <span class="flbl">판매가 (직접 수정 가능)</span>
+            <input type="text" id="targetThreshold" class="won tnum" value="59,000" />
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">계산값 (제조원가×4)</span>
+            <div class="targetbox-result" id="targetPriceView">0원</div>
+          </div>
         </div>
       </div>
-      <div class="price-quick" id="priceQuick">
-        <div class="price-cat-row" id="priceCatRow">
-          <button type="button" class="price-cat" data-cat="상의">상의</button>
-          <button type="button" class="price-cat" data-cat="하의">하의</button>
-          <button type="button" class="price-cat" data-cat="원피스">원피스</button>
-          <button type="button" class="price-cat" data-cat="재킷류">재킷류</button>
-        </div>
-        <div class="price-val-row" id="priceValRow"></div>
-      </div>
-      <div class="ohint">기준값 이하면 파란색, 기준값 초과하면 핑크색으로 표시됩니다. 위 버튼을 누르면 해당 카테고리 표준가로 바로 채워집니다.</div>
+      <div class="ohint">판매가 이하면 파란색, 판매가 초과하면 핑크색으로 표시됩니다. 위 버튼을 누르면 해당 카테고리 표준가로 바로 채워집니다.</div>
     </div>
 
     <!-- 제품 입고일 (인쇄 안 됨) -->
     <div class="targetbox noprint" id="arrivalBox">
-      <div class="sec-title">&lt; 제품 입고일 &gt;</div>
+      <div class="sec-title-np">제품 입고일</div>
 
       <div class="arrival-group">
         <div class="arrival-group-title">🧵 원단</div>
@@ -905,7 +1086,7 @@
 
     <!-- 발주 (order-form.html 통합) -->
     <div class="order noprint">
-      <div class="sec-title">&lt; 발 주 &gt;</div>
+      <div class="sec-title-np">발 주</div>
 
       <div class="field">
         <span class="flbl">발주 구분</span>
@@ -938,11 +1119,7 @@
     </div>
 
 <div class="copygen-scope copygen-wrap noprint">
-<div class="sec-title">&lt; 상세페이지 카피 생성기 &gt;</div>
-<div class="field" style="margin-top:14px;">
-  <span class="flbl">이 작지에 연결된 상세설명 (자동 반영됨)</span>
-  <textarea id="detailCopy" rows="4" readonly style="width:100%;background:#f5f5f5;"></textarea>
-</div>
+<div class="sec-title-np">상세페이지 카피 생성기</div>
 <div class="copygen-grid">
 <div>
 <div class="copygen-card">
@@ -1018,7 +1195,7 @@
 <div class="copygen-hint">위에서 고른 원단·핏·디테일은 자동으로 여기 포함됩니다. 필요하면 더 추가해주세요.</div>
 <label for="note">비고 (선택)</label>
 <input id="note" placeholder="예: 신규 컬러, 품절 예정 등" type="text"/>
-<button class="copygen-btn-primary" id="copygenGenBtn" style="background:#1D5FD8;border-color:#1D5FD8;">AISEL 상세페이지</button>
+<button class="copygen-btn-primary" id="copygenGenBtn" style="background:#2F3B52;border-color:#2F3B52;">Claude AI</button>
 <div class="copygen-status" id="status"></div>
 </div>
 <div class="copygen-card">
@@ -1026,12 +1203,12 @@
 <h2 style="margin:0;">생성 결과</h2>
 <button class="copygen-btn-secondary" disabled="" id="regenBtnTop" style="padding:4px 10px;font-size:11.5px;">🔄 새로고침</button>
 </div>
-<textarea class="copygen-output copygen-empty" id="output" rows="8">아직 생성된 설명이 없습니다. 위에서 정보를 채우고 생성 버튼을 눌러주세요.</textarea>
+<textarea class="copygen-output copygen-empty" id="output" rows="8" placeholder="아직 생성된 설명이 없습니다. 위에서 정보를 채우고 생성 버튼을 눌러주세요."></textarea>
 <div class="copygen-hint">생성 후에는 직접 클릭해서 단어 하나만 고치는 것도 가능합니다.</div>
 <div class="copygen-output-actions">
 <button class="copygen-btn-secondary" disabled="" id="copyBtn">복사</button>
 <button class="copygen-btn-secondary" disabled="" id="regenBtn">🔄 다시 생성</button>
-<button class="copygen-btn-primary" disabled="" id="addBtn" style="margin-top:0;width:auto;flex:1;">작업지시서에 추가</button>
+<button class="copygen-btn-primary" disabled="" id="addBtn" style="margin-top:0;width:auto;flex:1;background:#2F3B52;border-color:#2F3B52;">PDP 상세설명 저장</button>
 </div>
 </div>
 </div>
@@ -1045,11 +1222,17 @@
 </div>
 <div id="tableWrap"></div>
 
-<div class="order noprint" style="border-top:none;">
-<div class="sec-title">&lt; 원단정보 인식 &gt;</div>
+<div class="order noprint" style="margin-top:20px;">
+<div class="sec-title-np">원단 정보</div>
+<div class="arrival-group" style="margin-top:0;">
 <div class="field" style="margin-top:0;">
 <span class="flbl">원단 라벨 사진 인식</span>
-<input type="file" id="fabricPhotoInput" accept="image/*" capture="environment" style="width:100%;">
+<div class="fabric-photo-row">
+  <button type="button" class="fabric-photo-btn" id="fabricCameraBtn">📷 사진 촬영</button>
+  <button type="button" class="fabric-photo-btn" id="fabricFileBtn">🖼 파일에서 선택</button>
+</div>
+<input type="file" id="fabricPhotoInput" accept="image/*" capture="environment" style="display:none;">
+<input type="file" id="fabricPhotoInputFile" accept="image/*" style="display:none;">
 <div class="ohint">사진 선택하면 아래 다섯 칸이 자동으로 채워집니다. 사진 없이 직접 입력하셔도 됩니다.</div>
 <div class="order-status" id="fabricVisionStatus"></div>
 </div>
@@ -1074,11 +1257,17 @@
 <input type="text" id="fabricBlend" placeholder="예) 폴리에스터82 레이온18">
 </div>
 <div class="field">
+<span class="flbl">원단처 전화번호</span>
+<input type="text" id="fabricSupplierPhone" placeholder="010-0000-0000">
+</div>
+<div class="field">
 <span class="flbl">네고가</span>
 <input type="text" id="fabricNegoPrice" placeholder="예) 4000" style="background:#FCE4EC;">
 </div>
-<button type="button" class="order-submit-btn" id="fabricSaveBtn" style="background:#1D5FD8;">원단정보 저장</button>
+<button type="button" class="order-submit-btn" id="fabricSaveBtn" style="background:#2F3B52;">원단정보 저장</button>
 <div class="order-status" id="fabricStatusBox"></div>
+</div>
+</div>
 </div>
   </div>
 </div>
@@ -1231,8 +1420,8 @@
   const PRICE_BY_CATEGORY = {
     "상의": ["59,000", "69,000", "79,000", "89,000"],
     "하의": ["59,900", "69,000", "79,000", "89,000", "98,000"],
-    "원피스": ["98,000"],
-    "재킷류": ["89,000", "98,000"]
+    "원피스": ["89,000", "98,000"],
+    "아우터": ["89,000", "98,000"]
   };
   const priceValRow = $("#priceValRow");
   function renderPriceValues_(cat){
@@ -1441,6 +1630,24 @@
   // ---------- 발주 (order-form.html 통합) ----------
   const ORDER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2H-GGzAPMytgXTyGMHi5zGfWi4SNz1jmvzfWlpmQebtng2c-Md2AcLw/exec";
 
+  // ---------- 공장 연락처 자동완성 ----------
+  let factoryContactsMap_ = {};
+  fetch(ORDER_WEBAPP_URL + "?type=contacts")
+    .then(res => res.json())
+    .then(data => {
+      (data.factory || []).forEach(c => { factoryContactsMap_[c.name] = c.phone; });
+    })
+    .catch(()=>{ /* 연락처 못 불러와도 나머지 기능엔 지장 없음 */ });
+
+  $("#factory").addEventListener("blur", () => {
+    const name = $("#factory").value.trim();
+    const phoneField = $("#factoryPhone");
+    if(name && !phoneField.value.trim() && factoryContactsMap_[name]){
+      phoneField.value = factoryContactsMap_[name];
+      phoneField.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+
   // ---------- 작업지시서/사이즈 AISEL_공용 저장 ----------
   function collectCostLines_(){
     const lines = [];
@@ -1494,9 +1701,16 @@
       pumMyeong: pumMyeongVal,
       designer: $("#designer").value.trim(),
       factory: $("#factory").value.trim(),
+      factoryPhone: $("#factoryPhone").value.trim(),
       fabricSupplier: $("#fabricSupplierField").value.trim(),
       fabricName: $("#fabricNameField").value.trim(),
-      detailCopy: (document.getElementById("detailCopy") ? document.getElementById("detailCopy").value.trim() : ""),
+      blend: $("#blend").value.trim(),
+      salePrice: $("#targetThreshold").value.trim(),
+      detailCopy: (function(){
+        const outputEl = document.getElementById("output");
+        if(!outputEl || outputEl.classList.contains("copygen-empty")) return "";
+        return outputEl.value.trim();
+      })(),
       materials: (document.getElementById("materials") ? document.getElementById("materials").value.trim() : ""),
       costDetail: costLinesToText_(costLines),
       gongim: $("#gongim").value.trim(),
@@ -1676,6 +1890,7 @@
   });
 
   $("#printBtn").addEventListener("click", ()=>{
+    setToday();
     const SHEET_WEBAPP_URL="https://script.google.com/macros/s/AKfycbwOhMWHpNB56ugu_upMQ9iWHD1h5RrDPQ9RIkwF9uFRMMSoKY4b1Hk7GMjZpGRzXYJv/exec";
     const st=collect(); delete st.p1; delete st.p2;
     fetch(SHEET_WEBAPP_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(st)});
@@ -1687,7 +1902,9 @@
   // 나중에 저장용량이 부담되면 false로 바꾸면 원본 없이 압축 썸네일만 저장됨(화질은 떨어짐)
   const SAVE_ORIGINAL_PHOTO = true;
 
-  const TXT_IDS = ["yy","mm","dd","designer","phone","factory","fabricSupplierField","fabricNameField","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","detailCopy"];
+  const TXT_IDS = ["yy","mm","dd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","output",
+    "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
+    "refTitle","refLink","refMemo"];
   let loading = false;
   let lastSentJSON = null;   // 내가 방금 보낸 내용 (그대로 되돌아오면 다시 그릴 필요 없음)
   let pendingRemoteState = null; // 입력 중이라 잠깐 미뤄둔 다른 기기의 최신 내용
@@ -1752,6 +1969,7 @@
   }
   $("#saveBtn").addEventListener("click", async ()=>{
     const s = $("#saveBtn");
+    setToday();
     save();
     s.textContent = "💾 저장 중...";
     s.disabled = true;
@@ -1776,7 +1994,12 @@
     $("#season").value = st.season ?? "26F";
     catSel.value = st.cat ?? 4;
     TXT_IDS.forEach(id=>{ if(st[id]!==undefined) document.getElementById(id).value = st[id]; });
+    ["predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection","refTitle","refLink","refMemo"].forEach(id=>{ document.getElementById(id).value = st[id] || ""; });
     refreshAllDelays_();
+    // 카피생성기 쪽 "생성 결과" 칸도 이 작지의 저장된 상세설명으로 복원됐으니
+    // 그 안의 내부 상태(lastGenerated, 빈칸 표시 등)가 같이 갱신되도록 input 이벤트를 강제로 한 번 발생시킴
+    const outputEl = document.getElementById("output");
+    if(outputEl) outputEl.dispatchEvent(new Event("input", { bubbles: true }));
     $("#materials").value = st.materials || "";
     pumInput.dataset.auto = st.pumAuto || "1";
     currentStatus = st.status || "planned";
@@ -1796,7 +2019,20 @@
     loading = false;
     if(currentCode) $("#codeView").textContent = currentCode;
     applyCat();
+    updateRefLink_();
   }
+  function updateRefLink_(){
+    const url = ($("#refLink").value || "").trim();
+    const a = $("#refLinkOpen");
+    if(url){
+      a.href = /^https?:\/\//i.test(url) ? url : ("https://" + url);
+      a.classList.remove("disabled");
+    } else {
+      a.href = "#";
+      a.classList.add("disabled");
+    }
+  }
+  $("#refLink").addEventListener("input", updateRefLink_);
   function isTypingNow(){
     const el = document.activeElement;
     return !!(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA"));
@@ -1837,28 +2073,56 @@
     $("#yy").value = d.getFullYear(); $("#mm").value = d.getMonth()+1; $("#dd").value = d.getDate();
   }
 
-  // ---------- 갤러리(목록) ↔ 편집 화면 전환 ----------
+  // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
+  function setMainTabActive_(which){
+    document.querySelectorAll(".maintab").forEach(b=> b.classList.toggle("active", b.dataset.main===which));
+  }
+  function showSales(){
+    $("#editorView").style.display = "none";
+    $("#galleryView").style.display = "none";
+    $("#salesView").style.display = "block";
+    $("#mainBar").style.display = "flex";
+    $("#editorTopFill").style.display = "none";
+    setMainTabActive_("sales");
+    renderSalesView();
+  }
   function showGallery(){
     $("#editorView").style.display = "none";
+    $("#salesView").style.display = "none";
     $("#galleryView").style.display = "block";
+    $("#mainBar").style.display = "flex";
+    $("#editorTopFill").style.display = "none";
+    setMainTabActive_("orders");
   }
   function showEditor(){
+    $("#salesView").style.display = "none";
     $("#galleryView").style.display = "none";
     $("#editorView").style.display = "block";
+    $("#mainBar").style.display = "flex";
+    $("#editorTopFill").style.display = "block";
   }
+  document.querySelectorAll(".maintab[data-main]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{ btn.dataset.main === "sales" ? showSales() : showGallery(); });
+  });
   function startNewWorkOrder(){
     showEditor();
     linesWrap.innerHTML="";
     [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
-    $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value="";
+    $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
     $("#materials").value="";
     $("#fabricExpectedArrivalDate").value=""; $("#fabricActualArrivalDate").value=""; $("#fabricDelayReason").value="";
     $("#factoryExpectedShipDate").value=""; $("#factoryActualShipDate").value=""; $("#factoryDelayReason").value="";
+    ["predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection","refTitle","refLink","refMemo"].forEach(id=> $("#"+id).value="");
+    updateRefLink_();
+    const outputEl = document.getElementById("output");
+    if(outputEl){
+      outputEl.value = "";
+      outputEl.classList.add("copygen-empty");
+    }
     currentStatus = "planned"; updateStatusButtons();
     setToday(); suggestSeq(); calc(); applySizeSpecDefault(); refreshAllDelays_();
   }
-  $("#galleryBtn").addEventListener("click", showGallery);
   $("#gallerySearchInput").addEventListener("input", ()=> renderGallery());
   $("#gallerySearchType").addEventListener("change", ()=> renderGallery());
   $("#newBtn").addEventListener("click", ()=>{
@@ -1908,9 +2172,76 @@
         grid.appendChild(card);
       });
   }
+  // ---------- 판매현황 대시보드 렌더링 ----------
+  let salesSort = "recent";
+  function ratioOf_(st){
+    const exp = Number(st.predExpectedQty)||0;
+    const act = Number(st.predActualQty)||0;
+    if(!exp) return null;
+    return act/exp;
+  }
+  function isSteady_(st){
+    const r = ratioOf_(st);
+    const days = Number(st.predActualDays)||0;
+    return r !== null && r >= 0.9 && days >= 14;
+  }
+  function renderSalesView(){
+    const body = $("#salesTableBody");
+    if(!body) return;
+    let list = Object.entries(allWorkOrders || {});
+    if(salesSort === "steady") list = list.filter(([code, st])=> isSteady_(st));
+    list.sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0));
+    if(!list.length){
+      body.innerHTML = `<tr><td colspan="5"><div class="sales-empty">${salesSort==='steady' ? '스테디셀러 조건(연속 14일 이상 · 예상 대비 90% 이상)을 만족하는 작지가 아직 없습니다' : '등록된 작지가 없습니다'}</div></td></tr>`;
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    list.forEach(([code, st])=>{
+      const thumb = st.p1Thumb || st.p1 || "";
+      const exp = Number(st.predExpectedQty)||0;
+      const act = Number(st.predActualQty)||0;
+      const r = ratioOf_(st);
+      let diffLabel = "예측 미입력", diffClass = "neutral";
+      if(r !== null){
+        const diffPct = Math.round((r-1)*100);
+        diffLabel = (diffPct>=0? "+":"") + diffPct + "%";
+        diffClass = r >= 1 ? "good" : (r >= 0.7 ? "mid" : "bad");
+      }
+      const tr = document.createElement("tr");
+      tr.className = "srow";
+      tr.innerHTML = `
+        <td><div class="srow-thumb">${thumb ? `<img loading="lazy" src="${thumb}">` : `<span class="empty">✎</span>`}</div></td>
+        <td><div class="srow-name">${st.pumMyeong || "(품명 미정)"}</div><div class="srow-code">${code}</div></td>
+        <td class="srow-num">${exp ? exp + "장" : "-"}</td>
+        <td class="srow-num">${act ? act + "장" : "-"}</td>
+        <td class="srow-diff ${diffClass}">${diffLabel}</td>
+      `;
+      tr.addEventListener("click", ()=>{
+        showEditor();
+        attachWoRef(code);
+        applyState(st);
+      });
+      frag.appendChild(tr);
+    });
+    body.innerHTML = "";
+    body.appendChild(frag);
+  }
+  $("#salesTabs").addEventListener("click", (e)=>{
+    const btn = e.target.closest(".gtab");
+    if(!btn) return;
+    salesSort = btn.dataset.sort;
+    $("#salesTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b===btn));
+    renderSalesView();
+  });
+
+  let renderListsTimer_ = null;
   woRoot.on("value", (snapshot)=>{
     allWorkOrders = snapshot.val() || {};
-    renderGallery();
+    clearTimeout(renderListsTimer_);
+    renderListsTimer_ = setTimeout(()=>{
+      renderGallery();
+      renderSalesView();
+    }, 250);
   });
   $("#galleryTabs").addEventListener("click", (e)=>{
     const btn = e.target.closest(".gtab");
@@ -1920,56 +2251,93 @@
     renderGallery();
   });
 
-  // ---------- 드롭처리 ----------
+  // ---------- 홈 버튼 ----------
+  // AISEL 메뉴판으로 나가는 홈 버튼은 편집화면에서 제거됨 (상단 메인바로 이동 통일)
 
-  const LS_DROP = "aisel_dropped_v1";
-  const getDropped = ()=>{ try{ return JSON.parse(localStorage.getItem(LS_DROP))||[]; }catch(e){ return []; } };
-  const setDropped = list =>{ try{ localStorage.setItem(LS_DROP, JSON.stringify(list)); }catch(e){} };
-
-  function renderDropList(){
-    const list = getDropped();
-    $("#dropListTitle").textContent = `드롭 목록 (${list.length}건)`;
-    $("#dropPanel").style.display = list.length ? "block" : "none";
-    const wrap = $("#dropList");
-    wrap.innerHTML = "";
-    list.slice().reverse().forEach((d, revIdx)=>{
-      const idx = list.length - 1 - revIdx;
-      const row = document.createElement("div");
-      row.className = "drop-item";
-      row.innerHTML = `
-        <span class="code">${d.code}</span>
-        <span class="info">${d.itemName || "(품명 미정)"} · ${d.date} ${d.reason ? "· " + d.reason : ""}</span>
-        <button type="button" class="restore">되돌리기</button>
-      `;
-      row.querySelector(".restore").addEventListener("click", ()=>{
-        const cur = getDropped();
-        cur.splice(idx, 1);
-        setDropped(cur);
-        renderDropList();
-      });
-      wrap.appendChild(row);
-    });
+  // ---------- 특정 작지 열기 (카드 클릭·이전/다음·발주서 팝업에서 공용으로 사용) ----------
+  function openWorkOrderByCode_(code){
+    const st = allWorkOrders[code];
+    if(!st) return;
+    showEditor();
+    attachWoRef(code);
+    applyState(st);
   }
 
-  $("#dropBtn").addEventListener("click", ()=>{
-    const code = $("#codeView").textContent.replace("품번", "").trim();
-    const itemName = pumInput.value.trim();
-    const reason = prompt(`"${code}" 를 드롭 처리할까요?\n드롭 사유를 적어주세요 (선택, 안 적어도 됩니다):`);
-    if(reason === null) return; // 취소
-    const list = getDropped();
-    list.push({ code, itemName, reason: reason.trim(), date: new Date().toISOString().slice(0,10) });
-    setDropped(list);
-    renderDropList();
+  // ---------- 이전/다음 작지 (목록 화면 정렬 순서 기준) ----------
+  function sortedCodes_(){
+    return Object.entries(allWorkOrders || {})
+      .sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0))
+      .map(([code])=> code);
+  }
+  function stepWorkOrder_(direction){
+    const codes = sortedCodes_();
+    if(codes.length === 0) return;
+    let idx = codes.indexOf(currentCode);
+    if(idx === -1){ idx = 0; } else { idx = (idx + direction + codes.length) % codes.length; }
+    openWorkOrderByCode_(codes[idx]);
+  }
+  $("#prevBtnEditor").addEventListener("click", ()=> stepWorkOrder_(-1));
+  $("#nextBtnEditor").addEventListener("click", ()=> stepWorkOrder_(1));
+  // 목록 화면의 이전/다음은 상태 탭을 순환 (전체가 첫 자리이므로 그 다음부터 순환)
+  const STATUS_TAB_ORDER = ["all","planned","sampling","samplemgmt","order","pdp","drop"];
+  function stepGalleryTab_(direction){
+    let idx = STATUS_TAB_ORDER.indexOf(galleryFilter);
+    if(idx === -1) idx = 0;
+    idx = (idx + direction + STATUS_TAB_ORDER.length) % STATUS_TAB_ORDER.length;
+    galleryFilter = STATUS_TAB_ORDER[idx];
+    $("#galleryTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b.dataset.status===galleryFilter));
+    renderGallery();
+  }
+  // 상태 탭 이동은 각 탭을 직접 클릭하는 방식만 사용 (이전/다음 버튼은 제거됨)
+
+  // ---------- 발주서 빠른 접근 (품번/품명 검색해서 그 작지로 이동 후 발주 섹션까지 스크롤) ----------
+  function openQuickOrderPicker_(){
+    const list = sortedCodes_();
+    if(list.length === 0){ alert("저장된 작지가 아직 없습니다."); return; }
+    const labelled = list.map(code=>{
+      const st = allWorkOrders[code] || {};
+      return code + " · " + (st.pumMyeong || "(품명 미정)");
+    });
+    const pick = prompt("발주할 작지를 품번 또는 품명으로 검색해서 아래 목록 중 하나를 그대로 복사해 입력해주세요:\n\n" + labelled.join("\n"));
+    if(!pick) return;
+    const matchIdx = labelled.findIndex(l => l === pick.trim());
+    const code = matchIdx !== -1 ? list[matchIdx] : list.find(c => c.includes(pick.trim()) || (allWorkOrders[c].pumMyeong||"").includes(pick.trim()));
+    if(!code){ alert("일치하는 작지를 찾지 못했습니다."); return; }
+    openWorkOrderByCode_(code);
+    setTimeout(()=>{
+      const orderSection = document.querySelector(".order.noprint");
+      if(orderSection) orderSection.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
+  }
+  $("#quickOrderBtnMain").addEventListener("click", openQuickOrderPicker_);
+
+  // ---------- 공장 저장/인쇄 (원가계산서는 빈 박스로 두고 시트기록 + 인쇄까지) ----------
+  $("#factorySaveBtn").addEventListener("click", ()=>{
+    setToday();
+    const SHEET_WEBAPP_URL="https://script.google.com/macros/s/AKfycbwOhMWHpNB56ugu_upMQ9iWHD1h5RrDPQ9RIkwF9uFRMMSoKY4b1Hk7GMjZpGRzXYJv/exec";
+    const st=collect(); delete st.p1; delete st.p2;
+    fetch(SHEET_WEBAPP_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(st)});
+    document.body.classList.add("factory-print-mode");
+    window.print();
+  });
+  window.addEventListener("afterprint", ()=>{
+    document.body.classList.remove("factory-print-mode");
   });
 
-  $("#dropListToggle").addEventListener("click", ()=>{
-    const box = $("#dropList");
-    const showing = box.style.display !== "none";
-    box.style.display = showing ? "none" : "flex";
-    $("#dropListToggle").textContent = showing ? "펼치기 ▾" : "접기 ▴";
+  // ---------- 삭제처리 (기존 드롭 버튼 대체, 실제 삭제) ----------
+  $("#deleteBtn").addEventListener("click", ()=>{
+    const code = currentCode || $("#codeView").textContent.replace("품번", "").trim();
+    const itemName = pumInput.value.trim() || "(품명 미정)";
+    if(!code){ return; }
+    const ok = confirm(`"${code}" ${itemName}\n정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
+    if(!ok) return;
+    clearTimeout(saveT); // 방금까지 입력하던 내용이 뒤늦게 자동저장되어 삭제한 항목이 되살아나는 것 방지
+    woRoot.child(code).remove().then(()=>{
+      showGallery();
+    }).catch(err=>{
+      alert("삭제 중 문제가 발생했습니다: " + err.message);
+    });
   });
-
-  renderDropList();
 
   // 자동저장 (디바운스)
   let saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(save, 300); }
@@ -2370,7 +2738,7 @@ function renderTable(){
   $("rowCount").textContent = rows.length + "건";
   const wrap = $("tableWrap");
   if(rows.length === 0){
-    wrap.innerHTML = '<div class="copygen-empty-state">아직 추가된 항목이 없습니다. 위에서 설명을 생성한 뒤 "작업지시서에 추가"를 눌러주세요.</div>';
+    wrap.innerHTML = '<div class="copygen-empty-state">아직 추가된 항목이 없습니다. 위에서 설명을 생성한 뒤 "PDP 상세설명 저장"을 눌러주세요.</div>';
     return;
   }
   let html = '<table><thead><tr>' +
@@ -2543,7 +2911,7 @@ ${note ? "비고(짝꿍 제품이나 특이사항이 있으면 참고): " + note
     $("regenBtn").disabled = false;
     $("regenBtnTop").disabled = false;
     $("addBtn").disabled = false;
-    setStatus("생성 완료. 마음에 들면 작업지시서에 추가하세요. 단어 하나만 고칠 거면 결과창을 직접 클릭해서 수정할 수 있습니다.", "copygen-ok");
+    setStatus("생성 완료. 마음에 들면 PDP 상세설명 저장을 누르세요. 단어 하나만 고칠 거면 결과창을 직접 클릭해서 수정할 수 있습니다.", "copygen-ok");
 
   }catch(err){
     console.error(err);
@@ -2603,14 +2971,8 @@ $("addBtn").addEventListener("click", () => {
     pumMyeongInput.value = finalName;
     pumMyeongInput.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  // ---- 상세설명 저장칸(#detailCopy)에 자동 반영 ----
-  const detailCopyField = document.getElementById("detailCopy");
-  if(detailCopyField){
-    detailCopyField.value = lastGenerated;
-    detailCopyField.dispatchEvent(new Event("input", { bubbles: true }));
-  }
 
-  setStatus("작업지시서에 추가했습니다. 위쪽 품명 칸에도 자동으로 반영됐습니다.", "copygen-ok");
+  setStatus("PDP 상세설명이 저장됐습니다. 위쪽 품명 칸에도 자동으로 반영됐습니다.", "copygen-ok");
 
   // reset for next entry
   sel1 = null; sel2 = []; sel3 = null;
@@ -2678,6 +3040,25 @@ renderTable();
 
 const FABRIC_SAVE_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2H-GGzAPMytgXTyGMHi5zGfWi4SNz1jmvzfWlpmQebtng2c-Md2AcLw/exec";
 
+// ---------- 원단처 연락처 자동완성 ----------
+let fabricContactsMap_ = {};
+fetch(FABRIC_SAVE_URL + "?type=contacts")
+  .then(res => res.json())
+  .then(data => {
+    (data.fabric || []).forEach(c => { fabricContactsMap_[c.name] = c.phone; });
+  })
+  .catch(()=>{ /* 연락처 못 불러와도 나머지 기능엔 지장 없음 */ });
+
+if($("fabricSupplier")){
+  $("fabricSupplier").addEventListener("blur", () => {
+    const name = $("fabricSupplier").value.trim();
+    const phoneField = $("fabricSupplierPhone");
+    if(name && phoneField && !phoneField.value.trim() && fabricContactsMap_[name]){
+      phoneField.value = fabricContactsMap_[name];
+    }
+  });
+}
+
 const FABRIC_VISION_PROMPT = `당신은 원단 라벨 사진에서 정보를 정확히 읽어내는 어시스턴트입니다.
 사진에 실제로 보이는 글자만 근거로 답합니다. 안 보이거나 불확실한 항목은 빈 문자열("")로 둡니다. 절대 추측해서 채우지 않습니다.
 아래 JSON 형식으로만 답하세요. 다른 말은 절대 하지 마세요.
@@ -2720,9 +3101,18 @@ function setFabricVisionStatus_(kind, msg){
 }
 
 const fabricPhotoInput = $("fabricPhotoInput");
-if(fabricPhotoInput){
-  fabricPhotoInput.addEventListener("change", async () => {
-    const file = fabricPhotoInput.files[0];
+const fabricPhotoInputFile = $("fabricPhotoInputFile");
+const fabricCameraBtn = $("fabricCameraBtn");
+const fabricFileBtn = $("fabricFileBtn");
+
+if(fabricCameraBtn && fabricPhotoInput){
+  fabricCameraBtn.addEventListener("click", () => fabricPhotoInput.click());
+}
+if(fabricFileBtn && fabricPhotoInputFile){
+  fabricFileBtn.addEventListener("click", () => fabricPhotoInputFile.click());
+}
+
+async function handleFabricPhoto_(file){
     if(!file) return;
 
     if(COPYGEN_RELAY_URL.indexOf("PASTE_YOUR") === 0){
@@ -2773,7 +3163,13 @@ if(fabricPhotoInput){
     }catch(err){
       setFabricVisionStatus_("err", "인식에 실패했습니다: " + err.message + " 다섯 칸에 직접 입력해주세요.");
     }
-  });
+}
+
+if(fabricPhotoInput){
+  fabricPhotoInput.addEventListener("change", () => handleFabricPhoto_(fabricPhotoInput.files[0]));
+}
+if(fabricPhotoInputFile){
+  fabricPhotoInputFile.addEventListener("change", () => handleFabricPhoto_(fabricPhotoInputFile.files[0]));
 }
 
 $("fabricSaveBtn").addEventListener("click", async () => {
@@ -2790,6 +3186,7 @@ $("fabricSaveBtn").addEventListener("click", async () => {
     price: $("fabricPrice").value.trim(),
     width: $("fabricWidth").value.trim(),
     blend: $("fabricBlend").value.trim(),
+    supplierPhone: (document.getElementById("fabricSupplierPhone") ? document.getElementById("fabricSupplierPhone").value.trim() : ""),
     negoPrice: $("fabricNegoPrice").value.trim()
   };
   try{
@@ -2804,6 +3201,24 @@ $("fabricSaveBtn").addEventListener("click", async () => {
     setStatusBox_("fabricStatusBox", "err", "저장 중 문제가 생겼습니다: " + err.message);
   }
 });
+
+// ---------- 우하단 스크롤 위/아래 버튼 ----------
+(function(){
+  const topBtn = document.getElementById("scrollTopBtn");
+  const bottomBtn = document.getElementById("scrollBottomBtn");
+  if(!topBtn || !bottomBtn) return;
+  function updateFabState(){
+    const y = window.scrollY;
+    const maxY = document.documentElement.scrollHeight - window.innerHeight;
+    topBtn.disabled = y <= 4;
+    bottomBtn.disabled = maxY - y <= 4;
+  }
+  topBtn.addEventListener("click", ()=> window.scrollTo({ top: 0, behavior: "smooth" }));
+  bottomBtn.addEventListener("click", ()=> window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }));
+  window.addEventListener("scroll", updateFabState);
+  window.addEventListener("resize", updateFabState);
+  updateFabState();
+})();
 
 function setStatusBox_(id, kind, msg){
   const box = $(id);
