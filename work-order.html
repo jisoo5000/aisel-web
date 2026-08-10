@@ -110,7 +110,7 @@
     border: 1.4px solid var(--line) !important; background: var(--field); color: #000 !important; border-radius: 5px;
   }
   .predict-row.single input { grid-column: 2 / span 3; }
-  .predict-row input.as-link { border-color: transparent; background: transparent; color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: 700; }
+  .predict-row input.as-link { border-color: transparent !important; background: transparent; color: var(--accent) !important; text-decoration: underline; cursor: pointer; font-weight: 700; }
   .ref-link-row {
     display: flex !important; flex-wrap: nowrap; align-items: center; gap: 8px;
   }
@@ -123,6 +123,18 @@
     display: flex; align-items: center; justify-content: center;
   }
   .ref-icon-btn.danger { border-color: #E3B3AC; color: #A03B1E; background: #FBEEEC; }
+  .sample-recovery-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .sample-recovery-seg { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--hair); }
+  .sample-recovery-seg button {
+    padding: 8px 14px; border: none; background: var(--field); color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .sample-recovery-seg button.active[data-value=""] { background: #EFEFEF; color: #666; }
+  .sample-recovery-seg button.active[data-value="factory"] { background: #2F3B52; color: #fff; }
+  .sample-recovery-seg button.active[data-value="returned"] { background: #2F8F4E; color: #fff; }
+  .sample-recovery-dates { font-size: 12px; color: var(--muted); }
+  .sample-recovery-row.overdue .sample-recovery-seg { border-color: #E3A79C; }
+  .sample-recovery-row.overdue .sample-recovery-seg button.active[data-value="factory"] { background: #C0392B; }
+  .sample-recovery-row.overdue .sample-recovery-dates { color: #A03B1E; font-weight: 700; }
   .mainbar { max-width: 1100px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 12px; }
   .maintab {
     flex: 1; padding: 10px 10px; border-radius: 6px; border: 1px solid var(--field-line);
@@ -132,6 +144,75 @@
   .moodboard-note { font-size: 12.5px; color: var(--muted); margin: -6px 0 14px; }
   .moodboard-grid { display: flex; flex-direction: column; gap: 14px; }
   .moodboard-grid img { width: 100%; border-radius: 10px; border: 1px solid var(--hair); display: block; }
+  .mb-judge-card {
+    display: flex; flex-direction: row; align-items: stretch; border: 1px solid var(--hair); border-radius: 12px;
+    overflow: hidden; background: var(--sheet); max-height: 92vh;
+  }
+  .mb-judge-photo-box {
+    position: relative; flex: 0 0 33%; max-width: 33%; min-height: 300px;
+    background: repeating-linear-gradient(45deg, transparent, transparent 11px, rgba(120,130,150,.05) 11px, rgba(120,130,150,.05) 22px);
+    display: flex; align-items: center; justify-content: center; overflow: hidden; border-right: 1.5px solid var(--hair);
+  }
+  .mb-judge-photo-box img { width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 0; border: none; }
+  @media (max-width:700px){ .mb-judge-card{ flex-direction: column; max-height: none; } .mb-judge-photo-box{ flex-basis:auto; max-width:100%; min-height:220px; border-right:none; border-bottom:1.5px solid var(--hair); } }
+  .mb-judge-body { flex: 1; min-width: 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+  .mb-judge-link-row { display: flex; gap: 8px; align-items: center; }
+  .mb-judge-link-row input { flex: 1; min-width: 0; padding: 6px 10px; font-size: 12.5px; border: 1px solid var(--hair); border-radius: 8px; }
+  .mb-judge-link-row input.as-link { border-color: transparent; background: transparent; color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: 700; }
+  .mb-judge-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; }
+  @media (max-width:520px){ .mb-judge-grid2{ grid-template-columns: 1fr; } }
+  .mb-judge-item { border: 1px solid var(--hair); border-radius: 9px; padding: 8px 9px; display: flex; flex-direction: column; gap: 5px; background: var(--field); }
+  .mb-judge-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .mb-judge-title { font-size: 12px; font-weight: 700; color: var(--ink); cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; }
+  .mb-judge-title .box { font-size: 12px; }
+  .mb-judge-title.on { color: #2F3B52; }
+  .mb-judge-criteria-toggle {
+    font-size: 10px; color: var(--muted); border: 1px solid var(--hair); border-radius: 999px; width: 16px; height: 16px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; background: var(--sheet); flex-shrink: 0;
+  }
+  .mb-judge-criteria { font-size: 10.5px; color: var(--muted); line-height: 1.5; display: none; }
+  .mb-judge-criteria.show { display: block; }
+  .mb-judge-combo-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .mb-judge-combo-btn {
+    padding: 4px 9px; border-radius: 6px; border: 1px dashed var(--hair); background: var(--sheet);
+    font-size: 11.5px; color: var(--ink); font-weight: 600; cursor: pointer;
+  }
+  .mb-judge-combo-btn.on { background: #EAF1FB; border: 1px solid #2F3B52; border-style: solid; color: #2F3B52; font-weight: 700; }
+  .mb-judge-select {
+    padding: 5px 8px; font-size: 12px; border: 1px solid var(--hair); border-radius: 7px; width: 100%; box-sizing: border-box;
+  }
+  .mb-judge-detail-input, .mb-judge-target-input {
+    padding: 5px 8px; font-size: 11.5px; border: 1px solid var(--hair); border-radius: 6px; width: 100%; box-sizing: border-box;
+  }
+  .mb-judge-detail-input { margin-top: 2px; }
+  .mb-judge-memo {
+    width: 100%; box-sizing: border-box; padding: 6px 9px; font-size: 12px; border: 1px solid var(--hair); border-radius: 7px;
+    resize: vertical; min-height: 34px; font-family: inherit;
+  }
+  .mb-judge-result { font-size: 12.5px; font-weight: 800; padding: 5px 11px; border-radius: 8px; display: inline-block; width: fit-content; }
+  .mb-judge-result.reject { background: #EFEFEF; color: #888; }
+  .mb-judge-result.hold { background: #FFF3D6; color: #7a5c00; }
+  .mb-judge-result.go { background: #E6F4EA; color: #1E7A34; }
+  .mb-judge-result.strong { background: #EAF1FB; color: #2F3B52; }
+  .mb-judge-result.dropped { background: #F3E7E4; color: #96594F; }
+  .mb-judge-bottom-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .mb-judge-drop-btn { height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--hair); background: var(--sheet); font-size: 13.5px; font-weight: 700; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; box-sizing: border-box; }
+  .mb-judge-drop-btn.on { background: #F3E7E4; border-color: #D9A79A; color: #7a3d31; }
+  .sm-weekly-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+  .sm-weekly-chip { padding: 6px 12px; border-radius: 999px; background: var(--field); border: 1px solid var(--hair); font-size: 12.5px; font-weight: 700; color: var(--ink); }
+  .sm-table-wrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; }
+  .sm-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+  .sm-table th { background: #2F3B52; color: #fff; padding: 9px 8px; font-size: 12px; font-weight: 700; text-align: left; white-space: nowrap; }
+  .sm-table td { padding: 6px 7px; border-bottom: 1px solid var(--hair); vertical-align: middle; }
+  .sm-table tr:last-child td { border-bottom: none; }
+  .sm-table input, .sm-table select { width: 100%; box-sizing: border-box; padding: 5px 7px; font-size: 12.5px; border: 1px solid var(--hair); border-radius: 6px; }
+  .sm-table input[type=date] { min-width: 130px; }
+  .sm-table input.sm-overdue { background: #FCE4EC; border-color: #F3B4C8; }
+  .sm-table input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
+  .sm-del-btn { border: none; background: none; color: #A03B1E; cursor: pointer; font-size: 14px; }
+  .sm-empty { padding: 30px; text-align: center; color: var(--muted); font-size: 13px; }
+  .mb-judge-convert-btn { height: 36px; padding: 0 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 13.5px; cursor: pointer; width: fit-content; background: #2F3B52; color: #fff; display: inline-flex; align-items: center; box-sizing: border-box; }
+  .mb-judge-convert-btn.strong { background: #2F8F4E; }
 
   /* 무드보드 하위 탭 */
   .mb-subtabs { display: flex; gap: 8px; margin: -4px 0 16px; }
@@ -182,8 +263,14 @@
     overflow: hidden; background: var(--sheet);
   }
   .ref-card.is-drop { opacity: .45; }
-  .ref-card.is-go { border-color: #2F3B52; box-shadow: 0 0 0 1px #2F3B52 inset; }
-  .ref-card.is-pending { border-color: #d99; }
+  .ref-card.is-stale { border-color: #E0A800; box-shadow: 0 0 0 1px #E0A800 inset; }
+  input.field-missing, textarea.field-missing { background: #FCE4EC !important; border-color: #F3B4C8 !important; }
+  .ref-count-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 14px; font-size: 12.5px; color: var(--muted); }
+  .ref-count-bar .total { font-size: 14px; font-weight: 800; color: #2F3B52; }
+  .ref-count-bar .chip { padding: 3px 10px; border-radius: 999px; background: #F3F1EC; color: #7A7364; font-weight: 700; }
+  .ref-count-bar .chip.go { background: #E9EEE6; color: #55694C; }
+  .ref-count-bar .chip.drop { background: #F3E7E4; color: #96594F; }
+  .ref-stale-badge { font-size: 11px; color: #7a5c00; background: #FFF3D6; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
   .ref-photo-box {
     position: relative; flex: 0 0 240px; width: 240px; min-height: 300px;
     border-right: 1.5px solid var(--hair);
@@ -193,9 +280,6 @@
   .ref-photo-box img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .ref-photo-box .ref-photo-placeholder { font-size: 13px; color: var(--muted); text-align: center; padding: 6px; }
   .ref-body { flex: 1; min-width: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-  .ref-save-btn { padding: 4px 14px; font-size: 12px; font-weight: 700; border-radius: 8px; border: 1px solid #2F3B52; background: #2F3B52; color: #fff; cursor: pointer; }
-  .ref-save-btn:hover { opacity: .9; }
-  .ref-pending-note { font-size: 11px; color: #b23; font-weight: 600; }
   .ref-calc-toggle { padding: 4px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--hair); background: var(--sheet); color: #2F3B52; cursor: pointer; }
   .ref-calc-box { border: 1px dashed var(--hair); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
   .ref-calc-group-label { font-size: 11px; color: var(--muted); font-weight: 700; }
@@ -218,6 +302,21 @@
   .ref-link-input.as-link { border-color: transparent; background: transparent; color: var(--accent); text-decoration: underline; cursor: pointer; font-weight: 700; }
   .ref-converted-note { font-size: 11.5px; color: var(--muted); }
   .ref-fit-caption { font-size: 11px; color: var(--muted); line-height: 1.5; }
+  .ref-date-pill-wrap {
+    display: inline-flex; align-items: center; gap: 5px; background: #EAF1FB; border-radius: 999px;
+    padding: 5px 10px 5px 10px;
+  }
+  .ref-date-pill-wrap.has-date { background: #2F3B52; }
+  .ref-date-pill-icon { font-size: 13px; line-height: 1; }
+  .ref-date-pill-wrap input[type=date] {
+    border: none; background: transparent; font-size: 11.5px; font-weight: 600; padding: 1px 0;
+    cursor: pointer; color: #2F3B52; min-width: 96px;
+  }
+  .ref-date-pill-wrap.has-date input[type=date] { color: #fff; }
+  .ref-date-pill-wrap.has-date input[type=date]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+  .ref-date-pill-wrap input[type=date]::-webkit-calendar-picker-indicator {
+    cursor: pointer; padding: 2px; width: 14px; height: 14px;
+  }
   .ref-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .ref-toggle-group { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--hair); }
   .ref-toggle-btn {
@@ -598,6 +697,13 @@
     color: #2F3B52; font-size: 12.5px; font-weight: 700; padding: 8px 13px; border-radius: 6px; cursor: pointer; margin-top: 2px;
   }
   .order .ohint { font-size: 11.5px; color: var(--muted); margin-top: 7px; line-height: 1.55; }
+  .order .fabric-block { border: 1px solid var(--field-line); border-radius: 8px; padding: 12px; margin-bottom: 10px; background: var(--field); }
+  .order .fabric-block-head { display: flex; gap: 8px; align-items: center; margin-bottom: 9px; }
+  .order .fabric-block-head input { flex: 1; }
+  .order .fabric-calc-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: center; }
+  .order .fabric-calc-row input { padding: 8px 9px; font-size: 13.5px; }
+  .order .fabric-total { font-size: 13px; font-weight: 700; color: #2F3B52; text-align: center; }
+  .order .fabric-calc-row label { font-size: 10.5px; color: var(--muted); display: block; margin-bottom: 3px; }
   .order-submit-btn {
     width: 100%; padding: 13px; background: #2F3B52; color: #fff; border: none; border-radius: 7px;
     font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 4px;
@@ -608,29 +714,32 @@
   .order-status.ok { background: var(--good-soft); color: var(--good); border: 1px solid var(--good); }
   .order-status.err { background: var(--bad-soft); color: var(--bad); border: 1px solid var(--bad); }
   .order-status.pending { background: var(--field); color: var(--muted); border: 1px solid var(--field-line); }
-  .qo-search-wrap { position: relative; max-width: 520px; margin: 0 auto 16px; }
+  .qo-search-wrap { position: relative; max-width: 520px; margin: 0 0 16px; }
   .qo-search-wrap input { width: 100%; box-sizing: border-box; padding: 11px 14px; font-size: 15px; border: 1.4px solid var(--hair); border-radius: 8px; }
+  .qo-status-filter { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+  .qo-status-filter button {
+    padding: 6px 13px; border-radius: 999px; border: 1px solid var(--hair); background: var(--sheet);
+    color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .qo-status-filter button.active { background: #2F3B52; border-color: #2F3B52; color: #fff; }
   .qo-search-results {
     position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 20;
     background: var(--sheet); border: 1px solid var(--hair); border-radius: 8px; max-height: 320px; overflow-y: auto;
     box-shadow: 0 4px 16px rgba(0,0,0,.08);
   }
-  .qo-search-result-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--hair); }
+  .qo-search-result-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--hair); text-align: left; }
   .qo-search-result-item:last-child { border-bottom: none; }
   .qo-search-result-item:hover { background: var(--field); }
-  .qo-search-result-item .nm { font-weight: 700; font-size: 13.5px; }
-  .qo-search-result-item .cd { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
-  .qo-search-empty { padding: 14px; text-align: center; font-size: 12.5px; color: var(--muted); }
+  .qo-search-result-item .nm { font-weight: 700; font-size: 13.5px; text-align: left; }
+  .qo-search-result-item .cd { font-size: 11.5px; color: var(--muted); margin-top: 2px; text-align: left; }
+  .qo-search-empty { padding: 14px; text-align: left; font-size: 12.5px; color: var(--muted); }
   .qo-selected-info {
-    max-width: 820px; margin: 0 auto 4px; padding: 12px 16px; background: #EAF1FB; border: 1px solid #C9DAF0;
-    border-radius: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px;
+    max-width: 820px; margin: 0 0 4px; padding: 12px 16px; background: #EAF1FB; border: 1px solid #C9DAF0;
+    border-radius: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; text-align: left;
   }
-  .qo-selected-row { flex: 1 1 100%; font-size: 15px; }
+  .qo-selected-row { flex: 1 1 100%; font-size: 15px; text-align: left; }
   .qo-selected-code { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 6px; }
-  .qo-selected-sub { flex: 1 1 auto; font-size: 12.5px; color: var(--muted); }
-  .qo-yard-row { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
-  .qo-yard-row label { font-size: 12.5px; font-weight: 700; color: var(--muted); }
-  .qo-yard-row input { width: 100px; padding: 6px 10px; font-size: 13px; border: 1px solid var(--hair); border-radius: 6px; }
+  .qo-selected-sub { flex: 1 1 auto; font-size: 12.5px; color: var(--muted); text-align: left; }
 
   /* pricing strip */
   .pricing { border-top: 1.5px solid var(--line); padding: 14px 16px 18px; }
@@ -880,6 +989,26 @@
   <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">🧾 발주서</button>
 </div>
 
+<div class="gallery" id="sampleMgmtView" style="display:none">
+  <div class="gallery-head">
+    <h2>🧵 샘플관리</h2>
+    <button type="button" class="btn ghost nav-btn" id="smSyncBtn">🔄 샘플중 작지 불러오기</button>
+  </div>
+  <div class="sm-weekly-bar" id="smWeeklyBar"></div>
+  <div class="sm-table-wrap">
+    <table class="sm-table">
+      <thead>
+        <tr>
+          <th>품명</th><th>컬러</th><th>사이즈</th><th>샘플요청일</th><th>샘플완성일</th>
+          <th>재샘플</th><th>샘플수거</th><th>인정</th><th>주차</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="smTableBody"></tbody>
+    </table>
+    <div class="sm-empty" id="smEmpty" style="display:none">아직 샘플관리 항목이 없습니다. 작업지시서 상태를 "샘플중"으로 바꾸면 여기에 자동으로 추가됩니다. 이미 샘플중인 작지가 있다면 위 "샘플중 작지 불러오기" 버튼을 눌러주세요.</div>
+  </div>
+</div>
+
 <div class="gallery" id="salesView">
   <div class="gallery-head">
     <h2>📈 판매현황</h2>
@@ -985,15 +1114,15 @@
       <input type="file" id="refGalleryInput" accept="image/*" style="display:none">
       <div class="mb-refs-filters" id="mbRefsFilters">
         <button type="button" class="gtab active" data-reffilter="all">전체</button>
-        <button type="button" class="gtab" data-reffilter="go">GO</button>
-        <button type="button" class="gtab" data-reffilter="drop">DROP</button>
       </div>
+      <button type="button" class="btn ghost nav-btn" id="refCollectToMeetingBtn">🖼️ 무드보드 작성</button>
       <button type="button" class="btn ghost nav-btn" id="refExportSheetBtn">📤 구글시트로 보내기</button>
       <button type="button" class="btn ghost drop-btn" id="refDeleteAllBtn">전체 삭제</button>
     </div>
     <div class="ref-paste-hint">컴퓨터에서는 이 화면에 캡처한 이미지를 Ctrl+V로 바로 붙여넣을 수도 있습니다.</div>
     <div id="refUploadStatus" class="ref-upload-status" style="display:none"></div>
     <div class="ref-date-tabs" id="mbRefsDateTabs"></div>
+    <div class="ref-count-bar" id="mbRefsCountBar"></div>
     <div class="mb-refs-empty" id="mbRefsEmpty" style="display:none">아직 등록된 레퍼런스가 없습니다. 사진을 찍거나 가져와서 추가해보세요.</div>
     <div class="mb-refs-grid" id="mbRefsGrid"></div>
   </div>
@@ -1002,6 +1131,9 @@
 <div class="gallery" id="quickOrderView" style="display:none">
   <div class="gallery-head">
     <h2>🧾 발주서</h2>
+  </div>
+  <div class="qo-status-filter" id="qoStatusFilter">
+    <button type="button" class="active" data-qostatus="all">전체</button>
   </div>
   <div class="qo-search-wrap">
     <input type="text" id="qoSearchInput" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
@@ -1013,14 +1145,18 @@
     <div class="qo-selected-sub">공장연락처 <span id="qoSelFactoryPhone"></span> · 혼용률 <span id="qoSelBlend"></span></div>
     <div class="qo-selected-sub">원단 입고예정일 <span id="qoSelFabricEta"></span> · 공장 출고예정일 <span id="qoSelFactoryEta"></span></div>
     <div class="qo-selected-sub">네고가 <span id="qoSelNegoPrice">확인 중...</span></div>
-    <div class="qo-selected-row qo-yard-row">
-      <label for="qoYardInput">원단 야드</label>
-      <input type="text" id="qoYardInput" placeholder="예) 5">
-    </div>
     <button type="button" class="btn ghost nav-btn" id="qoChangeBtn">다른 품목 선택</button>
   </div>
 
   <div class="order noprint" id="qoOrderForm" style="display:none">
+    <div class="field">
+      <span class="flbl">발주 유형</span>
+      <div class="seg" id="qoOrderCategory">
+        <button type="button" data-value="공장발주" class="active">🏭 공장발주</button>
+        <button type="button" data-value="원단발주">🧵 원단발주</button>
+      </div>
+    </div>
+
     <div class="field">
       <span class="flbl">발주 구분</span>
       <div class="seg" id="qoOrderType">
@@ -1029,11 +1165,18 @@
       </div>
     </div>
 
-    <div class="field">
+    <div class="field" id="qoFactoryBlocksWrap">
       <span class="flbl">컬러별 사이즈·수량</span>
       <div id="qoColorBlocks"></div>
       <button type="button" class="add-color" id="qoAddColor">+ 컬러 추가</button>
       <div class="ohint">컬러마다 블록을 하나씩 추가하고 그 안에서 사이즈를 늘리세요. 숫자만 입력하면 "번"이 자동으로 붙습니다(예: 1 → 1번). S M L 같은 문자는 대문자로 저장됩니다. 수량 칸에는 숫자만 입력하세요.</div>
+    </div>
+
+    <div class="field" id="qoFabricBlocksWrap" style="display:none">
+      <span class="flbl">컬러(원단)별 야드수</span>
+      <div id="qoFabricBlocks"></div>
+      <button type="button" class="add-color" id="qoAddFabricBlock">+ 컬러(원단) 추가</button>
+      <div class="ohint">1장당 필요한 야드수와 만들 장수를 입력하면 총 야드수가 자동으로 계산됩니다 (1장당 야드 × 장수 = 총 야드). 총 야드수는 수량 칸에 실제 숫자로 들어가서 나중에 시트에서 합계 계산이 가능합니다.</div>
     </div>
 
     <div class="field">
@@ -1104,6 +1247,7 @@
     채우는 순서 → <b>①</b> 시즌·카테고리·순번 → <b>품번 생성</b> (이름 안 떠올라도 품번부터 확정)
     · <b>②</b> 원단·품명 확인/수정 · <b>③</b> 사진 클릭·드래그·붙여넣기 · <b>④</b> <b>단가 × 수량</b> 입력하면 예상 제조원가 자동합산
     · <b>⑤</b> PDF로 저장 → 구글드라이브 업로드. <b>판매가는 안 넣습니다.</b>
+    <br>🧵 <b>샘플중</b> 상태일 때는 필수 입력칸을 채우지 않으면 <b style="color:#A03B1E">핑크색</b>으로 표시됩니다.
   </div>
 
   <!-- 판매 예측/실적 (화면 전용, 인쇄 미노출) -->
@@ -1141,6 +1285,19 @@
         <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정">✎</button>
         <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제">🗑</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 원샘플 회수 (화면 전용, 인쇄 미노출) -->
+  <div class="predict-panel noprint" id="sampleRecoveryPanel">
+    <div class="sec-title-np">🧺 원샘플 회수</div>
+    <div class="sample-recovery-row" id="sampleRecoveryRow">
+      <div class="seg sample-recovery-seg" id="sampleRecoverySeg">
+        <button type="button" data-value="">미발송</button>
+        <button type="button" data-value="factory">공장</button>
+        <button type="button" data-value="returned">회수</button>
+      </div>
+      <div class="sample-recovery-dates" id="sampleRecoveryDates"></div>
     </div>
   </div>
 
@@ -1350,6 +1507,28 @@
         <div class="arrival-reason">
           <span class="flbl">사유</span>
           <input type="text" id="factoryDelayReason" placeholder="예) 원단 늦게 도착해서 공장도 지연">
+        </div>
+      </div>
+
+      <div class="arrival-group">
+        <div class="arrival-group-title">📦 제품</div>
+        <div class="arrival-row">
+          <div class="targetbox-field">
+            <span class="flbl">입고예정일</span>
+            <input type="date" id="productExpectedArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">실제입고일</span>
+            <input type="date" id="productActualArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">지연</span>
+            <div class="delay-view" id="productDelayView">-</div>
+          </div>
+        </div>
+        <div class="arrival-reason">
+          <span class="flbl">사유</span>
+          <input type="text" id="productDelayReason" placeholder="예) 배송 지연">
         </div>
       </div>
     </div>
@@ -1752,8 +1931,9 @@
   function refreshAllDelays_(){
     renderDelay_("#fabricExpectedArrivalDate", "#fabricActualArrivalDate", "#fabricDelayView");
     renderDelay_("#factoryExpectedShipDate", "#factoryActualShipDate", "#factoryDelayView");
+    renderDelay_("#productExpectedArrivalDate", "#productActualArrivalDate", "#productDelayView");
   }
-  ["#fabricExpectedArrivalDate","#fabricActualArrivalDate","#factoryExpectedShipDate","#factoryActualShipDate"].forEach(s=>{
+  ["#fabricExpectedArrivalDate","#fabricActualArrivalDate","#factoryExpectedShipDate","#factoryActualShipDate","#productExpectedArrivalDate","#productActualArrivalDate"].forEach(s=>{
     $(s).addEventListener("input", refreshAllDelays_);
   });
 
@@ -1924,12 +2104,14 @@
   // ---------- 발주 (order-form.html 통합) ----------
   const ORDER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2H-GGzAPMytgXTyGMHi5zGfWi4SNz1jmvzfWlpmQebtng2c-Md2AcLw/exec";
 
-  // ---------- 공장 연락처 자동완성 ----------
+  // ---------- 공장/디자이너 연락처 자동완성 ----------
   let factoryContactsMap_ = {};
+  let designerContactsMap_ = {};
   fetch(ORDER_WEBAPP_URL + "?type=contacts")
     .then(res => res.json())
     .then(data => {
       (data.factory || []).forEach(c => { factoryContactsMap_[c.name] = c.phone; });
+      (data.designer || []).forEach(c => { designerContactsMap_[c.name] = c.phone; });
     })
     .catch(()=>{ /* 연락처 못 불러와도 나머지 기능엔 지장 없음 */ });
 
@@ -1938,6 +2120,15 @@
     const phoneField = $("#factoryPhone");
     if(name && !phoneField.value.trim() && factoryContactsMap_[name]){
       phoneField.value = factoryContactsMap_[name];
+      phoneField.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  });
+
+  $("#designer").addEventListener("blur", () => {
+    const name = $("#designer").value.trim();
+    const phoneField = $("#phone");
+    if(name && !phoneField.value.trim() && designerContactsMap_[name]){
+      phoneField.value = designerContactsMap_[name];
       phoneField.dispatchEvent(new Event("input", { bubbles: true }));
     }
   });
@@ -1995,6 +2186,7 @@
       pumMyeong: pumMyeongVal,
       status: STATUS_LABEL_MAP[currentStatus] || currentStatus,
       designer: $("#designer").value.trim(),
+      designerPhone: $("#phone").value.trim(),
       factory: $("#factory").value.trim(),
       factoryPhone: $("#factoryPhone").value.trim(),
       fabricSupplier: $("#fabricSupplierField").value.trim(),
@@ -2017,6 +2209,11 @@
       factoryExpectedShipDate: $("#factoryExpectedShipDate").value,
       factoryActualShipDate: $("#factoryActualShipDate").value,
       factoryDelayReason: $("#factoryDelayReason").value.trim(),
+      productExpectedArrivalDate: $("#productExpectedArrivalDate").value,
+      productActualArrivalDate: $("#productActualArrivalDate").value,
+      productDelayReason: $("#productDelayReason").value.trim(),
+      sampleFactorySentDate: sampleFactorySentDate,
+      sampleReturnedDate: sampleReturnedDate,
       sizeRows: collectSizeSpecRows_()
     };
 
@@ -2043,6 +2240,7 @@
       pumMyeong: st.pumMyeong || "",
       status: STATUS_LABEL_MAP[st.status] || st.status || "",
       designer: st.designer || "",
+      designerPhone: st.phone || "",
       factory: st.factory || "",
       factoryPhone: st.factoryPhone || "",
       fabricSupplier: st.fabricSupplierField || "",
@@ -2061,6 +2259,11 @@
       factoryExpectedShipDate: st.factoryExpectedShipDate || "",
       factoryActualShipDate: st.factoryActualShipDate || "",
       factoryDelayReason: st.factoryDelayReason || "",
+      productExpectedArrivalDate: st.productExpectedArrivalDate || "",
+      productActualArrivalDate: st.productActualArrivalDate || "",
+      productDelayReason: st.productDelayReason || "",
+      sampleFactorySentDate: st.sampleFactorySentDate || "",
+      sampleReturnedDate: st.sampleReturnedDate || "",
       sizeRows: []
     };
   }
@@ -2242,7 +2445,7 @@
   // 나중에 저장용량이 부담되면 false로 바꾸면 원본 없이 압축 썸네일만 저장됨(화질은 떨어짐)
   const SAVE_ORIGINAL_PHOTO = true;
 
-  const TXT_IDS = ["yy","mm","dd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","output",
+  const TXT_IDS = ["yy","mm","dd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
     "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
     "refLink"];
   let loading = false;
@@ -2256,6 +2459,7 @@
     { key:"samplemgmt",  emoji:"🗂️", label:"샘플관리" },
     { key:"order",       emoji:"🏭", label:"발주생산" },
     { key:"pdp",         emoji:"🖼️", label:"PDP" },
+    { key:"sale",        emoji:"🛍️", label:"판매" },
     { key:"drop",        emoji:"⏸️", label:"드롭" },
   ];
   const STATUS_MAP = Object.fromEntries(STATUS_LIST.map(s=> [s.key, s]));
@@ -2264,16 +2468,37 @@
     planned: "📅 예정", sampling: "🧵 샘플중", samplemgmt: "🗂️ 샘플관리",
     order: "🏭 발주생산", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
   };
+  const SAMPLE_REQUIRED_FIELDS = [
+    "designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","pumMyeong",
+    "fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason",
+    "factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason",
+    "productExpectedArrivalDate","productActualArrivalDate","productDelayReason",
+    "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection"
+  ];
+  function updateSampleFieldHighlights_(){
+    const active = currentStatus === "sampling";
+    SAMPLE_REQUIRED_FIELDS.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      const empty = !el.value || !el.value.trim();
+      el.classList.toggle("field-missing", active && empty);
+    });
+  }
   function updateStatusButtons(){
     document.querySelectorAll(".status-btn").forEach(btn=>{
       btn.classList.toggle("active", btn.dataset.status === currentStatus);
     });
+    updateSampleFieldHighlights_();
   }
   document.querySelectorAll(".status-btn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       currentStatus = btn.dataset.status;
       updateStatusButtons();
       save();
+      if(currentStatus === "sampling"){
+        const code = currentCode || $("#codeView").textContent.replace("품번","").trim();
+        ensureSampleMgmtRow_(code, pumInput.value.trim());
+      }
     });
   });
 
@@ -2293,11 +2518,16 @@
       values: [...r.querySelectorAll(".ss-val")].map(inp=> inp.value)
     }));
     st.sizeSpecVersion = SIZESPEC_DEFAULT_VERSION;
+    st.sampleRecoveryStatus = sampleRecoveryStatus;
+    st.sampleFactorySentDate = sampleFactorySentDate;
+    st.sampleReturnedDate = sampleReturnedDate;
     st.updatedAt = Date.now();
     return st;
   }
+  let justDeletedCode_ = null;
   function save(){
     if(loading || !woRef) return;
+    if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
     const st = collect();
     const s = $("#saveBtn");
     lastSentJSON = JSON.stringify(st);
@@ -2348,6 +2578,10 @@
     pumInput.dataset.auto = st.pumAuto || "1";
     currentStatus = st.status || "planned";
     updateStatusButtons();
+    sampleRecoveryStatus = st.sampleRecoveryStatus || "";
+    sampleFactorySentDate = st.sampleFactorySentDate || "";
+    sampleReturnedDate = st.sampleReturnedDate || "";
+    renderSampleRecovery_();
     if(Array.isArray(st.lines)){
       linesWrap.innerHTML="";
       st.lines.forEach(l=> makeLine(l.nm, l.unit, l.qty));
@@ -2401,6 +2635,65 @@
     input.classList.remove("as-link");
     saveSoon();
   });
+
+  // ---------- 원샘플 회수 (미발송 → 공장 → 회수, 날짜 자동 기록 + 7일 넘게 회수 안 되면 경고) ----------
+  let sampleRecoveryStatus = "";
+  let sampleFactorySentDate = "";
+  let sampleReturnedDate = "";
+  const SAMPLE_OVERDUE_DAYS = 7;
+
+  function todayStr_(){
+    const d = new Date();
+    const pad = n=> String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function renderSampleRecovery_(){
+    const seg = $("#sampleRecoverySeg");
+    seg.querySelectorAll("button").forEach(btn=>{
+      btn.classList.toggle("active", btn.dataset.value === sampleRecoveryStatus);
+    });
+    const datesEl = $("#sampleRecoveryDates");
+    const parts = [];
+    if(sampleFactorySentDate) parts.push(`공장전달 ${sampleFactorySentDate}`);
+    if(sampleReturnedDate) parts.push(`회수 ${sampleReturnedDate}`);
+    datesEl.textContent = parts.join(" · ");
+
+    let overdue = false;
+    if(sampleRecoveryStatus === "factory" && sampleFactorySentDate){
+      const days = Math.floor((Date.now() - new Date(sampleFactorySentDate).getTime()) / 86400000);
+      if(days >= SAMPLE_OVERDUE_DAYS){
+        overdue = true;
+        datesEl.textContent += ` · ⚠️ ${days}일째 회수 안 됨`;
+      }
+    }
+    $("#sampleRecoveryRow").classList.toggle("overdue", overdue);
+  }
+
+  $("#sampleRecoverySeg").querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const val = btn.dataset.value;
+      if(val === sampleRecoveryStatus) return; // 이미 같은 상태면 아무 일 안 함
+      if(val === ""){
+        if(!confirm("원샘플 회수 기록을 초기화할까요? 기록된 날짜가 지워집니다.")) return;
+        sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
+      } else if(val === "factory"){
+        if(!confirm("오늘 날짜로 원샘플을 공장에 보낸 걸로 기록할까요?")) return;
+        sampleRecoveryStatus = "factory"; sampleFactorySentDate = todayStr_();
+      } else if(val === "returned"){
+        if(!confirm("오늘 날짜로 원샘플을 회수한 걸로 기록할까요?")) return;
+        sampleRecoveryStatus = "returned"; sampleReturnedDate = todayStr_();
+        // 샘플관리 탭에 이 품번으로 등록된 항목이 있으면 샘플수거 체크도 같이 반영
+        const code = currentCode || $("#codeView").textContent.replace("품번","").trim();
+        Object.entries(allSampleMgmt || {}).forEach(([id, s])=>{
+          if(s.code === code && !s.collected) sampleMgmtRoot.child(id).update({ collected: true });
+        });
+      }
+      renderSampleRecovery_();
+      saveSoon();
+    });
+  });
+
   function isTypingNow(){
     const el = document.activeElement;
     return !!(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA"));
@@ -2450,6 +2743,7 @@
     $("#galleryView").style.display = "none";
     $("#moodboardView").style.display = "none";
     $("#quickOrderView").style.display = "none";
+    $("#sampleMgmtView").style.display = "none";
     $("#salesView").style.display = "block";
     $("#mainBar").style.display = "flex";
     setMainTabActive_("sales");
@@ -2460,6 +2754,7 @@
     $("#salesView").style.display = "none";
     $("#moodboardView").style.display = "none";
     $("#quickOrderView").style.display = "none";
+    $("#sampleMgmtView").style.display = "none";
     $("#galleryView").style.display = "block";
     $("#mainBar").style.display = "flex";
     setMainTabActive_("orders");
@@ -2469,6 +2764,7 @@
     $("#salesView").style.display = "none";
     $("#galleryView").style.display = "none";
     $("#quickOrderView").style.display = "none";
+    $("#sampleMgmtView").style.display = "none";
     $("#moodboardView").style.display = "block";
     $("#mainBar").style.display = "flex";
     setMainTabActive_("moodboard");
@@ -2480,9 +2776,21 @@
     $("#salesView").style.display = "none";
     $("#galleryView").style.display = "none";
     $("#moodboardView").style.display = "none";
+    $("#sampleMgmtView").style.display = "none";
     $("#quickOrderView").style.display = "block";
     $("#mainBar").style.display = "flex";
     setMainTabActive_("quickorder");
+  }
+  function showSampleMgmt2(){
+    $("#editorView").style.display = "none";
+    $("#salesView").style.display = "none";
+    $("#galleryView").style.display = "none";
+    $("#moodboardView").style.display = "none";
+    $("#quickOrderView").style.display = "none";
+    $("#sampleMgmtView").style.display = "block";
+    $("#mainBar").style.display = "flex";
+    setMainTabActive_("samplemgmt2");
+    initSampleMgmt_();
   }
 
   // ---------- 무드보드 > 회의 목록 (날짜별, 사진은 Firebase Storage에 저장 · DB엔 주소만) ----------
@@ -2536,6 +2844,111 @@
     renderMeetingDetail_(id);
   }
 
+  // ---------- 로아스5 판별기 (원가·타겟 관문 + 매력·소구점·훅·수요 4개 중 3개) ----------
+  const JUDGE_GATE_KEYS = ["cost", "target"];
+  const JUDGE_GREEN_KEYS = ["appeal", "sellingPoint", "hook", "demand"];
+  const JUDGE_LABELS = { cost: "🔴 원가", target: "🔴 타겟", appeal: "🟢 매력", sellingPoint: "🟢 소구점", hook: "🟢 훅", demand: "🟢 수요" };
+  const JUDGE_CRITERIA = {
+    cost: "5-6만원 | 독점(예외)",
+    target: "누구 거야? 한 명으로 답되나",
+    appeal: "원단·컬러·디테일·셋업·핏·꾸안꾸 중 1개 이상",
+    sellingPoint: "날씬 / 부자 / 편안함 중 또렷한 게 있나",
+    hook: "8초 안에 멈칫하나",
+    demand: "남들도 파나(검증) 또는 나만 파나(빈틈)"
+  };
+  const COST_BASIS_OPTIONS = [
+    { key: "standard", label: "5-6만원" }, { key: "exception", label: "예외(독점)" }
+  ];
+  const COST_COMBO_OPTIONS = [
+    { key: "fabric", label: "원단 고급 → 패턴단순+다이마루" },
+    { key: "pattern", label: "패턴 고급 → 원단저렴+다이마루" },
+    { key: "loom", label: "직기 → 원단저렴+패턴단순" }
+  ];
+  const TARGET_PRESETS = ["30대 직장인", "40대 워킹맘", "빅사이즈", "임산부", "기타(직접입력)"];
+  const APPEAL_TAG_OPTIONS = [
+    { key: "fabric", label: "원단" }, { key: "color", label: "컬러" }, { key: "detail", label: "디테일" },
+    { key: "setup", label: "셋업" }, { key: "fit", label: "핏" }, { key: "plain", label: "꾸안꾸" }
+  ];
+  const APPEAL_DETAIL_PLACEHOLDER = {
+    fabric: "예) 실켓 니트", color: "예) 딥네이비", detail: "예) 리본 타이",
+    setup: "예) 상하의 세트", fit: "예) 허리 끊어짐", plain: "예) 꾸안꾸 포인트"
+  };
+  const SELLING_POINT_OPTIONS = [
+    { key: "slim", label: "날씬" }, { key: "rich", label: "부자" }, { key: "comfort", label: "편안함" }
+  ];
+  const SELLING_POINT_PLACEHOLDER = {
+    slim: "예) 허리라인 강조", rich: "예) 셋업으로 부자 이미지", comfort: "예) 밴딩 허리 편안함"
+  };
+  const DEMAND_OPTIONS = [
+    { key: "proven", label: "검증 · 남들도 판다" }, { key: "gap", label: "빈틈 · 나만 판다" }, { key: "exclusive", label: "독점(가격 예외)" }
+  ];
+  const HOOK_OPTIONS = [
+    { key: "possible", label: "가능" }, { key: "impossible", label: "불가능" }
+  ];
+
+  function computeJudgment_(p){
+    const gatePassed = JUDGE_GATE_KEYS.every(k=> !!p[k]);
+    const greenCount = JUDGE_GREEN_KEYS.filter(k=> !!p[k]).length;
+    if(!gatePassed) return { key: "reject", label: "❌ 탈락" };
+    if(greenCount >= 4) return { key: "strong", label: "✅ 강력 제작" };
+    if(greenCount >= 3) return { key: "go", label: "✅ 제작" };
+    return { key: "hold", label: "⚠️ 보류 · 수정 후 재판별" };
+  }
+
+  // 제목(텍스트) 클릭으로 on/off 토글 — 알약 버튼 대신 체크박스 아이콘+텍스트만. 옆에 (?) 누르면 기준 설명이 펼쳐짐 (저장 안 하는 화면 상태)
+  function makeJudgeItem_(key, checked, onToggle){
+    const item = document.createElement("div");
+    item.className = "mb-judge-item";
+
+    const titleRow = document.createElement("div");
+    titleRow.className = "mb-judge-title-row";
+
+    const title = document.createElement("div");
+    title.className = "mb-judge-title" + (checked ? " on" : "");
+    title.innerHTML = `<span class="box">${checked ? "☑" : "☐"}</span><span>${JUDGE_LABELS[key]}</span>`;
+    title.addEventListener("click", onToggle);
+    titleRow.appendChild(title);
+
+    const qBtn = document.createElement("button");
+    qBtn.type = "button";
+    qBtn.className = "mb-judge-criteria-toggle";
+    qBtn.textContent = "?";
+    titleRow.appendChild(qBtn);
+    item.appendChild(titleRow);
+
+    const criteria = document.createElement("div");
+    criteria.className = "mb-judge-criteria";
+    criteria.textContent = JUDGE_CRITERIA[key];
+    item.appendChild(criteria);
+    qBtn.addEventListener("click", ()=> criteria.classList.toggle("show"));
+
+    return item;
+  }
+
+  function makeComboRow_(options, selectedKey, onPick){
+    const row = document.createElement("div");
+    row.className = "mb-judge-combo-row";
+    options.forEach(opt=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "mb-judge-combo-btn" + (selectedKey === opt.key ? " on" : "");
+      btn.textContent = opt.label;
+      btn.addEventListener("click", ()=> onPick(opt.key));
+      row.appendChild(btn);
+    });
+    return row;
+  }
+
+  function makeDetailInput_(placeholder, value, onChange){
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "mb-judge-detail-input";
+    input.placeholder = placeholder;
+    input.value = value || "";
+    input.addEventListener("change", ()=> onChange(input.value.trim()));
+    return input;
+  }
+
   function renderMeetingDetail_(id){
     const m = allMeetings[id];
     if(!m) return;
@@ -2545,11 +2958,300 @@
     grid.innerHTML = "";
     $("#mbMeetingPhotoEmpty").style.display = photos.length ? "none" : "block";
     photos.forEach(([photoId, p])=>{
+      const photoRef = meetingRoot.child(id).child("photos").child(photoId);
+      const card = document.createElement("div");
+      card.className = "mb-judge-card";
+
+      const photoBox = document.createElement("div");
+      photoBox.className = "mb-judge-photo-box";
       const img = document.createElement("img");
       img.loading = "lazy";
       img.src = p.url;
       img.alt = "회의 사진";
-      grid.appendChild(img);
+      photoBox.appendChild(img);
+      card.appendChild(photoBox);
+
+      const body = document.createElement("div");
+      body.className = "mb-judge-body";
+
+      // 링크 (레퍼런스 카드에서 넘어온 값, 여기서도 수정 가능)
+      const linkWrap = document.createElement("div");
+      linkWrap.className = "mb-judge-link-row";
+      const linkInput = document.createElement("input");
+      linkInput.type = "text";
+      linkInput.placeholder = "https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)";
+      linkInput.value = p.link || "";
+      function updateLinkMode_(){
+        const val = (linkInput.value || "").trim();
+        if(val && document.activeElement !== linkInput){
+          linkInput.readOnly = true; linkInput.classList.add("as-link");
+        } else {
+          linkInput.readOnly = false; linkInput.classList.remove("as-link");
+        }
+      }
+      updateLinkMode_();
+      linkInput.addEventListener("change", ()=> photoRef.update({ link: linkInput.value.trim() }));
+      linkInput.addEventListener("blur", updateLinkMode_);
+      linkInput.addEventListener("mousedown", e=>{ if(linkInput.readOnly) e.preventDefault(); });
+      linkInput.addEventListener("click", ()=>{
+        if(!linkInput.readOnly) return;
+        let url = linkInput.value.trim();
+        if(!url) return;
+        if(!/^https?:\/\//i.test(url)) url = "https://" + url;
+        window.open(url, "_blank", "noopener");
+      });
+      linkWrap.appendChild(linkInput);
+      body.appendChild(linkWrap);
+
+      const grid2 = document.createElement("div");
+      grid2.className = "mb-judge-grid2";
+
+      // 🔴 원가
+      const costItem = makeJudgeItem_("cost", p.cost, ()=> photoRef.update({ cost: !p.cost }));
+      costItem.appendChild(makeComboRow_(COST_BASIS_OPTIONS, p.costBasis, key=>{
+        photoRef.update({ costBasis: p.costBasis === key ? "" : key });
+      }));
+      costItem.appendChild(makeComboRow_(COST_COMBO_OPTIONS, p.costCombo, key=>{
+        photoRef.update({ costCombo: p.costCombo === key ? "" : key });
+      }));
+      grid2.appendChild(costItem);
+
+      // 🔴 타겟
+      const targetItem = makeJudgeItem_("target", p.target, ()=> photoRef.update({ target: !p.target }));
+      const targetSelect = document.createElement("select");
+      targetSelect.className = "mb-judge-select";
+      targetSelect.innerHTML = `<option value="">타겟 선택</option>` + TARGET_PRESETS.map(t=> `<option value="${t}" ${p.targetPreset===t?"selected":""}>${t}</option>`).join("");
+      targetSelect.addEventListener("change", ()=>{
+        const val = targetSelect.value;
+        photoRef.update({ targetPreset: val, target: !!val });
+      });
+      targetItem.appendChild(targetSelect);
+      if(p.targetPreset === "기타(직접입력)"){
+        targetItem.appendChild(makeDetailInput_("예) 30대 초반 오피스룩", p.targetCustom, v=> photoRef.update({ targetCustom: v })));
+      }
+      grid2.appendChild(targetItem);
+
+      // 🟢 매력 (다중선택, 고른 태그마다 세부 입력칸)
+      const appealItem = makeJudgeItem_("appeal", p.appeal, ()=> photoRef.update({ appeal: !p.appeal }));
+      const appealTags = p.appealTags || {};
+      const appealDetails = p.appealDetails || {};
+      const appealRow = document.createElement("div");
+      appealRow.className = "mb-judge-combo-row";
+      APPEAL_TAG_OPTIONS.forEach(opt=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "mb-judge-combo-btn" + (appealTags[opt.key] ? " on" : "");
+        btn.textContent = opt.label;
+        btn.addEventListener("click", ()=>{
+          const nextTags = { ...appealTags, [opt.key]: !appealTags[opt.key] };
+          const anyOn = Object.values(nextTags).some(Boolean);
+          photoRef.update({ appealTags: nextTags, appeal: anyOn });
+        });
+        appealRow.appendChild(btn);
+      });
+      appealItem.appendChild(appealRow);
+      APPEAL_TAG_OPTIONS.forEach(opt=>{
+        if(appealTags[opt.key]){
+          appealItem.appendChild(makeDetailInput_(APPEAL_DETAIL_PLACEHOLDER[opt.key], appealDetails[opt.key], v=>{
+            photoRef.update({ appealDetails: { ...appealDetails, [opt.key]: v } });
+          }));
+        }
+      });
+      grid2.appendChild(appealItem);
+
+      // 🟢 소구점 (날씬/부자/편안함 모두 세부 입력칸)
+      const spItem = makeJudgeItem_("sellingPoint", p.sellingPoint, ()=> photoRef.update({ sellingPoint: !p.sellingPoint }));
+      const spDetails = p.sellingPointDetails || {};
+      spItem.appendChild(makeComboRow_(SELLING_POINT_OPTIONS, p.sellingPointTag, key=>{
+        const nowOn = p.sellingPointTag === key;
+        photoRef.update({ sellingPointTag: nowOn ? "" : key, sellingPoint: !nowOn });
+      }));
+      if(p.sellingPointTag){
+        spItem.appendChild(makeDetailInput_(SELLING_POINT_PLACEHOLDER[p.sellingPointTag] || "어떤 느낌인지 적어주세요", spDetails[p.sellingPointTag], v=>{
+          photoRef.update({ sellingPointDetails: { ...spDetails, [p.sellingPointTag]: v } });
+        }));
+      }
+      grid2.appendChild(spItem);
+
+      // 🟢 훅 (가능/불가능)
+      const hookItem = makeJudgeItem_("hook", p.hook, ()=> photoRef.update({ hook: !p.hook }));
+      hookItem.appendChild(makeComboRow_(HOOK_OPTIONS, p.hookChoice, key=>{
+        const nowOn = p.hookChoice === key;
+        photoRef.update({ hookChoice: nowOn ? "" : key, hook: !nowOn && key === "possible" });
+      }));
+      grid2.appendChild(hookItem);
+
+      // 🟢 수요 (검증/빈틈/독점)
+      const demandItem = makeJudgeItem_("demand", p.demand, ()=> photoRef.update({ demand: !p.demand }));
+      demandItem.appendChild(makeComboRow_(DEMAND_OPTIONS, p.demandTag, key=>{
+        const nowOn = p.demandTag === key;
+        photoRef.update({ demandTag: nowOn ? "" : key, demand: !nowOn });
+      }));
+      grid2.appendChild(demandItem);
+
+      body.appendChild(grid2);
+
+      // 메모
+      const memo = document.createElement("textarea");
+      memo.className = "mb-judge-memo";
+      memo.placeholder = "메모 (선택) — 왜 이렇게 판단했는지 적어두세요";
+      memo.value = p.memo || "";
+      memo.addEventListener("change", ()=> photoRef.update({ memo: memo.value.trim() }));
+      body.appendChild(memo);
+
+      // DROP + 작업지시서 전환 (판정과 무관하게 항상 전환 가능) — 탈락 배지는 없애고 보류/제작/강력제작일 때만 참고용 배지 표시
+      const bottomRow = document.createElement("div");
+      bottomRow.className = "mb-judge-bottom-row";
+      const judgment = computeJudgment_(p);
+      if(p.dropped || (judgment.key !== "reject")){
+        const resultEl = document.createElement("div");
+        resultEl.className = "mb-judge-result " + (p.dropped ? "dropped" : judgment.key);
+        resultEl.textContent = p.dropped ? "🔴 DROP" : judgment.label;
+        bottomRow.appendChild(resultEl);
+      }
+
+      if(!p.dropped){
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "mb-judge-convert-btn " + (judgment.key === "strong" ? "strong" : "");
+        btn.textContent = "🧾 작업지시서로 전환";
+        btn.addEventListener("click", ()=> convertMeetingPhotoToWorkOrder_(id, photoId, p));
+        bottomRow.appendChild(btn);
+      }
+
+      const dropBtn = document.createElement("button");
+      dropBtn.type = "button";
+      dropBtn.className = "mb-judge-drop-btn" + (p.dropped ? " on" : "");
+      dropBtn.textContent = p.dropped ? "DROP 취소" : "DROP";
+      dropBtn.addEventListener("click", ()=> photoRef.update({ dropped: !p.dropped }));
+      bottomRow.appendChild(dropBtn);
+      body.appendChild(bottomRow);
+
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+  }
+
+  function convertMeetingPhotoToWorkOrder_(meetingId, photoId, p){
+    if(p.convertedCode){ alert(`이미 "${p.convertedCode}" 작지로 전환됐습니다.`); return; }
+    bumpUsed(num($("#seq").value));
+    showEditor();
+    startNewWorkOrder();
+    if(p.url) setPhoto("#ph1", p.url, p.url);
+    saveSoon();
+    meetingRoot.child(meetingId).child("photos").child(photoId).update({ convertedCode: currentCode });
+    alert("새 작지가 생성됐습니다. (상태: 예정) 시즌/카테고리/품번을 확인하고 저장해주세요.");
+  }
+
+  // ---------- 샘플관리 (작지가 샘플중 상태로 바뀌면 자동으로 한 줄 생성, 원샘플 회수 토글과 연동) ----------
+  const sampleMgmtRoot = firebase.database().ref("sampleManagement");
+  let allSampleMgmt = {};
+  sampleMgmtRoot.on("value", snap=>{
+    allSampleMgmt = snap.val() || {};
+    if($("#sampleMgmtView").style.display !== "none") renderSampleMgmt_();
+  });
+
+  function initSampleMgmt_(){
+    renderSampleMgmt_();
+  }
+
+  $("#smSyncBtn").addEventListener("click", ()=>{
+    const samplingOrders = Object.entries(allWorkOrders || {}).filter(([code, st])=> (st.status||"") === "sampling");
+    if(!samplingOrders.length){ alert("현재 샘플중 상태인 작지가 없습니다."); return; }
+    let added = 0;
+    samplingOrders.forEach(([code, st])=>{
+      const already = Object.values(allSampleMgmt).some(s=> s.code === code);
+      if(!already){ ensureSampleMgmtRow_(code, st.pumMyeong); added++; }
+    });
+    alert(added ? `${added}개를 샘플관리에 새로 불러왔습니다.` : "이미 다 등록돼 있어서 새로 불러올 게 없습니다.");
+  });
+
+  function sampleMgmtCompleteDefault_(requestDate){
+    if(!requestDate) return "";
+    const d = new Date(requestDate);
+    d.setDate(d.getDate() + 7);
+    const pad = n=> String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  }
+
+  function renderSampleMgmt_(){
+    const entries = Object.entries(allSampleMgmt).sort((a,b)=> (b[1].createdAt||0)-(a[1].createdAt||0));
+    const tbody = $("#smTableBody");
+    tbody.innerHTML = "";
+    $("#smEmpty").style.display = entries.length ? "none" : "block";
+
+    // 주차별 "인정" 샘플 개수만 표시 (금액은 화면에 안 보여줌 — 디자이너도 보는 화면이라)
+    const weekCounts = {};
+    entries.forEach(([id, s])=>{
+      if(s.recognized === false) return;
+      const wk = s.week || "미지정";
+      weekCounts[wk] = (weekCounts[wk]||0) + 1;
+    });
+    $("#smWeeklyBar").innerHTML = Object.entries(weekCounts)
+      .sort((a,b)=> a[0].localeCompare(b[0], "ko"))
+      .map(([wk,count])=> `<span class="sm-weekly-chip">${wk} · 인정 샘플 ${count}개</span>`).join("");
+
+    entries.forEach(([id, s])=>{
+      const row = document.createElement("tr");
+      const recognized = s.recognized !== false; // 기본값 true (직접 체크 해제해야 제외됨)
+
+      const completeDefault = sampleMgmtCompleteDefault_(s.requestDate);
+      const completeVal = s.completeDate || completeDefault;
+      let overdue = false;
+      if(completeVal && !s.collected && Date.now() > new Date(completeVal).getTime()) overdue = true;
+
+      row.innerHTML = `
+        <td><input type="text" class="sm-pum" value="${(s.pumMyeong||"").replace(/"/g,"&quot;")}" placeholder="작업지시서에서 선택"></td>
+        <td><input type="text" class="sm-color" value="${(s.color||"").replace(/"/g,"&quot;")}"></td>
+        <td><input type="text" class="sm-size" value="${(s.size||"").replace(/"/g,"&quot;")}"></td>
+        <td><input type="date" class="sm-reqdate" value="${s.requestDate||""}"></td>
+        <td><input type="date" class="sm-compdate ${overdue?"sm-overdue":""}" value="${completeVal}"></td>
+        <td>
+          <select class="sm-resample">
+            <option value="" ${!s.resample?"selected":""}>없음</option>
+            <option value="1차재샘" ${s.resample==="1차재샘"?"selected":""}>1차 재샘</option>
+            <option value="2차재샘" ${s.resample==="2차재샘"?"selected":""}>2차 재샘</option>
+          </select>
+        </td>
+        <td style="text-align:center"><input type="checkbox" class="sm-collected" ${s.collected?"checked":""}></td>
+        <td style="text-align:center"><input type="checkbox" class="sm-recognized" ${recognized?"checked":""}></td>
+        <td><input type="text" class="sm-week" value="${(s.week||"").replace(/"/g,"&quot;")}" placeholder="예) 1주차"></td>
+        <td><button type="button" class="sm-del-btn" title="삭제">🗑</button></td>
+      `;
+      tbody.appendChild(row);
+
+      const ref = sampleMgmtRoot.child(id);
+      row.querySelector(".sm-pum").addEventListener("change", e=> ref.update({ pumMyeong: e.target.value.trim() }));
+      row.querySelector(".sm-color").addEventListener("change", e=> ref.update({ color: e.target.value.trim() }));
+      row.querySelector(".sm-size").addEventListener("change", e=> ref.update({ size: e.target.value.trim() }));
+      row.querySelector(".sm-reqdate").addEventListener("change", e=> ref.update({ requestDate: e.target.value }));
+      row.querySelector(".sm-compdate").addEventListener("change", e=> ref.update({ completeDate: e.target.value }));
+      row.querySelector(".sm-resample").addEventListener("change", e=> ref.update({ resample: e.target.value }));
+      row.querySelector(".sm-week").addEventListener("change", e=> ref.update({ week: e.target.value.trim() }));
+      row.querySelector(".sm-recognized").addEventListener("change", e=> ref.update({ recognized: e.target.checked }));
+      row.querySelector(".sm-collected").addEventListener("change", e=>{
+        const checked = e.target.checked;
+        ref.update({ collected: checked });
+        // 원샘플 회수 토글과 연동: 같은 품번의 작지 회수 상태도 같이 갱신 (회수 체크할 때만, 해제는 작지 쪽에 영향 안 줌)
+        if(checked && s.code){
+          woRoot.child(s.code).update({ sampleRecoveryStatus: "returned", sampleReturnedDate: todayStr_() });
+        }
+      });
+      row.querySelector(".sm-del-btn").addEventListener("click", ()=>{
+        if(confirm("이 샘플관리 항목을 삭제할까요?")) ref.remove();
+      });
+    });
+  }
+
+  // 작지 상태가 "샘플중"으로 처음 바뀔 때 샘플관리에 자동으로 한 줄 생성 (같은 품번 중복 생성 방지)
+  function ensureSampleMgmtRow_(code, pumMyeong){
+    if(!code) return;
+    const already = Object.values(allSampleMgmt).some(s=> s.code === code);
+    if(already) return;
+    sampleMgmtRoot.push().set({
+      code: code, pumMyeong: pumMyeong || "", color: "", size: "",
+      requestDate: todayStr_(), completeDate: "", resample: "", collected: false, recognized: true, week: "",
+      createdAt: Date.now()
     });
   }
 
@@ -2634,23 +3336,22 @@
   let lastRefsSig_ = null;
   let lastRefDateTabsSig_ = null;
 
-  function refDateOf_(createdAt){
-    if(!createdAt) return "";
-    const d = new Date(createdAt);
-    const pad = n=> String(n).padStart(2,"0");
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  function refDateOf_(r){
+    return (r.meetingDate || "").trim();
   }
 
   function renderRefDateTabs_(){
     const wrap = $("#mbRefsDateTabs");
     if(!wrap) return;
-    const dates = Array.from(new Set(Object.values(allRefCards).map(r=> refDateOf_(r.createdAt)).filter(Boolean))).sort().reverse();
-    const sig = JSON.stringify(dates);
+    const dates = Array.from(new Set(Object.values(allRefCards).map(r=> refDateOf_(r)).filter(Boolean))).sort().reverse();
+    const hasUnset = Object.values(allRefCards).some(r=> !refDateOf_(r));
+    const sig = JSON.stringify({ dates, hasUnset });
     if(sig === lastRefDateTabsSig_) return;
     lastRefDateTabsSig_ = sig;
-    if(refDateFilter !== "all" && !dates.includes(refDateFilter)) refDateFilter = "all";
-    wrap.innerHTML = `<button type="button" class="ref-date-tab ${refDateFilter==='all'?'active':''}" data-refdate="all">전체 날짜</button>`
-      + dates.map(d=> `<button type="button" class="ref-date-tab ${refDateFilter===d?'active':''}" data-refdate="${d}">${d}</button>`).join("");
+    if(refDateFilter !== "all" && refDateFilter !== "unset" && !dates.includes(refDateFilter)) refDateFilter = "all";
+    wrap.innerHTML = `<button type="button" class="ref-date-tab ${refDateFilter==='all'?'active':''}" data-refdate="all">전체</button>`
+      + dates.map(d=> `<button type="button" class="ref-date-tab ${refDateFilter===d?'active':''}" data-refdate="${d}">${d}</button>`).join("")
+      + (hasUnset ? `<button type="button" class="ref-date-tab ${refDateFilter==='unset'?'active':''}" data-refdate="unset">미정</button>` : "");
     wrap.querySelectorAll("[data-refdate]").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         refDateFilter = btn.dataset.refdate;
@@ -2658,9 +3359,86 @@
         lastRefsSig_ = null;
         renderRefDateTabs_();
         renderRefCards();
+        updateCollectBtnVisibility_();
       });
     });
+    updateCollectBtnVisibility_();
   }
+
+  function updateCollectBtnVisibility_(){
+    const btn = $("#refCollectToMeetingBtn");
+    if(!btn) return;
+    const isRealDate = refDateFilter !== "all" && refDateFilter !== "unset";
+    btn.textContent = isRealDate ? `🖼️ ${refDateFilter} 무드보드 작성` : "🖼️ 무드보드 작성";
+  }
+
+  async function collectDateToMeeting_(dateStr){
+    if(!dateStr || dateStr === "all" || dateStr === "unset"){
+      alert("먼저 위 날짜 탭에서 무드보드로 모을 특정 날짜를 선택해주세요. (예: 2026-08-10 탭)");
+      return;
+    }
+    const cardsForDate = Object.entries(allRefCards).filter(([id,r])=> refDateOf_(r) === dateStr);
+    if(!cardsForDate.length){ alert("이 날짜에 해당하는 레퍼런스가 없습니다."); return; }
+
+    const isDecided = (id, r)=>{
+      return !!r.convertedCode || (r.status || "") === "drop";
+    };
+    const decided = cardsForDate.filter(([id,r])=> isDecided(id,r));
+    const undecided = cardsForDate.filter(([id,r])=> !isDecided(id,r));
+
+    if(!confirm(
+      `${dateStr} 날짜 레퍼런스 ${cardsForDate.length}개를 무드보드 회의로 모을까요?\n\n` +
+      `GO/DROP 결정된 ${decided.length}개는 무드보드로 옮겨지고 레퍼런스 목록에서 삭제됩니다.\n` +
+      `아직 결정 안 된 ${undecided.length}개는 날짜가 "미정"으로 초기화되고 목록에는 남습니다.`
+    )) return;
+
+    const btn = $("#refCollectToMeetingBtn");
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = "모으는 중...";
+
+    try{
+      let meetingEntry = Object.entries(allMeetings).find(([id,m])=> (m.date||"").trim() === dateStr);
+      let meetingId;
+      if(meetingEntry){
+        meetingId = meetingEntry[0];
+      } else {
+        const newMeeting = meetingRoot.push();
+        meetingId = newMeeting.key;
+        await newMeeting.set({ date: dateStr, title: "", createdAt: Date.now(), photos: {} });
+      }
+
+      let orderBase = Date.now();
+      for(const [id, r] of cardsForDate){
+        if(r.photo){
+          const photoRef = meetingRoot.child(meetingId).child("photos").push();
+          await photoRef.set({ url: r.photo, order: orderBase++, createdAt: Date.now(), link: r.link || "", memo: r.memo || "" });
+        }
+      }
+      for(const [id] of decided){
+        // 사진 파일은 무드보드가 그대로 이어서 쓰므로 Storage 파일은 지우지 않고 카드 레코드만 지움
+        await refRoot.child(id).remove();
+      }
+      for(const [id] of undecided){
+        await refRoot.child(id).update({ meetingDate: "" });
+      }
+
+      refDateFilter = "all";
+      lastRefDateTabsSig_ = null;
+      lastRefsSig_ = null;
+      renderRefDateTabs_();
+      renderRefCards();
+      alert(`완료했습니다. ${decided.length}개는 무드보드 ${dateStr} 회의로 옮겨졌고 ${undecided.length}개는 미정으로 돌아갔습니다.`);
+    }catch(err){
+      alert("모으는 중 문제가 생겼습니다: " + (err && err.message ? err.message : err));
+    }finally{
+      btn.disabled = false;
+      btn.textContent = originalText;
+      updateCollectBtnVisibility_();
+    }
+  }
+
+  $("#refCollectToMeetingBtn").addEventListener("click", ()=> collectDateToMeeting_(refDateFilter));
 
   document.querySelectorAll("#mbSlideSubTabs .gtab[data-slidetab]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -2713,7 +3491,7 @@
   $("#refDeleteAllBtn").addEventListener("click", ()=>{
     const ids = Object.keys(allRefCards || {});
     if(!ids.length){ alert("삭제할 레퍼런스가 없습니다."); return; }
-    if(!confirm(`레퍼런스 수집에 있는 카드 ${ids.length}개를 전부 삭제할까요? 이미 GO로 전환된 작지는 지워지지 않고 그대로 남습니다. 이 작업은 되돌릴 수 없습니다.`)) return;
+    if(!confirm(`레퍼런스 수집에 있는 카드 ${ids.length}개를 전부 삭제할까요? 이미 작업지시서로 전환된 것은 지워지지 않고 그대로 남습니다. 이 작업은 되돌릴 수 없습니다.`)) return;
     if(!confirm("정말 전부 삭제하시겠습니까? 다시 한 번 확인합니다.")) return;
     ids.forEach(id=>{
       refPhotoStorage.child(id).listAll().then(res=>{
@@ -2721,7 +3499,6 @@
       }).catch(()=>{});
     });
     refRoot.remove().then(()=>{
-      pendingRefStatus = {};
       refCalcOpen = {};
       refDateFilter = "all";
       lastRefsSig_ = null;
@@ -2732,9 +3509,7 @@
 
   function refStatusLabel_(id, r){
     if(r.convertedCode) return `✅ 전환됨 (${r.convertedCode})`;
-    const eff = pendingRefStatus[id] !== undefined ? pendingRefStatus[id] : (r.status || "");
-    if(eff === "go") return "🟢 GO";
-    if(eff === "drop") return "🔴 DROP";
+    if((r.status || "") === "drop") return "🔴 DROP";
     return "";
   }
 
@@ -2749,7 +3524,7 @@
     ].filter(Boolean).join(" · ");
     const payload = {
       type: "refCollection",
-      date: refDateOf_(r.createdAt),
+      date: refDateOf_(r) || "미정",
       photoUrl: r.photo || "",
       link: r.link || "",
       status: refStatusLabel_(id, r),
@@ -2817,16 +3592,21 @@
     }
     showRefUploadStatus_("⏳ 사진을 처리하는 중입니다...", "info");
     let settled = false;
+    // 12초가 지나도 아직 진행 중이면 "실패"로 단정하지 않고 계속 기다리면서 안내만 부드럽게 바꿈
+    // (인터넷이 느려서 시간이 걸리는 것뿐인데 성급하게 실패 처리해서 성공한 결과를 버리는 일이 없도록)
+    const softWarning = setTimeout(()=>{
+      if(!settled) showRefUploadStatus_("⏳ 인터넷이 조금 느린 것 같습니다. 계속 시도 중이니 조금만 더 기다려주세요...", "info");
+    }, 12000);
     const watchdog = setTimeout(()=>{
       if(!settled){
         settled = true;
-        const msg = "사진을 등록하는 데 시간이 너무 오래 걸립니다. 인터넷 연결을 확인하거나 다른 사진으로 다시 시도해주세요.";
+        const msg = "45초가 지나도 등록이 안 됩니다. 인터넷 연결을 확인하거나 더 작은 사진으로 다시 시도해주세요.";
         showRefUploadStatus_("⚠️ " + msg, "err"); alert(msg);
       }
-    }, 12000);
+    }, 45000);
     const reader = new FileReader();
     reader.onerror = ()=>{
-      if(settled) return; settled = true; clearTimeout(watchdog);
+      if(settled) return; settled = true; clearTimeout(watchdog); clearTimeout(softWarning);
       const msg = "사진 파일을 읽는 중 문제가 생겼습니다. 다른 사진으로 다시 시도해주세요.";
       showRefUploadStatus_("⚠️ " + msg, "err"); alert(msg);
     };
@@ -2835,12 +3615,12 @@
         const newRef = refRoot.push();
         const id = newRef.key;
         uploadPhotoWithFallback_(e.target.result, refPhotoStorage.child(id), url=>{
-          if(settled) return; settled = true; clearTimeout(watchdog);
+          if(settled) return; settled = true; clearTimeout(watchdog); clearTimeout(softWarning);
           showRefUploadStatus_("📤 사진 업로드 완료, 카드 저장 중...", "info");
           newRef.set({
             photo: url,
             createdAt: Date.now(),
-            status: "", link: "", sampleStatus: "",
+            status: "", link: "", sampleStatus: "", meetingDate: "",
             targetPrice: "", yard: "", labor: "", etc: "", fabricPrice: "", memo: "",
             demand: "", supply: "", productFit: false, detailType: "",
             skuWeekly: false, skuMonthly: false,
@@ -2852,12 +3632,12 @@
             showRefUploadStatus_("⚠️ " + msg, "err"); alert(msg);
           });
         }, err=>{
-          if(settled) return; settled = true; clearTimeout(watchdog);
+          if(settled) return; settled = true; clearTimeout(watchdog); clearTimeout(softWarning);
           const msg = "이 사진 형식을 처리하지 못했습니다: " + (err && err.message ? err.message : err) + " 스크린샷으로 찍거나 다른 사진으로 다시 시도해주세요. (아이폰 HEIC 사진은 설정에서 '자동'을 '호환성 우선'으로 바꾸면 도움이 됩니다)";
           showRefUploadStatus_("⚠️ " + msg, "err"); alert(msg);
         });
       }catch(err){
-        if(settled) return; settled = true; clearTimeout(watchdog);
+        if(settled) return; settled = true; clearTimeout(watchdog); clearTimeout(softWarning);
         const msg = "사진을 처리하는 중 예상치 못한 문제가 생겼습니다: " + (err && err.message ? err.message : err);
         showRefUploadStatus_("⚠️ " + msg, "err"); alert(msg);
       }
@@ -2909,20 +3689,19 @@
   const REF_FABRIC_PRICES = [3500, 4000, 4500];
   const REF_DETAIL_OPTIONS = [ { key:"fabric", label:"원단" }, { key:"tie", label:"타이 / 끈 등 디테일" }, { key:"color", label:"컬러" }, { key:"setup", label:"셋업" }, { key:"etc", label:"기타" } ];
 
-  let pendingRefStatus = {}; // { [id]: 'go' | 'drop' | '' }  저장 전까지는 로컬에만 반영
   let refCalcOpen = {};      // { [id]: true }  계산기 펼침 상태
 
   function renderRefCards(){
     const entries = Object.entries(allRefCards)
       .sort((a,b)=> (b[1].createdAt||0) - (a[1].createdAt||0));
     const filtered = entries.filter(([id, r])=>{
-      const eff = pendingRefStatus[id] !== undefined ? pendingRefStatus[id] : (r.status || "");
-      if(refDateFilter !== "all" && refDateOf_(r.createdAt) !== refDateFilter) return false;
-      if(refFilter === "go") return eff === "go";
+      const eff = r.status || "";
+      if(refDateFilter === "unset"){ if(refDateOf_(r)) return false; }
+      else if(refDateFilter !== "all" && refDateOf_(r) !== refDateFilter) return false;
       if(refFilter === "drop") return eff === "drop";
       return true;
     });
-    const sig = JSON.stringify({ f: refFilter, d: refDateFilter, items: entries.map(([id,r])=> [id, r.status, r.link, r.sampleStatus, r.targetPrice, r.yard, r.labor, r.fabricPrice, r.demand, r.supply, r.productFit, r.detailType, r.skuWeekly, r.skuMonthly, r.memo, r.convertedCode]) });
+    const sig = JSON.stringify({ f: refFilter, d: refDateFilter, items: entries.map(([id,r])=> [id, r.status, r.link, r.sampleStatus, r.targetPrice, r.yard, r.labor, r.fabricPrice, r.demand, r.supply, r.productFit, r.detailType, r.skuWeekly, r.skuMonthly, r.memo, r.convertedCode, r.meetingDate]) });
     if(sig === lastRefsSig_) return;
     lastRefsSig_ = sig;
 
@@ -2930,11 +3709,29 @@
     grid.innerHTML = "";
     $("#mbRefsEmpty").style.display = filtered.length ? "none" : "block";
 
+    // 카운트 바: 지금 날짜 탭 기준으로 전체/DROP/진행중 개수 표시
+    const dateScoped = entries.filter(([id, r])=>{
+      if(refDateFilter === "unset") return !refDateOf_(r);
+      if(refDateFilter !== "all") return refDateOf_(r) === refDateFilter;
+      return true;
+    });
+    let dropCount = 0;
+    dateScoped.forEach(([id, r])=>{
+      if((r.status || "") === "drop") dropCount++;
+    });
+    const inProgress = dateScoped.length - dropCount;
+    const scopeLabel = refDateFilter === "all" ? "전체" : (refDateFilter === "unset" ? "미정" : refDateFilter);
+    $("#mbRefsCountBar").innerHTML =
+      `<span class="total">${scopeLabel} ${dateScoped.length}개</span>` +
+      `<span class="chip">진행중 ${inProgress}</span>` +
+      `<span class="chip drop">DROP ${dropCount}</span>`;
+
     filtered.forEach(([id, r])=>{
-      const effStatus = pendingRefStatus[id] !== undefined ? pendingRefStatus[id] : (r.status || "");
-      const isPending = pendingRefStatus[id] !== undefined && pendingRefStatus[id] !== (r.status || "");
+      const effStatus = r.status || "";
+      const daysOld = r.createdAt ? Math.floor((Date.now() - r.createdAt) / (1000*60*60*24)) : 0;
+      const isStale = !refDateOf_(r) && daysOld >= 14 && !r.convertedCode;
       const card = document.createElement("div");
-      card.className = "ref-card" + (effStatus === "drop" ? " is-drop" : "") + (effStatus === "go" ? " is-go" : "") + (isPending ? " is-pending" : "");
+      card.className = "ref-card" + (effStatus === "drop" ? " is-drop" : "") + (isStale ? " is-stale" : "");
 
       const photoBox = document.createElement("div");
       photoBox.className = "ref-photo-box";
@@ -2946,23 +3743,29 @@
       const body = document.createElement("div");
       body.className = "ref-body";
 
-      // 1행: GO/DROP 토글 + 전환됨 뱃지 + 저장 + 삭제 (전환된 카드는 되돌릴 수 없어 토글/저장을 잠금)
+      // 1행: 회의날짜 알약 + DROP 토글 + 전환됨 뱃지 + 삭제 (전환된 카드는 되돌릴 수 없어 토글을 잠금, DROP은 누르는 즉시 바로 반영됨)
       const row1 = document.createElement("div");
       row1.className = "ref-row";
+      const datePillHtml = `
+        <div class="ref-date-pill-wrap ${r.meetingDate ? "has-date" : ""}">
+          <span class="ref-date-pill-icon">📅</span>
+          <input type="date" class="ref-meeting-date-input" value="${r.meetingDate || ""}">
+        </div>
+        ${isStale ? `<span class="ref-stale-badge">⏳ ${daysOld}일째 미정</span>` : ""}
+      `;
       if(r.convertedCode){
         row1.innerHTML = `
+          ${datePillHtml}
           <span class="ref-converted-badge">✔ 전환됨: ${r.convertedCode}</span>
           <span class="ref-converted-note">이미 새 작지로 전환됨 · 이 상태는 되돌릴 수 없습니다</span>
           <button type="button" class="ref-delete-btn">삭제</button>
         `;
       } else {
         row1.innerHTML = `
+          ${datePillHtml}
           <div class="ref-toggle-group">
-            <button type="button" class="ref-toggle-btn go-btn ${effStatus==='go'?'go-on':''}">GO</button>
             <button type="button" class="ref-toggle-btn drop-btn ${effStatus==='drop'?'drop-on':''}">DROP</button>
           </div>
-          ${isPending ? `<span class="ref-pending-note">저장 전</span>` : ""}
-          <button type="button" class="ref-save-btn">저장</button>
           <button type="button" class="ref-delete-btn">삭제</button>
         `;
       }
@@ -3041,20 +3844,10 @@
       `;
       body.appendChild(row4);
 
-      // 상품성 (기준을 벗어나 튀는 디자인인가)
-      const row5 = document.createElement("div");
-      row5.className = "ref-row";
-      row5.innerHTML = `
-        <button type="button" class="ref-toggle-btn product-fit-btn ${r.productFit?'go-on':''}">상품성: 많이 팔릴 것 같은가</button>
-        <div class="ref-fit-caption" style="width:100%">아래 기준에 해당하지 않으면 제작 X</div>
-      `;
-      body.appendChild(row5);
-
-      // 꾸안꾸 디테일 (5개 중 1개)
+      // 꾸안꾸 디테일 (5개 중 1개) — 이름표 없이 버튼만
       const row6 = document.createElement("div");
       row6.className = "ref-row";
       row6.innerHTML = `
-        <div class="ref-calc-group-label" style="width:100%">꾸안꾸 디테일</div>
         <div class="ref-calc-btns ref-detail-btns">
           ${REF_DETAIL_OPTIONS.map(o=>`<button type="button" class="ref-calc-btn ${r.detailType===o.key?'on':''}" data-detail="${o.key}">${o.label}</button>`).join("")}
         </div>
@@ -3107,28 +3900,16 @@
         input.click();
       });
 
-      // GO/DROP: 전환된 카드는 잠금, 그 외에는 로컬 상태만 바꾸고 저장은 안 함
+      // DROP: 전환된 카드는 잠금, 그 외에는 누르는 즉시 바로 Firebase에 반영 (더 이상 별도 저장 버튼 없음)
       if(!r.convertedCode){
-        card.querySelector(".go-btn").addEventListener("click", ()=>{
-          pendingRefStatus[id] = effStatus === "go" ? "" : "go";
-          renderRefCards_forceOnce_();
-        });
         card.querySelector(".drop-btn").addEventListener("click", ()=>{
-          pendingRefStatus[id] = effStatus === "drop" ? "" : "drop";
-          renderRefCards_forceOnce_();
-        });
-        // 저장: 이 시점에 실제로 Firebase에 반영, GO 상태로 저장할 때만 새 작지로 이동 (전환 후에는 되돌릴 수 없음)
-        card.querySelector(".ref-save-btn").addEventListener("click", ()=>{
-          const statusToSave = pendingRefStatus[id] !== undefined ? pendingRefStatus[id] : (r.status || "");
-          cardRef.update({ status: statusToSave });
-          delete pendingRefStatus[id];
-          if(statusToSave === "go") convertRefToWorkOrder_(id, r);
+          const newStatus = effStatus === "drop" ? "" : "drop";
+          cardRef.update({ status: newStatus });
         });
       }
 
       card.querySelector(".ref-delete-btn").addEventListener("click", ()=>{
         if(confirm("이 레퍼런스를 정말 삭제하시겠습니까? 이미 전환된 작지는 함께 삭제되지 않습니다.")){
-          delete pendingRefStatus[id];
           refPhotoStorage.child(id).listAll().then(res=>{
             res.items.forEach(item=> item.delete().catch(()=>{}));
           }).catch(()=>{});
@@ -3174,15 +3955,25 @@
       });
 
       card.querySelector(".ref-price-input").addEventListener("input", e=> refSaveSoon({ targetPrice: e.target.value }));
+      {
+        const dateInput = card.querySelector(".ref-meeting-date-input");
+        dateInput.addEventListener("click", e=>{ if(e.target.showPicker){ try{ e.target.showPicker(); }catch(err){} } });
+        dateInput.addEventListener("change", e=>{
+          const wrap = e.target.closest(".ref-date-pill-wrap");
+          const val = e.target.value;
+          wrap.classList.toggle("has-date", !!val);
+          cardRef.update({ meetingDate: val }).then(()=>{
+            lastRefDateTabsSig_ = null;
+            renderRefDateTabs_();
+          });
+        });
+      }
       card.querySelector(".ref-memo-input").addEventListener("input", e=> refSaveSoon({ memo: e.target.value }));
       card.querySelector(".buy-btn").addEventListener("click", ()=>{
         cardRef.update({ sampleStatus: r.sampleStatus === "buy" ? "" : "buy" });
       });
       card.querySelector(".none-btn").addEventListener("click", ()=>{
         cardRef.update({ sampleStatus: r.sampleStatus === "none" ? "" : "none" });
-      });
-      card.querySelector(".product-fit-btn").addEventListener("click", ()=>{
-        cardRef.update({ productFit: !r.productFit });
       });
       card.querySelector(".sku-weekly-btn").addEventListener("click", ()=>{
         cardRef.update({ skuWeekly: !r.skuWeekly });
@@ -3335,6 +4126,7 @@
     $("#galleryView").style.display = "none";
     $("#moodboardView").style.display = "none";
     $("#quickOrderView").style.display = "none";
+    $("#sampleMgmtView").style.display = "none";
     $("#editorView").style.display = "block";
     $("#mainBar").style.display = "flex";
   }
@@ -3343,6 +4135,7 @@
       if(btn.dataset.main === "sales") showSales();
       else if(btn.dataset.main === "moodboard") showMoodboard();
       else if(btn.dataset.main === "quickorder") showQuickOrder();
+      else if(btn.dataset.main === "samplemgmt2") showSampleMgmt2();
       else showGallery();
     });
   });
@@ -3355,8 +4148,11 @@
     $("#materials").value="";
     $("#fabricExpectedArrivalDate").value=""; $("#fabricActualArrivalDate").value=""; $("#fabricDelayReason").value="";
     $("#factoryExpectedShipDate").value=""; $("#factoryActualShipDate").value=""; $("#factoryDelayReason").value="";
+    $("#productExpectedArrivalDate").value=""; $("#productActualArrivalDate").value=""; $("#productDelayReason").value="";
     ["predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection","refLink"].forEach(id=> $("#"+id).value="");
     updateRefLinkMode_();
+    sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
+    renderSampleRecovery_();
     const outputEl = document.getElementById("output");
     if(outputEl){
       outputEl.value = "";
@@ -3527,6 +4323,10 @@
   $("#galleryTabs").addEventListener("click", (e)=>{
     const btn = e.target.closest(".gtab");
     if(!btn) return;
+    if(btn.dataset.status === "samplemgmt"){
+      showSampleMgmt2(); // "샘플관리" 필터는 목록 필터링 대신 샘플관리 표로 이동
+      return;
+    }
     galleryFilter = btn.dataset.status;
     $("#galleryTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b===btn));
     renderGallery();
@@ -3560,7 +4360,7 @@
   $("#prevBtnEditor").addEventListener("click", ()=> stepWorkOrder_(-1));
   $("#nextBtnEditor").addEventListener("click", ()=> stepWorkOrder_(1));
   // 목록 화면의 이전/다음은 상태 탭을 순환 (전체가 첫 자리이므로 그 다음부터 순환)
-  const STATUS_TAB_ORDER = ["all","planned","sampling","samplemgmt","order","pdp","drop"];
+  const STATUS_TAB_ORDER = ["all","planned","sampling","samplemgmt","order","pdp","sale","drop"];
   function stepGalleryTab_(direction){
     let idx = STATUS_TAB_ORDER.indexOf(galleryFilter);
     if(idx === -1) idx = 0;
@@ -3574,12 +4374,33 @@
   // ---------- 발주서 (품명 검색 → 바로 아래에 발주 폼, 공장/원단은 골라둔 품목 정보로 자동 채움) ----------
   let selectedQO_ = null; // { code, pumMyeong, factory, fabricSupplierField, fabricNameField }
 
+  let qoStatusFilterVal = "all";
+  (function initQoStatusFilter_(){
+    const wrap = $("#qoStatusFilter");
+    STATUS_LIST.forEach(s=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.qostatus = s.key;
+      btn.textContent = s.emoji + " " + s.label;
+      wrap.appendChild(btn);
+    });
+    wrap.querySelectorAll("button[data-qostatus]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        wrap.querySelectorAll("button").forEach(b=> b.classList.remove("active"));
+        btn.classList.add("active");
+        qoStatusFilterVal = btn.dataset.qostatus;
+        qoRenderSearchResults_($("#qoSearchInput").value);
+      });
+    });
+  })();
+
   function qoRenderSearchResults_(query){
     const box = $("#qoSearchResults");
     const q = query.trim().toLowerCase();
-    if(!q){ box.style.display = "none"; box.innerHTML = ""; return; }
+    if(!q && qoStatusFilterVal === "all"){ box.style.display = "none"; box.innerHTML = ""; return; }
     const matches = Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> code.toLowerCase().includes(q) || (st.pumMyeong || "").toLowerCase().includes(q))
+      .filter(([code, st])=> qoStatusFilterVal === "all" || (st.status || "planned") === qoStatusFilterVal)
+      .filter(([code, st])=> !q || code.toLowerCase().includes(q) || (st.pumMyeong || "").toLowerCase().includes(q))
       .sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0))
       .slice(0, 8);
     box.innerHTML = matches.length
@@ -3613,7 +4434,6 @@
     $("#qoSelBlend").textContent = st.blend || "-";
     $("#qoSelFabricEta").textContent = st.fabricExpectedArrivalDate || "-";
     $("#qoSelFactoryEta").textContent = st.factoryExpectedShipDate || "-";
-    $("#qoYardInput").value = "";
     $("#qoSelectedInfo").style.display = "flex";
     $("#qoOrderForm").style.display = "block";
     qoLookupNegoPrice_(selectedQO_.fabricSupplierField, selectedQO_.fabricNameField);
@@ -3685,6 +4505,54 @@
   qoAddColorBlock();
   $("#qoAddColor").addEventListener('click', ()=> qoAddColorBlock());
 
+  // 원단발주 블록: 컬러(원단명) + 1장당 야드 × 장수 = 총 야드 (자동 계산)
+  const qoFabricBlocks = $("#qoFabricBlocks");
+  function qoAddFabricBlock(){
+    const block = document.createElement('div');
+    block.className = 'fabric-block';
+    block.innerHTML = `
+      <div class="fabric-block-head">
+        <input type="text" class="fabricColorName" placeholder="컬러 또는 원단명 예) 블랙">
+        <button type="button" class="removeColor">×</button>
+      </div>
+      <div class="fabric-calc-row">
+        <div><label>1장당 야드</label><input type="text" class="perPieceYard" placeholder="예) 1.2"></div>
+        <div><label>장수</label><input type="text" class="pieceCount" placeholder="예) 10"></div>
+        <div><label>총 야드</label><div class="fabric-total">0</div></div>
+      </div>
+    `;
+    block.querySelector('.removeColor').addEventListener('click', ()=>{
+      if(qoFabricBlocks.children.length > 1){ block.remove(); }
+    });
+    const perYardInput = block.querySelector('.perPieceYard');
+    const countInput = block.querySelector('.pieceCount');
+    const totalEl = block.querySelector('.fabric-total');
+    function recalcFabricTotal(){
+      const perYard = numf(perYardInput.value) || 0;
+      const count = numf(countInput.value) || 0;
+      const total = perYard * count;
+      totalEl.textContent = total ? (Math.round(total * 100) / 100) : '0';
+    }
+    perYardInput.addEventListener('input', recalcFabricTotal);
+    countInput.addEventListener('input', recalcFabricTotal);
+    qoFabricBlocks.appendChild(block);
+  }
+  qoAddFabricBlock();
+  $("#qoAddFabricBlock").addEventListener('click', ()=> qoAddFabricBlock());
+
+  // 발주유형: 공장발주 ↔ 원단발주 (폼 자체가 바뀜)
+  const qoOrderCategorySeg = $("#qoOrderCategory");
+  let qoOrderCategoryVal = '공장발주';
+  qoOrderCategorySeg.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      qoOrderCategorySeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      qoOrderCategoryVal = btn.dataset.value;
+      $("#qoFactoryBlocksWrap").style.display = qoOrderCategoryVal === '공장발주' ? 'block' : 'none';
+      $("#qoFabricBlocksWrap").style.display = qoOrderCategoryVal === '원단발주' ? 'block' : 'none';
+    });
+  });
+
   const qoOrderTypeSeg = $("#qoOrderType");
   let qoOrderTypeVal = '초기발주';
   qoOrderTypeSeg.querySelectorAll('button').forEach(btn=>{
@@ -3709,43 +4577,70 @@
 
   qoOrderSubmitBtn.addEventListener('click', async ()=>{
     if(!selectedQO_){ setQoOrderStatus('err', '먼저 위에서 품목을 검색해서 골라주세요.'); return; }
-    const factory = selectedQO_.factory;
     const itemName = selectedQO_.pumMyeong;
     const orderDate = $("#qoOrderDate").value;
-    const yardVal = $("#qoYardInput").value.trim();
-    const memoRaw = $("#qoOrderMemo").value.trim();
-    const memo = (yardVal ? `[원단 ${yardVal}야드] ` : "") + memoRaw;
+    const memo = $("#qoOrderMemo").value.trim();
+    const isFabric = qoOrderCategoryVal === '원단발주';
+    // 원단발주는 원단처로, 공장발주는 공장으로 (같은 칸에 들어가지만 발주유형에 맞는 이름을 넣음)
+    const factory = isFabric ? (selectedQO_.fabricSupplierField || selectedQO_.factory) : selectedQO_.factory;
 
     const orders = [];
     let hasError = false;
 
-    qoColorBlocks.querySelectorAll('.color-block').forEach(block=>{
-      const colorName = block.querySelector('.colorName').value.trim();
-      const sizeRows = [...block.querySelectorAll('.size-row')].map(row=>({
-        s: row.querySelector('.sizeLabel').value.trim(),
-        q: row.querySelector('.sizeQty').value.trim()
-      })).filter(r=> r.s && r.q);
-      if(colorName && sizeRows.length > 0){
-        sizeRows.forEach(r=>{
+    if(!isFabric){
+      qoColorBlocks.querySelectorAll('.color-block').forEach(block=>{
+        const colorName = block.querySelector('.colorName').value.trim();
+        const sizeRows = [...block.querySelectorAll('.size-row')].map(row=>({
+          s: row.querySelector('.sizeLabel').value.trim(),
+          q: row.querySelector('.sizeQty').value.trim()
+        })).filter(r=> r.s && r.q);
+        if(colorName && sizeRows.length > 0){
+          sizeRows.forEach(r=>{
+            orders.push({
+              orderType: qoOrderTypeVal,
+              orderCategory: '공장발주',
+              factory: factory,
+              itemName: itemName,
+              color: colorName,
+              size: formatSizeLabel_(r.s),
+              qty: formatQty_(r.q),
+              unit: '장',
+              orderDate: orderDate,
+              memo: memo
+            });
+          });
+        } else if(colorName || sizeRows.length > 0){
+          hasError = true;
+        }
+      });
+    } else {
+      qoFabricBlocks.querySelectorAll('.fabric-block').forEach(block=>{
+        const colorName = block.querySelector('.fabricColorName').value.trim();
+        const perYard = numf(block.querySelector('.perPieceYard').value) || 0;
+        const count = numf(block.querySelector('.pieceCount').value) || 0;
+        const totalYard = Math.round(perYard * count * 100) / 100;
+        if(colorName && totalYard > 0){
           orders.push({
             orderType: qoOrderTypeVal,
+            orderCategory: '원단발주',
             factory: factory,
             itemName: itemName,
             color: colorName,
-            size: formatSizeLabel_(r.s),
-            qty: formatQty_(r.q),
+            size: '',
+            qty: totalYard,
+            unit: '야드',
             orderDate: orderDate,
-            memo: memo
+            memo: (perYard && count ? `1장당 ${perYard}야드 × ${count}장` : '') + (memo ? ' · ' + memo : '')
           });
-        });
-      } else if(colorName || sizeRows.length > 0){
-        hasError = true;
-      }
-    });
+        } else if(colorName || perYard || count){
+          hasError = true;
+        }
+      });
+    }
 
-    if(!factory){ setQoOrderStatus('err', '고르신 품목에 공장/원단처명이 비어있습니다. 작업지시서에서 먼저 채워주세요.'); return; }
-    if(orders.length === 0){ setQoOrderStatus('err', '컬러와 사이즈별 수량을 최소 한 블록 입력해주세요.'); return; }
-    if(hasError){ setQoOrderStatus('err', '컬러명과 사이즈 수량을 모두 채워주세요. 일부만 입력된 블록이 있습니다.'); return; }
+    if(!factory){ setQoOrderStatus('err', (isFabric ? '고르신 품목에 원단처명이' : '고르신 품목에 공장명이') + ' 비어있습니다. 작업지시서에서 먼저 채워주세요.'); return; }
+    if(orders.length === 0){ setQoOrderStatus('err', isFabric ? '컬러(원단)와 1장당 야드·장수를 최소 한 블록 입력해주세요.' : '컬러와 사이즈별 수량을 최소 한 블록 입력해주세요.'); return; }
+    if(hasError){ setQoOrderStatus('err', '일부만 입력된 블록이 있습니다. 빠짐없이 채워주세요.'); return; }
 
     qoOrderSubmitBtn.disabled = true;
     setQoOrderStatus('pending', '제출하는 중입니다...');
@@ -3759,11 +4654,17 @@
       setQoOrderStatus('ok', '발주가 접수됐습니다. 구글 공용시트와 슬랙에 자동으로 올라갑니다.');
       qoColorBlocks.innerHTML = '';
       qoAddColorBlock();
+      qoFabricBlocks.innerHTML = '';
+      qoAddFabricBlock();
       $("#qoOrderMemo").value = '';
-      $("#qoYardInput").value = '';
       qoOrderTypeSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
       qoOrderTypeSeg.querySelector('button').classList.add('active');
       qoOrderTypeVal = '초기발주';
+      qoOrderCategorySeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      qoOrderCategorySeg.querySelector('button').classList.add('active');
+      qoOrderCategoryVal = '공장발주';
+      $("#qoFactoryBlocksWrap").style.display = 'block';
+      $("#qoFabricBlocksWrap").style.display = 'none';
     }catch(err){
       setQoOrderStatus('err', '제출 중 문제가 생겼습니다. 다시 시도하거나 관리자에게 알려주세요.');
     }finally{
@@ -3789,10 +4690,14 @@
     if(!code){ return; }
     const ok = confirm(`"${code}" ${itemName}\n정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
     if(!ok) return;
+    justDeletedCode_ = code; // 삭제 확정 순간부터 이 품번에 대한 자동저장은 전부 무시
     clearTimeout(saveT); // 방금까지 입력하던 내용이 뒤늦게 자동저장되어 삭제한 항목이 되살아나는 것 방지
     woRoot.child(code).remove().then(()=>{
+      clearTimeout(saveT); // confirm창 뜨는 사이 blur로 새로 걸렸을 수 있는 자동저장 타이머도 한 번 더 취소
       showGallery();
+      setTimeout(()=>{ if(justDeletedCode_ === code) justDeletedCode_ = null; }, 3000);
     }).catch(err=>{
+      justDeletedCode_ = null;
       alert("삭제 중 문제가 발생했습니다: " + err.message);
     });
   });
@@ -3807,6 +4712,7 @@
   // 자동저장 (디바운스)
   let saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(save, 300); }
   document.addEventListener("input", saveSoon);
+  document.addEventListener("input", updateSampleFieldHighlights_);
   document.addEventListener("change", saveSoon);
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
