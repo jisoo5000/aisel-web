@@ -201,14 +201,27 @@
   .sm-weekly-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
   .sm-weekly-chip { padding: 6px 12px; border-radius: 999px; background: var(--field); border: 1px solid var(--hair); font-size: 12.5px; font-weight: 700; color: var(--ink); }
   .sm-table-wrap { overflow-x: auto; border: 1px solid var(--hair); border-radius: 10px; }
-  .sm-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 900px; }
+  .sm-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 980px; table-layout: fixed; }
   .sm-table th { background: #2F3B52; color: #fff; padding: 9px 8px; font-size: 12px; font-weight: 700; text-align: left; white-space: nowrap; }
   .sm-table td { padding: 6px 7px; border-bottom: 1px solid var(--hair); vertical-align: middle; }
   .sm-table tr:last-child td { border-bottom: none; }
   .sm-table input, .sm-table select { width: 100%; box-sizing: border-box; padding: 5px 7px; font-size: 12.5px; border: 1px solid var(--hair); border-radius: 6px; }
-  .sm-table input[type=date] { min-width: 130px; }
+  .sm-table th:nth-child(1), .sm-table td:nth-child(1) { width: 190px; }
+  .sm-table th:nth-child(2), .sm-table td:nth-child(2) { width: 90px; }
+  .sm-table th:nth-child(3), .sm-table td:nth-child(3) { width: 70px; }
+  .sm-table th:nth-child(4), .sm-table td:nth-child(4) { width: 70px; }
+  .sm-table th:nth-child(5), .sm-table td:nth-child(5) { width: 70px; }
+  .sm-table th:nth-child(6), .sm-table td:nth-child(6) { width: 118px; }
+  .sm-table th:nth-child(7), .sm-table td:nth-child(7) { width: 118px; }
+  .sm-table th:nth-child(8), .sm-table td:nth-child(8) { width: 100px; }
+  .sm-table th:nth-child(9), .sm-table td:nth-child(9) { width: 70px; }
+  .sm-table th:nth-child(10), .sm-table td:nth-child(10) { width: 34px; }
+  .sm-table input[type=date] { min-width: 0; padding: 5px 4px; }
+  .sm-table select { padding: 5px 3px; }
   .sm-table input.sm-overdue { background: #FCE4EC; border-color: #F3B4C8; }
   .sm-table input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
+  .sm-recognized-cell { display: flex; align-items: center; gap: 6px; }
+  .sm-recognized-ordinal { font-size: 11px; color: var(--muted); font-weight: 700; white-space: nowrap; }
   .sm-del-btn { border: none; background: none; color: #A03B1E; cursor: pointer; font-size: 14px; }
   .sm-empty { padding: 30px; text-align: center; color: var(--muted); font-size: 13px; }
   .mb-judge-convert-btn { height: 36px; padding: 0 16px; border-radius: 8px; border: none; font-weight: 700; font-size: 13.5px; cursor: pointer; width: fit-content; background: #2F3B52; color: #fff; display: inline-flex; align-items: center; box-sizing: border-box; }
@@ -994,13 +1007,23 @@
     <h2>🧵 샘플관리</h2>
     <button type="button" class="btn ghost nav-btn" id="smSyncBtn">🔄 샘플중 작지 불러오기</button>
   </div>
+  <div class="gallery-tabs" id="smStatusTabs">
+    <button type="button" class="gtab" data-status="all">전체</button>
+    <button type="button" class="gtab" data-status="planned">📅 예정</button>
+    <button type="button" class="gtab" data-status="sampling">🧵 샘플중</button>
+    <button type="button" class="gtab active" data-status="samplemgmt">🗂️ 샘플관리</button>
+    <button type="button" class="gtab" data-status="order">🏭 발주생산</button>
+    <button type="button" class="gtab" data-status="pdp">🖼️ PDP</button>
+    <button type="button" class="gtab" data-status="sale">🛍️ 판매</button>
+    <button type="button" class="gtab" data-status="drop">⏸️ 드롭</button>
+  </div>
   <div class="sm-weekly-bar" id="smWeeklyBar"></div>
   <div class="sm-table-wrap">
     <table class="sm-table">
       <thead>
         <tr>
-          <th>품명</th><th>컬러</th><th>사이즈</th><th>샘플요청일</th><th>샘플완성일</th>
-          <th>재샘플</th><th>샘플수거</th><th>인정</th><th>주차</th><th></th>
+          <th>품명</th><th>주차</th><th>확인</th><th>컬러</th><th>사이즈</th><th>샘플요청일</th><th>샘플완성일</th>
+          <th>재샘플</th><th>샘플수거</th><th></th>
         </tr>
       </thead>
       <tbody id="smTableBody"></tbody>
@@ -2789,7 +2812,7 @@
     $("#quickOrderView").style.display = "none";
     $("#sampleMgmtView").style.display = "block";
     $("#mainBar").style.display = "flex";
-    setMainTabActive_("samplemgmt2");
+    setMainTabActive_("orders"); // 샘플관리는 작업지시서 안에 있는 화면이라 상단 탭은 작업지시서로 표시
     initSampleMgmt_();
   }
 
@@ -2857,7 +2880,7 @@
     demand: "남들도 파나(검증) 또는 나만 파나(빈틈)"
   };
   const COST_BASIS_OPTIONS = [
-    { key: "standard", label: "5-6만원" }, { key: "exception", label: "예외(독점)" }
+    { key: "standard", label: "5-6만원" }, { key: "exception", label: "예외(독점)" }, { key: "etc", label: "기타" }
   ];
   const COST_COMBO_OPTIONS = [
     { key: "fabric", label: "원단 고급 → 패턴단순+다이마루" },
@@ -2880,8 +2903,11 @@
     slim: "예) 허리라인 강조", rich: "예) 셋업으로 부자 이미지", comfort: "예) 밴딩 허리 편안함"
   };
   const DEMAND_OPTIONS = [
-    { key: "proven", label: "검증 · 남들도 판다" }, { key: "gap", label: "빈틈 · 나만 판다" }, { key: "exclusive", label: "독점(가격 예외)" }
+    { key: "proven", label: "검증" }, { key: "gap", label: "빈틈" }, { key: "exclusive", label: "독점(가격 예외)" }
   ];
+  const DEMAND_PLACEHOLDER = {
+    proven: "예) 다른 브랜드에서도 잘 팔림", gap: "예) 이 조합은 아직 아무도 안 함"
+  };
   const HOOK_OPTIONS = [
     { key: "possible", label: "가능" }, { key: "impossible", label: "불가능" }
   ];
@@ -3011,6 +3037,12 @@
       costItem.appendChild(makeComboRow_(COST_BASIS_OPTIONS, p.costBasis, key=>{
         photoRef.update({ costBasis: p.costBasis === key ? "" : key });
       }));
+      if(p.costBasis){
+        costItem.appendChild(makeDetailInput_("얼마인지 (원) — 레퍼런스에 타겟가 있으면 자동으로 채워짐", p.costAmount || p.targetPrice || "", v=> photoRef.update({ costAmount: v })));
+        if(p.costBasis === "etc"){
+          costItem.appendChild(makeDetailInput_("기타 사유", p.costEtcReason, v=> photoRef.update({ costEtcReason: v })));
+        }
+      }
       costItem.appendChild(makeComboRow_(COST_COMBO_OPTIONS, p.costCombo, key=>{
         photoRef.update({ costCombo: p.costCombo === key ? "" : key });
       }));
@@ -3087,6 +3119,12 @@
         const nowOn = p.demandTag === key;
         photoRef.update({ demandTag: nowOn ? "" : key, demand: !nowOn });
       }));
+      if(p.demandTag === "proven" || p.demandTag === "gap"){
+        const demandDetails = p.demandDetails || {};
+        demandItem.appendChild(makeDetailInput_(DEMAND_PLACEHOLDER[p.demandTag], demandDetails[p.demandTag], v=>{
+          photoRef.update({ demandDetails: { ...demandDetails, [p.demandTag]: v } });
+        }));
+      }
       grid2.appendChild(demandItem);
 
       body.appendChild(grid2);
@@ -3166,6 +3204,16 @@
     alert(added ? `${added}개를 샘플관리에 새로 불러왔습니다.` : "이미 다 등록돼 있어서 새로 불러올 게 없습니다.");
   });
 
+  $("#smStatusTabs").addEventListener("click", (e)=>{
+    const btn = e.target.closest(".gtab");
+    if(!btn) return;
+    if(btn.dataset.status === "samplemgmt") return; // 이미 이 화면
+    galleryFilter = btn.dataset.status;
+    showGallery();
+    $("#galleryTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b.dataset.status===galleryFilter));
+    renderGallery();
+  });
+
   function sampleMgmtCompleteDefault_(requestDate){
     if(!requestDate) return "";
     const d = new Date(requestDate);
@@ -3180,7 +3228,7 @@
     tbody.innerHTML = "";
     $("#smEmpty").style.display = entries.length ? "none" : "block";
 
-    // 주차별 "인정" 샘플 개수만 표시 (금액은 화면에 안 보여줌 — 디자이너도 보는 화면이라)
+    // 주차별 "확인" 샘플 개수만 요약으로 표시 (금액은 화면에 안 보여줌 — 디자이너도 보는 화면이라)
     const weekCounts = {};
     entries.forEach(([id, s])=>{
       if(s.recognized === false) return;
@@ -3189,7 +3237,7 @@
     });
     $("#smWeeklyBar").innerHTML = Object.entries(weekCounts)
       .sort((a,b)=> a[0].localeCompare(b[0], "ko"))
-      .map(([wk,count])=> `<span class="sm-weekly-chip">${wk} · 인정 샘플 ${count}개</span>`).join("");
+      .map(([wk,count])=> `<span class="sm-weekly-chip">${wk} · 확인 샘플 ${count}개</span>`).join("");
 
     entries.forEach(([id, s])=>{
       const row = document.createElement("tr");
@@ -3202,6 +3250,17 @@
 
       row.innerHTML = `
         <td><input type="text" class="sm-pum" value="${(s.pumMyeong||"").replace(/"/g,"&quot;")}" placeholder="작업지시서에서 선택"></td>
+        <td>
+          <select class="sm-week">
+            <option value="" ${!s.week?"selected":""}>-</option>
+            <option value="1주차" ${s.week==="1주차"?"selected":""}>1주차</option>
+            <option value="2주차" ${s.week==="2주차"?"selected":""}>2주차</option>
+            <option value="3주차" ${s.week==="3주차"?"selected":""}>3주차</option>
+            <option value="4주차" ${s.week==="4주차"?"selected":""}>4주차</option>
+            <option value="5주차" ${s.week==="5주차"?"selected":""}>5주차</option>
+          </select>
+        </td>
+        <td style="text-align:center"><input type="checkbox" class="sm-recognized" ${recognized?"checked":""}></td>
         <td><input type="text" class="sm-color" value="${(s.color||"").replace(/"/g,"&quot;")}"></td>
         <td><input type="text" class="sm-size" value="${(s.size||"").replace(/"/g,"&quot;")}"></td>
         <td><input type="date" class="sm-reqdate" value="${s.requestDate||""}"></td>
@@ -3214,8 +3273,6 @@
           </select>
         </td>
         <td style="text-align:center"><input type="checkbox" class="sm-collected" ${s.collected?"checked":""}></td>
-        <td style="text-align:center"><input type="checkbox" class="sm-recognized" ${recognized?"checked":""}></td>
-        <td><input type="text" class="sm-week" value="${(s.week||"").replace(/"/g,"&quot;")}" placeholder="예) 1주차"></td>
         <td><button type="button" class="sm-del-btn" title="삭제">🗑</button></td>
       `;
       tbody.appendChild(row);
@@ -3227,7 +3284,7 @@
       row.querySelector(".sm-reqdate").addEventListener("change", e=> ref.update({ requestDate: e.target.value }));
       row.querySelector(".sm-compdate").addEventListener("change", e=> ref.update({ completeDate: e.target.value }));
       row.querySelector(".sm-resample").addEventListener("change", e=> ref.update({ resample: e.target.value }));
-      row.querySelector(".sm-week").addEventListener("change", e=> ref.update({ week: e.target.value.trim() }));
+      row.querySelector(".sm-week").addEventListener("change", e=> ref.update({ week: e.target.value }));
       row.querySelector(".sm-recognized").addEventListener("change", e=> ref.update({ recognized: e.target.checked }));
       row.querySelector(".sm-collected").addEventListener("change", e=>{
         const checked = e.target.checked;
@@ -3412,7 +3469,7 @@
       for(const [id, r] of cardsForDate){
         if(r.photo){
           const photoRef = meetingRoot.child(meetingId).child("photos").push();
-          await photoRef.set({ url: r.photo, order: orderBase++, createdAt: Date.now(), link: r.link || "", memo: r.memo || "" });
+          await photoRef.set({ url: r.photo, order: orderBase++, createdAt: Date.now(), link: r.link || "", memo: r.memo || "", targetPrice: r.targetPrice || "" });
         }
       }
       for(const [id] of decided){
