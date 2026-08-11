@@ -136,6 +136,14 @@
   .sample-recovery-row.overdue .sample-recovery-seg button.active[data-value="factory"] { background: #C0392B; }
   .sample-recovery-row.overdue .sample-recovery-dates { color: #A03B1E; font-weight: 700; }
   .mainbar { max-width: 1100px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 12px; }
+  .home-add-btn { margin-left: auto; }
+  .home-add-modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .home-add-modal { background: var(--sheet); border-radius: 14px; padding: 22px; max-width: 380px; width: 100%; }
+  .home-add-modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
+  .home-add-modal-body { font-size: 13.5px; line-height: 1.7; color: var(--ink); margin-bottom: 18px; white-space: pre-line; }
   .maintab {
     flex: 1; padding: 10px 10px; border-radius: 6px; border: 1px solid var(--field-line);
     background: var(--field); font-weight: 700; font-size: 14px; cursor: pointer; color: var(--muted);
@@ -165,6 +173,7 @@
     font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
   .mb-judge-photo-actions { display: flex; gap: 8px; padding: 8px; background: var(--sheet); border-top: 1px solid var(--hair); }
+  .mb-judge-delete-btn { flex: 0 0 auto; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--hair); background: var(--sheet); color: #A03B1E; font-size: 14px; cursor: pointer; }
   .mb-judge-photo-actions .mb-judge-convert-btn { flex: 1; justify-content: center; }
   .mb-judge-photo-actions .mb-judge-drop-btn { flex: 0 0 auto; justify-content: center; }
   @media (max-width:700px){ .mb-judge-card{ flex-direction: column; max-height: none; } .mb-judge-photo-box{ flex-basis:auto; max-width:100%; min-height:220px; border-right:none; border-bottom:1.5px solid var(--hair); } }
@@ -196,6 +205,8 @@
     padding: 5px 8px; font-size: 11.5px; border: 1px solid var(--hair); border-radius: 6px; width: 100%; box-sizing: border-box;
   }
   .mb-judge-detail-input { margin-top: 2px; }
+  .mb-judge-cost-toprow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .mb-judge-cost-amount { width: 130px; flex: 0 0 auto; margin-top: 0; }
   .mb-judge-memo {
     width: 100%; box-sizing: border-box; padding: 6px 9px; font-size: 12px; border: 1px solid var(--hair); border-radius: 7px;
     resize: vertical; min-height: 34px; font-family: inherit;
@@ -306,6 +317,13 @@
   .ref-body { flex: 1; min-width: 0; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
   .ref-calc-toggle { padding: 4px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--hair); background: var(--sheet); color: #2F3B52; cursor: pointer; }
   .ref-calc-box { border: 1px dashed var(--hair); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 8px; background: var(--bg); }
+  .ref-suggest-sale-price { font-size: 12.5px; font-weight: 700; color: #2F3B52; background: #EAF1FB; padding: 6px 10px; border-radius: 7px; }
+  .opportunity-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+  .opportunity-badge.great { background: #E6F4EA; color: #1E7A34; }
+  .opportunity-badge.good { background: #EDF3E6; color: #4F7A3A; }
+  .opportunity-badge.neutral { background: #F0F0F0; color: #777; }
+  .opportunity-badge.caution { background: #FFF3D6; color: #7a5c00; }
+  .opportunity-badge.danger { background: #FBEEEC; color: #A03B1E; }
   .ref-calc-group-label { font-size: 11px; color: var(--muted); font-weight: 700; }
   .ref-calc-btns { display: flex; flex-wrap: wrap; gap: 6px; }
   .ref-calc-btn { padding: 5px 10px; font-size: 11.5px; border-radius: 999px; border: 1px solid var(--hair); background: var(--sheet); color: var(--muted); cursor: pointer; }
@@ -1011,6 +1029,15 @@
   <button type="button" class="maintab" data-main="orders">📋 작업지시서</button>
   <button type="button" class="maintab" data-main="moodboard">🖼️ 무드보드</button>
   <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">🧾 발주서</button>
+  <button type="button" class="maintab home-add-btn" id="homeAddBtn">📱 홈 화면에 추가</button>
+</div>
+
+<div class="home-add-modal-overlay" id="homeAddModalOverlay" style="display:none">
+  <div class="home-add-modal">
+    <div class="home-add-modal-title">📱 홈 화면에 추가하기</div>
+    <div class="home-add-modal-body" id="homeAddModalBody"></div>
+    <button type="button" class="btn ghost nav-btn" id="homeAddModalCloseBtn">닫기</button>
+  </div>
 </div>
 
 <div class="gallery" id="sampleMgmtView" style="display:none">
@@ -1149,8 +1176,7 @@
       <div class="mb-refs-filters" id="mbRefsFilters">
         <button type="button" class="gtab active" data-reffilter="all">전체</button>
       </div>
-      <button type="button" class="btn ghost nav-btn" id="refCollectToMeetingBtn">🖼️ 무드보드 작성</button>
-      <button type="button" class="btn ghost nav-btn" id="refExportSheetBtn">📤 구글시트로 보내기</button>
+      <button type="button" class="btn ghost nav-btn" id="refExportSheetBtn">📤 구글시트로 저장</button>
       <button type="button" class="btn ghost drop-btn" id="refDeleteAllBtn">전체 삭제</button>
     </div>
     <div class="ref-paste-hint">컴퓨터에서는 이 화면에 캡처한 이미지를 Ctrl+V로 바로 붙여넣을 수도 있습니다.</div>
@@ -3055,6 +3081,17 @@
       dropBtnTop.textContent = p.dropped ? "DROP 취소" : "DROP";
       dropBtnTop.addEventListener("click", ()=> photoRef.update({ dropped: !p.dropped }));
       photoActions.appendChild(dropBtnTop);
+      const deletePhotoBtn = document.createElement("button");
+      deletePhotoBtn.type = "button";
+      deletePhotoBtn.className = "mb-judge-delete-btn";
+      deletePhotoBtn.textContent = "🗑";
+      deletePhotoBtn.title = "이 사진 완전히 삭제";
+      deletePhotoBtn.addEventListener("click", ()=>{
+        if(confirm("이 사진을 무드보드에서 완전히 삭제할까요? (판별 체크 내용도 같이 사라집니다. 사진 원본은 지워지지 않습니다)")){
+          photoRef.remove();
+        }
+      });
+      photoActions.appendChild(deletePhotoBtn);
       photoBox.appendChild(photoActions);
 
       card.appendChild(photoBox);
@@ -3067,14 +3104,17 @@
 
       // 🔴 원가
       const costItem = makeJudgeItem_("cost", p.cost, ()=> photoRef.update({ cost: !p.cost }));
-      costItem.appendChild(makeComboRow_(COST_BASIS_OPTIONS, p.costBasis, key=>{
+      const costTopRow = document.createElement("div");
+      costTopRow.className = "mb-judge-cost-toprow";
+      costTopRow.appendChild(makeComboRow_(COST_BASIS_OPTIONS, p.costBasis, key=>{
         photoRef.update({ costBasis: p.costBasis === key ? "" : key });
       }));
-      if(p.costBasis){
-        costItem.appendChild(makeDetailInput_("얼마인지 (원) — 레퍼런스에 타겟가 있으면 자동으로 채워짐", p.costAmount || p.targetPrice || "", v=> photoRef.update({ costAmount: v })));
-        if(p.costBasis === "etc"){
-          costItem.appendChild(makeDetailInput_("기타 사유", p.costEtcReason, v=> photoRef.update({ costEtcReason: v })));
-        }
+      const costAmountInput = makeDetailInput_("타겟판매가(원)", p.costAmount || p.targetPrice || "", v=> photoRef.update({ costAmount: v }));
+      costAmountInput.classList.add("mb-judge-cost-amount");
+      costTopRow.appendChild(costAmountInput);
+      costItem.appendChild(costTopRow);
+      if(p.costBasis === "etc"){
+        costItem.appendChild(makeDetailInput_("기타 사유", p.costEtcReason, v=> photoRef.update({ costEtcReason: v })));
       }
       costItem.appendChild(makeComboRow_(COST_COMBO_OPTIONS, p.costCombo, key=>{
         photoRef.update({ costCombo: p.costCombo === key ? "" : key });
@@ -3441,86 +3481,9 @@
         lastRefsSig_ = null;
         renderRefDateTabs_();
         renderRefCards();
-        updateCollectBtnVisibility_();
       });
     });
-    updateCollectBtnVisibility_();
   }
-
-  function updateCollectBtnVisibility_(){
-    const btn = $("#refCollectToMeetingBtn");
-    if(!btn) return;
-    const isRealDate = refDateFilter !== "all" && refDateFilter !== "unset";
-    btn.textContent = isRealDate ? `🖼️ ${refDateFilter} 무드보드 작성` : "🖼️ 무드보드 작성";
-  }
-
-  async function collectDateToMeeting_(dateStr){
-    if(!dateStr || dateStr === "all" || dateStr === "unset"){
-      alert("먼저 위 날짜 탭에서 무드보드로 모을 특정 날짜를 선택해주세요. (예: 2026-08-10 탭)");
-      return;
-    }
-    const cardsForDate = Object.entries(allRefCards).filter(([id,r])=> refDateOf_(r) === dateStr);
-    if(!cardsForDate.length){ alert("이 날짜에 해당하는 레퍼런스가 없습니다."); return; }
-
-    const isDecided = (id, r)=>{
-      return !!r.convertedCode || (r.status || "") === "drop";
-    };
-    const decided = cardsForDate.filter(([id,r])=> isDecided(id,r));
-    const undecided = cardsForDate.filter(([id,r])=> !isDecided(id,r));
-
-    if(!confirm(
-      `${dateStr} 날짜 레퍼런스 ${cardsForDate.length}개를 무드보드 회의로 모을까요?\n\n` +
-      `GO/DROP 결정된 ${decided.length}개는 무드보드로 옮겨지고 레퍼런스 목록에서 삭제됩니다.\n` +
-      `아직 결정 안 된 ${undecided.length}개는 날짜가 "미정"으로 초기화되고 목록에는 남습니다.`
-    )) return;
-
-    const btn = $("#refCollectToMeetingBtn");
-    btn.disabled = true;
-    const originalText = btn.textContent;
-    btn.textContent = "모으는 중...";
-
-    try{
-      let meetingEntry = Object.entries(allMeetings).find(([id,m])=> (m.date||"").trim() === dateStr);
-      let meetingId;
-      if(meetingEntry){
-        meetingId = meetingEntry[0];
-      } else {
-        const newMeeting = meetingRoot.push();
-        meetingId = newMeeting.key;
-        await newMeeting.set({ date: dateStr, title: "", createdAt: Date.now(), photos: {} });
-      }
-
-      let orderBase = Date.now();
-      for(const [id, r] of cardsForDate){
-        if(r.photo){
-          const photoRef = meetingRoot.child(meetingId).child("photos").push();
-          await photoRef.set({ url: r.photo, order: orderBase++, createdAt: Date.now(), link: r.link || "", memo: r.memo || "", targetPrice: r.targetPrice || "" });
-        }
-      }
-      for(const [id] of decided){
-        // 사진 파일은 무드보드가 그대로 이어서 쓰므로 Storage 파일은 지우지 않고 카드 레코드만 지움
-        await refRoot.child(id).remove();
-      }
-      for(const [id] of undecided){
-        await refRoot.child(id).update({ meetingDate: "" });
-      }
-
-      refDateFilter = "all";
-      lastRefDateTabsSig_ = null;
-      lastRefsSig_ = null;
-      renderRefDateTabs_();
-      renderRefCards();
-      alert(`완료했습니다. ${decided.length}개는 무드보드 ${dateStr} 회의로 옮겨졌고 ${undecided.length}개는 미정으로 돌아갔습니다.`);
-    }catch(err){
-      alert("모으는 중 문제가 생겼습니다: " + (err && err.message ? err.message : err));
-    }finally{
-      btn.disabled = false;
-      btn.textContent = originalText;
-      updateCollectBtnVisibility_();
-    }
-  }
-
-  $("#refCollectToMeetingBtn").addEventListener("click", ()=> collectDateToMeeting_(refDateFilter));
 
   document.querySelectorAll("#mbSlideSubTabs .gtab[data-slidetab]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -3560,15 +3523,29 @@
     });
   });
 
+  let pendingRefRender_ = false;
   function initRefCollection_(){
     if(refListenerAttached_) return;
     refListenerAttached_ = true;
     refRoot.on("value", (snapshot)=>{
       allRefCards = snapshot.val() || {};
+      if(isTypingNow()){
+        pendingRefRender_ = true; // 지금 어딘가(계산기·링크·메모 등) 입력 중이면 화면을 다시 안 그리고 미뤄둠
+        return;
+      }
       renderRefDateTabs_();
       renderRefCards();
     });
   }
+  document.addEventListener("focusout", ()=>{
+    setTimeout(()=>{
+      if(pendingRefRender_ && !isTypingNow()){
+        pendingRefRender_ = false;
+        renderRefDateTabs_();
+        renderRefCards();
+      }
+    }, 50);
+  });
 
   $("#refDeleteAllBtn").addEventListener("click", ()=>{
     const ids = Object.keys(allRefCards || {});
@@ -3601,8 +3578,10 @@
       r.supply ? `공급${r.supply}` : "",
       r.productFit ? "상품성✅" : "",
       (REF_DETAIL_OPTIONS.find(o=> o.key === r.detailType) || {}).label || "",
-      r.skuWeekly ? "주별SKU10✅" : "",
-      r.skuMonthly ? "월별SKU10✅" : ""
+      r.skuWeekly10 ? "주별핵심SKU10✅" : "",
+      r.skuWeekly20 ? "주별핵심SKU20✅" : "",
+      r.skuMonthly10 ? "월별핵심SKU10✅" : "",
+      r.skuMonthly20 ? "월별핵심SKU20✅" : ""
     ].filter(Boolean).join(" · ");
     const payload = {
       type: "refCollection",
@@ -3610,14 +3589,16 @@
       photoUrl: r.photo || "",
       link: r.link || "",
       status: refStatusLabel_(id, r),
-      sampleStatus: r.sampleStatus === "buy" ? "원샘플구매" : (r.sampleStatus === "none" ? "원샘플없음" : ""),
+      sampleStatus: r.sampleStatus === "buy" ? "원샘플" : (r.sampleStatus === "alt" ? "대체샘플" : (r.sampleStatus === "none" ? "원샘플없음" : "")),
       targetPrice: r.targetPrice || "",
       demand: r.demand || "",
       supply: r.supply || "",
       productFit: r.productFit ? "✅" : "✖️",
       detailType: (REF_DETAIL_OPTIONS.find(o=> o.key === r.detailType) || {}).label || "",
-      skuWeekly: r.skuWeekly ? "✅" : "✖️",
-      skuMonthly: r.skuMonthly ? "✅" : "✖️",
+      skuWeekly10: r.skuWeekly10 ? "✅" : "✖️",
+      skuWeekly20: r.skuWeekly20 ? "✅" : "✖️",
+      skuMonthly10: r.skuMonthly10 ? "✅" : "✖️",
+      skuMonthly20: r.skuMonthly20 ? "✅" : "✖️",
       memo: r.memo || "",
       convertedCode: r.convertedCode || "",
       summary: checks
@@ -3646,7 +3627,7 @@
       if(ok) okCount++;
     }
     btn.disabled = false;
-    btn.textContent = "📤 구글시트로 보내기";
+    btn.textContent = "📤 구글시트로 저장";
     alert(`${okCount}/${entries.length}개를 구글시트로 보냈습니다. 확인하신 뒤 필요하면 전체 삭제로 정리해주세요.`);
   });
 
@@ -3705,7 +3686,7 @@
             status: "", link: "", sampleStatus: "", meetingDate: "",
             targetPrice: "", yard: "", labor: "", etc: "", fabricPrice: "", memo: "",
             demand: "", supply: "", productFit: false, detailType: "",
-            skuWeekly: false, skuMonthly: false,
+            skuWeekly10: false, skuWeekly20: false, skuMonthly10: false, skuMonthly20: false, linkedMeetingId: "",
             convertedCode: ""
           }).then(()=>{
             showRefUploadStatus_("✅ 레퍼런스 카드가 등록됐습니다.", "ok");
@@ -3773,6 +3754,70 @@
 
   let refCalcOpen = {};      // { [id]: true }  계산기 펼침 상태
 
+  // 기회점수 = 수요 − 공급 (참고용 배지, 절대 기준 아님). 레퍼런스 카드·무드보드 판별기 양쪽에서 재사용
+  function renderOpportunityBadge_(slotEl, demand, supply){
+    if(!slotEl) return;
+    const d = Number(demand) || 0, s = Number(supply) || 0;
+    if(!d && !s){ slotEl.innerHTML = ""; return; }
+    const score = d - s;
+    let label, cls;
+    if(score >= 3){ label = "확실한 기회"; cls = "great"; }
+    else if(score >= 1){ label = "괜찮은 기회"; cls = "good"; }
+    else if(score === 0){ label = "애매함"; cls = "neutral"; }
+    else if(score >= -2){ label = "주의"; cls = "caution"; }
+    else { label = "위험"; cls = "danger"; }
+    slotEl.innerHTML = `<span class="opportunity-badge ${cls}">기회점수 ${score > 0 ? "+" + score : score} · ${label}</span>`;
+  }
+
+  // 레퍼런스 카드에 회의 날짜를 찍으면 그 날짜의 무드보드 회의로 실시간 연동 (같은 id로 연결해서 이후 수정도 계속 반영됨)
+  // DROP되거나 날짜가 지워지면 연결된 무드보드 항목에서 빠짐 (원본 사진 파일은 안 지워짐)
+  async function syncRefToMeeting_(id, r){
+    try{
+      const isDropped = (r.status || "") === "drop";
+      const targetDate = (!isDropped && r.meetingDate) ? String(r.meetingDate).trim() : "";
+      const prevMeetingId = r.linkedMeetingId || "";
+
+      if(!targetDate){
+        if(prevMeetingId){
+          await meetingRoot.child(prevMeetingId).child("photos").child(id).remove().catch(()=>{});
+          await refRoot.child(id).update({ linkedMeetingId: "" }).catch(()=>{});
+        }
+        return;
+      }
+
+      let meetingId = null;
+      for(const [mid, m] of Object.entries(allMeetings || {})){
+        if((m.date || "").trim() === targetDate){ meetingId = mid; break; }
+      }
+      if(!meetingId){
+        const newMeeting = meetingRoot.push();
+        meetingId = newMeeting.key;
+        await newMeeting.set({ date: targetDate, title: "", createdAt: Date.now(), photos: {} });
+        allMeetings[meetingId] = { date: targetDate, title: "", createdAt: Date.now(), photos: {} };
+      }
+
+      if(prevMeetingId && prevMeetingId !== meetingId){
+        await meetingRoot.child(prevMeetingId).child("photos").child(id).remove().catch(()=>{});
+      }
+
+      const entry = {
+        url: r.photo || "", link: r.link || "", memo: r.memo || "", targetPrice: r.targetPrice || "",
+        demand: r.demand || "", supply: r.supply || "", productFit: !!r.productFit, detailType: r.detailType || "",
+        sampleStatus: r.sampleStatus || "",
+        skuWeekly10: !!r.skuWeekly10, skuWeekly20: !!r.skuWeekly20,
+        skuMonthly10: !!r.skuMonthly10, skuMonthly20: !!r.skuMonthly20,
+        order: r.createdAt || Date.now(), createdAt: r.createdAt || Date.now()
+      };
+      await meetingRoot.child(meetingId).child("photos").child(id).update(entry).catch(()=>{});
+
+      if(prevMeetingId !== meetingId){
+        await refRoot.child(id).update({ linkedMeetingId: meetingId }).catch(()=>{});
+      }
+    }catch(err){
+      console.error("syncRefToMeeting_ 실패:", err);
+    }
+  }
+
   function renderRefCards(){
     const entries = Object.entries(allRefCards)
       .sort((a,b)=> (b[1].createdAt||0) - (a[1].createdAt||0));
@@ -3783,7 +3828,7 @@
       if(refFilter === "drop") return eff === "drop";
       return true;
     });
-    const sig = JSON.stringify({ f: refFilter, d: refDateFilter, items: entries.map(([id,r])=> [id, r.status, r.link, r.sampleStatus, r.targetPrice, r.yard, r.labor, r.fabricPrice, r.demand, r.supply, r.productFit, r.detailType, r.skuWeekly, r.skuMonthly, r.memo, r.convertedCode, r.meetingDate]) });
+    const sig = JSON.stringify({ f: refFilter, d: refDateFilter, items: entries.map(([id,r])=> [id, r.status, r.link, r.sampleStatus, r.targetPrice, r.yard, r.labor, r.fabricPrice, r.demand, r.supply, r.productFit, r.detailType, r.skuWeekly10, r.skuWeekly20, r.skuMonthly10, r.skuMonthly20, r.memo, r.convertedCode, r.meetingDate]) });
     if(sig === lastRefsSig_) return;
     lastRefsSig_ = sig;
 
@@ -3870,7 +3915,8 @@
       row3.className = "ref-row";
       row3.innerHTML = `
         <div class="ref-toggle-group">
-          <button type="button" class="ref-toggle-btn buy-btn ${r.sampleStatus==='buy'?'buy-on':''}">원샘플구매</button>
+          <button type="button" class="ref-toggle-btn buy-btn ${r.sampleStatus==='buy'?'buy-on':''}">원샘플</button>
+          <button type="button" class="ref-toggle-btn alt-btn ${r.sampleStatus==='alt'?'buy-on':''}">대체샘플</button>
           <button type="button" class="ref-toggle-btn none-btn ${r.sampleStatus==='none'?'none-on':''}">원샘플없음</button>
         </div>
         <input type="number" class="ref-price-input" placeholder="타겟판매가" value="${r.targetPrice||""}">
@@ -3904,6 +3950,7 @@
           <div class="ref-calc-field"><label>기타</label><input type="number" step="100" class="ref-calc-etc" value="${r.etc||""}"></div>
         </div>
         <div style="font-size:11px;color:var(--muted)">타겟판매가 = 원단가 × 야드 + 공임(시야게 포함) + 기타 + 로스분(1,000원) + 부자재(500원) · 값을 바꾸면 자동으로 계산됩니다</div>
+        <div class="ref-suggest-sale-price" style="display:none"></div>
       `;
       body.appendChild(calcBox);
 
@@ -3923,8 +3970,10 @@
             ${[1,2,3,4,5].map(n=>`<button type="button" class="ref-num-btn ${r.supply==n?'on':''}" data-val="${n}">${n}</button>`).join("")}
           </div>
         </div>
+        <div class="opportunity-badge-slot"></div>
       `;
       body.appendChild(row4);
+      renderOpportunityBadge_(row4.querySelector(".opportunity-badge-slot"), r.demand, r.supply);
 
       // 꾸안꾸 디테일 (5개 중 1개) — 이름표 없이 버튼만
       const row6 = document.createElement("div");
@@ -3936,13 +3985,15 @@
       `;
       body.appendChild(row6);
 
-      // 주별/월별 핵심 SKU10
+      // 주별/월별 핵심 SKU 10·20
       const row7 = document.createElement("div");
       row7.className = "ref-row";
       row7.innerHTML = `
         <div class="ref-toggle-group">
-          <button type="button" class="ref-toggle-btn sku-weekly-btn ${r.skuWeekly?'go-on':''}">주별 핵심 SKU10 가능</button>
-          <button type="button" class="ref-toggle-btn sku-monthly-btn ${r.skuMonthly?'go-on':''}">월별 핵심 SKU10 가능</button>
+          <button type="button" class="ref-toggle-btn sku-weekly10-btn ${r.skuWeekly10?'go-on':''}">주별 핵심SKU 10</button>
+          <button type="button" class="ref-toggle-btn sku-weekly20-btn ${r.skuWeekly20?'go-on':''}">주별 핵심SKU 20</button>
+          <button type="button" class="ref-toggle-btn sku-monthly10-btn ${r.skuMonthly10?'go-on':''}">월별 핵심SKU 10</button>
+          <button type="button" class="ref-toggle-btn sku-monthly20-btn ${r.skuMonthly20?'go-on':''}">월별 핵심SKU 20</button>
         </div>
       `;
       body.appendChild(row7);
@@ -3957,10 +4008,14 @@
       grid.appendChild(card);
 
       const cardRef = refRoot.child(id);
+      const crUpdate = (patch)=>{
+        cardRef.update(patch);
+        syncRefToMeeting_(id, { ...r, ...patch });
+      };
       let refSaveT = null;
       const refSaveSoon = (patch)=>{
         clearTimeout(refSaveT);
-        refSaveT = setTimeout(()=> cardRef.update(patch), 250);
+        refSaveT = setTimeout(()=> crUpdate(patch), 250);
       };
 
       // 사진 탭해서 교체/추가 (카메라·갤러리 둘 다 고를 수 있게)
@@ -3974,7 +4029,7 @@
           const reader = new FileReader();
           reader.onload = e=>{
             uploadPhotoWithFallback_(e.target.result, refPhotoStorage.child(id), url=>{
-              cardRef.update({ photo: url });
+              crUpdate({ photo: url });
             });
           };
           reader.readAsDataURL(file);
@@ -3986,7 +4041,7 @@
       if(!r.convertedCode){
         card.querySelector(".drop-btn").addEventListener("click", ()=>{
           const newStatus = effStatus === "drop" ? "" : "drop";
-          cardRef.update({ status: newStatus });
+          crUpdate({ status: newStatus });
         });
       }
 
@@ -4044,38 +4099,46 @@
           const wrap = e.target.closest(".ref-date-pill-wrap");
           const val = e.target.value;
           wrap.classList.toggle("has-date", !!val);
-          cardRef.update({ meetingDate: val }).then(()=>{
-            lastRefDateTabsSig_ = null;
-            renderRefDateTabs_();
-          });
+          crUpdate({ meetingDate: val });
+          lastRefDateTabsSig_ = null;
+          renderRefDateTabs_();
         });
       }
       card.querySelector(".ref-memo-input").addEventListener("input", e=> refSaveSoon({ memo: e.target.value }));
       card.querySelector(".buy-btn").addEventListener("click", ()=>{
-        cardRef.update({ sampleStatus: r.sampleStatus === "buy" ? "" : "buy" });
+        crUpdate({ sampleStatus: r.sampleStatus === "buy" ? "" : "buy" });
+      });
+      card.querySelector(".alt-btn").addEventListener("click", ()=>{
+        crUpdate({ sampleStatus: r.sampleStatus === "alt" ? "" : "alt" });
       });
       card.querySelector(".none-btn").addEventListener("click", ()=>{
-        cardRef.update({ sampleStatus: r.sampleStatus === "none" ? "" : "none" });
+        crUpdate({ sampleStatus: r.sampleStatus === "none" ? "" : "none" });
       });
-      card.querySelector(".sku-weekly-btn").addEventListener("click", ()=>{
-        cardRef.update({ skuWeekly: !r.skuWeekly });
+      card.querySelector(".sku-weekly10-btn").addEventListener("click", ()=>{
+        crUpdate({ skuWeekly10: !r.skuWeekly10 });
       });
-      card.querySelector(".sku-monthly-btn").addEventListener("click", ()=>{
-        cardRef.update({ skuMonthly: !r.skuMonthly });
+      card.querySelector(".sku-weekly20-btn").addEventListener("click", ()=>{
+        crUpdate({ skuWeekly20: !r.skuWeekly20 });
+      });
+      card.querySelector(".sku-monthly10-btn").addEventListener("click", ()=>{
+        crUpdate({ skuMonthly10: !r.skuMonthly10 });
+      });
+      card.querySelector(".sku-monthly20-btn").addEventListener("click", ()=>{
+        crUpdate({ skuMonthly20: !r.skuMonthly20 });
       });
       card.querySelectorAll(".ref-detail-btns .ref-calc-btn").forEach(btn=>{
         btn.addEventListener("click", ()=>{
-          cardRef.update({ detailType: r.detailType === btn.dataset.detail ? "" : btn.dataset.detail });
+          crUpdate({ detailType: r.detailType === btn.dataset.detail ? "" : btn.dataset.detail });
         });
       });
       card.querySelectorAll(".ref-demand-btns .ref-num-btn").forEach(btn=>{
         btn.addEventListener("click", ()=>{
-          cardRef.update({ demand: r.demand == btn.dataset.val ? "" : Number(btn.dataset.val) });
+          crUpdate({ demand: r.demand == btn.dataset.val ? "" : Number(btn.dataset.val) });
         });
       });
       card.querySelectorAll(".ref-supply-btns .ref-num-btn").forEach(btn=>{
         btn.addEventListener("click", ()=>{
-          cardRef.update({ supply: r.supply == btn.dataset.val ? "" : Number(btn.dataset.val) });
+          crUpdate({ supply: r.supply == btn.dataset.val ? "" : Number(btn.dataset.val) });
         });
       });
 
@@ -4087,6 +4150,12 @@
       const fitLineWrap = calcBox.querySelector(".ref-calc-fit-line-wrap");
       const priceInput = card.querySelector(".ref-price-input");
 
+      function updateSuggestPriceDisplay_(total){
+        const suggestEl = calcBox.querySelector(".ref-suggest-sale-price");
+        if(!total){ suggestEl.style.display = "none"; return; }
+        suggestEl.style.display = "block";
+        suggestEl.textContent = `판매가(예상, 원가×4): ${(total*4).toLocaleString()}원`;
+      }
       function recalcTargetPrice_(){
         const yard = numf(calcYardInput.value) || 0;
         const fabricPrice = numf(calcFabricInput.value) || 0;
@@ -4095,8 +4164,10 @@
         if(!yard && !fabricPrice && !labor && !etc) return;
         const total = Math.round(fabricPrice * yard) + labor + etc + 1000 + 500;
         priceInput.value = total;
+        updateSuggestPriceDisplay_(total);
         refSaveSoon({ targetPrice: total, yard: calcYardInput.value, fabricPrice: calcFabricInput.value, labor: calcLaborInput.value, etc: calcEtcInput.value });
       }
+      updateSuggestPriceDisplay_(numf(r.targetPrice));
 
       function renderFitLineOptions_(group){
         if(group === "top"){
@@ -4190,13 +4261,16 @@
     const detailLabel = (REF_DETAIL_OPTIONS.find(o=> o.key === r.detailType) || {}).label;
     const summaryParts = [];
     if(r.targetPrice) summaryParts.push(`타겟가 ${r.targetPrice}원`);
-    if(r.sampleStatus === "buy") summaryParts.push("원샘플 구매");
+    if(r.sampleStatus === "buy") summaryParts.push("원샘플");
+    if(r.sampleStatus === "alt") summaryParts.push("대체샘플");
     if(r.sampleStatus === "none") summaryParts.push("원샘플 없음");
     if(r.demand || r.supply) summaryParts.push(`수요 ${r.demand||"-"} / 공급 ${r.supply||"-"}`);
     if(r.productFit) summaryParts.push("상품성: 튀는 디자인");
     if(detailLabel) summaryParts.push(`꾸안꾸 디테일: ${detailLabel}`);
-    if(r.skuWeekly) summaryParts.push("주별 핵심 SKU10 가능");
-    if(r.skuMonthly) summaryParts.push("월별 핵심 SKU10 가능");
+    if(r.skuWeekly10) summaryParts.push("주별 핵심SKU 10");
+    if(r.skuWeekly20) summaryParts.push("주별 핵심SKU 20");
+    if(r.skuMonthly10) summaryParts.push("월별 핵심SKU 10");
+    if(r.skuMonthly20) summaryParts.push("월별 핵심SKU 20");
     if(r.memo) summaryParts.push(`메모: ${r.memo}`);
     $("#predNote").value = "레퍼런스 인수인계 · " + summaryParts.join(" · ");
     saveSoon();
@@ -4221,6 +4295,28 @@
       else showGallery();
     });
   });
+
+  // ---------- 홈 화면에 추가 (iOS/Android는 브라우저 정책상 자동 설치가 안 돼서 안내 팝업으로 안내) ----------
+  $("#homeAddBtn").addEventListener("click", ()=>{
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/.test(ua);
+    let msg;
+    if(isIOS){
+      msg = "1. 화면 아래(또는 위) 공유 버튼 ⬆️ 을 눌러주세요\n2. 아래로 스크롤해서 '홈 화면에 추가'를 선택해주세요\n3. 이름 확인하고 '추가'를 누르면 아이콘이 홈 화면에 생깁니다";
+    } else if(isAndroid){
+      msg = "1. 오른쪽 위 점 3개(⋮) 메뉴를 눌러주세요\n2. '홈 화면에 추가' 또는 '앱 설치'를 선택해주세요\n3. 이름 확인하고 추가하면 아이콘이 홈 화면에 생깁니다";
+    } else {
+      msg = "컴퓨터에서는 브라우저 주소창 오른쪽의 설치 아이콘(⊕ 또는 화면 모양 아이콘)을 눌러 '설치'를 선택하시면 됩니다. 안 보이면 브라우저 메뉴(⋮ 또는 ···)에서 '앱 설치'를 찾아주세요.\n\n아이패드·아이폰에서는 공유 버튼을 눌러 '홈 화면에 추가'를 선택해주세요.";
+    }
+    $("#homeAddModalBody").textContent = msg;
+    $("#homeAddModalOverlay").style.display = "flex";
+  });
+  $("#homeAddModalCloseBtn").addEventListener("click", ()=> $("#homeAddModalOverlay").style.display = "none");
+  $("#homeAddModalOverlay").addEventListener("click", (e)=>{
+    if(e.target.id === "homeAddModalOverlay") $("#homeAddModalOverlay").style.display = "none";
+  });
+
   function startNewWorkOrder(){
     showEditor();
     linesWrap.innerHTML="";
