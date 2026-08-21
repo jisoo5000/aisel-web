@@ -3732,6 +3732,9 @@
   let justDeletedCode_ = null;
   function save(){
     if(loading || !woRef) return;
+    // 2026-08-22 추가 (이중 안전장치): 품번이 아직 "품번 미정"이면 저장하지 않습니다.
+    // 저장 위치는 품번으로 정해지므로, 품번이 없는 상태의 저장은 항상 엉뚱한 자리로 갑니다.
+    if(typeof codePending_ !== "undefined" && codePending_) return;
     if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
     // 2026-08-13 추가: 새 작지를 만드는 중인데 그 품번에 이미 다른 작지가 있으면 저장하지 않음.
     // (예전에는 이 상태에서 저장이 나가서 기존 작지를 통째로 덮어썼음)
@@ -4686,7 +4689,7 @@
     { key: "pattern", label: "패턴 고급 → 원단저렴+다이마루" },
     { key: "loom", label: "직기 → 원단저렴+패턴단순" }
   ];
-  const TARGET_PRESETS = ["30대 직장인", "40대 워킹맘", "빅사이즈", "임산부", "기타(직접입력)"];
+  const TARGET_PRESETS = ["30대 직장인", "40대 워킹맘", "66·77", "임산부", "기타(직접입력)"];
   const APPEAL_TAG_OPTIONS = [
     { key: "fabric", label: "원단" }, { key: "color", label: "컬러" }, { key: "detail", label: "디테일" },
     { key: "setup", label: "셋업" }, { key: "fit", label: "핏" }, { key: "plain", label: "꾸안꾸" }
@@ -6129,6 +6132,13 @@
     // 이 상태에서는 품번이 겹쳐도 기존 작지 내용을 화면에 불러오지 않고, 그 품번으로 저장도 안 됨.
     newOrderMode_ = true;
     autoCreatedCode_ = null;
+    // 2026-08-22 수정 (치명적): 새 작지를 시작할 때 직전 작지와의 저장 연결을 끊습니다.
+    // 예전에는 연결이 직전 작지에 그대로 붙어 있었고, 품번이 아직 "품번 미정"이라
+    // 덮어쓰기 방지 검사도 통과해서, 사진을 넣는 순간 자동저장이
+    // 직전 작지를 새 내용으로 덮어썼습니다. (직전 작지의 품명이 지워지고 사진이 바뀜)
+    // 이제 품번이 정해져 attachWoRef 가 다시 연결하기 전까지는 저장 자체가 나가지 않습니다.
+    if(woRef && woListener) woRef.off("value", woListener);
+    woRef = null; woListener = null; currentCode = null;
     showEditor();
     linesWrap.innerHTML="";
     [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
@@ -6412,9 +6422,10 @@
           <div class="gcard-thumb">${thumb ? `<img loading="lazy" src="${thumb}">` : `<span class="empty">✎</span>`}</div>
           <div class="gcard-title">${statusInfo.emoji} ${st.pumMyeong || "(품명 미정)"}<span class="gcard-code">${code}${needCafe24 ? `<span class="gcard-warn" title="카페24 자체상품코드 입력 필요">코드 미입력</span>` : ""}${suspectOverwrite ? `<span class="gcard-warn" title="사진은 있는데 품명·원단·디자이너가 모두 비어 있습니다">내용 확인</span>` : ""}</span>${((showGrade && chk.grade.grade) || weakName) ? `<span class="gcard-row2">${(showGrade && chk.grade.grade) ? `<span class="gcard-grade g-${chk.grade.grade.toLowerCase()}" title="${chk.grade.why}">${chk.grade.grade} ${chk.grade.stars}</span>` : ""}${weakName ? `<span class="gcard-soft" title="고유명 + 셀링포인트 + 카테고리 형식에 못 미칩니다">이름 보완</span>` : ""}</span>` : ""}${(sampleBadge || photoStageBadge || factoryBadge) ? `<span class="gcard-row2">${sampleBadge}${photoStageBadge}${factoryBadge}</span>` : ""}${(showGrade && chk.missing.length) ? `<span class="gcard-miss" title="지금 상태에서 있어야 하는데 비어 있는 항목">${chk.missing.join(" · ")} 없음</span>` : ""}${(Array.isArray(st.selectedColors) && st.selectedColors.length) ? `<span class="gcard-colors">${st.selectedColors.map(c=>{
   const info = window.colorHex_ ? window.colorHex_(c) : null;
+  const nm = window.colorName_ ? window.colorName_(c) : c;
   return info
-    ? `<span class="gcard-color-chip" style="background:${info.hex};color:${info.text};">${c}</span>`
-    : `<span class="gcard-color-chip">${c}</span>`;
+    ? `<span class="gcard-color-chip" style="background:${info.hex};color:${info.text};">${nm}</span>`
+    : `<span class="gcard-color-chip">${nm}</span>`;
 }).join("")}</span>` : ""}<span class="code">${dateLabel}</span></div>
         `;
         card.addEventListener("click", ()=>{
@@ -7921,7 +7932,7 @@ const BASE_COLORS = [
   { key:"블랙", hex:"#1a1a1a", text:"#ffffff" },
   { key:"차콜", hex:"#3a3d40", text:"#ffffff" },
   { key:"딥네이비", hex:"#22314f", text:"#ffffff" },
-  { key:"회소라", hex:"#a9b7c2", text:"#1a2530" },
+  { key:"그레이 블루", hex:"#a9b7c2", text:"#1a2530" },
   { key:"라이트그레이", hex:"#cfcecb", text:"#33322f" },
   { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
   { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
@@ -7952,12 +7963,12 @@ const COLOR_VARIANT_HEX = {
   "다크 네이비": { hex: "#0c131e", text: "#ffffff" },
   "네이비 블루": { hex: "#202951", text: "#ffffff" },
   "스틸 네이비": { hex: "#2f3b4c", text: "#ffffff" },
-  "회소라": { hex: "#a9b7c2", text: "#3a352c" },
-  "소라 그레이": { hex: "#b0b6bb", text: "#3a352c" },
-  "페일 소라": { hex: "#d6dadc", text: "#3a352c" },
-  "더스티 소라": { hex: "#c0c5c9", text: "#3a352c" },
+  "그레이 블루": { hex: "#a9b7c2", text: "#3a352c" },
+  "블루 그레이": { hex: "#b0b6bb", text: "#3a352c" },
+  "페일 블루": { hex: "#d6dadc", text: "#3a352c" },
+  "더스티 블루": { hex: "#c0c5c9", text: "#3a352c" },
   "미스티 블루": { hex: "#d4d9de", text: "#3a352c" },
-  "소라 블루": { hex: "#a6b1c5", text: "#3a352c" },
+  "소프트 블루": { hex: "#a6b1c5", text: "#3a352c" },
   "라이트그레이": { hex: "#cfcecb", text: "#3a352c" },
   "라이트 그레이": { hex: "#d1cfc9", text: "#3a352c" },
   "페일 그레이": { hex: "#ecebe9", text: "#3a352c" },
@@ -7988,14 +7999,21 @@ const COLOR_VARIANT_HEX = {
   "민트 그린": { hex: "#748773", text: "#ffffff" },
   "카키 그린": { hex: "#707c6a", text: "#ffffff" },
   "포레스트 그린": { hex: "#667552", text: "#ffffff" },
+  // 2026-08-22: 옛 이름(소라 계열)을 새 이름으로 바꿨습니다. 아래는 이미 저장된 작지가
+  // 색을 잃지 않도록 남겨둔 옛 이름입니다. 고르는 목록에는 안 나옵니다.
+  "회소라": { hex: "#a9b7c2", text: "#3a352c" }, "소라 그레이": { hex: "#b0b6bb", text: "#3a352c" }, "페일 소라": { hex: "#d6dadc", text: "#3a352c" }, "더스티 소라": { hex: "#c0c5c9", text: "#3a352c" }, "소라 블루": { hex: "#a6b1c5", text: "#3a352c" },
 };
-window.colorHex_ = (name) => COLOR_VARIANT_HEX[name] || null;   // 2026-08-13 추가: 목록 카드 등 다른 화면에서 색을 조회할 때 씁니다
+const COLOR_RENAME_ = { "회소라":"그레이 블루", "소라 그레이":"블루 그레이", "페일 소라":"페일 블루",
+                          "더스티 소라":"더스티 블루", "소라 블루":"소프트 블루" };
+  window.colorHex_ = (name) => COLOR_VARIANT_HEX[name] || null;
+  // 2026-08-22 추가: 옛 색 이름을 새 이름으로 바꿔 보여줍니다 (목록 카드 등 어디서나 씁니다)
+  window.colorName_ = (name) => COLOR_RENAME_[name] || name;   // 2026-08-13 추가: 목록 카드 등 다른 화면에서 색을 조회할 때 씁니다
 
 const COLOR_VARIANTS = {
   "블랙": ["블랙","딥 블랙","소프트 블랙","스모키 블랙","미드나잇 블랙","펄 블랙"],
   "차콜": ["차콜","차콜 쉐도우","스모크 차콜","딥 차콜","애쉬 차콜","소프트 차콜"],
   "딥네이비": ["딥네이비","미드나잇 네이비","인디고 네이비","다크 네이비","네이비 블루","스틸 네이비"],
-  "회소라": ["회소라","소라 그레이","페일 소라","더스티 소라","미스티 블루","소라 블루"],
+  "그레이 블루": ["그레이 블루","블루 그레이","페일 블루","더스티 블루","미스티 블루","소프트 블루"],
   "라이트그레이": ["라이트그레이","라이트 그레이","페일 그레이","애쉬 그레이","미스트 그레이","실버 그레이"],
   "블러쉬": ["블러쉬","블러쉬 핑크","더스티 핑크","로즈 블러쉬","페일 블러쉬","소프트 핑크"],
   "크림": ["크림","크림 베이지","웜 크림","펄리 크림","바닐라 크림","아이보리 크림"],
@@ -8084,8 +8102,10 @@ function removeColor(v){
 // 안 비워지고 다음 작지를 저장할 때 그 값이 그대로 얹혀 저장됐습니다.
 // (A에서 고른 컬러가 B로, B에서 고른 컬러가 C로 밀리던 버그의 원인이었습니다)
 window.getSelectedColors_ = () => selectedColors;
+// 2026-08-22 추가: 옛 색 이름(소라 계열)을 새 이름으로 바꿔서 보여줍니다.
+// "소라"는 일본말이라 "페일 소라"처럼 앞말과 어울리지 않는 조합이 생겼습니다.
 window.setSelectedColors_ = (list) => {
-  selectedColors = Array.isArray(list) ? list.slice() : [];
+  selectedColors = (Array.isArray(list) ? list : []).map(v => COLOR_RENAME_[v] || v);
   renderSelectedColors();
   renderVariantPanel();
 };
