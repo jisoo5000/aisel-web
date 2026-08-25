@@ -14,6 +14,7 @@
            wordsMaster_ 를 만들기 전에 ITEM_GROUPS 가 먼저 읽어서 났습니다. 선언을 위로 올렸습니다.
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
+     [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
                 원격 데이터가 바뀔 때 다시 그리는 자리 13곳 전부 변경검사 통과
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
@@ -6928,10 +6929,8 @@
     if(!mates.length) return null;
     const row = document.createElement("div");
     row.className = "gcard-coordi";
-    const lab = document.createElement("span");
-    lab.className = "gcard-coordi-label";
-    lab.textContent = "👗 코디";
-    row.appendChild(lab);
+    // 2026-08-25 수정: 카드에 '👗 코디' 글자는 빼고 제품 단추만 둡니다.
+    // 카드가 좁아서 글자가 자리만 차지했습니다.
     mates.slice(0, 3).forEach(mc=>{
       const e = (allWorkOrders || {})[mc] || {};
       const b = document.createElement("button");
