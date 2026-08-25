@@ -8,6 +8,8 @@
      [v49] 무드보드 '이전 자료(2026.8.6)' 화면과 사진 19장 삭제 - 회의 목록·레퍼런스 수집은 그대로
      [v50] 셀링포인트 묶음마다 자동/직접 딱지 - 손대면 사진 읽기가 그 묶음을 안 건드림
      [v50] 코디에 내 제품 골라 넣기 - 주소 대신 품번 저장, 썸네일 표시, 반대쪽 작지에도 자동 표시
+     [v51] 무드보드 회의 상세: 메모를 치는 중에 다른 사람 저장이 오면 치던 글자가 되돌아가던 문제 차단
+     [v51] tools/check-flicker.py 추가 - 깜빡임 장치가 빠진 자리를 자동으로 찾아냄
                 원격 데이터가 바뀔 때 다시 그리는 자리 13곳 전부 변경검사 통과
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
@@ -5141,14 +5143,33 @@
   let meetingListenerAttached_ = false;
   let lastMeetingListSig_ = null;
   let currentMeetingId = null;
+  // 2026-08-25 추가: 메모를 치는 중에 다시 그리기를 미뤄두는 자리
+  let pendingMeetingRender_ = false;
 
   function initMeetingList_(){
     if(meetingListenerAttached_) return;
     meetingListenerAttached_ = true;
     meetingRoot.on("value", (snapshot)=>{
       allMeetings = snapshot.val() || {};
+      // 2026-08-25 추가: 회의 상세는 사진마다 메모칸이 있고, 다시 그리는 기준에 그 메모가
+      // 들어 있습니다. 그래서 메모를 치면 저장 → 되돌아옴 → 치던 칸이 통째로 다시 만들어지며
+      // 글자가 저장된 값으로 되돌아가고 커서가 튑니다.
+      // 디자인회의처럼 여러 명이 같은 화면을 볼 때 제일 크게 티가 나던 자리입니다.
+      // 입력 중이면 미뤄뒀다가 칸에서 손을 뗀 뒤에 그립니다. (레퍼런스 카드와 같은 방식)
+      if(isTypingNow()){
+        pendingMeetingRender_ = true;
+        return;
+      }
       renderMeetingList_();
       if(currentMeetingId) renderMeetingDetail_(currentMeetingId);
+    });
+    document.addEventListener("focusout", ()=>{
+      setTimeout(()=>{
+        if(!pendingMeetingRender_ || isTypingNow()) return;
+        pendingMeetingRender_ = false;
+        renderMeetingList_();
+        if(currentMeetingId) renderMeetingDetail_(currentMeetingId);
+      }, 60);
     });
   }
 
