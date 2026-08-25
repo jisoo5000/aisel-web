@@ -1,4 +1,16 @@
 <meta name="robots" content="noindex,nofollow,noarchive" />
+<!-- AISEL 작업지시서 v48 (2026-08-25)
+     v44 대비 수정 8건 - 인쇄영역 무변경
+     [v45] 화면 전환 시 예약 저장 취소 / 저장 대상 고정 / 재시도 대상 고정 / 품번 이동 원자화
+     [v46] 목록 전용 색인(workorderIndex) / 저장을 필드 단위 update 로 전환
+     [v47] 단어 목록 11종을 words.json(깃허브) + 파이어베이스로 이전 · 붙여넣기 지원 · 개수 표시
+     [v48] 깜빡임 방지 장치 4곳 추가 - 단어 칩 · 샘플관리 표 · 레퍼런스 카드 · 무드보드 상세
+     [v49] 무드보드 '이전 자료(2026.8.6)' 화면과 사진 19장 삭제 - 회의 목록·레퍼런스 수집은 그대로
+     [v50] 셀링포인트 묶음마다 자동/직접 딱지 - 손대면 사진 읽기가 그 묶음을 안 건드림
+     [v50] 코디에 내 제품 골라 넣기 - 주소 대신 품번 저장, 썸네일 표시, 반대쪽 작지에도 자동 표시
+                원격 데이터가 바뀔 때 다시 그리는 자리 13곳 전부 변경검사 통과
+     words.json 은 work-order.html 과 같은 폴더에 둘 것
+-->
 <title>AISEL 작업지시서</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
@@ -181,6 +193,51 @@
   /* 2026-08-21 추가: 코디 링크 한 줄 안에 링크 칸과 메모 칸을 나란히 배분 (링크가 조금 더 넓게) */
   .coordi-row .coordi-link { flex: 1.3 1 0; min-width: 0; }
   .coordi-row .coordi-note { flex: 1 1 0; min-width: 0; }
+  /* 2026-08-25 추가: 코디에 내 제품을 골라 넣는 부분 */
+  .coordi-pick-btn {
+    flex: 0 0 auto; padding: 7px 11px; border-radius: 8px; cursor: pointer;
+    border: 1px solid #2F3B52; background: #EAF1FB; color: #2F3B52;
+    font-size: 12.5px; font-weight: 700; white-space: nowrap;
+  }
+  .coordi-pick-btn:hover { background: #DCE7F7; }
+  .coordi-picked {
+    display: flex; align-items: center; gap: 10px; margin: 0 0 8px 0;
+    padding: 8px 10px; border: 1px solid var(--hair); border-radius: 10px; background: #FAFBFD;
+  }
+  .coordi-thumb {
+    width: 46px; height: 46px; flex: 0 0 auto; border-radius: 8px; overflow: hidden;
+    background: #F2F4F8; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: #B9BFCB;
+  }
+  .coordi-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .coordi-picked-mid { flex: 1 1 auto; min-width: 0; }
+  .coordi-picked-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .coordi-picked-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+  .coordi-picked-acts { flex: 0 0 auto; display: flex; gap: 4px; }
+  .coordi-pick-panel {
+    margin: 0 0 10px 0; padding: 10px; border: 1px solid #2F3B52;
+    border-radius: 10px; background: #F7FAFF;
+  }
+  .coordi-pick-panel input { width: 100%; }
+  .coordi-pick-results { max-height: 260px; overflow-y: auto; margin-top: 8px; }
+  .coordi-pick-item {
+    display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+    padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; cursor: pointer;
+  }
+  .coordi-pick-item:hover { background: #E8EFFA; }
+  .coordi-pick-empty { font-size: 12.5px; color: var(--muted); padding: 8px 4px; }
+  .coordi-backlinks {
+    margin: 2px 0 10px 0; padding: 9px 11px; border-radius: 10px;
+    background: #F3F1EC; border: 1px dashed #D6D0C2;
+  }
+  .coordi-back-head { font-size: 12px; font-weight: 700; color: #7A7364; margin-bottom: 6px; }
+  .coordi-back-item {
+    display: inline-flex; align-items: center; gap: 6px; margin: 0 6px 5px 0;
+    padding: 4px 9px; border-radius: 999px; border: 1px solid var(--hair);
+    background: #fff; cursor: pointer; font-size: 12px; color: var(--ink);
+  }
+  .coordi-back-item:hover { border-color: var(--accent); }
+  .coordi-back-item img { width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
   .sample-recovery-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
   /* 2026-08-21 추가: 메타 정보 접었다 펴기 */
   /* 2026-08-21 수정: 너비가 안쪽 카드(predict-panel, 820px)보다 넓어서 혼자 튀어나와 있었습니다.
@@ -1226,6 +1283,16 @@
 .copygen-chip.copygen-sp.copygen-selected{
     background:#8A5A18;border-color:#8A5A18;color:#fff;
   }
+.sp-mode-badge{
+    display:inline-flex; align-items:center; gap:5px; margin-right:8px;
+    padding:4px 10px; border-radius:999px; font-size:11.5px; font-weight:700;
+    border:1px dashed #D9C7A6; background:#FFFDF8; color:#A98545;
+    flex:0 0 auto;
+  }
+.sp-mode-badge.manual{
+    border-style:solid; border-color:#2F3B52; background:#EAF1FB; color:#2F3B52; cursor:pointer;
+  }
+.sp-mode-badge.manual:hover{ background:#DCE7F7; }
 .copygen-sp-block{
     border:1.5px solid #E5C489; background:#FFFCF5;
     border-radius:10px; padding:12px 14px; margin-top:14px;
@@ -1459,7 +1526,7 @@
     <button type="button" class="mb-subtab" data-mbtab="refs">📸 레퍼런스 수집</button>
   </div>
 
-  <div id="mbSlidesPane"><div class="mb-slide-subtabs" id="mbSlideTopTabs"><button type="button" class="gtab active" data-slidetoptab="meetings">📅 회의 목록</button><button type="button" class="gtab" data-slidetoptab="legacy">🗂️ 이전 자료 (2026.8.6)</button></div>
+  <div id="mbSlidesPane">
   <div id="mbMeetingListView">
     <div class="mb-refs-toolbar">
       <button type="button" class="btn ghost nav-btn" id="mbNewMeetingBtn">+ 새 회의 추가</button>
@@ -1481,7 +1548,6 @@
     <div class="moodboard-grid" id="mbMeetingPhotoGrid"></div>
   </div>
   <div id="meetingPrintArea"></div>
-  <div id="mbLegacyView" style="display:none"><div class="moodboard-note">2026.8.6 디자인 회의 자료입니다. 작업지시서 파일을 가볍게 하려고 별도 페이지로 옮겼습니다. 내용은 그대로입니다.</div><p><a href="moodboard-20260806.html" target="_blank" rel="noopener" style="display:inline-block;padding:10px 16px;border:1px solid #2F3B52;background:#2F3B52;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;">🖼️ 2026.8.6 무드보드 자료 열기 (새 창)</a></p></div>
   </div>
 
   <div id="mbRefsPane" style="display:none">
@@ -1808,33 +1874,49 @@
     <!-- 2026-08-21 추가: 코디 링크. 한 줄 안에 링크 칸과 메모 칸을 나란히 둡니다.
          레퍼런스 링크(주소만 있는 형태)와 달리 코디는 무엇을 코디할지 짧은 메모가 항상 같이 필요해서
          줄을 나누지 않고 한 줄에 배분했습니다. -->
-    <div class="mini-sec-title" id="coordiSection">코디 링크 (최대 3개)</div>
-    <div class="predict-row single ref-link-row ref-actions-row coordi-row">
+    <div class="mini-sec-title" id="coordiSection">코디 (최대 3개)</div>
+    <div class="ohint" style="margin:-4px 0 8px;">내 제품은 <b>🔍 내 제품</b>으로 골라주세요. 주소 대신 품번으로 저장돼서 사진을 바꿔도 항상 최신 사진이 뜨고 링크가 죽지 않습니다. 남의 제품만 주소를 붙여넣습니다.</div>
+    <div class="coordi-backlinks" id="coordiBacklinks" style="display:none"></div>
+    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow1">
       <label>코디 1</label>
-      <input id="coordiLink1" class="coordi-link" type="text" placeholder="https://... (제품 링크)">
+      <input type="hidden" id="coordiCode1">
+      <button type="button" class="coordi-pick-btn" id="coordiPickBtn1">🔍 내 제품</button>
+      <input id="coordiLink1" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
       <input id="coordiNote1" class="coordi-note" type="text" placeholder="예: 니트탑에 매치할 와이드 팬츠">
       <div class="ref-actions">
         <button type="button" id="coordiEditBtn1" class="ref-icon-btn" title="수정">✎</button>
         <button type="button" id="coordiDelBtn1" class="ref-icon-btn danger" title="삭제">🗑</button>
       </div>
     </div>
-    <div class="predict-row single ref-link-row ref-actions-row coordi-row">
+    <div class="coordi-picked" id="coordiPicked1" style="display:none"></div>
+    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow2">
       <label>코디 2</label>
-      <input id="coordiLink2" class="coordi-link" type="text" placeholder="https://...">
+      <input type="hidden" id="coordiCode2">
+      <button type="button" class="coordi-pick-btn" id="coordiPickBtn2">🔍 내 제품</button>
+      <input id="coordiLink2" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
       <input id="coordiNote2" class="coordi-note" type="text" placeholder="예: 세트로 매치할 스카프">
       <div class="ref-actions">
         <button type="button" id="coordiEditBtn2" class="ref-icon-btn" title="수정">✎</button>
         <button type="button" id="coordiDelBtn2" class="ref-icon-btn danger" title="삭제">🗑</button>
       </div>
     </div>
-    <div class="predict-row single ref-link-row ref-actions-row coordi-row">
+    <div class="coordi-picked" id="coordiPicked2" style="display:none"></div>
+    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow3">
       <label>코디 3</label>
-      <input id="coordiLink3" class="coordi-link" type="text" placeholder="https://...">
+      <input type="hidden" id="coordiCode3">
+      <button type="button" class="coordi-pick-btn" id="coordiPickBtn3">🔍 내 제품</button>
+      <input id="coordiLink3" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
       <input id="coordiNote3" class="coordi-note" type="text" placeholder="예: 가을 시즌 니트와 레이어드">
       <div class="ref-actions">
         <button type="button" id="coordiEditBtn3" class="ref-icon-btn" title="수정">✎</button>
         <button type="button" id="coordiDelBtn3" class="ref-icon-btn danger" title="삭제">🗑</button>
       </div>
+    </div>
+    <div class="coordi-picked" id="coordiPicked3" style="display:none"></div>
+    <!-- 2026-08-25 추가: 내 제품 고르는 창. 고르는 칸 바로 아래로 옮겨 붙습니다 -->
+    <div class="coordi-pick-panel" id="coordiPickPanel" style="display:none">
+      <input id="coordiPickSearch" type="text" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
+      <div class="coordi-pick-results" id="coordiPickResults"></div>
     </div>
   </div>
 
@@ -2458,6 +2540,52 @@
     }
   }
   const woRoot = firebase.database().ref("workorders"); // 품번마다 각자 칸을 갖는 창고
+  // 2026-08-25 추가: 목록 전용 색인 창고.
+  // 예전에는 갤러리·판매현황이 workorders 트리 전체를 구독했습니다. 작지 하나하나에
+  // 사진 원본(base64)이 통째로 들어 있어서, 누가 한 글자만 쳐도 모든 접속자에게
+  // 전체 스냅샷이 다시 내려왔고 그때마다 화면이 깜빡였습니다.
+  // 이제 목록에 실제로 쓰이는 값과 압축 썸네일만 여기에 따로 두고, 목록 화면은
+  // 이 창고만 구독합니다. 사진 원본은 작지를 열었을 때만 내려옵니다.
+  const woIndexRoot = firebase.database().ref("workorderIndex");
+  const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
+  const WO_INDEX_VERSION = 2;   // 2026-08-25: 코디 품번을 색인에 넣느라 한 판 올림
+
+  // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
+  const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
+    "fabricNameField","fabricSupplierField","designer","blend","factory",
+    "predExpectedQty","predActualQty","predActualDays",
+    "sampleRecoveryStatus","photoStage",
+    // 2026-08-25 추가: 코디 품번. 이게 색인에 있어야 "이 옷을 코디로 걸어둔 작지"를
+    // 원본 전체를 내려받지 않고 찾을 수 있습니다
+    "coordiCode1","coordiCode2","coordiCode3"];
+  function woIndexEntryFrom_(st){
+    const s = st || {};
+    const e = {};
+    WO_INDEX_KEYS.forEach(k=>{
+      const v = s[k];
+      e[k] = (v === undefined || v === null) ? "" : v;
+    });
+    e.selectedColors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    const sp = s.sellingPoints || null;
+    e.hasSp   = !!sp;
+    e.spTwist = sp ? ((sp.twist || []).length) : 0;
+    e.spSlim  = sp ? ((sp.slim  || []).length) : 0;
+    // 사이즈 판정 기준은 예전 코드와 똑같이 둡니다 (지금 뜨던 표시가 갑자기 사라지지 않게)
+    const rows = s.sizeSpecRows || s.sizeRows || [];
+    e.hasSize  = !!(rows && rows.length);
+    e.hasPhoto = !!(s.p1Thumb || s.p1);
+    e.thumb    = s.p1Thumb || "";   // 압축 썸네일만
+    return e;
+  }
+  // updatedAt 을 뺀 알맹이만 비교합니다. 목록에 안 나오는 칸(원가·메모 등)만 고쳤을 때는
+  // 색인을 아예 다시 쓰지 않아서 다른 사람 화면이 새로 그려지지 않습니다.
+  function woIndexSig_(e){
+    if(!e) return "";
+    const c = Object.assign({}, e);
+    delete c.updatedAt;
+    return JSON.stringify(c);
+  }
+
   // 2026-08-13 추가: 원단 마스터 창고
   // 원단처명 + 원단명을 하나로 합친 값을 열쇠로 씀. 같은 원단처 · 같은 원단명이면 같은 원단으로 보고
   // 새 줄을 만들지 않고 그 줄을 최신값으로 덮어씀. 그래서 같은 원단이 중복으로 쌓이지 않음.
@@ -2813,6 +2941,9 @@
     }
 
     try{
+      // 2026-08-25 추가: 옮기는 동안 예약돼 있던 자동저장이 옛 품번으로 나가면
+      // 한 박자 이전 내용이 복사되거나 지운 자리가 되살아납니다. 먼저 취소합니다.
+      try{ clearTimeout(saveT); }catch(e){}
       const snap = await woRoot.child(oldCode).once("value");
       const data = snap.val();
       if(!data){
@@ -2826,8 +2957,23 @@
         return;
       }
 
-      await woRoot.child(newCode).set(data);   // 새 자리에 그대로 복사
-      await woRoot.child(oldCode).remove();    // 옛 자리 삭제
+      // 2026-08-25 수정 (중요): 예전에는 "새 자리에 복사" 와 "옛 자리 삭제" 가 따로 나갔습니다.
+      // 복사만 성공하고 삭제가 실패하면 내용이 똑같은 작지가 두 개 남았고,
+      // 자동 이동(silent) 일 때는 그 실패가 아무 표시 없이 삼켜졌습니다.
+      // 이제 한 번의 update 로 두 가지를 함께 보냅니다. 둘 다 되거나 둘 다 안 되거나뿐입니다.
+      const moveUpdates_ = {};
+      moveUpdates_[newCode] = data;
+      moveUpdates_[oldCode] = null;
+      await woRoot.update(moveUpdates_);
+      // 2026-08-25 추가: 목록 색인도 같은 방식으로 한 번에 옮깁니다
+      const idxEntry_ = woIndexEntryFrom_(data);
+      idxEntry_.updatedAt = data.updatedAt || Date.now();
+      const idxUpdates_ = {};
+      idxUpdates_[newCode] = idxEntry_;
+      idxUpdates_[oldCode] = null;
+      delete lastIndexSig_[oldCode];
+      lastIndexSig_[newCode] = woIndexSig_(idxEntry_);
+      await woIndexRoot.update(idxUpdates_);
 
       // 연결을 새 품번으로 갈아끼움
       if(woRef && woListener) woRef.off("value", woListener);
@@ -2843,7 +2989,13 @@
         ? "카테고리에 맞춰 품번을 " + newCode + " 로 자동으로 옮겼습니다."
         : "품번을 " + newCode + " 로 옮겼습니다. 카페24 자체상품코드도 새 품번으로 바꿔주세요.");
     }catch(err){
-      if(!silent) alert("품번 옮기기에 실패했습니다: " + err.message);
+      // 2026-08-25 수정: 자동 이동일 때도 반드시 화면에 알립니다.
+      // 조용한 실패가 작지 중복의 원인이었습니다.
+      if(!silent){
+        alert("품번 옮기기에 실패했습니다: " + err.message);
+      }else{
+        setCodeChangeNotice_("품번을 " + newCode + " 로 옮기지 못했습니다. 품번은 " + oldCode + " 그대로입니다. 인터넷 상태를 확인하고 카테고리를 다시 골라주세요. (" + err.message + ")");
+      }
     }
   }
   if($("#moveCodeBtn")) $("#moveCodeBtn").addEventListener("click", ()=> moveCurrentWorkOrder_(false));
@@ -3584,7 +3736,17 @@
     pumInput.value = v;
     saveSoon();
   };
-  window.getAllWorkOrders_ = () => allWorkOrders;
+  window.getAllWorkOrders_ = () => allWorkOrders;   // 목록용 가벼운 색인
+  // 2026-08-25 추가: 작지 전체 내용이 정말 필요한 기능(통계·일괄 내보내기 등)만
+  // 이 함수로 그때 한 번 읽습니다. 평소에는 절대 내려받지 않습니다.
+  window.fetchAllWorkOrders_ = async () => {
+    const snap = await woRoot.once("value");
+    return snap.val() || {};
+  };
+  window.fetchWorkOrder_ = async (code) => {
+    const snap = await woRoot.child(code).once("value");
+    return snap.val() || null;
+  };
   window.getEditLog_ = () => editLog_;
   window.setEditLog_ = (v) => { editLog_ = Array.isArray(v) ? v : []; };
 
@@ -3595,6 +3757,8 @@
     // 2026-08-21 추가: 원샘플 메모(제목·내용)와 코디 링크 3개(주소·메모)도 같은 방식으로 저장
     "sampleNoteTitle",
     "coordiLink1", "coordiNote1", "coordiLink2", "coordiNote2", "coordiLink3", "coordiNote3",
+    // 2026-08-25 추가: 코디로 고른 내 제품의 품번. 주소가 아니라 품번을 저장합니다
+    "coordiCode1", "coordiCode2", "coordiCode3",
     // 2026-08-13 추가: 원단정보 섹션 7개 칸. 예전에는 구글시트로만 보내고 앱에는 저장되지 않아
     // 새로고침하거나 다른 작지로 옮기면 입력값이 전부 사라졌음. 이제 다른 칸과 똑같이 자동저장됨.
     "fabricSupplier","fabricName","fabricPrice","fabricWidth","fabricSwatchNo","fabricBlend","fabricSupplierPhone","fabricNegoPrice"];
@@ -3711,6 +3875,8 @@
     // 2026-08-13 추가: 셀링포인트(편안함·날씬·반전 디테일)를 품번 단위로 함께 저장
     st.sellingPoints = window.getSellingPoints_ ? window.getSellingPoints_() : null;
     st.spOrder = window.getSlimClickOrder_ ? window.getSlimClickOrder_() : null;   // 날씬을 누른 순서
+    // 2026-08-25 추가: 셀링포인트 묶음마다 「자동 / 직접」 딱지도 함께 저장 (품명의 pumAuto 와 같은 방식)
+    st.spManual = window.getSpManual_ ? window.getSpManual_() : null;
     st.selectedColors = window.getSelectedColors_ ? window.getSelectedColors_() : null;   // 2026-08-13 추가: 컬러도 품번 단위로 저장
     st.nameParts = window.getNameParts_ ? window.getNameParts_() : null;   // 2026-08-13 추가: 고유명·원단·아이템명도 품번 단위로 저장
     st.cafe24Done = $("#cafe24Done").checked;   // 카페24 자체상품코드 입력 완료 여부
@@ -3729,23 +3895,82 @@
     st.updatedAt = Date.now();
     return st;
   }
+  // 2026-08-25 추가: 마지막으로 "서버에도 있고 화면에도 반영된" 상태.
+  // 저장할 때 이 값과 지금 화면을 비교해서 바뀐 칸만 골라 보냅니다.
+  // 다른 사람이 고친 내용을 아직 화면에 반영하지 않은 상태(입력 중 보류)에서는
+  // 이 값을 일부러 갱신하지 않습니다. 그래야 내가 안 건드린 칸이 패치에 안 실립니다.
+  let lastSavedState_ = null;
+  function sameValue_(a, b){
+    const ta = typeof a, tb = typeof b;
+    if(a === b) return true;
+    if((ta === "string" || ta === "number" || ta === "boolean") &&
+       (tb === "string" || tb === "number" || tb === "boolean")) return false;
+    try{ return JSON.stringify(a) === JSON.stringify(b); }catch(e){ return false; }
+  }
+  function buildPatch_(oldSt, newSt){
+    const patch = {};
+    const prev = oldSt || {};
+    Object.keys(newSt).forEach(k=>{
+      const v = newSt[k] === undefined ? null : newSt[k];
+      if(!oldSt || !sameValue_(prev[k], v)) patch[k] = v;
+    });
+    // 예전에 있었는데 지금은 사라진 칸은 지웁니다
+    if(oldSt){
+      Object.keys(prev).forEach(k=>{
+        if(!(k in newSt)) patch[k] = null;
+      });
+    }
+    return patch;
+  }
+  // 색인 쓰기. 목록에 보이는 값이 하나도 안 바뀌었으면 아예 쓰지 않습니다.
+  const lastIndexSig_ = {};
+  function writeIndexIfChanged_(code, st){
+    if(!code || !st) return;
+    const e = woIndexEntryFrom_(st);
+    const sig = woIndexSig_(e);
+    const known = (lastIndexSig_[code] !== undefined)
+      ? lastIndexSig_[code]
+      : woIndexSig_((allWorkOrders && allWorkOrders[code]) || null);
+    if(known === sig) return;
+    lastIndexSig_[code] = sig;
+    e.updatedAt = st.updatedAt || Date.now();
+    woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
+  }
+  function removeIndexEntry_(code){
+    if(!code) return;
+    delete lastIndexSig_[code];
+    woIndexRoot.child(code).remove().catch(()=>{});
+  }
   let justDeletedCode_ = null;
   function save(){
     if(loading || !woRef) return;
-    // 2026-08-22 추가 (이중 안전장치): 품번이 아직 "품번 미정"이면 저장하지 않습니다.
-    // 저장 위치는 품번으로 정해지므로, 품번이 없는 상태의 저장은 항상 엉뚱한 자리로 갑니다.
-    if(typeof codePending_ !== "undefined" && codePending_) return;
     if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
     // 2026-08-13 추가: 새 작지를 만드는 중인데 그 품번에 이미 다른 작지가 있으면 저장하지 않음.
     // (예전에는 이 상태에서 저장이 나가서 기존 작지를 통째로 덮어썼음)
     if(codeConflictNow_()){ updateCodeConflictUI_(); return; }
+    // 2026-08-25 추가: 저장 대상을 이 시점에 고정합니다.
+    // 예전에는 저장이 실행되는 사이 다른 작지로 옮겨가면 전역 woRef가 이미 바뀌어 있어서
+    // A작지 내용이 B작지에 저장되는 일이 있었습니다.
+    const targetRef = woRef;
+    const targetCode = currentCode;
     const st = collect();
+    // collect() 뒤에도 대상이 그대로인지 다시 확인합니다. 달라졌으면 이 저장은 버립니다.
+    if(woRef !== targetRef || currentCode !== targetCode) return;
     const s = $("#saveBtn");
     // 저장 전 새 작지에서 처음 자동 저장되는 품번을 기억해둡니다.
     // 품번이 바뀌면 이 줄을 지워서 같은 사진의 작지가 여러 개 생기지 않게 합니다.
-    if(newOrderMode_ && !autoCreatedCode_) autoCreatedCode_ = currentCode;
+    if(newOrderMode_ && !autoCreatedCode_) autoCreatedCode_ = targetCode;
+
+    // 2026-08-25 수정 (중요): 객체 전체를 set 하던 것을 "바뀐 칸만" update 로 바꿉니다.
+    // 예전에는 디자이너와 지수님이 서로 다른 칸을 고쳐도 나중에 저장한 쪽이 상대 수정을
+    // 통째로 지웠습니다. 이제 각자 고친 칸만 보내므로 서버에서 합쳐집니다.
+    const patch = buildPatch_(lastSavedState_, st);
     lastSentJSON = JSON.stringify(st);
-    woRef.set(st).then(()=>{
+    if(Object.keys(patch).length === 0){ return; }   // 실제로 바뀐 게 없으면 아무것도 안 보냄
+    const sentState = st;
+    targetRef.update(patch).then(()=>{
+      lastSavedState_ = sentState;
+      writeIndexIfChanged_(targetCode, sentState);
       // 첫 저장이 끝나면 이제 이 품번은 정식으로 이 작지의 자리이므로 "새로 만드는 중" 표시를 끔
       // (그래야 다른 기기에서 수정한 내용이 실시간으로 반영됨)
       newOrderMode_ = false;
@@ -3754,9 +3979,16 @@
       clearTimeout(save._t); save._t=setTimeout(()=> s.style.opacity=".7", 900);
     }).catch(()=>{
       // 사진이 너무 커서 실패한 경우 사진 없이 한 번 더 시도
+      // 2026-08-25 수정: 재시도도 반드시 처음에 고정해둔 targetRef 로 보냅니다.
+      // 예전에는 여기서 전역 woRef 를 다시 읽어서, 그 사이 다른 작지로 옮겼다면
+      // 엉뚱한 작지에 "사진이 지워진 남의 내용"이 저장됐습니다.
       const st2 = {...st, p1:"", p1Thumb:""};
-      lastSentJSON = JSON.stringify(st2);
-      woRef.set(st2).catch(()=>{ s.textContent="⚠ 저장 실패 (인터넷 확인)"; });
+      const patch2 = buildPatch_(lastSavedState_, st2);
+      if(woRef === targetRef) lastSentJSON = JSON.stringify(st2);
+      targetRef.update(patch2).then(()=>{
+        lastSavedState_ = st2;
+        writeIndexIfChanged_(targetCode, st2);
+      }).catch(()=>{ s.textContent="⚠ 저장 실패 (인터넷 확인)"; });
     });
   }
   $("#saveBtn").addEventListener("click", async ()=>{
@@ -3810,6 +4042,16 @@
       box.classList.remove("filled");
     }
     box.dataset.thumb = thumb || "";
+    // 2026-08-25 추가: 원본은 있는데 압축 썸네일이 없는 예전 작지는 여기서 한 번 만들어둡니다.
+    // 목록은 이제 썸네일만 쓰기 때문에 이게 없으면 카드에 사진이 안 보입니다.
+    if(src && !thumb){
+      makeThumbnail(src, 320, 0.6, t=>{
+        if(!t) return;
+        if(box.dataset.thumb) return;
+        box.dataset.thumb = t;
+        if(typeof saveSoon === "function") saveSoon();
+      });
+    }
   }
   function applyState(st){
     loading = true;
@@ -3853,7 +4095,7 @@
     sampleReturnedDate = st.sampleReturnedDate || "";
     renderSampleRecovery_(); if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
     if(window.setPdpRows_) window.setPdpRows_(st.pdpRows || []);
-    if(window.setSellingPoints_) window.setSellingPoints_(st.sellingPoints || null, st.spOrder || null);
+    if(window.setSellingPoints_) window.setSellingPoints_(st.sellingPoints || null, st.spOrder || null, st.spManual || null);
     if(window.setSelectedColors_) window.setSelectedColors_(st.selectedColors || []);   // 2026-08-13 추가
     if(window.setNameParts_) window.setNameParts_(st.nameParts || null);   // 2026-08-13 추가: 고유명·원단·아이템명 복원
     // 2026-08-13 추가: 핵심 키워드와 비고도 이 작지에 저장된 값으로 정확히 채웁니다(없으면 비움).
@@ -3911,6 +4153,10 @@
     // 2026-08-21 추가: 작지를 열 때 기획 체크 버튼과 셀링포인트 요약도 그 작지 값으로 다시 그립니다.
     if(typeof refreshPlanChecks_ === "function") refreshPlanChecks_();
     if(typeof refreshSpSummaryLine_ === "function") refreshSpSummaryLine_();
+    // 2026-08-25 추가: 화면에 실제로 반영한 이 내용이 다음 저장의 비교 기준이 됩니다.
+    // 여기서만 기준을 갱신하므로, 입력 중이라 반영을 미뤄둔 남의 수정은 기준에 들어가지
+    // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
+    lastSavedState_ = st;
   }
   function updateRefLinkMode_(){
     updateOneRefLinkMode_("#refLink");
@@ -3966,7 +4212,233 @@
     updateOneRefLinkMode_("#coordiLink1");
     updateOneRefLinkMode_("#coordiLink2");
     updateOneRefLinkMode_("#coordiLink3");
+    [1,2,3].forEach(renderCoordiRow_);
+    renderCoordiBacklinks_();
   }
+
+  /* ============ 코디에 내 제품 골라 넣기 (2026-08-25 추가) ============
+     외부 주소를 붙여넣는 방식은 두 가지가 안 됩니다.
+       1. 브라우저는 다른 사이트(카페24 포함) 사진을 대신 가져오지 못해 썸네일이 안 뜹니다
+       2. 상품을 내리거나 옮기면 주소가 죽습니다
+     그래서 내 제품은 주소가 아니라 "품번"을 저장합니다.
+     사진을 다시 찍어 바꿔도 항상 최신 사진이 뜨고, 링크가 죽을 일이 없습니다. */
+  let coordiPickTarget_ = 0;   // 지금 고르는 중인 칸 번호 (1~3)
+
+  function coordiIndexAll_(){
+    try{ return (window.getAllWorkOrders_ && window.getAllWorkOrders_()) || {}; }catch(e){ return {}; }
+  }
+  function coordiColorChips_(colors){
+    const wrap = document.createElement("span");
+    wrap.style.cssText = "display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:3px;";
+    (Array.isArray(colors) ? colors : []).slice(0,4).forEach(c=>{
+      const info = window.colorHex_ ? window.colorHex_(c) : null;
+      const chip = document.createElement("span");
+      chip.className = "gcard-color-chip";
+      if(info){ chip.style.background = info.hex; chip.style.color = info.text; }
+      chip.textContent = c;
+      wrap.appendChild(chip);
+    });
+    return wrap;
+  }
+  // 2026-08-25: 드롭된 제품도 목록에는 보이게 하되 상태를 같이 적어 헷갈리지 않게 합니다
+  function coordiStatusText_(entry){
+    const k = (entry && entry.status) || "planned";
+    return (typeof STATUS_LABEL_MAP !== "undefined" && STATUS_LABEL_MAP[k]) ? STATUS_LABEL_MAP[k] : "";
+  }
+  function coordiThumbEl_(entry){
+    const th = document.createElement("div");
+    th.className = "coordi-thumb";
+    if(entry && entry.thumb){
+      const im = document.createElement("img");
+      im.loading = "lazy"; im.src = entry.thumb;
+      th.appendChild(im);
+    }else{
+      th.textContent = "✎";
+    }
+    return th;
+  }
+  function renderCoordiRow_(i){
+    const codeInput = $("#coordiCode" + i);
+    const box  = $("#coordiPicked" + i);
+    const link = $("#coordiLink" + i);
+    const pick = $("#coordiPickBtn" + i);
+    if(!codeInput || !box || !link) return;
+    const code = (codeInput.value || "").trim();
+    box.innerHTML = "";
+    if(!code){
+      box.style.display = "none";
+      link.style.display = "";
+      if(pick) pick.style.display = "";
+      return;
+    }
+    // 내 제품을 골랐으면 주소칸 자리에 제품 카드를 보여줍니다
+    box.style.display = "flex";
+    link.style.display = "none";
+    if(pick) pick.style.display = "none";
+
+    const e = coordiIndexAll_()[code] || null;
+    box.appendChild(coordiThumbEl_(e));
+
+    const mid = document.createElement("div");
+    mid.className = "coordi-picked-mid";
+    const nameEl = document.createElement("div");
+    nameEl.className = "coordi-picked-name";
+    nameEl.textContent = (e && e.pumMyeong) ? e.pumMyeong : "(품명 미정)";
+    const subEl = document.createElement("div");
+    subEl.className = "coordi-picked-sub";
+    subEl.textContent = e ? (code + "  ·  " + coordiStatusText_(e)) : (code + "  · 목록에서 찾지 못했습니다");
+    mid.appendChild(nameEl);
+    mid.appendChild(subEl);
+    if(e && Array.isArray(e.selectedColors) && e.selectedColors.length){
+      mid.appendChild(coordiColorChips_(e.selectedColors));
+    }
+    box.appendChild(mid);
+
+    const acts = document.createElement("div");
+    acts.className = "coordi-picked-acts";
+    const mk = (txt, title, danger, fn)=>{
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "ref-icon-btn" + (danger ? " danger" : "");
+      b.title = title; b.textContent = txt;
+      b.addEventListener("click", fn);
+      return b;
+    };
+    acts.appendChild(mk("↗", "이 작업지시서 열기", false, ()=>{
+      if(typeof openWorkOrderByCode_ === "function") openWorkOrderByCode_(code);
+    }));
+    acts.appendChild(mk("✎", "다른 제품으로 바꾸기", false, ()=> openCoordiPicker_(i)));
+    acts.appendChild(mk("🗑", "빼기", true, ()=>{
+      codeInput.value = "";
+      renderCoordiRow_(i);
+      saveSoon();
+    }));
+    box.appendChild(acts);
+  }
+  function openCoordiPicker_(i){
+    const panel = $("#coordiPickPanel");
+    const anchor = $("#coordiPicked" + i);
+    if(!panel || !anchor) return;
+    coordiPickTarget_ = i;
+    anchor.parentNode.insertBefore(panel, anchor.nextSibling);   // 고른 칸 바로 아래에 붙입니다
+    panel.style.display = "block";
+    const box = $("#coordiPickSearch");
+    if(box){ box.value = ""; box.focus(); }
+    renderCoordiResults_("");
+  }
+  function closeCoordiPicker_(){
+    const panel = $("#coordiPickPanel");
+    if(panel) panel.style.display = "none";
+    coordiPickTarget_ = 0;
+  }
+  function renderCoordiResults_(q){
+    const box = $("#coordiPickResults");
+    if(!box) return;
+    box.innerHTML = "";
+    const all = coordiIndexAll_();
+    const me = currentCode || "";
+    const key = String(q || "").trim().toLowerCase();
+    const rows = Object.keys(all)
+      .filter(code => code && code !== me)
+      .map(code => ({ code, e: all[code] || {} }))
+      .filter(x => !key || (x.code + " " + (x.e.pumMyeong || "")).toLowerCase().indexOf(key) !== -1)
+      .sort((a,b)=>{
+        // 드롭된 것은 맨 뒤로 밀고, 나머지는 최근에 만든 것부터
+        const da = (a.e.status === "drop") ? 1 : 0, db = (b.e.status === "drop") ? 1 : 0;
+        if(da !== db) return da - db;
+        return String(b.e.createdAt || "").localeCompare(String(a.e.createdAt || ""));
+      })
+      .slice(0, 40);
+    if(!rows.length){
+      const em = document.createElement("div");
+      em.className = "coordi-pick-empty";
+      em.textContent = key ? "찾는 제품이 없습니다. 품번이 매겨진 작업지시서만 고를 수 있습니다." : "고를 수 있는 작업지시서가 없습니다.";
+      box.appendChild(em);
+      return;
+    }
+    rows.forEach(x=>{
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "coordi-pick-item";
+      btn.appendChild(coordiThumbEl_(x.e));
+      const mid = document.createElement("div");
+      mid.className = "coordi-picked-mid";
+      const t1 = document.createElement("div");
+      t1.className = "coordi-picked-name";
+      t1.textContent = x.e.pumMyeong || "(품명 미정)";
+      const t2 = document.createElement("div");
+      t2.className = "coordi-picked-sub";
+      t2.textContent = x.code + "  ·  " + coordiStatusText_(x.e);
+      mid.appendChild(t1); mid.appendChild(t2);
+      btn.appendChild(mid);
+      btn.addEventListener("click", ()=> pickCoordi_(coordiPickTarget_, x.code));
+      box.appendChild(btn);
+    });
+  }
+  function pickCoordi_(i, code){
+    if(!i) return;
+    const el = $("#coordiCode" + i);
+    if(!el) return;
+    // 같은 제품을 두 칸에 넣지 않게 합니다
+    const dup = [1,2,3].some(k => k !== i && (($("#coordiCode"+k) || {}).value || "").trim() === code);
+    if(dup){ alert("이미 다른 코디 칸에 들어 있는 제품입니다."); return; }
+    el.value = code;
+    const link = $("#coordiLink" + i);
+    if(link) link.value = "";   // 내 제품을 고르면 외부 주소는 비웁니다
+    closeCoordiPicker_();
+    renderCoordiRow_(i);
+    renderCoordiBacklinks_();
+    saveSoon();
+  }
+  /* 반대쪽에도 보이게 합니다.
+     한쪽 작지에만 적어두면 반대쪽 옷을 찍는 날 그 코디를 놓칩니다. */
+  function renderCoordiBacklinks_(){
+    const box = $("#coordiBacklinks");
+    if(!box) return;
+    box.innerHTML = "";
+    const me = currentCode || "";
+    if(!me){ box.style.display = "none"; return; }
+    const all = coordiIndexAll_();
+    const hits = Object.keys(all).filter(code=>{
+      if(code === me) return false;
+      const e = all[code] || {};
+      return [1,2,3].some(k => String(e["coordiCode" + k] || "").trim() === me);
+    });
+    if(!hits.length){ box.style.display = "none"; return; }
+    box.style.display = "block";
+    const head = document.createElement("div");
+    head.className = "coordi-back-head";
+    head.textContent = "이 옷을 코디로 걸어둔 작업지시서 " + hits.length + "개 — 촬영할 때 같이 챙기세요";
+    box.appendChild(head);
+    hits.slice(0, 12).forEach(code=>{
+      const e = all[code] || {};
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "coordi-back-item";
+      if(e.thumb){
+        const im = document.createElement("img");
+        im.loading = "lazy"; im.src = e.thumb;
+        b.appendChild(im);
+      }
+      const tx = document.createElement("span");
+      tx.textContent = (e.pumMyeong || "(품명 미정)") + " · " + code;
+      b.appendChild(tx);
+      b.addEventListener("click", ()=>{
+        if(typeof openWorkOrderByCode_ === "function") openWorkOrderByCode_(code);
+      });
+      box.appendChild(b);
+    });
+  }
+  [1,2,3].forEach(i=>{
+    const btn = $("#coordiPickBtn" + i);
+    if(btn) btn.addEventListener("click", ()=> openCoordiPicker_(i));
+  });
+  (function(){
+    const sbox = $("#coordiPickSearch");
+    if(!sbox) return;
+    sbox.addEventListener("input", ()=> renderCoordiResults_(sbox.value));
+    sbox.addEventListener("keydown", ev=>{ if(ev.key === "Escape") closeCoordiPicker_(); });
+  })();
   setupRefLink_("#coordiLink1", "#coordiEditBtn1", "#coordiDelBtn1");
   setupRefLink_("#coordiLink2", "#coordiEditBtn2", "#coordiDelBtn2");
   setupRefLink_("#coordiLink3", "#coordiEditBtn3", "#coordiDelBtn3");
@@ -4080,6 +4552,7 @@
   // ---------- 품번마다 각자 저장 위치에 실시간으로 연결 ----------
   let currentCode = null;
   let woRef = null;
+  let openWatchdog_ = null;   // 2026-08-25 추가: 작지 불러오기가 너무 오래 걸릴 때 저장 잠금을 푸는 안전장치
   let woListener = null;
   // 2026-08-13 추가: 저장 전 새 작지에서 품번이 바뀌면 먼저 자동으로 만들어진 줄을 지웁니다.
   // 발번을 늦추면서 생긴 문제였습니다. 사진 판독이 카테고리를 정하면 품번이 매겨지고
@@ -4093,44 +4566,65 @@
     const stale = autoCreatedCode_;
     autoCreatedCode_ = null;
     woRoot.child(stale).remove().catch(()=>{});   // 실패해도 진행을 막지 않음
+    removeIndexEntry_(stale);                    // 2026-08-25 추가: 목록 색인도 같이 정리
   }
 
+  // 2026-08-25 추가: 화면을 떠날 때 예약된 자동저장을 취소하고 연결을 끊습니다.
+  // 이 세 줄이 없어서 "작지가 사라짐 · 품명이 다른 이름으로 바뀜" 사고가 났습니다.
+  function detachWoRefNow_(reason){
+    try{ clearTimeout(saveT); }catch(e){}
+    if(woRef && woListener) woRef.off("value", woListener);
+    woRef = null; woListener = null; currentCode = null;
+    pendingRemoteState = null;
+    lastSentJSON = null;
+    lastSavedState_ = null;   // 2026-08-25 추가: 비교 기준도 함께 비웁니다
+  }
   function attachWoRef(code){
     if(!code || code === currentCode) return;
     // 저장 전 새 작지라면, 품번이 바뀔 때 앞서 자동으로 만들어진 줄을 정리합니다
     if(newOrderMode_) cleanupAutoCreated_(code);
     if(woRef && woListener) woRef.off("value", woListener);
-    // 2026-08-22 추가: 작지를 갈아탈 때 앞 작지의 보류분을 버립니다.
-    // 안 버리면 A 작지의 내용이 B 작지 화면에 부어질 수 있습니다.
-    pendingRemoteState = null;
     currentCode = code;
     woRef = woRoot.child(code);
+    let firstSnapshot = true;
     woListener = (snapshot)=>{
       const st = snapshot.val();
-      if(!st) return; // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
+      // 2026-08-25 추가: 목록에서 연 직후 첫 응답은 "불러오기"입니다.
+      // 내용이 비어 있어도 저장 잠금을 반드시 풀어야 화면이 멈추지 않습니다.
+      const isFirst = firstSnapshot;
+      firstSnapshot = false;
+      if(isFirst){
+        clearTimeout(openWatchdog_);
+        const sBtn = $("#saveBtn");
+        if(sBtn && sBtn.textContent.indexOf("불러오는 중") !== -1) sBtn.textContent = "💾 저장됨 ✓";
+      }
+      if(!st){
+        if(isFirst) loading = false;
+        return; // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
+      }
       // 2026-08-13 추가: "새 작지"를 만드는 중이면, 그 품번에 기존 작지가 있어도 화면에 불러오지 않음.
       // (예전에는 새 작지를 눌렀는데 기존 작지의 사진과 내용이 스르륵 채워지는 문제가 있었음)
       // 대신 품번이 겹친다는 경고를 띄우고 저장을 막음.
       if(newOrderMode_){
+        if(isFirst) loading = false;
         updateCodeConflictUI_();
         return;
       }
       const json = JSON.stringify(st);
-      if(json === lastSentJSON) return; // 내가 방금 보낸 내용이 그대로 돌아온 것뿐이라 다시 그릴 필요 없음
-      if(isTypingNow()){
+      if(json === lastSentJSON && !isFirst) return; // 내가 방금 보낸 내용이 그대로 돌아온 것뿐이라 다시 그릴 필요 없음
+      if(isTypingNow() && !isFirst){
         pendingRemoteState = st; // 지금 어딘가 칸에 입력 중이면 화면을 다시 그리지 않고 잠깐 보류
         return;
       }
       applyState(st);
+      // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
+      if(isFirst) syncIndexFromFull_(code, st);
     };
     woRef.on("value", woListener);
   }
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
   document.addEventListener("focusout", ()=>{
     if(!pendingRemoteState) return;
-    // 2026-08-22 추가 (이중 안전장치): 지금 열려 있는 작지가 없거나 새 작지를 만드는 중이면
-    // 보류분을 화면에 붓지 않고 그냥 버립니다.
-    if(!woRef || newOrderMode_){ pendingRemoteState = null; return; }
     const st = pendingRemoteState; pendingRemoteState = null;
     setTimeout(()=>{ if(!isTypingNow()) applyState(st); }, 60);
   });
@@ -4186,20 +4680,26 @@
     // ---------- 작지 점검 (2026-08-13 추가) ----------
   // 작지 하나를 받아 "빠진 것"과 "팔릴 근거 등급"을 계산합니다.
   // 목록 카드와 작지 상단 요약이 같은 함수를 쓰므로 판정이 어긋나지 않습니다.
-  // 2026-08-22 수정: "샘플관리"에도 샘플중과 같은 기준을 적용합니다.
-  // 샘플중을 지나온 작지인데 샘플관리로 넘어가면 빠진 항목 경고가 사라져서,
-  // 원단·디자이너·품명이 비어 있어도 아무 표시가 없었습니다.
   const CHECK_FIELDS = [
-    { key: "fabricNameField", label: "원단", from: ["sampling","samplemgmt","order","pdp","sale"] },
+    { key: "fabricNameField", label: "원단", from: ["sampling","order","pdp","sale"] },
     { key: "blend",           label: "혼용률", from: ["order","pdp","sale"] },
     { key: "factory",         label: "공장", from: ["order","pdp","sale"] },
-    { key: "designer",        label: "디자이너", from: ["sampling","samplemgmt","order","pdp","sale"] },
-    { key: "pumMyeong",       label: "품명", from: ["sampling","samplemgmt","order","pdp","sale"] },
+    { key: "designer",        label: "디자이너", from: ["sampling","order","pdp","sale"] },
+    { key: "pumMyeong",       label: "품명", from: ["sampling","order","pdp","sale"] },
     { key: "predExpectedQty", label: "예상 판매량", from: ["order","pdp","sale"] }
   ];
   // 팔릴 근거 등급: 반전 디테일이 있으면 A, 날씬만 있으면 B, 둘 다 없으면 C
   function gradeOf_(st){
-    const sp = (st && st.sellingPoints) || null;
+    // 2026-08-25 수정: 목록은 이제 가벼운 색인(hasSp·spTwist·spSlim)을 넘기고,
+    // 편집화면은 예전처럼 sellingPoints 통째를 넘깁니다. 둘 다 받아들입니다.
+    const s_ = st || {};
+    if(typeof s_.hasSp === "boolean"){
+      if(!s_.hasSp) return { grade: "", stars: "", label: "", why: "셀링포인트 미입력" };
+      if((s_.spTwist||0) > 0) return { grade: "A", stars: "⭐⭐⭐", label: "⭐⭐⭐ A 근거 있음", why: "반전 디테일이 있어 편안함과 라인을 동시에 설명할 수 있습니다." };
+      if((s_.spSlim ||0) > 0) return { grade: "B", stars: "⭐⭐", label: "⭐⭐ B 근거 약함", why: "날씬 요소는 있지만 반전 디테일이 없어 다른 브랜드도 만들 수 있습니다." };
+      return { grade: "C", stars: "⭐", label: "⭐ C 근거 없음", why: "반전 디테일도 날씬도 없어 AISEL에서 사야 할 이유가 약합니다." };
+    }
+    const sp = s_.sellingPoints || null;
     // 2026-08-13 재수정: A·B·C만으로는 처음 보는 사람이 무슨 뜻인지 모릅니다.
     // 별 개수는 한국어를 몰라도 많을수록 좋다는 게 바로 읽혀서 label에 별을 함께 넣습니다.
     if(!sp) return { grade: "", stars: "", label: "", why: "셀링포인트 미입력" };
@@ -4217,8 +4717,13 @@
     });
     // 사이즈 스펙은 별도 저장이라 따로 봅니다
     if(["order","pdp","sale"].includes(status)){
-      const rows = (st && st.sizeSpecRows) || (st && st.sizeRows) || [];
-      if(!rows || rows.length === 0) out.push("사이즈");
+      // 2026-08-25 수정: 목록에서는 색인의 hasSize 를 씁니다. 판정 기준 자체는 그대로입니다.
+      if(st && typeof st.hasSize === "boolean"){
+        if(!st.hasSize) out.push("사이즈");
+      }else{
+        const rows = (st && st.sizeSpecRows) || (st && st.sizeRows) || [];
+        if(!rows || rows.length === 0) out.push("사이즈");
+      }
     }
     return out;
   }
@@ -4300,7 +4805,9 @@
   // 시트를 거치지 않고 앱 안의 데이터만으로 하므로 별도 준비가 필요 없습니다.
   // 같은 원단이 여러 작지에 있으면 가장 최근 작지 값이 남습니다.
   window.migrateFabricMaster_ = async function(){
-    const all = allWorkOrders || {};
+    // 2026-08-25 수정: 원단 칸은 목록 색인에 다 없으므로 이때만 전체를 한 번 읽습니다
+    const snap_ = await woRoot.once("value");
+    const all = snap_.val() || {};
     const rows = [];
     Object.keys(all).forEach(code=>{
       const st = all[code] || {};
@@ -4698,7 +5205,7 @@
     { key: "pattern", label: "패턴 고급 → 원단저렴+다이마루" },
     { key: "loom", label: "직기 → 원단저렴+패턴단순" }
   ];
-  const TARGET_PRESETS = ["30대 직장인", "40대 워킹맘", "66·77", "임산부", "기타(직접입력)"];
+  const TARGET_PRESETS = ["30대 직장인", "40대 워킹맘", "빅사이즈", "임산부", "기타(직접입력)"];
   const APPEAL_TAG_OPTIONS = [
     { key: "fabric", label: "원단" }, { key: "color", label: "컬러" }, { key: "detail", label: "디테일" },
     { key: "setup", label: "셋업" }, { key: "fit", label: "핏" }, { key: "plain", label: "꾸안꾸" }
@@ -4786,9 +5293,15 @@
     return input;
   }
 
+  let lastMeetingDetailSig_ = null;
   function renderMeetingDetail_(id){
     const m = allMeetings[id];
     if(!m) return;
+    // 2026-08-25 추가: 같은 내용이면 사진 격자를 다시 만들지 않습니다.
+    // 다시 만들면 사진이 전부 새로 로드되며 번쩍입니다.
+    const sig_ = JSON.stringify([id, m.date, m.title, m.photos || {}]);
+    if(sig_ === lastMeetingDetailSig_) return;
+    lastMeetingDetailSig_ = sig_;
     $("#mbMeetingDetailTitle").textContent = `${m.date || ""} ${m.title || ""}`.trim();
     const photos = Object.entries(m.photos || {}).sort((a,b)=> (a[1].order||0)-(b[1].order||0));
     const grid = $("#mbMeetingPhotoGrid");
@@ -5028,8 +5541,14 @@
   // ---------- 샘플관리 (작지가 샘플중 상태로 바뀌면 자동으로 한 줄 생성, 원샘플 회수 토글과 연동) ----------
   const sampleMgmtRoot = firebase.database().ref("sampleManagement");
   let allSampleMgmt = {};
+  let lastSampleMgmtSig_ = null;
   sampleMgmtRoot.on("value", snap=>{
     allSampleMgmt = snap.val() || {};
+    // 2026-08-25 추가: 내용이 그대로면 표를 다시 만들지 않습니다.
+    // 디자이너와 같이 보고 있을 때 저장할 때마다 표 전체가 깜빡이던 자리입니다.
+    const sig = JSON.stringify(allSampleMgmt);
+    if(sig === lastSampleMgmtSig_) return;
+    lastSampleMgmtSig_ = sig;
     if($("#sampleMgmtView").style.display !== "none") renderSampleMgmt_();
   });
 
@@ -5304,26 +5823,6 @@
     });
   }
 
-  document.querySelectorAll("#mbSlideSubTabs .gtab[data-slidetab]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      document.querySelectorAll("#mbSlideSubTabs .gtab").forEach(b=> b.classList.toggle("active", b===btn));
-      const which = btn.dataset.slidetab;
-      $("#mbSlideOverviewPane").style.display = which === "overview" ? "block" : "none";
-      $("#mbSlideDetailPane").style.display = which === "detail" ? "block" : "none";
-    });
-  });
-
-  // 무드보드 최상단: 회의 목록(신규, 날짜별) ↔ 이전 자료(2026.8.6, 예전 방식 그대로 보존)
-  document.querySelectorAll("#mbSlideTopTabs .gtab[data-slidetoptab]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      document.querySelectorAll("#mbSlideTopTabs .gtab").forEach(b=> b.classList.toggle("active", b===btn));
-      const which = btn.dataset.slidetoptab;
-      $("#mbMeetingListView").style.display = which === "meetings" ? "block" : "none";
-      $("#mbMeetingDetailView").style.display = "none";
-      $("#mbLegacyView").style.display = which === "legacy" ? "block" : "none";
-      if(which === "meetings") initMeetingList_();
-    });
-  });
 
   document.querySelectorAll(".mb-subtab[data-mbtab]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -5637,9 +6136,15 @@
     }
   }
 
+  let lastRefCardsSig_ = null;
   function renderRefCards(){
     const entries = Object.entries(allRefCards)
       .sort((a,b)=> (b[1].createdAt||0) - (a[1].createdAt||0));
+    // 2026-08-25 추가: 지금 보이는 조건에서 실제로 달라진 게 없으면 다시 그리지 않습니다.
+    // 여러 사람이 무드보드를 같이 볼 때 카드가 통째로 다시 그려지며 깜빡이던 자리입니다.
+    const sig_ = JSON.stringify([refFilter, refDateFilter, entries]);
+    if(sig_ === lastRefCardsSig_) return;
+    lastRefCardsSig_ = sig_;
     const filtered = entries.filter(([id, r])=>{
       const eff = r.status || "";
       if(refDateFilter === "unset"){ if(refDateOf_(r)) return false; }
@@ -6137,21 +6642,16 @@
   });
 
   function startNewWorkOrder(){
+    // 2026-08-25 추가 (중요): 직전 작지를 편집하다가 600ms 안에 새 작지를 누르면
+    // 예약돼 있던 자동저장이 "비워진 화면"을 읽어서 직전 작지에 덮어쓰는 사고가 있었습니다.
+    // (품명·사진·레퍼런스 링크가 동시에 사라지고 나중에 조립된 새 품명이 옛 작지에 박히던 원인)
+    // 화면을 떠나는 이 시점에 예약된 저장을 취소하고 연결도 끊습니다.
+    detachWoRefNow_("새 작지");
     // 2026-08-13 추가: 지금부터는 "새로 만드는 중"이라고 표시.
     // 이 상태에서는 품번이 겹쳐도 기존 작지 내용을 화면에 불러오지 않고, 그 품번으로 저장도 안 됨.
     newOrderMode_ = true;
     autoCreatedCode_ = null;
-    // 2026-08-22 수정 (치명적): 새 작지를 시작할 때 직전 작지와의 저장 연결을 끊습니다.
-    // 예전에는 연결이 직전 작지에 그대로 붙어 있었고, 품번이 아직 "품번 미정"이라
-    // 덮어쓰기 방지 검사도 통과해서, 사진을 넣는 순간 자동저장이
-    // 직전 작지를 새 내용으로 덮어썼습니다. (직전 작지의 품명이 지워지고 사진이 바뀜)
-    // 이제 품번이 정해져 attachWoRef 가 다시 연결하기 전까지는 저장 자체가 나가지 않습니다.
-    if(woRef && woListener) woRef.off("value", woListener);
-    woRef = null; woListener = null; currentCode = null;
-    // 2026-08-22 추가 (치명적 2): 입력 중이라 잠깐 보관해둔 "직전 작지의 내용"을 버립니다.
-    // 이게 남아 있으면 새 작지 화면에서 커서가 칸을 벗어나는 순간 그 내용이 부어져서,
-    // 새 작지에 직전 작지(블라우스 등) 내용이 그대로 나타났습니다.
-    pendingRemoteState = null;
+    lastSavedState_ = null;   // 2026-08-25 추가: 새 작지는 비교 기준 없이 처음부터 씁니다
     showEditor();
     linesWrap.innerHTML="";
     [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
@@ -6168,7 +6668,10 @@
      "planChecksData","planGrade","planWhy","planCheckCustom",
      "fabricSupplier","fabricName","fabricPrice","fabricWidth","fabricSwatchNo","fabricBlend","fabricSupplierPhone","fabricNegoPrice",
      // 2026-08-21 추가: 새 작지는 원샘플 메모와 코디 링크도 비웁니다
-     "sampleNoteTitle","coordiLink1","coordiNote1","coordiLink2","coordiNote2","coordiLink3","coordiNote3"
+     "sampleNoteTitle","coordiLink1","coordiNote1","coordiLink2","coordiNote2","coordiLink3","coordiNote3",
+     // 2026-08-25 추가: 코디로 골라둔 내 제품 품번도 반드시 함께 비웁니다.
+     // 안 비우면 새 작지에 직전 작지의 코디가 그대로 딸려옵니다
+     "coordiCode1","coordiCode2","coordiCode3"
     ].forEach(id=> $("#"+id).value="");
     updateRefLinkMode_(); if(typeof updateCoordiLinkMode_ === "function") updateCoordiLinkMode_();
     sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
@@ -6241,9 +6744,9 @@
       const r = window.checkWorkOrder_(st);
       r.missing.forEach(m=>{ missMap[m] = (missMap[m] || 0) + 1; });
       if(r.grade.grade === "C") gradeC++;
-      if(!st.sellingPoints){
+      if(!st.hasSp){
         noSp++;
-        if(st.p1Thumb || st.p1) canFill++;   // 사진이 있어야 판독할 수 있습니다
+        if(st.hasPhoto) canFill++;   // 사진이 있어야 판독할 수 있습니다
       }
     });
 
@@ -6271,8 +6774,8 @@
     const targets = Object.keys(all).filter(code=>{
       const st = all[code] || {};
       if(!["sampling","order","pdp","sale"].includes(st.status)) return false;
-      if(st.sellingPoints) return false;
-      return !!(st.p1 || st.p1Thumb);
+      if(st.hasSp) return false;
+      return !!st.hasPhoto;
     });
     if(targets.length === 0){ alert("채울 수 있는 작지가 없습니다."); return; }
     if(!confirm(targets.length + "개를 사진으로 읽어 셀링포인트를 채웁니다.\n\n약 " + (targets.length * 4) + "원이 들고 " + Math.ceil(targets.length * 4 / 60) + "분쯤 걸립니다.\n진행할까요?")) return;
@@ -6285,11 +6788,21 @@
       done++;
       if(box) box.innerHTML = `읽는 중 · ${done} / ${targets.length} · ${code}`;
       try{
-        const st = all[code] || {};
-        const photo = st.p1 || st.p1Thumb;
+        // 2026-08-25 수정: 사진은 색인에 원본이 없으므로 이 작지 것만 그때 한 장 읽습니다
+        const photoSnap = await woRoot.child(code).child("p1").once("value");
+        const photo = photoSnap.val() || (all[code] || {}).thumb || "";
+        if(!photo){ failed++; continue; }
         const sp = window.analyzePhotoForBatch_ ? await window.analyzePhotoForBatch_(photo) : null;
         if(!sp){ failed++; continue; }
         await woRoot.child(code).child("sellingPoints").set(sp);
+        // 목록 색인에도 결과를 반영합니다 (안 하면 목록 등급 표시가 그대로 남습니다)
+        delete lastIndexSig_[code];
+        await woIndexRoot.child(code).update({
+          hasSp: true,
+          spTwist: (sp.twist || []).length,
+          spSlim:  (sp.slim  || []).length,
+          updatedAt: Date.now()
+        });
         filled++;
         if((sp.twist || []).length === 0 && (sp.slim || []).length === 0) noEvidence.push(code);
       }catch(err){ failed++; }
@@ -6321,8 +6834,11 @@
     btn.disabled = true;
     btn.textContent = "📤 내보내는 중...";
     let okCount = 0;
-    for(const [code, st] of list){
-      const ok = await sendStoredWorkOrderToSheet_(code, st);
+    for(const [code] of list){
+      // 2026-08-25 수정: 시트로 보내려면 작지 전체 내용이 필요하므로 하나씩 읽습니다
+      const full = await window.fetchWorkOrder_(code);
+      if(!full) continue;
+      const ok = await sendStoredWorkOrderToSheet_(code, full);
       if(ok) okCount++;
     }
     btn.disabled = false;
@@ -6334,23 +6850,13 @@
   // 1순위 createdAt(생성 시각 기록) → 2순위 디자인회의 날짜(yy/mm/dd) → 3순위 최종 수정 시각.
   // 오늘 하루 테스트 삼아 여러 번 저장된 예전 작지가 최종 수정 시각 때문에 맨 위로
   // 몰리지 않도록, 기록이 없을 때는 회의 날짜를 최종 수정 시각보다 먼저 씁니다.
-  // 2026-08-22 수정: 카드에 보이는 "작성일"(작지에 적힌 yy/mm/dd)을 1순위로 씁니다.
-  // 예전에는 숨어 있는 생성 시각(createdAt)이 1순위여서, 카드에 8.25라고 적힌 것이
-  // 8.20짜리보다 아래로 가는 등 보이는 날짜와 순서가 어긋났습니다.
-  // 같은 날짜끼리는 아래 compareForOrder_ 가 생성 시각으로 다시 정렬합니다.
   function sortKeyForOrder_(st){
+    if(st.createdAt) return st.createdAt;
     if(st.yy && st.mm && st.dd){
       const t = new Date(Number(st.yy), Number(st.mm) - 1, Number(st.dd)).getTime();
       if(!isNaN(t)) return t;
     }
-    if(st.createdAt) return st.createdAt;
     return st.updatedAt || 0;
-  }
-  // 최신이 맨 위로 (내림차순). 작성일이 같으면 나중에 만든 것이 위로 옵니다.
-  function compareForOrder_(sa, sb){
-    const d = sortKeyForOrder_(sb) - sortKeyForOrder_(sa);
-    if(d) return d;
-    return (sb.createdAt || sb.updatedAt || 0) - (sa.createdAt || sa.updatedAt || 0);
   }
 
   function renderGallery(){
@@ -6358,7 +6864,7 @@
     const type = $("#gallerySearchType").value;
     const sig = JSON.stringify({
       f: galleryFilter, q, type,
-      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.blend, st.factory, st.predExpectedQty, JSON.stringify(st.sellingPoints||null), st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.p1Thumb||st.p1||"").length])
+      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length])
     });
     if(sig === lastGallerySig_) return; // 실제로 바뀐 게 없으면 다시 그리지 않음 (썸네일 깜빡임 방지)
     lastGallerySig_ = sig;
@@ -6381,10 +6887,10 @@
         const target = type === "code" ? code : (st.pumMyeong || "");
         return target.toLowerCase().includes(q);
       })
-      .sort((a,b)=> compareForOrder_(a[1], b[1]))
+      .sort((a,b)=> (sortKeyForOrder_(b[1]) - sortKeyForOrder_(a[1])))
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[st.status] || STATUS_MAP.planned;
-        const thumb = st.p1Thumb || st.p1 || "";
+        const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
         // 2026-08-13 수정: 카드 아래 표시를 품번에서 날짜로 변경.
         // 작지에 적힌 등록일(yy/mm/dd)을 우선 쓰고, 없으면 마지막 저장 시각으로 대신함.
         let dateLabel = "";
@@ -6411,7 +6917,7 @@
 
         // 2026-08-13 추가 (13-6): 덮어쓰기 의심 표시.
         // 사진은 있는데 품명·원단·디자이너가 모두 비어 있으면 다른 작지를 덮어쓴 흔적일 수 있습니다.
-        const hasPhoto = !!(st.p1Thumb || st.p1);
+        const hasPhoto = !!st.hasPhoto;
         const emptyCore = !String(st.pumMyeong || "").trim()
           && !String(st.fabricNameField || "").trim()
           && !String(st.designer || "").trim();
@@ -6443,12 +6949,11 @@
 
         card.innerHTML = `
           <div class="gcard-thumb">${thumb ? `<img loading="lazy" src="${thumb}">` : `<span class="empty">✎</span>`}</div>
-          <div class="gcard-title">${statusInfo.emoji} ${st.pumMyeong || "(품명 미정)"}<span class="gcard-code">${code}${needCafe24 ? `<span class="gcard-warn" title="카페24 자체상품코드 입력 필요">코드 미입력</span>` : ""}${suspectOverwrite ? `<span class="gcard-warn" title="사진은 있는데 품명·원단·디자이너가 모두 비어 있습니다">내용 확인</span>` : ""}</span>${((showGrade && chk.grade.grade) || weakName) ? `<span class="gcard-row2">${(showGrade && chk.grade.grade) ? `<span class="gcard-grade g-${chk.grade.grade.toLowerCase()}" title="${chk.grade.why}">${chk.grade.grade} ${chk.grade.stars}</span>` : ""}${weakName ? `<span class="gcard-soft" title="고유명 + 셀링포인트 + 카테고리 형식에 못 미칩니다">이름 보완</span>` : ""}</span>` : ""}${(sampleBadge || photoStageBadge || factoryBadge) ? `<span class="gcard-row2">${sampleBadge}${photoStageBadge}${factoryBadge}</span>` : ""}${chk.missing.length ? `<span class="gcard-miss" title="지금 상태에서 있어야 하는데 비어 있는 항목">${chk.missing.join(" · ")} 없음</span>` : ""}${(Array.isArray(st.selectedColors) && st.selectedColors.length) ? `<span class="gcard-colors">${st.selectedColors.map(c=>{
+          <div class="gcard-title">${statusInfo.emoji} ${st.pumMyeong || "(품명 미정)"}<span class="gcard-code">${code}${needCafe24 ? `<span class="gcard-warn" title="카페24 자체상품코드 입력 필요">코드 미입력</span>` : ""}${suspectOverwrite ? `<span class="gcard-warn" title="사진은 있는데 품명·원단·디자이너가 모두 비어 있습니다">내용 확인</span>` : ""}</span>${((showGrade && chk.grade.grade) || weakName) ? `<span class="gcard-row2">${(showGrade && chk.grade.grade) ? `<span class="gcard-grade g-${chk.grade.grade.toLowerCase()}" title="${chk.grade.why}">${chk.grade.grade} ${chk.grade.stars}</span>` : ""}${weakName ? `<span class="gcard-soft" title="고유명 + 셀링포인트 + 카테고리 형식에 못 미칩니다">이름 보완</span>` : ""}</span>` : ""}${(sampleBadge || photoStageBadge || factoryBadge) ? `<span class="gcard-row2">${sampleBadge}${photoStageBadge}${factoryBadge}</span>` : ""}${(showGrade && chk.missing.length) ? `<span class="gcard-miss" title="지금 상태에서 있어야 하는데 비어 있는 항목">${chk.missing.join(" · ")} 없음</span>` : ""}${(Array.isArray(st.selectedColors) && st.selectedColors.length) ? `<span class="gcard-colors">${st.selectedColors.map(c=>{
   const info = window.colorHex_ ? window.colorHex_(c) : null;
-  const nm = window.colorName_ ? window.colorName_(c) : c;
   return info
-    ? `<span class="gcard-color-chip" style="background:${info.hex};color:${info.text};">${nm}</span>`
-    : `<span class="gcard-color-chip">${nm}</span>`;
+    ? `<span class="gcard-color-chip" style="background:${info.hex};color:${info.text};">${c}</span>`
+    : `<span class="gcard-color-chip">${c}</span>`;
 }).join("")}</span>` : ""}<span class="code">${dateLabel}</span></div>
         `;
         card.addEventListener("click", ()=>{
@@ -6479,7 +6984,7 @@
     let list = Object.entries(allWorkOrders || {}).filter(([code, st])=> st.status === "order" || st.status === "pdp" || st.status === "sale");
     const sig = JSON.stringify({
       sort: salesSort,
-      items: list.map(([code, st])=> [code, st.updatedAt, st.pumMyeong, st.predExpectedQty, st.predActualQty, st.predActualDays, (st.p1Thumb||st.p1||"").length])
+      items: list.map(([code, st])=> [code, st.updatedAt, st.pumMyeong, st.predExpectedQty, st.predActualQty, st.predActualDays, (st.thumb||"").length])
     });
     if(sig === lastSalesSig_) return;
     lastSalesSig_ = sig;
@@ -6491,7 +6996,7 @@
     }
     const frag = document.createDocumentFragment();
     list.forEach(([code, st])=>{
-      const thumb = st.p1Thumb || st.p1 || "";
+      const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
       const exp = Number(st.predExpectedQty)||0;
       const act = Number(st.predActualQty)||0;
       const r = ratioOf_(st);
@@ -6536,7 +7041,11 @@
     const el = document.getElementById(id);
     return !!(el && el.style.display !== "none");
   }
-  woRoot.on("value", (snapshot)=>{
+  // 2026-08-25 수정 (중요): 예전에는 여기서 workorders 트리 전체를 구독했습니다.
+  // 작지마다 사진 원본(base64)이 통째로 들어 있어서, 누가 한 글자만 쳐도 모든 접속자에게
+  // 전체 스냅샷이 다시 내려왔고 그때마다 목록이 새로 그려지며 깜빡였습니다.
+  // 이제 목록 화면은 가벼운 색인만 구독합니다. 사진 원본은 작지를 열었을 때만 내려옵니다.
+  woIndexRoot.on("value", (snapshot)=>{
     allWorkOrders = snapshot.val() || {};
     updateCodeConflictUI_(); // 2026-08-13 추가: 목록이 늦게 도착한 경우에도 품번 중복 경고가 정확히 뜨게
     clearTimeout(renderListsTimer_);
@@ -6545,6 +7054,47 @@
       if(isViewVisible_("salesView")) renderSalesView();
     }, 250);
   });
+
+  // 색인이 아직 없거나 예전 판이면 딱 한 번만 전체를 읽어 색인을 만듭니다.
+  // 이 작업 이후로는 목록 화면이 두 번 다시 원본 사진을 내려받지 않습니다.
+  (async function ensureWoIndex_(){
+    try{
+      const verSnap = await woIndexMetaRoot.child("version").once("value");
+      if(verSnap.val() === WO_INDEX_VERSION) return;
+      const allSnap = await woRoot.once("value");
+      const all = allSnap.val() || {};
+      const payload = {};
+      const codes = Object.keys(all);
+      for(const code of codes){
+        const st = all[code] || {};
+        // 예전 작지 중에는 압축 썸네일 없이 원본만 있는 것이 있습니다.
+        // 그대로 두면 목록에서 사진이 안 보이므로 이때 한 번 만들어 같이 저장합니다.
+        if(!st.p1Thumb && st.p1){
+          const t = await new Promise(res=>{
+            try{ makeThumbnail(st.p1, 320, 0.6, res); }catch(e){ res(""); }
+          });
+          if(t){
+            st.p1Thumb = t;
+            woRoot.child(code).child("p1Thumb").set(t).catch(()=>{});
+          }
+        }
+        const e = woIndexEntryFrom_(st);
+        e.updatedAt = st.updatedAt || 0;
+        payload[code] = e;
+      }
+      await woIndexRoot.set(payload);
+      await woIndexMetaRoot.child("version").set(WO_INDEX_VERSION);
+    }catch(err){
+      console.error("색인 준비 실패:", err);
+    }
+  })();
+
+  // 다른 사람이 색인을 못 만든 채 저장한 작지가 있으면 목록에서 사라져 보일 수 있습니다.
+  // 그런 일이 없도록 내가 여는 작지는 열 때마다 색인을 맞춰둡니다.
+  function syncIndexFromFull_(code, st){
+    if(!code || !st) return;
+    writeIndexIfChanged_(code, st);
+  }
   $("#galleryTabs").addEventListener("click", (e)=>{
     const btn = e.target.closest(".gtab");
     if(!btn) return;
@@ -6562,8 +7112,10 @@
 
   // ---------- 특정 작지 열기 (카드 클릭·이전/다음·발주서 팝업에서 공용으로 사용) ----------
   function openWorkOrderByCode_(code){
-    const st = allWorkOrders[code];
-    if(!st) return;
+    if(!code || !allWorkOrders[code]) return;
+    // 2026-08-25 추가: 작지를 빠르게 갈아탈 때 직전 작지의 예약된 자동저장이
+    // 전환 도중에 실행돼 엉뚱한 내용이 저장되는 것을 막습니다.
+    if(code !== currentCode) detachWoRefNow_("작지 이동");
     clearPendingCode_();   // 저장된 작지는 품번이 확정된 상태
     setTimeout(()=>{ if(typeof refreshMoveCodeBtn_ === "function") refreshMoveCodeBtn_(); }, 0);
     // 2026-08-13 추가: 목록에서 기존 작지를 여는 경우이므로 "새로 만드는 중" 표시를 끔
@@ -6571,15 +7123,27 @@
     autoCreatedCode_ = null;
     if(typeof toggleMetaAccordion_ === "function") toggleMetaAccordion_(false);   // 2026-08-21 추가: 작지를 열 때마다 메타 정보는 접힌 채로 시작
     showEditor();
+    // 2026-08-25 수정: 목록은 이제 가벼운 색인만 가지고 있어서 여기에 작지 전체 내용이
+    // 없습니다. 실제 내용은 아래 attachWoRef 가 붙인 연결로 곧바로 내려옵니다.
+    // 그 사이에는 직전 작지 값이 화면에 남아 있으므로 저장을 잠가둡니다.
+    loading = true;
+    const sBtn = $("#saveBtn");
+    if(sBtn) sBtn.textContent = "⏳ 불러오는 중...";
+    clearTimeout(openWatchdog_);
+    openWatchdog_ = setTimeout(()=>{
+      if(loading && currentCode === code){
+        loading = false;
+        if(sBtn) sBtn.textContent = "⚠ 불러오기 지연 (인터넷 확인)";
+      }
+    }, 8000);
     attachWoRef(code);
-    applyState(st);
     updateCodeConflictUI_();
   }
 
   // ---------- 이전/다음 작지 (목록 화면 정렬 순서 기준) ----------
   function sortedCodes_(){
     return Object.entries(allWorkOrders || {})
-      .sort((a,b)=> compareForOrder_(a[1], b[1]))
+      .sort((a,b)=> (sortKeyForOrder_(b[1]) - sortKeyForOrder_(a[1])))
       .map(([code])=> code);
   }
   function stepWorkOrder_(direction){
@@ -6927,6 +7491,7 @@
     justDeletedCode_ = code; // 삭제 확정 순간부터 이 품번에 대한 자동저장은 전부 무시
     clearTimeout(saveT); // 방금까지 입력하던 내용이 뒤늦게 자동저장되어 삭제한 항목이 되살아나는 것 방지
     woRoot.child(code).remove().then(()=>{
+      removeIndexEntry_(code);   // 2026-08-25 추가: 목록 색인에서도 지웁니다
       clearTimeout(saveT); // confirm창 뜨는 사이 blur로 새로 걸렸을 수 있는 자동저장 타이머도 한 번 더 취소
       // 2026-08-13 수정: 예전에는 3초가 지나면 justDeletedCode_ 기억이 사라지는데
       // woRef는 삭제된 품번을 계속 가리키고 있어서, 그 뒤에 입력이 한 번만 일어나도
@@ -7043,27 +7608,72 @@ const FABRIC_GROUPS_DEFAULT = {
 };
 const FABRIC_KEYS = { fabric:"aisel_custom_fabric", detail:"aisel_custom_detail", fit:"aisel_custom_fit" };
 
-function loadCustomList(key){
+/* ===== 2026-08-25 · 단어 목록 저장소 전면 교체 =====
+   예전에는 직접 추가한 단어가 그 브라우저(localStorage)에만 저장됐습니다. 그래서
+   노트북에서 넣은 이름이 휴대폰이나 디자이너 노트북에서는 안 보였고, 브라우저 데이터를
+   지우면 사라졌으며, 파일에는 흔적조차 남지 않아 추적이 불가능했습니다.
+   또 기본 목록이 이 파일 안에 한 줄로 박혀 있어 깃 차이로는 몇 개가 줄었는지 보이지 않았습니다.
+
+   이제 세 곳에서 읽어 합칩니다.
+     1) words.json  — 깃허브 마스터. 한 줄에 한 단어라 깃 이력에 증감이 그대로 보입니다.
+     2) 파이어베이스 — 앱에서 직접 추가한 단어. 모든 기기에 바로 반영됩니다.
+     3) localStorage — 예전 기기에 남아 있던 단어. 처음 한 번 파이어베이스로 옮깁니다.
+   셋 중 하나가 실패해도 나머지로 화면이 채워지고, 전부 실패하면 이 파일의 기본 목록을 씁니다. */
+const WORDS_JSON_URL = "words.json";   // work-order.html 과 같은 폴더
+const wordsRoot_ = firebase.database().ref("wordLists");
+let wordsMaster_ = {};   // words.json 에서 읽은 것
+let wordsShared_ = {};   // 파이어베이스에서 읽은 것
+const wordsKeySafe_ = w => String(w).replace(/[.#$/\[\]]/g, "_");
+
+// 붙여넣기 지원. 줄바꿈·쉼표·가운뎃점·슬래시·탭으로 나눕니다.
+// 시에 목록처럼 수십 개를 한 번에 붙여넣어도 한 번에 다 들어갑니다.
+function splitWords_(raw){
+  return String(raw || "")
+    .split(/[\n,·/|\t;]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+function loadLocalList_(key){
   try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; }
 }
-function saveCustomWord(key, word){
-  const list = loadCustomList(key);
-  if(!list.includes(word)) list.push(word);
-  localStorage.setItem(key, JSON.stringify(list));
+// 원래 이름과 사용처를 그대로 두고 속만 바꿨습니다. 부르는 쪽은 고칠 것이 없습니다.
+function loadCustomList(key){
+  const out = [];
+  const push = w => { const v = String(w || "").trim(); if(v && !out.includes(v)) out.push(v); };
+  (wordsMaster_[key] || []).forEach(push);
+  Object.values(wordsShared_[key] || {}).forEach(push);
+  loadLocalList_(key).forEach(push);
+  return out;
+}
+function saveCustomWord(key, raw){
+  const words = splitWords_(raw);
+  if(!words.length) return [];
+  // 파이어베이스는 단어마다 각자 칸을 씁니다. 두 사람이 동시에 넣어도 서로 안 지웁니다.
+  const patch = {};
+  words.forEach(w => { patch[wordsKeySafe_(w)] = w; });
+  wordsRoot_.child(key).update(patch).catch(()=>{});
+  // 인터넷이 끊겨도 이 기기에서는 계속 보이도록 예전 방식도 함께 남깁니다
+  const local = loadLocalList_(key);
+  words.forEach(w => { if(!local.includes(w)) local.push(w); });
+  try{ localStorage.setItem(key, JSON.stringify(local)); }catch(e){}
+  return words;
 }
 
 function loadNameList(){
-  const custom = loadCustomList(NAME1_KEY);
+  // words.json 을 못 읽었을 때를 대비해 이 파일의 기본 목록을 바닥에 깔아둡니다
   const merged = [...NAME1_DEFAULT];
-  custom.forEach(c => { if(!merged.includes(c)) merged.push(c); });
+  loadCustomList(NAME1_KEY).forEach(c => { if(!merged.includes(c)) merged.push(c); });
   return merged;
 }
 function loadFabricGroup(groupKey){
-  const custom = loadCustomList(FABRIC_KEYS[groupKey]);
   const merged = [...FABRIC_GROUPS_DEFAULT[groupKey]];
-  custom.forEach(c => { if(!merged.some(m => m.w === c)) merged.push({w:c, star:false}); });
+  loadCustomList(FABRIC_KEYS[groupKey]).forEach(c => {
+    if(!merged.some(m => m.w === c)) merged.push({ w:c, star:false });
+  });
   return merged;
 }
+
 
 let name1List = loadNameList();
 let fabricGroups = {
@@ -7144,6 +7754,19 @@ function loadSpGroup(groupKey){
 }
 let spGroups = { comfort: loadSpGroup("comfort"), slim: loadSpGroup("slim"), twist: loadSpGroup("twist") };
 let selSP = { comfort: [], slim: [], twist: [] };
+/* 2026-08-25 추가: 묶음마다 「자동 / 직접」 딱지.
+   지수님이 그 묶음의 칩을 한 번이라도 누르면 「직접」이 되고,
+   그 뒤로는 사진 읽기(AI)가 그 묶음을 다시 건드리지 않습니다.
+   품명칸이 이미 쓰고 있는 방식(dataset.auto)과 같은 생각입니다. */
+let spManual = { comfort:false, slim:false, twist:false };
+/* AI가 제안했지만 「직접」이라 넣지 않은 단어들. 안내에 보여주고 원하시면 그때 넣습니다 */
+let spSkipped_ = { comfort:[], slim:[], twist:[] };
+function setSpAuto_(groupKey){
+  spManual[groupKey] = false;
+  spSkipped_[groupKey] = [];
+  renderSpGroup(groupKey);
+  persistRows_();
+}
 // 2026-08-13 추가: 날씬(반전 디테일 + 날씬 요소)을 누른 순서를 따로 기억합니다.
 // 이름을 만들 때 이 순서를 그대로 씁니다 — 어느 게 먼저 눈에 들어왔는지가
 // 지수님 감각을 가장 정확히 반영하기 때문입니다. (편안함은 항상 이 순서 뒤, 맨 끝에 옵니다)
@@ -7160,12 +7783,26 @@ function renderSpGroup(groupKey){
   const el = $(ui.chips);
   if(!el) return;
   el.innerHTML = "";
+  // 2026-08-25 추가: 이 묶음이 자동인지 직접인지 맨 앞에 표시합니다
+  const badge = document.createElement(spManual[groupKey] ? "button" : "span");
+  badge.className = "sp-mode-badge" + (spManual[groupKey] ? " manual" : "");
+  if(spManual[groupKey]){
+    badge.type = "button";
+    badge.textContent = "직접 ↺ 자동으로";
+    badge.title = "지금은 직접 고르신 상태라 사진 읽기가 이 묶음을 건드리지 않습니다. 누르면 자동으로 되돌립니다.";
+    badge.addEventListener("click", ()=> setSpAuto_(groupKey));
+  }else{
+    badge.textContent = "자동";
+    badge.title = "사진을 읽으면 AI가 이 묶음을 채웁니다. 칩을 하나라도 누르시면 직접 고르신 것으로 바뀝니다.";
+  }
+  el.appendChild(badge);
   spGroups[groupKey].forEach(word => {
     const btn = document.createElement("button");
     const isSel = selSP[groupKey].includes(word);
     btn.className = "copygen-chip copygen-sp" + (isSel ? " copygen-selected" : "");
     btn.textContent = spDisplay_(word); // 화면에는 띄어쓰기 표기, 저장은 붙여쓰기 태그로
     btn.addEventListener("click", () => {
+      spManual[groupKey] = true;   // 2026-08-25: 손을 대신 순간부터 이 묶음은 직접 고르신 것
       if(selSP[groupKey].includes(word)){
         selSP[groupKey] = selSP[groupKey].filter(w => w !== word);
         if(groupKey === "twist" || groupKey === "slim") removeSlimOrder_(groupKey, word);
@@ -7216,9 +7853,12 @@ function setupSpAdd(groupKey){
   if(!confirmBtn) return;
   confirmBtn.addEventListener("click", () => {
     // 붙여쓰기 통일: 입력값의 공백을 제거해서 같은 태그가 두 개로 갈라지지 않게 함
-    const val = $(ui.input).value.replace(/\s+/g, "").trim();
-    if(!val) return;
-    saveCustomWord(SP_KEYS[groupKey], val);
+    // 2026-08-25 수정: 여러 개 붙여넣기 지원. 태그 붙여쓰기 규칙은 그대로 지킵니다
+    const raw = splitWords_($(ui.input).value).map(w => w.replace(/\s+/g, "")).join("\n");
+    const added = saveCustomWord(SP_KEYS[groupKey], raw);
+    if(!added.length) return;
+    const val = added[0];
+    spManual[groupKey] = true;   // 2026-08-25: 직접 추가한 것도 손을 댄 것
     spGroups[groupKey] = loadSpGroup(groupKey);
     if(!selSP[groupKey].includes(val)){
       selSP[groupKey].push(val);
@@ -7278,9 +7918,18 @@ if($("output")){
 
 window.spDisplayFor_ = spDisplay_;
 window.getSellingPoints_ = () => selSP;
+// 2026-08-25 추가: 「자동 / 직접」 딱지도 작지에 함께 저장합니다 (품명의 pumAuto 와 같은 방식)
+window.getSpManual_ = () => spManual;
 // 2026-08-13 추가: 날씬(반전+날씬) 클릭 순서도 함께 저장/복원합니다.
 window.getSlimClickOrder_ = () => slimClickOrder_;
-window.setSellingPoints_ = (v, order) => {
+window.setSellingPoints_ = (v, order, manual) => {
+  // 2026-08-25 추가: 저장돼 있던 딱지를 되살립니다. 기록이 없던 예전 작지는 전부 「자동」으로 봅니다
+  spManual = {
+    comfort: !!(manual && manual.comfort),
+    slim:    !!(manual && manual.slim),
+    twist:   !!(manual && manual.twist)
+  };
+  spSkipped_ = { comfort:[], slim:[], twist:[] };
   selSP = {
     comfort: Array.isArray(v && v.comfort) ? v.comfort.slice() : [],
     slim:    Array.isArray(v && v.slim)    ? v.slim.slice()    : [],
@@ -7594,11 +8243,49 @@ function syncKeywordsFromFabric(){
    도식화에서는 형태(넥라인·밑단·랩·절개 등)가 잘 읽히고,
    촉감 계열(텐션·드레이프·소프트)은 실물 사진이라야 정확합니다.
    그래서 샘플 사진으로 바꾸면 다시 읽어 보강합니다. */
+/* 2026-08-25 추가: 직접 고르신 묶음을 건너뛴 게 있으면 그 사실과 AI 제안을 함께 알려줍니다.
+   그냥 조용히 무시하면 "AI가 일을 안 하네"로 보이기 때문입니다. 넣을지는 지수님이 고르십니다. */
+function appendSpSkippedNotice_(box){
+  const keys = ["comfort","slim","twist"].filter(k => (spSkipped_[k] || []).length);
+  if(!keys.length) return;
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "margin-top:7px;padding-top:7px;border-top:1px dashed #D9C7A6;font-size:11.5px;line-height:1.6;";
+  const labels = keys.map(k => SP_UI[k].label).join(" · ");
+  const words  = keys.map(k => spSkipped_[k].map(spDisplay_).join(" · ")).join(" / ");
+  wrap.append(labels + " — 직접 고르신 칸이라 그대로 뒀습니다. AI 제안: " + words + " ");
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "copygen-btn-secondary";
+  btn.style.cssText = "margin-left:6px;padding:3px 9px;font-size:11px;";
+  btn.textContent = "AI 것으로 바꾸기";
+  btn.addEventListener("click", ()=>{
+    keys.forEach(k=>{
+      spSkipped_[k].forEach(w=>{
+        if(!selSP[k].includes(w)){
+          selSP[k].push(w);
+          if(k === "twist" || k === "slim") pushSlimOrder_(k, w);
+        }
+      });
+      spSkipped_[k] = [];
+    });
+    renderAllSp();
+    updatePreview();
+    syncKeywordsFromSellingPoints_();
+    if(window.onCopygenMaterialChanged_) window.onCopygenMaterialChanged_();
+    persistRows_();
+    if(window.refreshSpSummaryLine_) window.refreshSpSummaryLine_();
+    if(window.refreshWoCheckBar_) window.refreshWoCheckBar_();
+    wrap.textContent = "AI 제안을 넣었습니다.";
+  });
+  wrap.appendChild(btn);
+  box.appendChild(wrap);
+}
 function setPhotoVisionStatus_(kind, msg, withRetry){
   const box = $("photoVisionStatus");
   if(!box) return;
   box.className = "copygen-photo-status" + (kind ? " on " + kind : "");
   box.textContent = msg || "";
+  appendSpSkippedNotice_(box);
   if(withRetry){
     const btn = document.createElement("button");
     btn.className = "copygen-btn-secondary";
@@ -7660,8 +8347,9 @@ ${spGroups.twist.join(", ")}
    기타로 직접 입력한 단어가 자주 쓰이면 정식 버튼으로 올려야 합니다.
    매번 손으로 치면 오타로 같은 태그가 두 개로 갈라지기 때문입니다.
    아래 버튼을 누르면 지금까지 만든 작지 전체에서 셀링포인트 사용 횟수를 세어 보여줍니다. */
-window.showSellingPointUsage_ = function(){
-  const all = (window.getAllWorkOrders_ && window.getAllWorkOrders_()) || {};
+window.showSellingPointUsage_ = async function(){
+  // 2026-08-25 수정: 목록 색인에는 셀링포인트 단어가 없으므로 이때만 전체를 한 번 읽습니다
+  const all = window.fetchAllWorkOrders_ ? await window.fetchAllWorkOrders_() : {};
   const count = { comfort: {}, slim: {}, twist: {} };
   let total = 0;
   Object.keys(all).forEach(code=>{
@@ -7697,8 +8385,20 @@ function applyPhotoVision_(parsed){
   let nameWasAuto = false;  // 고유명을 임의로 골랐는지
 
   // 셀링포인트 (목록에 있는 단어만 받아들임)
+  spSkipped_ = { comfort:[], slim:[], twist:[] };
   ["comfort","slim","twist"].forEach(key => {
     const list = Array.isArray(parsed[key]) ? parsed[key] : [];
+    // 2026-08-25 추가: 직접 고르신 묶음은 건드리지 않습니다.
+    // 대신 AI가 뭘 제안했는지만 따로 담아두고 안내에서 보여드립니다.
+    if(spManual[key]){
+      list.forEach(w => {
+        const word = String(w || "").replace(/\s+/g, "");
+        if(!spGroups[key].includes(word)) return;
+        if(SP_RETIRED.includes(word)) return;
+        if(!selSP[key].includes(word)) spSkipped_[key].push(word);
+      });
+      return;
+    }
     list.forEach(w => {
       const word = String(w || "").replace(/\s+/g, "");
       if(!spGroups[key].includes(word)) return;
@@ -7818,6 +8518,7 @@ window.analyzeWorkOrderPhoto_ = async function(dataUrl){
     setPhotoVisionStatus_("err", "사진 판독은 배달원 연결이 필요합니다. 셀링포인트를 직접 골라주세요.");
     return;
   }
+  spSkipped_ = { comfort:[], slim:[], twist:[] };   // 2026-08-25: 지난번 건너뛴 기록을 먼저 비웁니다
   setPhotoVisionStatus_("pending", "사진을 읽는 중입니다...");
   try{
     const base64 = dataUrl.split("base64,")[1];
@@ -7911,6 +8612,8 @@ window.rebuildFromPhoto_ = function(){
   );
   if(!ok) return;
   selSP = { comfort: [], slim: [], twist: [] };
+  spManual = { comfort:false, slim:false, twist:false };   // 2026-08-25: 처음부터 다시면 딱지도 자동으로
+  spSkipped_ = { comfort:[], slim:[], twist:[] };
   sel1 = null;
   sel3 = null;
   renderAllSp();
@@ -7955,7 +8658,7 @@ const BASE_COLORS = [
   { key:"블랙", hex:"#1a1a1a", text:"#ffffff" },
   { key:"차콜", hex:"#3a3d40", text:"#ffffff" },
   { key:"딥네이비", hex:"#22314f", text:"#ffffff" },
-  { key:"그레이 블루", hex:"#a9b7c2", text:"#1a2530" },
+  { key:"회소라", hex:"#a9b7c2", text:"#1a2530" },
   { key:"라이트그레이", hex:"#cfcecb", text:"#33322f" },
   { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
   { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
@@ -7986,12 +8689,12 @@ const COLOR_VARIANT_HEX = {
   "다크 네이비": { hex: "#0c131e", text: "#ffffff" },
   "네이비 블루": { hex: "#202951", text: "#ffffff" },
   "스틸 네이비": { hex: "#2f3b4c", text: "#ffffff" },
-  "그레이 블루": { hex: "#a9b7c2", text: "#3a352c" },
-  "블루 그레이": { hex: "#b0b6bb", text: "#3a352c" },
-  "페일 블루": { hex: "#d6dadc", text: "#3a352c" },
-  "더스티 블루": { hex: "#c0c5c9", text: "#3a352c" },
+  "회소라": { hex: "#a9b7c2", text: "#3a352c" },
+  "소라 그레이": { hex: "#b0b6bb", text: "#3a352c" },
+  "페일 소라": { hex: "#d6dadc", text: "#3a352c" },
+  "더스티 소라": { hex: "#c0c5c9", text: "#3a352c" },
   "미스티 블루": { hex: "#d4d9de", text: "#3a352c" },
-  "소프트 블루": { hex: "#a6b1c5", text: "#3a352c" },
+  "소라 블루": { hex: "#a6b1c5", text: "#3a352c" },
   "라이트그레이": { hex: "#cfcecb", text: "#3a352c" },
   "라이트 그레이": { hex: "#d1cfc9", text: "#3a352c" },
   "페일 그레이": { hex: "#ecebe9", text: "#3a352c" },
@@ -8022,21 +8725,14 @@ const COLOR_VARIANT_HEX = {
   "민트 그린": { hex: "#748773", text: "#ffffff" },
   "카키 그린": { hex: "#707c6a", text: "#ffffff" },
   "포레스트 그린": { hex: "#667552", text: "#ffffff" },
-  // 2026-08-22: 옛 이름(소라 계열)을 새 이름으로 바꿨습니다. 아래는 이미 저장된 작지가
-  // 색을 잃지 않도록 남겨둔 옛 이름입니다. 고르는 목록에는 안 나옵니다.
-  "회소라": { hex: "#a9b7c2", text: "#3a352c" }, "소라 그레이": { hex: "#b0b6bb", text: "#3a352c" }, "페일 소라": { hex: "#d6dadc", text: "#3a352c" }, "더스티 소라": { hex: "#c0c5c9", text: "#3a352c" }, "소라 블루": { hex: "#a6b1c5", text: "#3a352c" },
 };
-const COLOR_RENAME_ = { "회소라":"그레이 블루", "소라 그레이":"블루 그레이", "페일 소라":"페일 블루",
-                          "더스티 소라":"더스티 블루", "소라 블루":"소프트 블루" };
-  window.colorHex_ = (name) => COLOR_VARIANT_HEX[name] || null;
-  // 2026-08-22 추가: 옛 색 이름을 새 이름으로 바꿔 보여줍니다 (목록 카드 등 어디서나 씁니다)
-  window.colorName_ = (name) => COLOR_RENAME_[name] || name;   // 2026-08-13 추가: 목록 카드 등 다른 화면에서 색을 조회할 때 씁니다
+window.colorHex_ = (name) => COLOR_VARIANT_HEX[name] || null;   // 2026-08-13 추가: 목록 카드 등 다른 화면에서 색을 조회할 때 씁니다
 
 const COLOR_VARIANTS = {
   "블랙": ["블랙","딥 블랙","소프트 블랙","스모키 블랙","미드나잇 블랙","펄 블랙"],
   "차콜": ["차콜","차콜 쉐도우","스모크 차콜","딥 차콜","애쉬 차콜","소프트 차콜"],
   "딥네이비": ["딥네이비","미드나잇 네이비","인디고 네이비","다크 네이비","네이비 블루","스틸 네이비"],
-  "그레이 블루": ["그레이 블루","블루 그레이","페일 블루","더스티 블루","미스티 블루","소프트 블루"],
+  "회소라": ["회소라","소라 그레이","페일 소라","더스티 소라","미스티 블루","소라 블루"],
   "라이트그레이": ["라이트그레이","라이트 그레이","페일 그레이","애쉬 그레이","미스트 그레이","실버 그레이"],
   "블러쉬": ["블러쉬","블러쉬 핑크","더스티 핑크","로즈 블러쉬","페일 블러쉬","소프트 핑크"],
   "크림": ["크림","크림 베이지","웜 크림","펄리 크림","바닐라 크림","아이보리 크림"],
@@ -8125,10 +8821,8 @@ function removeColor(v){
 // 안 비워지고 다음 작지를 저장할 때 그 값이 그대로 얹혀 저장됐습니다.
 // (A에서 고른 컬러가 B로, B에서 고른 컬러가 C로 밀리던 버그의 원인이었습니다)
 window.getSelectedColors_ = () => selectedColors;
-// 2026-08-22 추가: 옛 색 이름(소라 계열)을 새 이름으로 바꿔서 보여줍니다.
-// "소라"는 일본말이라 "페일 소라"처럼 앞말과 어울리지 않는 조합이 생겼습니다.
 window.setSelectedColors_ = (list) => {
-  selectedColors = (Array.isArray(list) ? list : []).map(v => COLOR_RENAME_[v] || v);
+  selectedColors = Array.isArray(list) ? list.slice() : [];
   renderSelectedColors();
   renderVariantPanel();
 };
@@ -8248,8 +8942,7 @@ const SYSTEM_PROMPT = `당신은 AISEL(에이슬)이라는 여성복 D2C 브랜�
   "여유롭다"고 쓰면 오버핏과 구분이 안 됩니다.
   허리·밑단을 함께 풀어 설명하지 않습니다 (예: "허리는 감싸고 밑단은 떨어진다" 같은 서술은
   편안함이 직관적으로 와닿지 않으므로 쓰지 않습니다). 이 문구 하나로 끝내고,
-  뒤에는 짝꿍 제품이 있으면 그 제품명을 붙이고, 없으면 아무것도 붙이지 않고 그대로 끝냅니다.
-  ("취향에 따라 다양하게 연출하실 수 있습니다" 같은 아무 정보 없는 마무리는 쓰지 않습니다.)
+  뒤에는 짝꿍 제품이 있으면 그 제품명을, 없으면 "취향에 따라 다양하게 연출하실 수 있습니다"를 붙입니다.
 - 루즈핏: "넉넉하게 감싸는" 형태로 씁니다.
 - 오버핏: "여유롭게 떨어지는", "넓게 흐르는" 형태로 씁니다.
 - "체형 상관없이"는 릴렉스핏에서만 씁니다. 사이즈나 체형에 대한 우려를 없애는 표현이라
@@ -8299,14 +8992,14 @@ const SYSTEM_PROMPT = `당신은 AISEL(에이슬)이라는 여성복 D2C 브랜�
   "'○○'와 세트로 매치하면 완성도 있는 룩을 연출하실 수 있습니다" 형태로 실명을 그대로 씁니다.
 - 짝꿍 제품이 없으면 활용 범위를 억지로 한 줄 덧붙이지 않습니다.
   마지막 문단의 내용에 자연스럽게 이어 붙이거나, 아예 쓰지 않고 앞 문장으로 끝냅니다.
-  ★ "취향에 따라 다양하게 연출하실 수 있습니다"는 쓰지 않습니다. 아무 정보도 주지 않는 문장입니다.
+  릴렉스핏 문장 뒤에 붙일 때는 "취향에 따라 다양하게 연출하실 수 있습니다"로 통일합니다.
   올바른 예: "면 스판 혼방 소재로 제작되어 착용감이 편안하고 일상에서도 부담 없이 즐기기 좋습니다."
-  올바른 예: "체형 상관없이 편안하게 착용할 수 있습니다."
+  올바른 예: "체형 상관없이 편안하게 착용할 수 있으며, 취향에 따라 다양하게 연출하실 수 있습니다."
   올바른 예: 활용 문장 없이 마지막 디테일 설명으로 그대로 끝내기
   금지 예: 앞 문단과 빈 줄로 떨어진 채 "다양하게 착용하실 수 있습니다."만 한 줄로 놓기
 - "다양하게 착용하실 수 있습니다"는 단독 문장이나 단독 문단으로 쓰지 않습니다.
-  아예 쓰지 않습니다. "취향에 따라 다양하게 연출하실 수 있습니다", "다양한 스타일링을 즐길 수 있습니다"
-  같은 표현은 전부 금지입니다. 활용 범위는 짝꿍 제품이 실제로 있을 때만 그 제품명으로 말합니다.
+  반드시 앞 내용과 한 문장으로 묶습니다. 표현은 "취향에 따라 다양하게 연출하실 수 있습니다"로 통일합니다
+  ("다양한 스타일링을 즐길 수 있습니다" 같은 변형은 쓰지 않습니다).
 
 [컬러 언급]
 - 상세설명 본문 안에서는 컬러명을 언급하지 않습니다.
@@ -8365,24 +9058,11 @@ const SYSTEM_PROMPT = `당신은 AISEL(에이슬)이라는 여성복 D2C 브랜�
 - 실루엣/핏 계열: 실루엣, 라인, 핏, 밸런스, 비율
 - 소재/촉감 계열: 터치감, 텍스처, 결, 밀도감, 신축성, 복원력
 - 질감 형용사: 부드러운, 산뜻한, 청량한, 은은한, 매끈한, 도톰한, 가벼운
-  ※ 이 목록은 "써도 되는 후보"일 뿐 "쓰라는 지시"가 아닙니다.
-     입력에 원단명·혼용률·소재 관련 키워드가 주어졌을 때만 쓰고, 없으면 한 개도 쓰지 않습니다.
 - 무드 형용사: 우아한, 세련된, 모던한, 차분한, 단정한 (문장마다 절제된 형용사 1개만)
-  ※ 사진이나 디테일로 실제 확인되는 경우에만 씁니다. 분위기를 짐작해서 붙이지 않습니다.
 - 효과 동사: 연출하다, 완성하다, 정돈하다, 잡아주다, 감싸다, 돋보이다, 떨어지다, 드러내다
 - 위 목록에 없는 일반적인 형용사·부사(예: "손쉽게", "간편하게")는 꼭 필요한 경우가 아니면 피합니다.
 - "캐주얼부터 세미포멀까지"처럼 키워드에 없는 착용 상황(오피스룩, 파티룩 등)을 지어내지 않습니다.
 - 과장된 수식어(최고, 완벽, 무조건, 대박)는 절대 쓰지 않습니다.
-- ★ 만져보지 않으면 알 수 없는 것을 단정하지 않습니다.
-  입력에 원단 정보가 없으면 촉감·착용감·온도감을 아예 쓰지 않습니다.
-  금지 예: "피부에 닿는 느낌이 산뜻하며", "부드러운 터치감의 소재로 제작되어",
-           "가볍게 흐르는 소재감" — 원단명이 주어지지 않았다면 전부 지어낸 말입니다.
-  원단명이 주어졌으면 그 원단에서 실제로 나오는 성질만 씁니다 (예: 면 100% → 흡습성).
-- ★ 디테일이 만드는 효과를 지어내지 않습니다.
-  금지 예: "러플이 네크라인을 따라 우아한 라인을 완성합니다" — 러플이 있다는 사실만 말하고,
-           그것이 무슨 라인을 만드는지는 근거가 없으면 쓰지 않습니다.
-  디테일은 "무엇이 어디에 있다"까지만 씁니다.
-- ★ 정보가 부족하면 문장을 늘리지 말고 짧게 끝냅니다. 짧은 것이 지어낸 것보다 낫습니다.
 - 상세설명 본문에는 품명을 직접 언급하지 않습니다.
 
 입력으로 핵심 키워드가 주어지면, 위 규칙에 맞춘 상세페이지 설명만 출력하세요. 다른 말은 하지 마세요.`;
@@ -8611,15 +9291,7 @@ if($("colors")) $("colors").addEventListener("input", onMaterialChanged_);
 if($("keywords")) $("keywords").addEventListener("input", onMaterialChanged_);
 if($("name")) $("name").addEventListener("input", onMaterialChanged_);
 
-window.refreshCopygenOutput_ = () => {
-  // 2026-08-22 수정 (치명적): 불러온 상세설명이 이미 있으면 "사람이 쓴 것"으로 봅니다.
-  // 예전에는 여기서 잠금을 풀어버려서, 작지를 다시 불러오거나 다른 기기의 저장이 들어온 뒤
-  // 셀링포인트 버튼 하나만 눌러도 자동 생성이 지수님이 쓴 문장을 통째로 덮어썼습니다.
-  // 이제 저장된 문장은 절대 저절로 안 바뀌고, 바꾸려면 "다시 쓰기"를 눌러야 합니다.
-  userEditedOutput_ = !!(($("output").value || "").trim());
-  setStaleBar_(false);
-  refreshCopygenOutputState_();
-};
+window.refreshCopygenOutput_ = () => { userEditedOutput_ = false; setStaleBar_(false); refreshCopygenOutputState_(); };
 $("output").addEventListener("input", ()=>{
   userEditedOutput_ = true;   // 직접 고친 문장은 자동 갱신이 덮어쓰지 않음
   refreshCopygenOutputState_();
@@ -8917,6 +9589,109 @@ function setStatusBox_(id, kind, msg){
   box.className = "order-status show " + kind;
   box.textContent = msg;
 }
+
+/* ===== 2026-08-25 · 단어 목록 불러오기와 화면 갱신 ===== */
+// 세 곳에서 읽은 것을 합쳐 목록 변수들을 다시 만들고 화면을 다시 그립니다.
+let lastWordsSig_ = null;
+function refreshAllWordLists_(force){
+  try{
+    // 2026-08-25 추가: 다른 사람이 단어를 넣을 때마다 칩을 통째로 다시 그리면
+    // 화면이 번쩍이고 마우스를 올려둔 칩이 사라집니다. 내용이 실제로 달라졌을 때만 그립니다.
+    const sig = JSON.stringify([
+      loadCustomList(NAME1_KEY),
+      Object.values(FABRIC_KEYS).map(loadCustomList),
+      Object.values(ITEM_KEYS).map(loadCustomList),
+      Object.values(SP_KEYS).map(loadCustomList)
+    ]);
+    if(!force && sig === lastWordsSig_) return;
+    lastWordsSig_ = sig;
+    // 입력 중이면 잠시 미뤘다가 손을 뗀 뒤에 그립니다
+    const ae = document.activeElement;
+    if(ae && (ae.tagName === "INPUT" || ae.tagName === "TEXTAREA")){
+      clearTimeout(wordsRedrawTimer_);
+      wordsRedrawTimer_ = setTimeout(()=> refreshAllWordLists_(true), 800);
+      return;
+    }
+    name1List = loadNameList();
+    fabricGroups = { fabric: loadFabricGroup("fabric"), detail: loadFabricGroup("detail"), fit: loadFabricGroup("fit") };
+    ITEM_GROUPS = { top: loadItemGroup("top"), bottom: loadItemGroup("bottom"),
+                    skirtDress: loadItemGroup("skirtDress"), outer: loadItemGroup("outer") };
+    spGroups = { comfort: loadSpGroup("comfort"), slim: loadSpGroup("slim"), twist: loadSpGroup("twist") };
+    if(name1ChunkStart >= name1List.length) name1ChunkStart = 0;
+    renderName1();
+    renderFabricGroup("fabric", "chipsFabric");
+    renderFabricGroup("detail", "chipsDetail");
+    renderFabricGroup("fit", "chipsFit");
+    renderAllItemGroups();
+    ["comfort","slim","twist"].forEach(renderSpGroup);
+    renderWordCount_();
+  }catch(err){ console.error("단어 목록 갱신 실패:", err); }
+}
+
+// 목록 위에 총 개수를 띄웁니다. 어제 200개였는데 오늘 164개면 바로 눈에 들어옵니다.
+// 인쇄영역은 건드리지 않으려고 화면 요소를 코드에서 만들어 붙입니다.
+function renderWordCount_(){
+  const anchor = $("toggleNameList");
+  if(!anchor || !anchor.parentNode) return;
+  let box = $("wordCountBar");
+  if(!box){
+    box = document.createElement("div");
+    box.id = "wordCountBar";
+    box.className = "noprint";
+    box.style.cssText = "margin:6px 0;font-size:12px;color:#5A6474;line-height:1.6;";
+    anchor.parentNode.insertBefore(box, anchor);
+  }
+  const n = (k)=> loadCustomList(k).length;
+  const total = name1List.length;
+  const src = wordsMasterOk_ ? "words.json" : "이 파일의 기본 목록";
+  box.innerHTML = "고유명 <b>" + total + "개</b> · 원단 " + fabricGroups.fabric.length
+    + " · 디테일 " + fabricGroups.detail.length + " · 핏 " + fabricGroups.fit.length
+    + " · 셀링포인트 " + (spGroups.comfort.length + spGroups.slim.length + spGroups.twist.length)
+    + "<br>출처 " + src + (wordsSharedOk_ ? " + 공유 저장소" : "");
+}
+
+let wordsMasterOk_ = false;
+let wordsSharedOk_ = false;
+let wordsRedrawTimer_ = null;
+
+(async function bootWordLists_(){
+  // 1) 깃허브 마스터
+  try{
+    const res = await fetch(WORDS_JSON_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if(res.ok){
+      const doc = await res.json();
+      wordsMaster_ = (doc && doc.lists) || {};
+      wordsMasterOk_ = true;
+    }
+  }catch(err){ console.warn("words.json 을 못 읽었습니다. 이 파일의 기본 목록으로 갑니다.", err); }
+  refreshAllWordLists_();
+
+  // 2) 공유 저장소를 계속 구독합니다. 다른 기기에서 추가하면 바로 반영됩니다.
+  wordsRoot_.on("value", (snap)=>{
+    wordsShared_ = snap.val() || {};
+    wordsSharedOk_ = true;
+    refreshAllWordLists_();
+  });
+
+  // 3) 이 브라우저에만 갇혀 있던 예전 단어를 한 번만 공유 저장소로 올립니다
+  try{
+    if(!localStorage.getItem("aisel_words_migrated_v1")){
+      const keys = [NAME1_KEY,
+        ...Object.values(ITEM_KEYS), ...Object.values(FABRIC_KEYS), ...Object.values(SP_KEYS)];
+      const updates = {};
+      let moved = 0;
+      keys.forEach(k=>{
+        loadLocalList_(k).forEach(w=>{
+          updates[k + "/" + wordsKeySafe_(w)] = w;
+          moved++;
+        });
+      });
+      if(moved) await wordsRoot_.update(updates);
+      localStorage.setItem("aisel_words_migrated_v1", String(moved));
+      if(moved) console.log("이 기기에만 있던 단어 " + moved + "개를 공유 저장소로 옮겼습니다.");
+    }
+  }catch(err){ console.warn("예전 단어 옮기기 실패:", err); }
+})();
 
 })();
 </script>
