@@ -15,6 +15,9 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v55] ★누수 수정: 다른 작지로 옮겨도 직전 작지의 코디가 화면에 남던 문제.
+           복원할 때 저장된 값이 없는 칸을 건너뛰던 것이 원인 - 이제 비웁니다.
+           코디뿐 아니라 예전 작지에 없던 모든 칸이 같이 고쳐집니다.
                 원격 데이터가 바뀔 때 다시 그리는 자리 13곳 전부 변경검사 통과
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
@@ -4084,14 +4087,19 @@
     $("#season").value = st.season ?? "26F";
     catSel.value = st.cat ?? 4;
     TXT_IDS.forEach(id=>{
-      if(st[id]===undefined) return;
       const el = document.getElementById(id);
+      // 2026-08-25 고침: 예전에는 저장된 값이 없으면(undefined) 그 칸을 그냥 건너뛰었습니다.
+      // 그러면 직전에 보던 작지의 값이 화면에 그대로 남습니다.
+      // 코디가 다른 작지로 새던 원인이 이것이었습니다 — v50 이전에 만든 작지에는
+      // 코디 품번 칸 자체가 저장돼 있지 않아 매번 건너뛰었습니다.
+      // 이 작지에 없는 값이면 비우는 것이 맞습니다.
+      const v = st[id] ?? "";
       // 2026-08-13 추가: 값이 지금과 같으면 건드리지 않습니다. 또한 지금 그 칸에서
       // 타이핑 중이면(포커스가 가 있으면) 절대 덮어쓰지 않습니다. 여러 사람이 같은 작지를
       // 동시에 보고 있을 때 한 사람이 저장할 때마다 다른 모든 칸까지 값이 재대입되면서
       // 화면이 번쩍이던 문제를 여기서 막습니다.
       if(document.activeElement === el) return;
-      if(el.value !== st[id]) el.value = st[id];
+      if(el.value !== v) el.value = v;
     });
     ["predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection","refLink","refLink2",
      "planChecksData","planGrade","planWhy","planCheckCustom",
