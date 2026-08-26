@@ -15,6 +15,7 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v57] 공유 칸이 비어 있으면 목록 색인만 보고 가볍게 채우도록 (원본 통째로 읽는 무거운 재작성 없앰)
      [v56] 물류·MD 공유용 칸(workorderShare) 신설 + 공유 화면 status.html 추가.
            status·품명·공장·날짜·컬러·썸네일·원샘플수거만 넘김. 원가·원단처·판매수량은 아예 안 넘어감.
      [v55] ★누수 수정: 다른 작지로 옮겨도 직전 작지의 코디가 화면에 남던 문제.
@@ -2584,6 +2585,37 @@
      넘길 값은 아래 한 곳에서만 정합니다. 여기 없는 값은 절대 공유되지 않습니다. */
   const woShareRoot = firebase.database().ref("workorderShare");
   const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","sampleRecoveryStatus"];
+  /* 목록 색인(가벼움)에서 바로 공유 칸을 만듭니다.
+     색인에 이미 필요한 값이 다 들어 있어서 사진 원본을 내려받을 일이 없습니다. */
+  function woShareEntryFromIndex_(e){
+    const s = e || {};
+    const o = {};
+    WO_SHARE_KEYS.forEach(k=>{
+      const v = s[k];
+      o[k] = (v === undefined || v === null) ? "" : v;
+    });
+    o.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    o.thumb  = s.thumb || "";
+    return o;
+  }
+  let shareBackfillDone_ = false;
+  async function backfillShare_(){
+    if(shareBackfillDone_) return;
+    shareBackfillDone_ = true;
+    try{
+      const snap = await woShareRoot.once("value");
+      const have = snap.val() || {};
+      const mine = allWorkOrders || {};
+      const updates = {};
+      Object.keys(mine).forEach(code=>{
+        if(!have[code]) updates[code] = woShareEntryFromIndex_(mine[code]);
+      });
+      Object.keys(have).forEach(code=>{
+        if(!mine[code]) updates[code] = null;   // 지워진 작지는 공유 화면에서도 빠집니다
+      });
+      if(Object.keys(updates).length) await woShareRoot.update(updates);
+    }catch(err){ console.warn("공유 칸 채우기 실패:", err); }
+  }
   function woShareEntryFrom_(st){
     const s = st || {};
     const e = {};
@@ -2596,7 +2628,9 @@
     return e;
   }
   const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
-  const WO_INDEX_VERSION = 3;   // 2026-08-25: 공유용 칸(workorderShare)을 채우느라 한 판 더 올림
+  /* 2026-08-25: 공유용 칸은 아래 backfillShare_() 가 목록 색인만 보고 가볍게 채웁니다.
+     그래서 원본을 통째로 읽는 무거운 재작성(판 올리기)은 하지 않습니다. */
+  const WO_INDEX_VERSION = 2;
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
   const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
@@ -7193,6 +7227,7 @@
   // 이제 목록 화면은 가벼운 색인만 구독합니다. 사진 원본은 작지를 열었을 때만 내려옵니다.
   woIndexRoot.on("value", (snapshot)=>{
     allWorkOrders = snapshot.val() || {};
+    backfillShare_();   // 2026-08-25: 공유 칸이 비어 있으면 색인에서 가볍게 채웁니다
     updateCodeConflictUI_(); // 2026-08-13 추가: 목록이 늦게 도착한 경우에도 품번 중복 경고가 정확히 뜨게
     clearTimeout(renderListsTimer_);
     renderListsTimer_ = setTimeout(()=>{
