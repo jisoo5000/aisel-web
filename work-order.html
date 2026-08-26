@@ -15,6 +15,7 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v59] 공유 화면: 원샘플 수거필요 제거(디자이너가 들고 다님) + 코디를 동그란 사진 한 줄로 표시
      [v58] 공유용 사진을 240px 파일로 따로 올리고 주소만 넘김 - 공유 화면이 보이는 것만 받게 됨
      [v57] 공유 칸이 비어 있으면 목록 색인만 보고 가볍게 채우도록 (원본 통째로 읽는 무거운 재작성 없앰)
      [v56] 물류·MD 공유용 칸(workorderShare) 신설 + 공유 화면 status.html 추가.
@@ -2585,7 +2586,19 @@
      화면에서 숨기는 게 아니라 애초에 내려가지도 않습니다.
      넘길 값은 아래 한 곳에서만 정합니다. 여기 없는 값은 절대 공유되지 않습니다. */
   const woShareRoot = firebase.database().ref("workorderShare");
-  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","sampleRecoveryStatus"];
+  /* 2026-08-25 수정: 원샘플 수거필요를 뺐습니다 — 원샘플은 디자이너가 들고 다니는 것이라
+     물류·MD가 볼 이유가 없습니다. 대신 코디를 넣습니다. */
+  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt"];
+  // 코디는 이 작지가 "건" 품번만 적습니다. 반대 방향(남이 이 옷을 건 것)은
+  // 공유 화면이 전체를 보고 스스로 이어붙입니다. 양쪽을 다 적어두면 어긋날 수 있습니다.
+  function shareCoordiOf_(s){
+    const out = [];
+    [1,2,3].forEach(k=>{
+      const c = String((s || {})["coordiCode" + k] || "").trim();
+      if(c && out.indexOf(c) === -1) out.push(c);
+    });
+    return out.length ? out : null;
+  }
   /* 목록 색인(가벼움)에서 바로 공유 칸을 만듭니다.
      색인에 이미 필요한 값이 다 들어 있어서 사진 원본을 내려받을 일이 없습니다. */
   function woShareEntryFromIndex_(e){
@@ -2596,6 +2609,8 @@
       o[k] = (v === undefined || v === null) ? "" : v;
     });
     o.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    o.coordi = shareCoordiOf_(s);
+    o.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
     return o;
   }
   let shareBackfillDone_ = false;
@@ -2668,6 +2683,8 @@
       e[k] = (v === undefined || v === null) ? "" : v;
     });
     e.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    e.coordi = shareCoordiOf_(s);
+    e.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
     // 사진은 여기에 넣지 않습니다. ensureShareThumb_() 가 파일로 올리고 주소만 적습니다
     return e;
   }
