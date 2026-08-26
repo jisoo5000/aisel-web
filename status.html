@@ -41,6 +41,20 @@
   .tab.on{background:var(--navy); border-color:var(--navy); color:#fff;}
   .tab:focus-visible{outline:2px solid var(--navy); outline-offset:2px;}
 
+  .tab .num{
+    margin-left:7px; font-size:12px; font-weight:700; opacity:.72;
+    font-variant-numeric:tabular-nums;
+  }
+  .desc{
+    background:var(--sheet); border:1px solid var(--hair); border-radius:10px;
+    padding:12px 16px; margin:0 0 14px; font-size:13.5px; color:var(--ink);
+    display:flex; flex-wrap:wrap; align-items:baseline; gap:10px;
+  }
+  .desc-count{
+    font-size:12px; font-weight:800; color:var(--navy);
+    background:var(--navy-soft); border-radius:6px; padding:3px 9px;
+    font-variant-numeric:tabular-nums; white-space:nowrap;
+  }
   .search{
     width:100%; border:1px solid var(--hair); background:var(--field);
     border-radius:10px; padding:11px 14px; font-size:14.5px; font-family:inherit;
@@ -88,6 +102,7 @@
   </header>
 
   <div class="tabs" id="tabs"></div>
+  <div class="desc" id="desc" style="display:none"></div>
   <input class="search" id="search" type="text" placeholder="품명 또는 품번으로 검색" autocomplete="off" />
 
   <div class="grid" id="grid"></div>
@@ -112,12 +127,18 @@ firebase.initializeApp({
 
 /* 보여줄 상태와 순서. 샘플관리는 내부 단계라 공유하지 않습니다. */
 var STATES = [
-  { key:"planned",  label:"예정",    bg:"#EEF1F6", fg:"#4B5566" },
-  { key:"sampling", label:"샘플중",  bg:"#EAF0F9", fg:"#2F3B52" },
-  { key:"order",    label:"발주생산", bg:"#FFF6E5", fg:"#8A5A18" },
-  { key:"pdp",      label:"PDP",     bg:"#F3F1EC", fg:"#7A7364" },
-  { key:"sale",     label:"판매",    bg:"#E9EEE6", fg:"#55694C" },
-  { key:"drop",     label:"드롭",    bg:"#F3E7E4", fg:"#96594F" }
+  { key:"planned",  label:"예정",    bg:"#EEF1F6", fg:"#4B5566",
+    desc:"만들기로 예정된 제품입니다." },
+  { key:"sampling", label:"샘플중",  bg:"#EAF0F9", fg:"#2F3B52",
+    desc:"샘플 제작중입니다." },
+  { key:"order",    label:"발주생산", bg:"#FFF6E5", fg:"#8A5A18",
+    desc:"공장에 발주했습니다. 입고될 예정입니다." },
+  { key:"pdp",      label:"PDP",     bg:"#F3F1EC", fg:"#7A7364",
+    desc:"생산이 완료되었습니다. 상세페이지 등록을 기다리고 있습니다." },
+  { key:"sale",     label:"판매",    bg:"#E9EEE6", fg:"#55694C",
+    desc:"상세페이지가 제작되고 현재 판매중인 제품입니다." },
+  { key:"drop",     label:"드롭",    bg:"#F3E7E4", fg:"#96594F",
+    desc:"잠시 멈췄거나, 제작이 중단된 제품입니다." }
 ];
 var SHOWN = STATES.map(function(s){ return s.key; });
 var stateOf = function(k){
@@ -131,17 +152,53 @@ var query = "";
 
 /* ---------- 탭 ---------- */
 var tabsEl = document.getElementById("tabs");
+function countOf(key){
+  var n = 0;
+  for(var c in all){
+    if(!Object.prototype.hasOwnProperty.call(all, c)) continue;
+    var st = (all[c] || {}).status;
+    if(SHOWN.indexOf(st) === -1) continue;
+    if(key === "all" || st === key) n++;
+  }
+  return n;
+}
 function renderTabs(){
   tabsEl.innerHTML = "";
-  var list = [{ key:"all", label:"전체" }].concat(STATES);
+  var total = countOf("all");
+  var list = [{ key:"all", label:"전체", desc:"전체 제품입니다. 상태를 눌러 단계별로 보실 수 있습니다." }].concat(STATES);
   list.forEach(function(s){
     var b = document.createElement("button");
     b.type = "button";
     b.className = "tab" + (filter === s.key ? " on" : "");
-    b.textContent = s.label;
+    var nm = document.createElement("span");
+    nm.textContent = s.label;
+    b.appendChild(nm);
+    var num = document.createElement("span");
+    num.className = "num";
+    num.textContent = (s.key === "all") ? String(total) : (countOf(s.key) + "/" + total);
+    b.appendChild(num);
     b.addEventListener("click", function(){ filter = s.key; renderTabs(); render(); });
     tabsEl.appendChild(b);
   });
+  // 고른 탭의 설명
+  var cur = null;
+  for(var i=0;i<list.length;i++){ if(list[i].key === filter) cur = list[i]; }
+  var d = document.getElementById("desc");
+  if(cur){
+    d.style.display = "block";
+    d.innerHTML = "";
+    var t = document.createElement("span");
+    t.className = "desc-count";
+    t.textContent = (filter === "all")
+      ? (total + " SKU")
+      : (countOf(filter) + " SKU / TOTAL " + total);
+    var x = document.createElement("span");
+    x.textContent = cur.desc;
+    d.appendChild(t);
+    d.appendChild(x);
+  }else{
+    d.style.display = "none";
+  }
 }
 
 /* ---------- 목록 ---------- */
@@ -172,7 +229,8 @@ function render(){
      여러 명이 같이 볼 때 화면이 번쩍이는 것을 막는 장치입니다. */
   var sig = JSON.stringify([filter, query, rows.map(function(x){
     return [x.code, x.e.status, x.e.pumMyeong, x.e.factory, x.e.sampleRecoveryStatus,
-            x.e.yy, x.e.mm, x.e.dd, (x.e.colors || []).join(","), (x.e.thumb || "").length];
+            x.e.yy, x.e.mm, x.e.dd, (x.e.colors || []).join(","),
+            x.e.thumbUrl || "", (x.e.thumb || "").length];
   })]);
   if(sig === lastSig) return;
   lastSig = sig;
@@ -187,10 +245,14 @@ function render(){
 
     var th = document.createElement("div");
     th.className = "thumb";
-    if(e.thumb){
+    // 사진은 따로 올린 파일 주소를 씁니다. 화면에 보이는 것만 내려받습니다.
+    // 아직 파일로 안 올라간 작지는 예전 방식(글자로 박힌 사진)으로 보여줍니다.
+    var src = e.thumbUrl || e.thumb || "";
+    if(src){
       var im = document.createElement("img");
-      im.loading = "lazy";
-      im.src = e.thumb;
+      im.setAttribute("loading", "lazy");   // 화면에 보일 때 받습니다
+      im.setAttribute("decoding", "async");
+      im.src = src;
       im.alt = e.pumMyeong || x.code;
       th.appendChild(im);
     }else{

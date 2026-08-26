@@ -15,6 +15,7 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v58] 공유용 사진을 240px 파일로 따로 올리고 주소만 넘김 - 공유 화면이 보이는 것만 받게 됨
      [v57] 공유 칸이 비어 있으면 목록 색인만 보고 가볍게 채우도록 (원본 통째로 읽는 무거운 재작성 없앰)
      [v56] 물류·MD 공유용 칸(workorderShare) 신설 + 공유 화면 status.html 추가.
            status·품명·공장·날짜·컬러·썸네일·원샘플수거만 넘김. 원가·원단처·판매수량은 아예 안 넘어감.
@@ -2595,7 +2596,6 @@
       o[k] = (v === undefined || v === null) ? "" : v;
     });
     o.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
-    o.thumb  = s.thumb || "";
     return o;
   }
   let shareBackfillDone_ = false;
@@ -2607,14 +2607,58 @@
       const have = snap.val() || {};
       const mine = allWorkOrders || {};
       const updates = {};
+      Object.keys(have).forEach(code=>{
+        // 이미 올려둔 사진은 다시 올리지 않도록 기억해 둡니다
+        if(have[code] && have[code].thumbSig) shareThumbSigCache_[code] = String(have[code].thumbSig);
+        if(!mine[code]) updates[code] = null;   // 지워진 작지는 공유 화면에서도 빠집니다
+      });
       Object.keys(mine).forEach(code=>{
         if(!have[code]) updates[code] = woShareEntryFromIndex_(mine[code]);
       });
-      Object.keys(have).forEach(code=>{
-        if(!mine[code]) updates[code] = null;   // 지워진 작지는 공유 화면에서도 빠집니다
-      });
       if(Object.keys(updates).length) await woShareRoot.update(updates);
+
+      /* 아직 파일로 안 올라간 사진을 하나씩 올립니다.
+         한꺼번에 24개를 올리면 저장이 잠깐 버벅이므로 조금씩 띄워서 보냅니다.
+         한 번 올라간 뒤로는 이 자리를 다시 지나가지 않습니다. */
+      let slot = 0;
+      Object.keys(mine).forEach(code=>{
+        const src = (mine[code] && mine[code].thumb) || "";
+        if(!src) return;
+        if(shareThumbSigCache_[code] === String(src.length)) return;
+        setTimeout(()=> ensureShareThumb_(code, src), (slot++) * 400);
+      });
     }catch(err){ console.warn("공유 칸 채우기 실패:", err); }
+  }
+  /* 2026-08-25 추가: 공유 화면용 사진을 파일로 따로 올립니다.
+     예전에는 사진이 데이터 안에 글자(base64)로 박혀 있어서, 공유 화면을 열면
+     화면에 안 보이는 것까지 전부 한꺼번에 내려받아야 했습니다 (24개에 414KB).
+     파일로 두면 브라우저가 화면에 보이는 것만 받습니다. 첫 화면이 5KB로 뜹니다.
+     크기는 240px — 휴대폰에서 어떤 제품인지 알아보고 입고 물건과 대조할 정도면 충분합니다. */
+  const SHARE_THUMB_W = 240;
+  const shareThumbSigCache_ = {};
+  function ensureShareThumb_(code, srcDataUrl){
+    if(!code) return;
+    const sig = String((srcDataUrl || "").length);
+    if(shareThumbSigCache_[code] === sig) return;   // 사진이 그대로면 다시 안 올립니다
+    if(!srcDataUrl){
+      shareThumbSigCache_[code] = sig;
+      woShareRoot.child(code).update({ thumbUrl:"", thumbSig:"", thumb:null }).catch(()=>{});
+      return;
+    }
+    shareThumbSigCache_[code] = sig;   // 같은 사진을 두 번 올리지 않게 먼저 표시합니다
+    makeThumbnail(srcDataUrl, SHARE_THUMB_W, 0.6, small=>{
+      const use = small || srcDataUrl;
+      fetch(use).then(r=> r.blob()).then(blob=>{
+        const fileRef = fbStorage.ref("workorderShareThumbs").child(code + ".jpg");
+        return fileRef.put(blob, { contentType:"image/jpeg" }).then(()=> fileRef.getDownloadURL());
+      }).then(url=>{
+        // 주소가 확실히 생긴 뒤에야 글자로 박혀 있던 사진을 지웁니다 (중간에 사진이 사라지지 않게)
+        woShareRoot.child(code).update({ thumbUrl:url, thumbSig:sig, thumb:null }).catch(()=>{});
+      }).catch(err=>{
+        delete shareThumbSigCache_[code];   // 실패했으면 다음에 다시 시도합니다
+        console.warn("공유 사진 올리기 실패:", code, err);
+      });
+    });
   }
   function woShareEntryFrom_(st){
     const s = st || {};
@@ -2624,7 +2668,7 @@
       e[k] = (v === undefined || v === null) ? "" : v;
     });
     e.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
-    e.thumb  = s.p1Thumb || "";   // 압축 썸네일만. 원본 사진은 넘기지 않습니다
+    // 사진은 여기에 넣지 않습니다. ensureShareThumb_() 가 파일로 올리고 주소만 적습니다
     return e;
   }
   const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
@@ -4023,7 +4067,9 @@
     e.updatedAt = st.updatedAt || Date.now();
     woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
     // 2026-08-25 추가: 공유용 칸도 같이 갱신 (실패해도 작지 저장에는 영향 없음)
-    woShareRoot.child(code).set(woShareEntryFrom_(st)).catch(()=>{});
+    // update 를 씁니다. set 이면 따로 올려둔 사진 주소(thumbUrl)까지 지워집니다
+    woShareRoot.child(code).update(woShareEntryFrom_(st)).catch(()=>{});
+    ensureShareThumb_(code, st.p1Thumb || st.p1 || "");
   }
   function removeIndexEntry_(code){
     if(!code) return;
