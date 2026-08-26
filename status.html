@@ -75,7 +75,9 @@
   .chip{
     border-radius:4px; padding:2px 7px; font-size:10.5px; line-height:1.35;
     font-weight:600; background:#EFEFEF; color:#666;
+    border:1px solid transparent;
   }
+  .chip.light{ border-color:rgba(0,0,0,.14); }   /* 크림처럼 밝은 색이 흰 카드에 묻히지 않게 */
   .date{font-size:11.5px; line-height:1.2; color:var(--muted); font-variant-numeric:tabular-nums;}
   .state{
     align-self:flex-start; border-radius:999px; padding:3px 11px;
@@ -98,7 +100,6 @@
     background:var(--sheet); border:1px dashed var(--hair); border-radius:12px;
     padding:44px 20px; text-align:center; color:var(--muted); font-size:14px;
   }
-  footer{margin-top:34px; font-size:12.5px; color:var(--muted); text-align:center;}
 </style>
 
 <div class="wrap">
@@ -113,7 +114,6 @@
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">해당하는 제품이 없습니다.</div>
 
-  <footer>AISEL 내부 공유용 · 원가와 거래처 정보는 이 화면에 포함되지 않습니다</footer>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -228,7 +228,9 @@ function renderTabs(){
     var b = document.createElement("button");
     b.type = "button";
     b.className = "tab" + (filter === s.key ? " on" : "");
-    b.textContent = s.label;   // 숫자는 탭에 넣지 않습니다
+    // 숫자는 있을 때만 붙입니다. 0이면 이름만 씁니다 ("PDP 0" 은 읽기 나쁩니다)
+    var cnt = countOf(s.key);
+    b.textContent = cnt ? (s.label + " " + cnt) : s.label;
     b.addEventListener("click", function(){ filter = s.key; renderTabs(); render(); });
     tabsEl.appendChild(b);
   });
@@ -274,7 +276,7 @@ function render(){
      여러 명이 같이 볼 때 화면이 번쩍이는 것을 막는 장치입니다. */
   var sig = JSON.stringify([filter, query, rows.map(function(x){
     return [x.code, x.e.status, x.e.pumMyeong, x.e.factory,
-            x.e.yy, x.e.mm, x.e.dd, (x.e.colors || []).join(","),
+            x.e.yy, x.e.mm, x.e.dd, JSON.stringify(x.e.colors || []),
             (pairs[x.code] || []).join(","),
             x.e.thumbUrl || "", (x.e.thumb || "").length];
   })]);
@@ -338,9 +340,19 @@ function render(){
       var cw = document.createElement("div");
       cw.className = "colors";
       e.colors.forEach(function(c){
+        // 예전 자료는 색 이름만 있고, 새 자료는 색값도 같이 옵니다. 둘 다 받습니다.
+        var name = (c && typeof c === "object") ? c.n : c;
+        var bg   = (c && typeof c === "object") ? c.h : null;
+        var fg   = (c && typeof c === "object") ? c.t : null;
         var ch = document.createElement("span");
         ch.className = "chip";
-        ch.textContent = c;
+        if(bg){
+          ch.style.background = bg;
+          if(fg) ch.style.color = fg;
+          // 글자색이 어두우면 바탕이 밝은 색이라는 뜻이라 테두리를 줍니다
+          if(fg && fg.toLowerCase() !== "#ffffff") ch.className += " light";
+        }
+        ch.textContent = name;
         cw.appendChild(ch);
       });
       body.appendChild(cw);

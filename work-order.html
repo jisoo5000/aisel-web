@@ -15,6 +15,7 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v60] 공유 화면: 전체·발주생산·PDP 세 탭만 · 탭 숫자는 있을 때만 · 컬러 칩에 실제 색 · 아래 문구 제거
      [v59] 공유 화면: 원샘플 수거필요 제거(디자이너가 들고 다님) + 코디를 동그란 사진 한 줄로 표시
      [v58] 공유용 사진을 240px 파일로 따로 올리고 주소만 넘김 - 공유 화면이 보이는 것만 받게 됨
      [v57] 공유 칸이 비어 있으면 목록 색인만 보고 가볍게 채우도록 (원본 통째로 읽는 무거운 재작성 없앰)
@@ -2591,6 +2592,17 @@
   const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt"];
   // 코디는 이 작지가 "건" 품번만 적습니다. 반대 방향(남이 이 옷을 건 것)은
   // 공유 화면이 전체를 보고 스스로 이어붙입니다. 양쪽을 다 적어두면 어긋날 수 있습니다.
+  /* 2026-08-25 추가: 컬러 칩을 실제 색으로 칠하려면 색값이 있어야 합니다.
+     공유 화면에 색표를 복사해두면 지수님이 새 색을 만들 때 두 곳이 어긋나므로,
+     색 이름 옆에 색값을 같이 실어 보냅니다. 색 하나에 20글자 정도라 부담이 없습니다. */
+  function shareColorsOf_(s){
+    const list = Array.isArray(s && s.selectedColors) ? s.selectedColors : [];
+    if(!list.length) return null;
+    return list.map(name=>{
+      const info = (window.colorHex_ ? window.colorHex_(name) : null) || null;
+      return info ? { n:name, h:info.hex, t:info.text } : { n:name };
+    });
+  }
   function shareCoordiOf_(s){
     const out = [];
     [1,2,3].forEach(k=>{
@@ -2608,7 +2620,7 @@
       const v = s[k];
       o[k] = (v === undefined || v === null) ? "" : v;
     });
-    o.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    o.colors = shareColorsOf_(s);
     o.coordi = shareCoordiOf_(s);
     o.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
     return o;
@@ -2682,7 +2694,7 @@
       const v = s[k];
       e[k] = (v === undefined || v === null) ? "" : v;
     });
-    e.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    e.colors = shareColorsOf_(s);
     e.coordi = shareCoordiOf_(s);
     e.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
     // 사진은 여기에 넣지 않습니다. ensureShareThumb_() 가 파일로 올리고 주소만 적습니다
