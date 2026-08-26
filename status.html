@@ -41,19 +41,9 @@
   .tab.on{background:var(--navy); border-color:var(--navy); color:#fff;}
   .tab:focus-visible{outline:2px solid var(--navy); outline-offset:2px;}
 
-  .tab .num{
-    margin-left:7px; font-size:12px; font-weight:700; opacity:.72;
-    font-variant-numeric:tabular-nums;
-  }
   .desc{
     background:var(--sheet); border:1px solid var(--hair); border-radius:10px;
-    padding:12px 16px; margin:0 0 14px; font-size:13.5px; color:var(--ink);
-    display:flex; flex-wrap:wrap; align-items:baseline; gap:10px;
-  }
-  .desc-count{
-    font-size:12px; font-weight:800; color:var(--navy);
-    background:var(--navy-soft); border-radius:6px; padding:3px 9px;
-    font-variant-numeric:tabular-nums; white-space:nowrap;
+    padding:12px 16px; margin:0 0 14px; font-size:13.5px; line-height:1.6; color:var(--ink);
   }
   .search{
     width:100%; border:1px solid var(--hair); background:var(--field);
@@ -141,19 +131,25 @@ firebase.initializeApp({
 });
 
 /* 보여줄 상태와 순서. 샘플관리는 내부 단계라 공유하지 않습니다. */
+/* 2026-08-25 수정: 드롭을 뺐습니다 — 물류·MD가 준비할 것이 없고 "왜 엎었지"만 묻게 됩니다.
+   탭에 있던 7/24 숫자도 뺐습니다. 헷갈린다고 하셔서 숫자를 아래 문장 안으로 옮겼습니다.
+   개수가 0일 때는 "0개가 기다리고 있습니다"가 어색해서 문장을 따로 둡니다. */
 var STATES = [
   { key:"planned",  label:"예정",    bg:"#EEF1F6", fg:"#4B5566",
-    desc:"만들기로 예정된 제품입니다." },
+    desc:  function(n){ return "만들기로 예정된 제품 " + n + "개입니다."; },
+    empty: "아직 없습니다." },
   { key:"sampling", label:"샘플중",  bg:"#EAF0F9", fg:"#2F3B52",
-    desc:"샘플 제작중입니다." },
+    desc:  function(n){ return "샘플 제작중인 제품 " + n + "개입니다."; },
+    empty: "아직 없습니다." },
   { key:"order",    label:"발주생산", bg:"#FFF6E5", fg:"#8A5A18",
-    desc:"공장에 발주했습니다. 입고될 예정입니다." },
+    desc:  function(n){ return "공장에 발주했습니다. 제품 " + n + "개가 나올 예정입니다."; },
+    empty: "지금 발주된 제품이 없습니다." },
   { key:"pdp",      label:"PDP",     bg:"#F3F1EC", fg:"#7A7364",
-    desc:"생산이 완료되었습니다. 상세페이지 등록을 기다리고 있습니다." },
+    desc:  function(n){ return "생산이 완료되어 " + n + "개가 상세페이지 등록을 기다리고 있습니다."; },
+    empty: "상세페이지 등록을 기다리는 제품이 아직 없습니다." },
   { key:"sale",     label:"판매",    bg:"#E9EEE6", fg:"#55694C",
-    desc:"상세페이지가 제작되고 현재 판매중인 제품입니다." },
-  { key:"drop",     label:"드롭",    bg:"#F3E7E4", fg:"#96594F",
-    desc:"잠시 멈췄거나, 제작이 중단된 제품입니다." }
+    desc:  function(n){ return "상세페이지가 제작되고 현재 판매중인 제품 " + n + "개입니다."; },
+    empty: "아직 판매중인 제품이 없습니다." }
 ];
 var SHOWN = STATES.map(function(s){ return s.key; });
 var stateOf = function(k){
@@ -230,37 +226,27 @@ function countOf(key){
 function renderTabs(){
   tabsEl.innerHTML = "";
   var total = countOf("all");
-  var list = [{ key:"all", label:"전체", desc:"전체 제품입니다. 상태를 눌러 단계별로 보실 수 있습니다." }].concat(STATES);
+  var list = [{
+    key:"all", label:"전체",
+    desc:  function(n){ return "전체 " + n + "개 제품입니다. 상태를 눌러 단계별로 보실 수 있습니다."; },
+    empty: "등록된 제품이 없습니다."
+  }].concat(STATES);
   list.forEach(function(s){
     var b = document.createElement("button");
     b.type = "button";
     b.className = "tab" + (filter === s.key ? " on" : "");
-    var nm = document.createElement("span");
-    nm.textContent = s.label;
-    b.appendChild(nm);
-    var num = document.createElement("span");
-    num.className = "num";
-    num.textContent = (s.key === "all") ? String(total) : (countOf(s.key) + "/" + total);
-    b.appendChild(num);
+    b.textContent = s.label;   // 숫자는 탭에 넣지 않습니다
     b.addEventListener("click", function(){ filter = s.key; renderTabs(); render(); });
     tabsEl.appendChild(b);
   });
-  // 고른 탭의 설명
+  // 고른 탭의 설명. 개수는 문장 안에 들어갑니다
   var cur = null;
   for(var i=0;i<list.length;i++){ if(list[i].key === filter) cur = list[i]; }
   var d = document.getElementById("desc");
   if(cur){
+    var cnt = countOf(filter);
     d.style.display = "block";
-    d.innerHTML = "";
-    var t = document.createElement("span");
-    t.className = "desc-count";
-    t.textContent = (filter === "all")
-      ? (total + " SKU")
-      : (countOf(filter) + " SKU / TOTAL " + total);
-    var x = document.createElement("span");
-    x.textContent = cur.desc;
-    d.appendChild(t);
-    d.appendChild(x);
+    d.textContent = cnt ? cur.desc(cnt) : cur.empty;
   }else{
     d.style.display = "none";
   }
