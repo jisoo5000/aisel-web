@@ -27,11 +27,9 @@
 
   header{
     background:var(--sheet); border:1px solid var(--hair); border-radius:14px;
-    padding:18px 22px; margin-bottom:14px;
+    padding:16px 22px; margin-bottom:14px;
   }
-  h1{margin:0 0 4px; font-size:19px; font-weight:800; letter-spacing:0;}
-  .hint{margin:0; font-size:13px; color:var(--muted);}
-  .count{margin:8px 0 0; font-size:13px; color:var(--navy); font-weight:700;}
+  h1{margin:0; font-size:19px; font-weight:800; letter-spacing:0;}
 
   .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px;}
   .tab{
@@ -87,8 +85,6 @@
 <div class="wrap">
   <header>
     <h1>AISEL 제품 진행 현황</h1>
-    <p class="hint">제품이 지금 어느 단계까지 왔고 어느 공장에서 들어오는지 보는 화면입니다. 여기 값은 작업지시서가 저장될 때 자동으로 갱신됩니다.</p>
-    <p class="count" id="count">불러오는 중입니다...</p>
   </header>
 
   <div class="tabs" id="tabs"></div>
@@ -151,7 +147,6 @@ function renderTabs(){
 /* ---------- 목록 ---------- */
 var gridEl  = document.getElementById("grid");
 var emptyEl = document.getElementById("empty");
-var countEl = document.getElementById("count");
 var lastSig = null;
 
 function rowsNow(){
@@ -184,11 +179,6 @@ function render(){
 
   gridEl.innerHTML = "";
   emptyEl.style.display = rows.length ? "none" : "block";
-
-  var total = Object.keys(all).filter(function(c){
-    return SHOWN.indexOf((all[c] || {}).status) !== -1;
-  }).length;
-  countEl.textContent = "전체 " + total + "개 중 " + rows.length + "개 보는 중";
 
   rows.forEach(function(x){
     var e = x.e;
@@ -277,7 +267,8 @@ firebase.database().ref("workorderShare").on("value", function(snap){
   renderTabs();
   render();
 }, function(err){
-  countEl.textContent = "자료를 불러오지 못했습니다. 새로고침해보시고, 계속 안 되면 담당자에게 알려주세요.";
+  emptyEl.style.display = "block";
+  emptyEl.textContent = "자료를 불러오지 못했습니다. 새로고침해보시고, 계속 안 되면 담당자에게 알려주세요.";
   console.error(err);
 });
 
