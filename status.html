@@ -11,6 +11,10 @@
      ★ 판매현황·무드보드·발주서 화면은 이 파일에 존재하지 않습니다.
 -->
 <title>AISEL 제품 진행 현황</title>
+<!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
+     안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
+<link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
+<link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root{
@@ -295,7 +299,7 @@ function render(){
   gridEl.innerHTML = "";
   emptyEl.style.display = rows.length ? "none" : "block";
 
-  rows.forEach(function(x){
+  rows.forEach(function(x, idx){
     var e = x.e;
     var card = document.createElement("div");
     card.className = "card";
@@ -307,7 +311,14 @@ function render(){
     var src = e.thumbUrl || e.thumb || "";
     if(src){
       var im = document.createElement("img");
-      im.setAttribute("loading", "lazy");   // 화면에 보일 때 받습니다
+      /* 2026-08-27 수정: 앞의 6장은 열자마자 화면에 보이는 것이라 미루지 않고 바로 받습니다.
+         전부 "보일 때 받기"로 두면 브라우저가 한 박자 늦게 시작해서 늦게 뜨는 느낌이 납니다.
+         나머지는 스크롤할 때 받습니다. */
+      if(idx < 6){
+        im.setAttribute("fetchpriority", "high");
+      }else{
+        im.setAttribute("loading", "lazy");
+      }
       im.setAttribute("decoding", "async");
       im.src = src;
       im.alt = e.pumMyeong || x.code;
