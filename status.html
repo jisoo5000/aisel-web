@@ -1,0 +1,285 @@
+<meta name="robots" content="noindex,nofollow,noarchive" />
+<!-- AISEL 제품 진행 현황 (공유용) v1 (2026-08-25)
+     물류·MD 공유 전용 화면입니다. 작업지시서(work-order.html)와는 다른 파일입니다.
+
+     ★ 이 화면은 파이어베이스의 workorderShare 칸만 읽습니다.
+       원가·공임·원단처·원단명·판매수량·디자이너·사이즈·상세설명은
+       화면에서 숨기는 게 아니라 애초에 내려오지도 않습니다.
+       넘길 값을 늘리거나 줄이려면 work-order.html 의 WO_SHARE_KEYS 를 고칩니다.
+
+     ★ 편집 기능이 없습니다. 카드를 눌러도 아무 일도 일어나지 않습니다.
+     ★ 판매현황·무드보드·발주서 화면은 이 파일에 존재하지 않습니다.
+-->
+<title>AISEL 제품 진행 현황</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#E9ECF2; --sheet:#FFFFFF; --ink:#191C23; --muted:#667085;
+    --hair:#DDE2EA; --navy:#2F3B52; --navy-soft:#EAF0F9; --field:#F5F7FA;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Pretendard","Malgun Gothic","맑은 고딕",system-ui,sans-serif;
+    font-size:15px; line-height:1.7;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:20px 16px 80px;}
+
+  header{
+    background:var(--sheet); border:1px solid var(--hair); border-radius:14px;
+    padding:18px 22px; margin-bottom:14px;
+  }
+  h1{margin:0 0 4px; font-size:19px; font-weight:800; letter-spacing:0;}
+  .hint{margin:0; font-size:13px; color:var(--muted);}
+  .count{margin:8px 0 0; font-size:13px; color:var(--navy); font-weight:700;}
+
+  .tabs{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px;}
+  .tab{
+    border:1px solid var(--hair); background:var(--sheet); color:var(--ink);
+    border-radius:999px; padding:8px 16px; font-size:13.5px; font-weight:700;
+    cursor:pointer; font-family:inherit;
+  }
+  .tab:hover{border-color:var(--navy);}
+  .tab.on{background:var(--navy); border-color:var(--navy); color:#fff;}
+  .tab:focus-visible{outline:2px solid var(--navy); outline-offset:2px;}
+
+  .search{
+    width:100%; border:1px solid var(--hair); background:var(--field);
+    border-radius:10px; padding:11px 14px; font-size:14.5px; font-family:inherit;
+    color:var(--ink); margin-bottom:16px;
+  }
+  .search:focus{outline:2px solid var(--navy); outline-offset:1px; background:var(--sheet);}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(184px,1fr)); gap:14px;}
+  .card{
+    background:var(--sheet); border:1px solid var(--hair); border-radius:12px;
+    overflow:hidden; display:flex; flex-direction:column;
+  }
+  .thumb{
+    aspect-ratio:3/4; background:var(--field);
+    display:flex; align-items:center; justify-content:center;
+    color:#B9BFCB; font-size:26px;
+  }
+  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  .body{padding:11px 13px 14px; display:flex; flex-direction:column; gap:5px;}
+  .name{font-size:14px; font-weight:700; line-height:1.45;}
+  .code{font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .factory{font-size:12.5px; color:var(--ink);}
+  .colors{display:flex; flex-wrap:wrap; gap:4px;}
+  .chip{border-radius:4px; padding:1px 7px; font-size:10.5px; font-weight:600; background:#EFEFEF; color:#666;}
+  .date{font-size:11.5px; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .state{
+    align-self:flex-start; border-radius:999px; padding:3px 11px;
+    font-size:11.5px; font-weight:700;
+  }
+  .pickup{
+    align-self:flex-start; border-radius:5px; padding:2px 8px;
+    font-size:10.5px; font-weight:700; background:#F3E7E4; color:#96594F;
+  }
+
+  .empty{
+    background:var(--sheet); border:1px dashed var(--hair); border-radius:12px;
+    padding:44px 20px; text-align:center; color:var(--muted); font-size:14px;
+  }
+  footer{margin-top:34px; font-size:12.5px; color:var(--muted); text-align:center;}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>AISEL 제품 진행 현황</h1>
+    <p class="hint">제품이 지금 어느 단계까지 왔고 어느 공장에서 들어오는지 보는 화면입니다. 여기 값은 작업지시서가 저장될 때 자동으로 갱신됩니다.</p>
+    <p class="count" id="count">불러오는 중입니다...</p>
+  </header>
+
+  <div class="tabs" id="tabs"></div>
+  <input class="search" id="search" type="text" placeholder="품명 또는 품번으로 검색" autocomplete="off" />
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">해당하는 제품이 없습니다.</div>
+
+  <footer>AISEL 내부 공유용 · 원가와 거래처 정보는 이 화면에 포함되지 않습니다</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* 작업지시서와 같은 창고를 보되, workorderShare 칸만 읽습니다. */
+firebase.initializeApp({
+  apiKey: "AIzaSyAJLu3HAH0jxKeLX5vQwEFtkfJHu2DYgmo",
+  authDomain: "aisel-workorder.firebaseapp.com",
+  databaseURL: "https://aisel-workorder-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "aisel-workorder",
+  storageBucket: "aisel-workorder.firebasestorage.app",
+  messagingSenderId: "150328860955",
+  appId: "1:150328860955:web:98086ff488035fc8be33be"
+});
+
+/* 보여줄 상태와 순서. 샘플관리는 내부 단계라 공유하지 않습니다. */
+var STATES = [
+  { key:"planned",  label:"예정",    bg:"#EEF1F6", fg:"#4B5566" },
+  { key:"sampling", label:"샘플중",  bg:"#EAF0F9", fg:"#2F3B52" },
+  { key:"order",    label:"발주생산", bg:"#FFF6E5", fg:"#8A5A18" },
+  { key:"pdp",      label:"PDP",     bg:"#F3F1EC", fg:"#7A7364" },
+  { key:"sale",     label:"판매",    bg:"#E9EEE6", fg:"#55694C" },
+  { key:"drop",     label:"드롭",    bg:"#F3E7E4", fg:"#96594F" }
+];
+var SHOWN = STATES.map(function(s){ return s.key; });
+var stateOf = function(k){
+  for(var i=0;i<STATES.length;i++){ if(STATES[i].key === k) return STATES[i]; }
+  return null;
+};
+
+var all = {};
+var filter = "all";
+var query = "";
+
+/* ---------- 탭 ---------- */
+var tabsEl = document.getElementById("tabs");
+function renderTabs(){
+  tabsEl.innerHTML = "";
+  var list = [{ key:"all", label:"전체" }].concat(STATES);
+  list.forEach(function(s){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "tab" + (filter === s.key ? " on" : "");
+    b.textContent = s.label;
+    b.addEventListener("click", function(){ filter = s.key; renderTabs(); render(); });
+    tabsEl.appendChild(b);
+  });
+}
+
+/* ---------- 목록 ---------- */
+var gridEl  = document.getElementById("grid");
+var emptyEl = document.getElementById("empty");
+var countEl = document.getElementById("count");
+var lastSig = null;
+
+function rowsNow(){
+  return Object.keys(all)
+    .map(function(code){ return { code: code, e: all[code] || {} }; })
+    // 공유하지 않는 단계(샘플관리 등)는 목록에서 아예 제외합니다
+    .filter(function(x){ return SHOWN.indexOf(x.e.status) !== -1; })
+    .filter(function(x){ return filter === "all" || x.e.status === filter; })
+    .filter(function(x){
+      if(!query) return true;
+      return (x.code + " " + (x.e.pumMyeong || "")).toLowerCase().indexOf(query) !== -1;
+    })
+    .sort(function(a, b){
+      var da = String(a.e.createdAt || ""), db = String(b.e.createdAt || "");
+      if(da !== db) return db.localeCompare(da);
+      return b.code.localeCompare(a.code);
+    });
+}
+
+function render(){
+  var rows = rowsNow();
+  /* 내용이 그대로면 다시 그리지 않습니다.
+     여러 명이 같이 볼 때 화면이 번쩍이는 것을 막는 장치입니다. */
+  var sig = JSON.stringify([filter, query, rows.map(function(x){
+    return [x.code, x.e.status, x.e.pumMyeong, x.e.factory, x.e.sampleRecoveryStatus,
+            x.e.yy, x.e.mm, x.e.dd, (x.e.colors || []).join(","), (x.e.thumb || "").length];
+  })]);
+  if(sig === lastSig) return;
+  lastSig = sig;
+
+  gridEl.innerHTML = "";
+  emptyEl.style.display = rows.length ? "none" : "block";
+
+  var total = Object.keys(all).filter(function(c){
+    return SHOWN.indexOf((all[c] || {}).status) !== -1;
+  }).length;
+  countEl.textContent = "전체 " + total + "개 중 " + rows.length + "개 보는 중";
+
+  rows.forEach(function(x){
+    var e = x.e;
+    var card = document.createElement("div");
+    card.className = "card";
+
+    var th = document.createElement("div");
+    th.className = "thumb";
+    if(e.thumb){
+      var im = document.createElement("img");
+      im.loading = "lazy";
+      im.src = e.thumb;
+      im.alt = e.pumMyeong || x.code;
+      th.appendChild(im);
+    }else{
+      th.textContent = "▧";
+    }
+    card.appendChild(th);
+
+    var body = document.createElement("div");
+    body.className = "body";
+
+    var st = stateOf(e.status);
+    if(st){
+      var sp = document.createElement("span");
+      sp.className = "state";
+      sp.style.background = st.bg;
+      sp.style.color = st.fg;
+      sp.textContent = st.label;
+      body.appendChild(sp);
+    }
+
+    var nm = document.createElement("div");
+    nm.className = "name";
+    nm.textContent = e.pumMyeong || "(품명 미정)";
+    body.appendChild(nm);
+
+    var cd = document.createElement("div");
+    cd.className = "code";
+    cd.textContent = x.code;
+    body.appendChild(cd);
+
+    var fac = document.createElement("div");
+    fac.className = "factory";
+    fac.textContent = e.factory ? ("🏭 " + e.factory) : "🏭 공장 미정";
+    body.appendChild(fac);
+
+    if(Array.isArray(e.colors) && e.colors.length){
+      var cw = document.createElement("div");
+      cw.className = "colors";
+      e.colors.forEach(function(c){
+        var ch = document.createElement("span");
+        ch.className = "chip";
+        ch.textContent = c;
+        cw.appendChild(ch);
+      });
+      body.appendChild(cw);
+    }
+
+    if(e.sampleRecoveryStatus === "factory"){
+      var pk = document.createElement("span");
+      pk.className = "pickup";
+      pk.textContent = "원샘플 수거필요";
+      body.appendChild(pk);
+    }
+
+    var dt = document.createElement("div");
+    dt.className = "date";
+    dt.textContent = (e.yy && e.mm && e.dd) ? (e.yy + "." + e.mm + "." + e.dd) : "";
+    body.appendChild(dt);
+
+    card.appendChild(body);
+    gridEl.appendChild(card);
+  });
+}
+
+/* ---------- 검색 ---------- */
+document.getElementById("search").addEventListener("input", function(ev){
+  query = (ev.target.value || "").trim().toLowerCase();
+  render();
+});
+
+/* ---------- 자료 받기 ---------- */
+firebase.database().ref("workorderShare").on("value", function(snap){
+  all = snap.val() || {};
+  renderTabs();
+  render();
+}, function(err){
+  countEl.textContent = "자료를 불러오지 못했습니다. 새로고침해보시고, 계속 안 되면 담당자에게 알려주세요.";
+  console.error(err);
+});
+
+renderTabs();
+</script>

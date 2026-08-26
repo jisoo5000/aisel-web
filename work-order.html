@@ -15,6 +15,8 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v56] 물류·MD 공유용 칸(workorderShare) 신설 + 공유 화면 status.html 추가.
+           status·품명·공장·날짜·컬러·썸네일·원샘플수거만 넘김. 원가·원단처·판매수량은 아예 안 넘어감.
      [v55] ★누수 수정: 다른 작지로 옮겨도 직전 작지의 코디가 화면에 남던 문제.
            복원할 때 저장된 값이 없는 칸을 건너뛰던 것이 원인 - 이제 비웁니다.
            코디뿐 아니라 예전 작지에 없던 모든 칸이 같이 고쳐집니다.
@@ -2576,8 +2578,25 @@
   // 이제 목록에 실제로 쓰이는 값과 압축 썸네일만 여기에 따로 두고, 목록 화면은
   // 이 창고만 구독합니다. 사진 원본은 작지를 열었을 때만 내려옵니다.
   const woIndexRoot = firebase.database().ref("workorderIndex");
+  /* 2026-08-25 추가: 물류·MD 공유용 창고.
+     공유 화면(status.html)은 오직 이 칸만 읽습니다. 그래서 원가·원단처·판매수량은
+     화면에서 숨기는 게 아니라 애초에 내려가지도 않습니다.
+     넘길 값은 아래 한 곳에서만 정합니다. 여기 없는 값은 절대 공유되지 않습니다. */
+  const woShareRoot = firebase.database().ref("workorderShare");
+  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","sampleRecoveryStatus"];
+  function woShareEntryFrom_(st){
+    const s = st || {};
+    const e = {};
+    WO_SHARE_KEYS.forEach(k=>{
+      const v = s[k];
+      e[k] = (v === undefined || v === null) ? "" : v;
+    });
+    e.colors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
+    e.thumb  = s.p1Thumb || "";   // 압축 썸네일만. 원본 사진은 넘기지 않습니다
+    return e;
+  }
   const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
-  const WO_INDEX_VERSION = 2;   // 2026-08-25: 코디 품번을 색인에 넣느라 한 판 올림
+  const WO_INDEX_VERSION = 3;   // 2026-08-25: 공유용 칸(workorderShare)을 채우느라 한 판 더 올림
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
   const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
@@ -3003,6 +3022,11 @@
       delete lastIndexSig_[oldCode];
       lastIndexSig_[newCode] = woIndexSig_(idxEntry_);
       await woIndexRoot.update(idxUpdates_);
+      // 2026-08-25 추가: 공유용 칸도 같은 품번으로 옮깁니다
+      const shareUpdates_ = {};
+      shareUpdates_[newCode] = woShareEntryFrom_(data);
+      shareUpdates_[oldCode] = null;
+      await woShareRoot.update(shareUpdates_).catch(()=>{});
 
       // 연결을 새 품번으로 갈아끼움
       if(woRef && woListener) woRef.off("value", woListener);
@@ -3964,11 +3988,14 @@
     lastIndexSig_[code] = sig;
     e.updatedAt = st.updatedAt || Date.now();
     woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
+    // 2026-08-25 추가: 공유용 칸도 같이 갱신 (실패해도 작지 저장에는 영향 없음)
+    woShareRoot.child(code).set(woShareEntryFrom_(st)).catch(()=>{});
   }
   function removeIndexEntry_(code){
     if(!code) return;
     delete lastIndexSig_[code];
     woIndexRoot.child(code).remove().catch(()=>{});
+    woShareRoot.child(code).remove().catch(()=>{});   // 2026-08-25: 공유 칸도 같이
   }
   let justDeletedCode_ = null;
   function save(){
@@ -7183,6 +7210,7 @@
       const allSnap = await woRoot.once("value");
       const all = allSnap.val() || {};
       const payload = {};
+      const sharePayload = {};   // 2026-08-25: 공유용
       const codes = Object.keys(all);
       for(const code of codes){
         const st = all[code] || {};
@@ -7200,8 +7228,10 @@
         const e = woIndexEntryFrom_(st);
         e.updatedAt = st.updatedAt || 0;
         payload[code] = e;
+        sharePayload[code] = woShareEntryFrom_(st);   // 2026-08-25: 공유 칸도 같이 채웁니다
       }
       await woIndexRoot.set(payload);
+      await woShareRoot.set(sharePayload);
       await woIndexMetaRoot.child("version").set(WO_INDEX_VERSION);
     }catch(err){
       console.error("색인 준비 실패:", err);
