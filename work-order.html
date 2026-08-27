@@ -1,5 +1,5 @@
 <meta name="robots" content="noindex,nofollow,noarchive" />
-<!-- AISEL 작업지시서 v48 (2026-08-25)
+<!-- AISEL 작업지시서 v62 (2026-08-27)
      v44 대비 수정 8건 - 인쇄영역 무변경
      [v45] 화면 전환 시 예약 저장 취소 / 저장 대상 고정 / 재시도 대상 고정 / 품번 이동 원자화
      [v46] 목록 전용 색인(workorderIndex) / 저장을 필드 단위 update 로 전환
@@ -15,6 +15,9 @@
            v47 에서 words.json 으로 옮길 때 들어간 것으로, v48·v49 에도 있었습니다.
      [v53] 목록 카드에 코디 세트를 단추로 표시 - 눌러서 바로 그 작지로 이동. 양쪽 방향 다 보임
      [v54] 목록 카드의 '👗 코디' 글자 제거 - 제품 단추만 남김
+     [v62] 공유용 사진을 240px 재압축 없이 320px 그대로 올림 (두 번 눌러 뭉개던 것을 없앰)
+           + 보관 규칙 shareKeeps_() 신설 - 예정·발주생산·PDP·판매30일만 공유 칸에 둡니다.
+           샘플중·드롭 12칸이 화면에 안 나오는데도 매번 내려가던 것을 막았습니다.
      [v61] 공유용 사진에 보관 지시(cacheControl) 추가 - 안 붙이면 파이어베이스가 "보관 금지"를 달아
            브라우저가 화면을 열 때마다 사진을 다시 받았습니다. 썸네일이 버벅이던 원인.
      [v60] 공유 화면: 전체·발주생산·PDP 세 탭만 · 탭 숫자는 있을 때만 · 컬러 칩에 실제 색 · 아래 문구 제거
@@ -2605,6 +2608,20 @@
       return info ? { n:name, h:info.hex, t:info.text } : { n:name };
     });
   }
+  /* 2026-08-27 추가: 공유 칸에 둘 것인가 — 보관 규칙.
+     여기는 보관소가 아니라 「지금 볼 것」만 두는 자리입니다. 작지 원본은 그대로 남습니다.
+     실제로 재보니 공유 칸 26개 중 12개(샘플중 10 · 드롭 2)가 화면에 안 나오는데도
+     매번 내려가고 있었습니다. 글자 10.6KB 중 4.5KB가 헛것이었습니다.
+     판매는 입고 대조가 끝날 때까지 30일만 남기고 저절로 빠집니다. */
+  const SHARE_STATES = ["planned", "order", "pdp"];
+  const SHARE_SALE_DAYS = 30;
+  function shareKeeps_(st){
+    const s = st || {};
+    if(SHARE_STATES.indexOf(s.status) !== -1) return true;
+    if(s.status !== "sale") return false;
+    const t = Number(s.updatedAt || s.createdAt || 0);
+    return !!t && (Date.now() - t) < SHARE_SALE_DAYS * 86400000;
+  }
   function shareCoordiOf_(s){
     const out = [];
     [1,2,3].forEach(k=>{
@@ -2640,9 +2657,11 @@
         // 이미 올려둔 사진은 다시 올리지 않도록 기억해 둡니다
         if(have[code] && have[code].thumbSig) shareThumbSigCache_[code] = String(have[code].thumbSig);
         if(!mine[code]) updates[code] = null;   // 지워진 작지는 공유 화면에서도 빠집니다
+        // 2026-08-27 추가: 샘플중·드롭·오래된 판매는 공유 칸에서 빼냅니다
+        else if(!shareKeeps_(mine[code])){ updates[code] = null; delete shareThumbSigCache_[code]; }
       });
       Object.keys(mine).forEach(code=>{
-        if(!have[code]) updates[code] = woShareEntryFromIndex_(mine[code]);
+        if(!have[code] && shareKeeps_(mine[code])) updates[code] = woShareEntryFromIndex_(mine[code]);
       });
       if(Object.keys(updates).length) await woShareRoot.update(updates);
 
@@ -2651,9 +2670,10 @@
          한 번 올라간 뒤로는 이 자리를 다시 지나가지 않습니다. */
       let slot = 0;
       Object.keys(mine).forEach(code=>{
+        if(!shareKeeps_(mine[code])) return;   // 안 보여줄 것은 사진도 안 올립니다
         const src = (mine[code] && mine[code].thumb) || "";
         if(!src) return;
-        if(shareThumbSigCache_[code] === String(src.length)) return;
+        if(shareThumbSigCache_[code] === (SHARE_THUMB_VER + ":" + src.length)) return;
         setTimeout(()=> ensureShareThumb_(code, src), (slot++) * 400);
       });
     }catch(err){ console.warn("공유 칸 채우기 실패:", err); }
@@ -2662,12 +2682,29 @@
      예전에는 사진이 데이터 안에 글자(base64)로 박혀 있어서, 공유 화면을 열면
      화면에 안 보이는 것까지 전부 한꺼번에 내려받아야 했습니다 (24개에 414KB).
      파일로 두면 브라우저가 화면에 보이는 것만 받습니다. 첫 화면이 5KB로 뜹니다.
-     크기는 240px — 휴대폰에서 어떤 제품인지 알아보고 입고 물건과 대조할 정도면 충분합니다. */
-  const SHARE_THUMB_W = 240;
+     2026-08-27 수정: 240px 로 한 번 더 줄이던 것을 없앴습니다.
+     작지 썸네일이 이미 가로 320px 인데 그걸 240으로 다시 누르면 두 번 뭉개집니다.
+     그대로 올리면 한 번만 눌린 사진이 됩니다. 한 장 6.2KB -> 12.9KB 로 늘지만
+     화면에 나오는 것만 받고, 한 번 받으면 브라우저가 1년 보관하므로 두 번째부터는 0KB입니다.
+     이 크기라야 눌렀을 때 크게 띄워도 구별이 됩니다. */
+  const SHARE_THUMB_W = 320;
+  /* 판 번호를 붙입니다. 안 붙이면 사진 길이가 그대로라 240px 옛 파일이 320px 로 안 바뀝니다. */
+  const SHARE_THUMB_VER = "v2";
   const shareThumbSigCache_ = {};
+  /* 이미 320px 이하면 다시 누르지 않고 그대로 씁니다.
+     썸네일 없이 800px 원본만 있는 옛 작지일 때만 한 번 줄입니다. */
+  function shareSourceFor_(src, cb){
+    const img = new Image();
+    img.onload = ()=>{
+      if(img.width <= SHARE_THUMB_W){ cb(src); return; }
+      makeThumbnail(src, SHARE_THUMB_W, 0.72, out=> cb(out || src));
+    };
+    img.onerror = ()=> cb(src);
+    img.src = src;
+  }
   function ensureShareThumb_(code, srcDataUrl){
     if(!code) return;
-    const sig = String((srcDataUrl || "").length);
+    const sig = srcDataUrl ? (SHARE_THUMB_VER + ":" + srcDataUrl.length) : "";
     if(shareThumbSigCache_[code] === sig) return;   // 사진이 그대로면 다시 안 올립니다
     if(!srcDataUrl){
       shareThumbSigCache_[code] = sig;
@@ -2675,9 +2712,8 @@
       return;
     }
     shareThumbSigCache_[code] = sig;   // 같은 사진을 두 번 올리지 않게 먼저 표시합니다
-    makeThumbnail(srcDataUrl, SHARE_THUMB_W, 0.6, small=>{
-      const use = small || srcDataUrl;
-      fetch(use).then(r=> r.blob()).then(blob=>{
+    shareSourceFor_(srcDataUrl, use=>{
+      fetch(use || srcDataUrl).then(r=> r.blob()).then(blob=>{
         const fileRef = fbStorage.ref("workorderShareThumbs").child(code + ".jpg");
         /* 2026-08-27 추가: cacheControl 을 안 주면 파이어베이스가 "private, max-age=0" 을 붙입니다.
            그러면 브라우저가 사진을 하나도 보관하지 않고 화면을 열 때마다 다시 받습니다.
@@ -3140,7 +3176,7 @@
       await woIndexRoot.update(idxUpdates_);
       // 2026-08-25 추가: 공유용 칸도 같은 품번으로 옮깁니다
       const shareUpdates_ = {};
-      shareUpdates_[newCode] = woShareEntryFrom_(data);
+      if(shareKeeps_(data)) shareUpdates_[newCode] = woShareEntryFrom_(data);
       shareUpdates_[oldCode] = null;
       await woShareRoot.update(shareUpdates_).catch(()=>{});
 
@@ -4106,6 +4142,13 @@
     woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
     // 2026-08-25 추가: 공유용 칸도 같이 갱신 (실패해도 작지 저장에는 영향 없음)
     // update 를 씁니다. set 이면 따로 올려둔 사진 주소(thumbUrl)까지 지워집니다
+    // 2026-08-27 추가: 보관 규칙에 안 맞으면(샘플중·드롭·30일 지난 판매) 칸을 지웁니다.
+    // 작지 원본은 그대로 남습니다 — 공유 칸은 지금 볼 것만 두는 자리입니다.
+    if(!shareKeeps_(st)){
+      delete shareThumbSigCache_[code];
+      woShareRoot.child(code).remove().catch(()=>{});
+      return;
+    }
     woShareRoot.child(code).update(woShareEntryFrom_(st)).catch(()=>{});
     ensureShareThumb_(code, st.p1Thumb || st.p1 || "");
   }
@@ -7347,7 +7390,8 @@
         const e = woIndexEntryFrom_(st);
         e.updatedAt = st.updatedAt || 0;
         payload[code] = e;
-        sharePayload[code] = woShareEntryFrom_(st);   // 2026-08-25: 공유 칸도 같이 채웁니다
+        // 2026-08-25: 공유 칸도 같이 채웁니다 / 2026-08-27: 보관 규칙에 맞는 것만
+        if(shareKeeps_(st)) sharePayload[code] = woShareEntryFrom_(st);
       }
       await woIndexRoot.set(payload);
       await woShareRoot.set(sharePayload);

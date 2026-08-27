@@ -1,5 +1,7 @@
 <meta name="robots" content="noindex,nofollow,noarchive" />
-<!-- AISEL 제품 진행 현황 (공유용) v1 (2026-08-25)
+<!-- AISEL 제품 진행 현황 (공유용) v2 (2026-08-27)
+     v2 에서 바뀐 것 - 사진을 자르지 않고 전체를 보여줍니다 / 사진을 누르면 크게 뜹니다
+                    / 「🛍️ 최근 완료」 단계 추가 (판매로 넘어간 지 30일 이내)
      물류·MD 공유 전용 화면입니다. 작업지시서(work-order.html)와는 다른 파일입니다.
 
      ★ 이 화면은 파이어베이스의 workorderShare 칸만 읽습니다.
@@ -7,7 +9,8 @@
        화면에서 숨기는 게 아니라 애초에 내려오지도 않습니다.
        넘길 값을 늘리거나 줄이려면 work-order.html 의 WO_SHARE_KEYS 를 고칩니다.
 
-     ★ 편집 기능이 없습니다. 카드를 눌러도 아무 일도 일어나지 않습니다.
+     ★ 편집 기능이 없습니다. 사진을 누르면 그 사진이 크게만 뜹니다 (2026-08-27 추가).
+       값을 고치거나 지울 수 있는 자리는 이 화면에 없습니다.
      ★ 판매현황·무드보드·발주서 화면은 이 파일에 존재하지 않습니다.
 -->
 <title>AISEL 제품 진행 현황</title>
@@ -66,7 +69,13 @@
     display:flex; align-items:center; justify-content:center;
     color:#B9BFCB; font-size:26px;
   }
-  .thumb img{width:100%; height:100%; object-fit:cover; display:block;}
+  /* 2026-08-27 수정: cover(잘라 채우기) -> contain(전체 보이기).
+     도식화는 비율이 제각각입니다. 실제 25장을 재보니 23장은 3:4 근처(0.70~0.91)라
+     보이는 모습이 지금과 거의 같고, 가로로 넓은 2장만 위아래 여백이 생깁니다.
+     그 2장이 바로 잘려서 못 알아보던 것들입니다 (AS-26F-KT-022 는 좌우 54%가 잘렸습니다). */
+  .thumb img{width:100%; height:100%; object-fit:contain; display:block;}
+  .thumb.can-open{cursor:zoom-in;}
+  .thumb.can-open:focus-visible{outline:2px solid var(--navy); outline-offset:-2px;}
   /* 2026-08-25 수정: 줄 사이가 벌어져 보이던 문제.
      간격(gap)은 5px였는데 품번·공장·날짜 줄에 글줄 높이가 안 정해져 있어서
      본문 기본값 1.7 이 걸렸습니다. 글자 위아래로 4px씩 보이지 않는 여백이 붙어
@@ -104,6 +113,29 @@
     background:var(--sheet); border:1px dashed var(--hair); border-radius:12px;
     padding:44px 20px; text-align:center; color:var(--muted); font-size:14px;
   }
+
+  /* 2026-08-27 추가: 사진 크게 보기.
+     사진을 새로 받지 않습니다. 카드에 이미 받아둔 그 파일을 그대로 크게 띄웁니다.
+     늘리지 않고 사진 크기 그대로 둡니다 — 억지로 늘리면 흐려져서 오히려 구별이 안 됩니다. */
+  .viewer{
+    position:fixed; inset:0; z-index:50; padding:16px;
+    background:rgba(16,19,25,.84);
+    display:none; align-items:center; justify-content:center;
+  }
+  .viewer.on{display:flex;}
+  .viewer img{
+    display:block; width:auto; height:auto;
+    max-width:92vw; max-height:88vh;
+    background:#fff; border-radius:10px;
+  }
+  .viewer .x{
+    position:absolute; top:12px; right:14px;
+    width:42px; height:42px; border-radius:999px; border:0;
+    background:rgba(255,255,255,.94); color:var(--ink);
+    font-size:19px; font-weight:700; line-height:1;
+    cursor:pointer; font-family:inherit;
+  }
+  .viewer .x:focus-visible{outline:2px solid #fff; outline-offset:2px;}
 </style>
 
 <div class="wrap">
@@ -118,6 +150,12 @@
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none">해당하는 제품이 없습니다.</div>
 
+</div>
+
+<!-- 사진 크게 보기. 바깥이나 ✕ 를 누르거나 ESC 로 닫습니다 -->
+<div class="viewer" id="viewer" aria-hidden="true">
+  <button type="button" class="x" id="viewerClose" aria-label="닫기">✕</button>
+  <img id="viewerImg" alt="" />
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -148,7 +186,13 @@ var STATES = [
     empty: "지금 발주된 제품이 없습니다." },
   { key:"pdp",      label:"PDP",     icon:"🖼️", bg:"#F3F1EC", fg:"#7A7364",
     desc:  function(n){ return "생산이 완료되어 " + n + "개가 상세페이지 등록을 기다리고 있습니다."; },
-    empty: "상세페이지 등록을 기다리는 제품이 아직 없습니다." }
+    empty: "상세페이지 등록을 기다리는 제품이 아직 없습니다." },
+  /* 2026-08-27 추가: 판매로 넘어간 제품. 입고 대조가 끝날 때까지만 남깁니다.
+     30일이 지나면 작업지시서 쪽에서 이 칸을 지우므로 여기서도 저절로 사라집니다.
+     작지 원본은 그대로 남습니다 — 여기는 보관소가 아니라 지금 볼 것만 두는 자리입니다. */
+  { key:"sale",     label:"최근 완료", icon:"🛍️", bg:"#ECF2EC", fg:"#4F6552",
+    desc:  function(n){ return "최근 30일 안에 판매로 넘어간 제품 " + n + "개입니다."; },
+    empty: "최근 30일 안에 판매로 넘어간 제품이 없습니다." }
 ];
 var SHOWN = STATES.map(function(s){ return s.key; });
 var stateOf = function(k){
@@ -323,6 +367,16 @@ function render(){
       im.src = src;
       im.alt = e.pumMyeong || x.code;
       th.appendChild(im);
+      /* 2026-08-27 추가: 누르면 이 사진이 크게 뜹니다.
+         새로 받는 파일이 없습니다 — 방금 받은 이 파일을 그대로 키웁니다. */
+      th.className = "thumb can-open";
+      th.setAttribute("role", "button");
+      th.setAttribute("tabindex", "0");
+      th.title = "누르면 사진이 크게 보입니다";
+      th.addEventListener("click", function(){ openViewer(src, im.alt); });
+      th.addEventListener("keydown", function(ev){
+        if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openViewer(src, im.alt); }
+      });
     }else{
       th.textContent = "▧";
     }
@@ -390,6 +444,41 @@ function render(){
     gridEl.appendChild(card);
   });
 }
+
+/* ---------- 사진 크게 보기 ---------- */
+/* 이 화면이 하는 일은 이게 전부입니다. 고치거나 지우는 자리는 없습니다. */
+var viewerEl    = document.getElementById("viewer");
+var viewerImgEl = document.getElementById("viewerImg");
+var viewerCloseEl = document.getElementById("viewerClose");
+var viewerLastFocus = null;
+
+function openViewer(src, alt){
+  if(!src) return;
+  viewerLastFocus = document.activeElement;
+  viewerImgEl.src = src;
+  viewerImgEl.alt = alt || "";
+  viewerEl.classList.add("on");
+  viewerEl.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";   // 뒤 목록이 같이 밀리지 않게
+  viewerCloseEl.focus();
+}
+function closeViewer(){
+  if(!viewerEl.classList.contains("on")) return;
+  viewerEl.classList.remove("on");
+  viewerEl.setAttribute("aria-hidden", "true");
+  viewerImgEl.removeAttribute("src");
+  document.body.style.overflow = "";
+  if(viewerLastFocus && viewerLastFocus.focus) viewerLastFocus.focus();
+  viewerLastFocus = null;
+}
+/* 사진 자체를 누른 것은 닫기가 아닙니다. 바깥이나 ✕ 를 눌러야 닫힙니다. */
+viewerEl.addEventListener("click", function(ev){
+  if(ev.target === viewerImgEl) return;
+  closeViewer();
+});
+document.addEventListener("keydown", function(ev){
+  if(ev.key === "Escape") closeViewer();
+});
 
 /* ---------- 검색 ---------- */
 document.getElementById("search").addEventListener("input", function(ev){
