@@ -472,7 +472,8 @@
     height: 120px; background: repeating-linear-gradient(45deg, transparent, transparent 11px, rgba(120,130,150,.05) 11px, rgba(120,130,150,.05) 22px);
     display: flex; align-items: center; justify-content: center; overflow: hidden;
   }
-  .mb-meeting-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  /* 2026-08-27: 갤러리와 같은 이유로 잘라 채우기를 뺐습니다 */
+  .mb-meeting-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .mb-meeting-thumb .ph { font-size: 12px; color: var(--muted); }
   .mb-meeting-info { padding: 8px 10px; }
   .mb-meeting-date { font-size: 12px; font-weight: 700; color: #2F3B52; }
@@ -644,11 +645,17 @@
     cursor: pointer; display: flex; flex-direction: column;
   }
   .gcard:hover { border-color: var(--accent); }
+  /* 2026-08-27 수정: 정사각 칸에 잘라 채우던 것을 3:4 칸에 전체 보이기로 바꿨습니다.
+     도식화는 대부분 3:4 근처(0.70~0.91)인데 정사각 칸에 맞추느라 위아래가 잘렸고,
+     가로로 넓은 것은 좌우가 잘렸습니다 — AS-26F-KT-022(피노 하이넥 셔츠)는
+     도식화와 실물이 가로로 붙어 있어 오른쪽 실물이 통째로 날아가 있었습니다.
+     제품 진행 현황(status.html)을 같은 날 같은 이유로 이렇게 고쳤고, 두 화면을 맞춥니다.
+     되돌리려면 aspect-ratio 를 1/1 로, object-fit 을 cover 로 되돌리면 됩니다. */
   .gcard-thumb {
-    aspect-ratio: 1 / 1; background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(120,130,150,.06) 8px, rgba(120,130,150,.06) 16px);
+    aspect-ratio: 3 / 4; background: repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(120,130,150,.06) 8px, rgba(120,130,150,.06) 16px);
     display: flex; align-items: center; justify-content: center; overflow: hidden;
   }
-  .gcard-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .gcard-thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .gcard-thumb .empty { font-size: 24px; opacity: .35; }
   .gcard-title { padding: 8px 9px; font-size: 12.5px; font-weight: 700; line-height: 1.4; }
   .gcard-title .code { display: block; font-size: 10.5px; font-weight: 600; color: var(--muted); margin-top: 2px; }
@@ -1020,7 +1027,9 @@
   .meeting-print-title { font-size: 14px; font-weight: 800; margin-bottom: 10px; }
   .meeting-print-grid { display: grid; grid-template-columns: repeat(2, 9cm); gap: 6mm; justify-content: start; }
   .meeting-print-item { width: 9cm; page-break-inside: avoid; }
-  .meeting-print-item img { width: 9cm; height: 12cm; object-fit: cover; display: block; border: 1px solid #ccc; }
+  /* 2026-08-27: 종이에서 잘리면 회의 중에 되돌릴 방법이 없습니다.
+     9x12cm 은 3:4 라 도식화 대부분은 그대로 차고, 가로로 넓은 것만 위아래 여백이 생깁니다. */
+  .meeting-print-item img { width: 9cm; height: 12cm; object-fit: contain; background: #fff; display: block; border: 1px solid #ccc; }
   .meeting-print-cap { font-size: 9px; line-height: 1.4; margin-top: 3px; }
   body.meeting-print-mode * { visibility: hidden !important; }
   body.meeting-print-mode #meetingPrintArea,
