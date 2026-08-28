@@ -6019,7 +6019,14 @@
     }
     fetch(dataUrl).then(res=> res.blob()).then(blob=>{
       const fileRef = storageFolderRef.child(Date.now() + "_" + Math.random().toString(36).slice(2) + ".jpg");
-      return fileRef.put(blob, { contentType: "image/jpeg" }).then(()=> fileRef.getDownloadURL()).then(cb);
+      /* 2026-08-29 추가: cacheControl 을 안 주면 파이어베이스가 "private, max-age=0" 을 붙입니다.
+         그러면 브라우저가 사진을 하나도 보관하지 않고 화면을 열 때마다 다시 받습니다.
+         작지 사진과 무드보드 회의 사진이 여기를 지나갑니다.
+         사진이 바뀌면 주소(토큰)도 같이 바뀌므로 오래 보관해도 옛날 사진이 남지 않습니다. */
+      return fileRef.put(blob, {
+        contentType: "image/jpeg",
+        cacheControl: "public, max-age=31536000, immutable"
+      }).then(()=> fileRef.getDownloadURL()).then(cb);
     }).catch(err=>{
       if(onError) onError(err); else alert("사진 업로드 중 문제가 생겼습니다: " + (err && err.message ? err.message : err));
     });
