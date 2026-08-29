@@ -1,4 +1,3 @@
-<meta name="robots" content="noindex,nofollow,noarchive" />
 <!-- AISEL 작업지시서 v62 (2026-08-27)
      v44 대비 수정 8건 - 인쇄영역 무변경
      [v45] 화면 전환 시 예약 저장 취소 / 저장 대상 고정 / 재시도 대상 고정 / 품번 이동 원자화
@@ -139,7 +138,8 @@
      너비 100%짜리 투명 요소를 사이에 끼워 넣으면 그 뒤 버튼들이 화면 폭과 상관없이
      항상 강제로 다음 줄로 넘어갑니다. */
   .jump-btn-break { flex-basis: 100%; height: 0; }
-  /* 2026-08-29 추가: 폰에서 버튼 줄이 화면 밖으로 나가던 문제.
+  /* 2026-08-29 추가: 폰(480px 아래)에서 버튼 줄이 화면 밖으로 삐져나가던 문제.
+     줄바꿈은 원래 켜져 있었지만 버튼 하나가 화면보다 넓으면 줄바꿈으로 못 막습니다.
      최소 너비를 풀고 글자를 줄이고, 폰에서 안 쓰는 버튼은 「더보기」로 접습니다.
      PC 화면과 인쇄는 아무것도 안 바뀝니다. */
   .mfold-toggle { display: none; }
@@ -151,6 +151,7 @@
     .mfold { display: none !important; }
     .mfold-toggle { display: inline-flex; }
     body.mfold-open .mfold { display: inline-flex !important; }
+    /* 상태는 7개나 되는데 하나만 고르는 것이라 옆으로 미는 게 자연스럽습니다 */
     .statusbar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .statusbar .status-btn { flex: 0 0 auto; }
   }
@@ -368,7 +369,8 @@
      눌렸을 때와 안 눌렸을 때 모두 700으로 통일하고, 눌린 표시는 배경색으로만 구분함. */
   .maintab.active { background: #2F3B52; border-color: #2F3B52; color: #fff; font-weight: 700; }
   /* 2026-08-29 추가: 좁은 화면에서 탭 글자가 「작업지시 서」처럼 두 줄로 쪼개지던 문제.
-     줄바꿈을 막고, 폭이 모자라면 아이콘을 먼저 접은 뒤 글자 크기를 줄입니다. */
+     줄바꿈을 막고, 폭이 모자라면 아이콘을 먼저 접은 뒤 글자 크기를 줄입니다.
+     탭이 4개라 360px 화면에서 한 탭이 약 73px 밖에 안 됩니다. */
   .maintab { white-space: nowrap; }
   .tabicon { margin-right: 5px; }
   @media (max-width: 480px) {
@@ -634,7 +636,7 @@
   .srow-diff.bad { color: #64748B; }
   .srow-diff.neutral { color: var(--muted); }
   /* 2026-08-21 수정: 1100px에서 820px로. 상단 탭·작지 본문과 같은 폭으로 맞춰서
-     판매현황·작업지시서·무드보드·발주서 네 화면 모두 탭 줄보다 옆으로 삐져나오지 않게 했습니다.
+     판매·수배요청·작업지시서·발주 네 화면 모두 탭 줄보다 옆으로 삐져나오지 않게 했습니다.
      이 클래스 하나를 네 화면이 전부 같이 쓰고 있어서 여기 한 번만 고치면 전체 적용됩니다. */
   .gallery { max-width: 820px; margin: 0 auto; padding: 22px 16px 60px; }
   .gallery-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; flex-wrap: wrap; }
@@ -1772,6 +1774,8 @@
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
       <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:3px;font-weight:800;">🖨 PDF로 저장 / 인쇄</button>
+      <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
+           폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
       <button type="button" class="btn ghost nav-btn mfold-toggle" id="mfoldToggle">⋯ 더보기</button>
     </div>
   </div>
@@ -2155,6 +2159,8 @@
           <div class="price-cat-row" id="priceCatRow">
             <button type="button" class="price-cat" data-cat="상의">👚 상의</button>
             <button type="button" class="price-cat" data-cat="하의">👖 하의</button>
+            <button type="button" class="price-cat" data-cat="컴포트팬츠">🩳 컴포트팬츠</button>
+            <button type="button" class="price-cat" data-cat="컴포트스커트">🩳 컴포트스커트</button>
             <button type="button" class="price-cat" data-cat="원피스">👗 원피스</button>
             <button type="button" class="price-cat" data-cat="아우터">🧥 아우터</button>
           </div>
@@ -2406,7 +2412,7 @@
 </div>
 <div class="copygen-card">
 <h2>2. 컬러 고르기</h2>
-<div class="copygen-sub">기본 컬러를 클릭하면 AISEL/SIE 스타일 변형 5가지가 아래에 뜹니다. 여러 개 선택 가능합니다.</div>
+<div class="copygen-sub">기본 컬러를 클릭하면 감성 컬러명 변형 5가지가 아래에 뜹니다. 여러 개 선택 가능합니다.</div>
 <div class="copygen-swatch-grid" id="colorSwatches"></div>
 <div class="copygen-inline-add" id="addColorRow">
 <input id="newColorInput" placeholder="직접 입력할 컬러명" type="text"/>
@@ -3311,8 +3317,13 @@
 
   // ---------- 타겟 판매가 퀵버튼(카테고리 → 가격 2단계) ----------
   const PRICE_BY_CATEGORY = {
+    // 2026-08-29 정정: 상의·하의 공통 계단(원가x4, 끝자리 000). 69,000 넘기려면
+    // 원가룰(원가<=판매가/4) 먼저 통과하고 수요 비탄력일 때만 79,000·89,000 (data/판단기준.json 참고)
     "상의": ["59,000", "69,000", "79,000", "89,000"],
-    "하의": ["59,900", "69,000", "79,000", "89,000", "98,000"],
+    "하의": ["59,000", "69,000", "79,000", "89,000"],
+    // 컴포트 라인은 별도 가격 체계(끝자리 900). 팬츠·스커트 공통 — 실제 매장 판매가 기준
+    "컴포트팬츠": ["59,900", "62,900", "65,900", "69,900", "74,000", "79,000"],
+    "컴포트스커트": ["59,900", "62,900", "65,900", "69,900", "74,000", "79,000"],
     "원피스": ["89,000", "98,000"],
     "아우터": ["89,000", "98,000"]
   };
@@ -3952,6 +3963,14 @@
 
   $("#printBtn").addEventListener("click", async ()=>{
     setModifiedToday();
+    // 2026-08-29 추가: 인쇄(=작업지시서 확정) 시점에 상태를 PDP로 자동 전환.
+    // 이미 PDP·판매·드롭이면 되돌리지 않음(재인쇄 시 상태가 거꾸로 가지 않게).
+    // 상세설명 카피생성기(onPdpStageReached_)는 여기서 부르지 않음 — 상태 탭 버튼과 분리해서 유지.
+    if(currentStatus !== "pdp" && currentStatus !== "sale" && currentStatus !== "drop"){
+      currentStatus = "pdp";
+      updateStatusButtons();
+      refreshCafe24Bar_();
+    }
     save();
     await syncToAiselSheets_(); // 디자이너 최종 확정 시점 → 같은 품번이면 시트 줄을 덮어씀
     window.print();
@@ -6892,6 +6911,7 @@
     $("#editorView").style.display = "block";
     $("#mainBar").style.display = "flex";
   }
+  // 2026-08-29 추가: 폰에서 접어둔 버튼을 펴고 접습니다 (PC 에서는 이 버튼이 안 보입니다)
   (function(){
     var t = document.getElementById("mfoldToggle");
     if(!t) return;
@@ -7995,7 +8015,7 @@ const wordsRoot_ = firebase.database().ref("wordLists");
 const wordsKeySafe_ = w => String(w).replace(/[.#$/\[\]]/g, "_");
 
 // 붙여넣기 지원. 줄바꿈·쉼표·가운뎃점·슬래시·탭으로 나눕니다.
-// 시에 목록처럼 수십 개를 한 번에 붙여넣어도 한 번에 다 들어갑니다.
+// 참고 브랜드 목록처럼 수십 개를 한 번에 붙여넣어도 한 번에 다 들어갑니다.
 function splitWords_(raw){
   return String(raw || "")
     .split(/[\n,·/|\t;]+/)
@@ -8076,7 +8096,7 @@ window.setNameParts_ = (v) => {
    선택값은 작지에 st.sellingPoints 로 함께 저장되어 나중에 성적표 분석에 쓰임.
    단어는 전부 붙여쓰기로 통일 (띄어쓰기가 섞이면 같은 태그가 두 개로 갈라져 집계가 어긋남). */
 // 목록의 순서가 곧 우선순위입니다. 앞에 있을수록 품명에 먼저 들어갑니다.
-// 커브드라인은 시에가 실제로 쓰는 표현(루빈 커브드 라인 티셔츠)이라 반전 디테일 맨 앞에 둡니다.
+// 커브드라인은 참고 브랜드가 실제로 쓰는 표현이라 반전 디테일 맨 앞에 둡니다.
 // 커브드헴은 밑단만 곡선일 때 쓰고, 커브드라인은 실루엣 전체가 곡선일 때 씁니다.
 const SP_GROUPS_DEFAULT = {
   comfort: ["컴포트","밴딩","텐션","릴렉스핏","루즈핏","오버핏","드레이프","소프트","2way"],
@@ -8088,11 +8108,11 @@ const SP_GROUPS_DEFAULT = {
 };
 // 2026-08-13 추가: 태그는 붙여쓰기로 저장해 집계가 갈라지지 않게 하고,
 // 품명과 상세설명에 나갈 때만 아래 표대로 띄어써서 표기합니다.
-// (시에·시야쥬 모두 본문에서 "세미 플레어", "세미 부츠컷"처럼 띄어씁니다)
+// (참고 브랜드들도 본문에서 "세미 플레어", "세미 부츠컷"처럼 띄어씁니다)
 // 핏 정도는 릴렉스핏 → 루즈핏 → 오버핏 세 단계로 구분합니다.
 // "세미"는 실루엣(플레어·부츠컷)에만 붙이고 핏에는 붙이지 않습니다. 두 브랜드 모두 그렇게 씁니다.
 // 저장 태그는 붙여쓰고(집계가 갈라지지 않게), 화면·품명·상세설명에는 아래대로 띄어씁니다.
-// 시에와 시야쥬 모두 라인과 헴을 독립된 어절로 씁니다.
+// 참고 브랜드들도 라인과 헴을 독립된 어절로 씁니다.
 //   루빈 커브드 라인 티셔츠 / 컴포트 라인 카프리 팬츠 / 러플 헴 맥시 드레스
 const SP_DISPLAY = {
   "세미부츠컷": "세미 부츠컷",
@@ -8103,7 +8123,7 @@ const SP_DISPLAY = {
 };
 const spDisplay_ = w => SP_DISPLAY[w] || w;
 // 2026-08-13 추가: 목록에서 뺀 단어. 예전 작지에 저장돼 있어도 버튼으로 되살리지 않고 선택도 해제합니다.
-// (사이드버튼은 부품어라 시에·시야쥬 모두 쓰지 않아 제외했습니다. 같은 기능은 "랩"으로 표기합니다)
+// (사이드버튼은 부품어라 참고 브랜드들도 쓰지 않아 제외했습니다. 같은 기능은 "랩"으로 표기합니다)
 const SP_RETIRED = ["사이드버튼", "허리라인"]; // 허리라인은 촌스러워 제외. 같은 효과는 커브드라인이 대신합니다.
 const SP_KEYS = {
   comfort: "aisel_custom_sp_comfort",
@@ -8522,14 +8542,14 @@ setupItemGroupAdd("skirtDress", "newItemSkirtDressConfirm", "newItemSkirtDressIn
 setupItemGroupAdd("outer", "newItemOuterConfirm", "newItemOuterInput", "addItemOuterRow");
 
 // 2026-08-13 추가: 품명에 들어갈 셀링포인트 한 개를 고릅니다.
-// 시에와 시야쥬 모두 셀링포인트를 고유명 바로 뒤(고유명이 없으면 맨 앞)에 두고 전체를 네 어절로 유지합니다.
+// 참고 브랜드들도 셀링포인트를 고유명 바로 뒤(고유명이 없으면 맨 앞)에 두고 전체를 네 어절로 유지합니다.
 // 그래서 여러 개를 골랐어도 이름에는 한 개만 넣고 나머지는 데이터로만 남깁니다.
 // 우선순위는 반전 디테일 > 날씬 > 편안함. 반전 디테일이 가격 프리미엄의 근거라 이름에 우선 노출합니다.
 // 사이드버튼처럼 부품에 해당하는 말은 이름에 쓰지 않고 결과에 해당하는 말(랩 등)로 대체합니다.
 const SP_NAME_SKIP = ["이너스트링"]; // 부품어. 이름에는 빼고 상세설명과 데이터에만 남김
 const NAME_MAX_WORDS = 4;          // 품명 전체 어절 상한
-// 시에 20개와 시야쥬 30개를 세어보니 3-4어절이 표준입니다.
-// 시에 실제 상품(루빈 커브드 라인 티셔츠 / 엘리브 커브드 라인 블라우스)도 모두 4어절이고,
+// 참고 브랜드 상품명 50개를 세어보니 3-4어절이 표준입니다.
+// 참고 브랜드 실제 상품도 모두 4어절이고,
 // 커브드 라인처럼 두 어절짜리가 들어가면 소재가 빠집니다.
 // 고유명과 카테고리를 뺀 나머지 자리를 아래 우선순위로 채웁니다.
 //   1) 반전 디테일 — 가격 프리미엄의 근거
@@ -9278,7 +9298,7 @@ const SYSTEM_PROMPT = `당신은 AISEL(에이슬)이라는 여성복 D2C 브랜�
 
 [브랜드명 원칙]
 - 브랜드명을 언급할 경우 반드시 "AISEL"만 사용합니다.
-- SIE, 시에, 시야쥬 등 다른 브랜드명은 어떤 경우에도 결과에 등장시키지 않습니다.
+- 다른 브랜드명은 어떤 경우에도 결과에 등장시키지 않습니다.
 - 다른 브랜드의 문장을 그대로 옮기지 않습니다. 아래 규칙과 어휘만 사용해 AISEL의 문장을 새로 씁니다.
 
 [어체]
