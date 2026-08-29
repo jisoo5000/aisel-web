@@ -352,6 +352,15 @@
   /* 2026-08-13 수정: 눌린 탭만 800으로 더 굵어서 탭마다 글자 두께가 달라 보이던 문제.
      눌렸을 때와 안 눌렸을 때 모두 700으로 통일하고, 눌린 표시는 배경색으로만 구분함. */
   .maintab.active { background: #2F3B52; border-color: #2F3B52; color: #fff; font-weight: 700; }
+  /* 2026-08-29 추가: 좁은 화면에서 탭 글자가 「작업지시 서」처럼 두 줄로 쪼개지던 문제.
+     줄바꿈을 막고, 폭이 모자라면 아이콘을 먼저 접은 뒤 글자 크기를 줄입니다. */
+  .maintab { white-space: nowrap; }
+  .tabicon { margin-right: 5px; }
+  @media (max-width: 480px) {
+    .mainbar { gap: 6px; padding: 0 10px; }
+    .maintab { padding: 10px 4px; font-size: 12.5px; }
+    .tabicon { display: none; }
+  }
   .moodboard-note { font-size: 12.5px; color: var(--muted); margin: -6px 0 14px; }
   .moodboard-grid { display: flex; flex-direction: column; gap: 14px; }
   .moodboard-grid img { width: 100%; border-radius: 10px; border: 1px solid var(--hair); display: block; }
@@ -1472,11 +1481,11 @@
 </div>
 
 <div class="mainbar noprint" id="mainBar">
-  <button type="button" class="maintab active" data-main="sales">📈 판매현황</button>
-  <button type="button" class="maintab" data-main="orders">📋 작업지시서</button>
-  <button type="button" class="maintab" data-main="moodboard">🖼️ 무드보드</button>
+  <button type="button" class="maintab active" data-main="sales"><span class="tabicon">📈</span>판매</button>
+  <button type="button" class="maintab" data-main="moodboard"><span class="tabicon">🧵</span>수배요청</button>
+  <button type="button" class="maintab" data-main="orders"><span class="tabicon">📋</span>작업지시서</button>
   <div class="mainbar-order-col">
-    <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">🧾 발주서</button>
+    <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder"><span class="tabicon">🧾</span>발주</button>
     <button type="button" class="home-add-btn" id="homeAddBtn">📱 홈 화면에 추가</button>
   </div>
 </div>
@@ -1521,7 +1530,7 @@
 
 <div class="gallery" id="salesView">
   <div class="gallery-head">
-    <h2>📈 판매현황</h2>
+    <h2>📈 판매</h2>
   </div>
   <div class="gallery-tabs" id="salesTabs">
     <button type="button" class="gtab active" data-sort="recent">최신순</button>
@@ -1568,7 +1577,7 @@
 
 <div class="gallery" id="moodboardView" style="display:none">
   <div class="gallery-head">
-    <h2>🖼️ 무드보드</h2>
+    <h2>🧵 수배요청</h2>
   </div>
   <div class="mb-subtabs" id="mbSubTabs">
     <button type="button" class="mb-subtab active" data-mbtab="slides">🖼️ 무드보드</button>
@@ -1622,7 +1631,7 @@
 
 <div class="gallery" id="quickOrderView" style="display:none">
   <div class="gallery-head">
-    <h2>🧾 발주서</h2>
+    <h2>🧾 발주</h2>
   </div>
   <div class="qo-status-filter" id="qoStatusFilter">
     <button type="button" class="active" data-qostatus="all">전체</button>
