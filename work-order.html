@@ -1,5 +1,9 @@
-<!-- AISEL 작업지시서 v62 (2026-08-27)
+<!-- AISEL 작업지시서 v63 (2026-09-07)
      v44 대비 수정 8건 - 인쇄영역 무변경
+     [v63] ★치명적 수정: 공유 화면(status.html) 사진이 특정 작지만 빈 칸으로 보이던 문제.
+           backfillShare_() 가 "브라우저 탭 하나당 딱 한 번"만 돌아서, 그 뒤 새로 추가된
+           작지는 사진이 스토리지로 영영 안 올라갔습니다(8/15개 확인). 목록이 바뀔 때마다
+           다시 확인하도록 바꿨습니다 - 이미 올라간 사진은 캐시가 걸러서 다시 안 올립니다.
      [v45] 화면 전환 시 예약 저장 취소 / 저장 대상 고정 / 재시도 대상 고정 / 품번 이동 원자화
      [v46] 목록 전용 색인(workorderIndex) / 저장을 필드 단위 update 로 전환
      [v47] 단어 목록 11종을 words.json(깃허브) + 파이어베이스로 이전 · 붙여넣기 지원 · 개수 표시
@@ -2684,10 +2688,20 @@
     o.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
     return o;
   }
-  let shareBackfillDone_ = false;
+  /* 2026-09-07 수정: "세션당 딱 한 번"이 버그였습니다. 그 한 번이 지나간 뒤에
+     새로 추가된 작지는 사진이 영영 스토리지로 안 올라가서 공유 화면(status.html)에서
+     사진이 빈 칸으로 보였습니다 (실제로 8개가 이렇게 빠져 있었습니다).
+     이제 목록이 바뀔 때마다(woIndexRoot 값이 새로 올 때마다) 다시 확인합니다.
+     이미 올라간 사진은 shareThumbSigCache_ 가 걸러주므로 다시 올리지 않고,
+     겹쳐 돌지 않도록(재진입 방지) + 너무 자주 돌지 않도록(최소 간격) 만 지킵니다. */
+  let shareBackfillRunning_ = false;
+  let shareBackfillLastRun_ = 0;
+  const SHARE_BACKFILL_MIN_GAP_MS = 5000;
   async function backfillShare_(){
-    if(shareBackfillDone_) return;
-    shareBackfillDone_ = true;
+    if(shareBackfillRunning_) return;
+    if(Date.now() - shareBackfillLastRun_ < SHARE_BACKFILL_MIN_GAP_MS) return;
+    shareBackfillRunning_ = true;
+    shareBackfillLastRun_ = Date.now();
     try{
       const snap = await woShareRoot.once("value");
       const have = snap.val() || {};
@@ -2707,7 +2721,7 @@
 
       /* 아직 파일로 안 올라간 사진을 하나씩 올립니다.
          한꺼번에 24개를 올리면 저장이 잠깐 버벅이므로 조금씩 띄워서 보냅니다.
-         한 번 올라간 뒤로는 이 자리를 다시 지나가지 않습니다. */
+         이미 올라간 사진은 shareThumbSigCache_ 가 걸러서 다시 안 올립니다. */
       let slot = 0;
       Object.keys(mine).forEach(code=>{
         if(!shareKeeps_(mine[code])) return;   // 안 보여줄 것은 사진도 안 올립니다
@@ -2717,6 +2731,7 @@
         setTimeout(()=> ensureShareThumb_(code, src), (slot++) * 400);
       });
     }catch(err){ console.warn("공유 칸 채우기 실패:", err); }
+    finally{ shareBackfillRunning_ = false; }
   }
   /* 2026-08-25 추가: 공유 화면용 사진을 파일로 따로 올립니다.
      예전에는 사진이 데이터 안에 글자(base64)로 박혀 있어서, 공유 화면을 열면
