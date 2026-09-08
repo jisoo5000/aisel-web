@@ -1,4 +1,6 @@
-<!-- AISEL 제품 진행 현황 (공유용) v2 (2026-08-27)
+<!-- AISEL 제품 진행 현황 (공유용) v3 (2026-09-08)
+     v3 에서 바뀐 것 - 카드에 있던 날짜(작지 생성일)를 뺐습니다.
+                    발주일·납기처럼 보여서 헷갈린다는 지적으로 제거.
      v2 에서 바뀐 것 - 사진을 자르지 않고 전체를 보여줍니다 / 사진을 누르면 크게 뜹니다
                     / 「🛍️ 최근 완료」 단계 추가 (판매로 넘어간 지 30일 이내)
      물류·MD 공유 전용 화면입니다. 작업지시서(work-order.html)와는 다른 파일입니다.
@@ -90,7 +92,6 @@
     border:1px solid transparent;
   }
   .chip.light{ border-color:rgba(0,0,0,.14); }   /* 크림처럼 밝은 색이 흰 카드에 묻히지 않게 */
-  .date{font-size:11.5px; line-height:1.2; color:var(--muted); font-variant-numeric:tabular-nums;}
   .state{
     align-self:flex-start; border-radius:999px; padding:3px 11px;
     font-size:11.5px; line-height:1.4; font-weight:700;
@@ -433,11 +434,6 @@ function render(){
 
     var cr = coordiRow(x.code);
     if(cr) body.appendChild(cr);
-
-    var dt = document.createElement("div");
-    dt.className = "date";
-    dt.textContent = (e.yy && e.mm && e.dd) ? (e.yy + "." + e.mm + "." + e.dd) : "";
-    body.appendChild(dt);
 
     card.appendChild(body);
     gridEl.appendChild(card);
