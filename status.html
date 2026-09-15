@@ -227,24 +227,10 @@ var stateOf = function(k){
    세 칸을 같이 고칩니다. 한 곳만 고치면 이 화면과 work-order.html 이 서로 다른 상태를
    보여주게 됩니다 (세 칸이 왜 따로 있는지는 work-order.html:2634-2661,4200-4221 참고).
 
-   ★PIN은 진짜 보안이 아닙니다. 파이어베이스 쓰기 규칙(콘솔에서 따로 관리 — 이 저장소
-   안에는 없습니다)이 막아주지 않는 한, 이 주소를 아는 사람은 개발자도구로 그냥 써버릴
-   수 있습니다. 여기 PIN은 "아무나 실수로 누르지 않게" 막는 정도이지 접근 통제가
-   아닙니다. 정말 막아야 한다면 파이어베이스 콘솔에서 이 경로 쓰기 규칙을 따로 잠가야
-   합니다 (이건 이 파일만 고쳐서는 안 되는 일입니다). */
-var LOGISTICS_PIN = "8253";   // 물류 담당자에게 따로 전달. 바꾸려면 이 숫자만 고치면 됨
-var LOGISTICS_OK_KEY = "aisel_logistics_ok";
-function hasLogisticsAccess_(){
-  try{ return localStorage.getItem(LOGISTICS_OK_KEY) === "1"; }catch(e){ return false; }
-}
-function askLogisticsAccess_(){
-  if(hasLogisticsAccess_()) return true;
-  var entered = prompt("물류 확인 번호를 입력해주세요:");
-  if(entered === null) return false;
-  if(entered.trim() !== LOGISTICS_PIN){ alert("번호가 다릅니다."); return false; }
-  try{ localStorage.setItem(LOGISTICS_OK_KEY, "1"); }catch(e){}
-  return true;
-}
+   ★비밀번호는 없습니다(2026-09-15 지수 지시로 뺐습니다). 눌렀을 때 확인 팝업 한 번
+   (confirm)만 거칩니다. 이 주소를 아는 사람은 누구나 누를 수 있다는 뜻입니다 — 진짜
+   막아야 한다면 파이어베이스 콘솔에서 이 경로 쓰기 규칙을 따로 잠가야 합니다
+   (이건 이 파일만 고쳐서는 안 되는 일입니다). */
 function todayStr_(){
   var d = new Date();
   var p = function(n){ return n < 10 ? "0" + n : "" + n; };
@@ -264,12 +250,10 @@ function writeStatusPatch_(code, patch, btn, okText){
   });
 }
 function markArrived_(code, name, btn){
-  if(!askLogisticsAccess_()) return;
   if(!confirm("\"" + (name || code) + "\" 오늘 도착 처리할까요?\n\n상세페이지 등록(PDP) 단계로 넘어갑니다.")) return;
   writeStatusPatch_(code, { status:"pdp", arrivedAt: todayStr_() }, btn, "✓ 도착 처리됨");
 }
 function undoArrived_(code, name, btn){
-  if(!askLogisticsAccess_()) return;
   if(!confirm("\"" + (name || code) + "\" 도착 처리를 취소하고 발주생산으로 되돌릴까요?")) return;
   writeStatusPatch_(code, { status:"order", arrivedAt:null }, btn, "↩ 되돌림");
 }
