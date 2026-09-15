@@ -1,3 +1,4 @@
+<meta name="robots" content="noindex,nofollow,noarchive" />
 <!-- AISEL 작업지시서 v63 (2026-09-07)
      v44 대비 수정 8건 - 인쇄영역 무변경
      [v63] ★치명적 수정: 공유 화면(status.html) 사진이 특정 작지만 빈 칸으로 보이던 문제.
@@ -1939,6 +1940,14 @@
     <div class="predict-row single" style="margin-top:8px;">
       <label>원샘플 메모</label>
       <input id="sampleNoteTitle" type="text" placeholder="예: 아일 루즈 가디건과 소매 패턴 동일, 그 작지 원샘플로 검토 요청함">
+    </div>
+
+    <!-- 2026-09-15 추가: 디자인회의 컨펌 때 나온 수정 지시(핀턱 빼기·기장 늘리기 등)를
+         적을 칸이 없어서 회의 메모를 옮겨 적을 곳이 없었습니다. 인쇄 영역이 아닌 여기(noprint)에
+         자유 텍스트로 둡니다. 저장·불러오기는 TXT_IDS 에 넣어 다른 칸들과 같은 방식으로 자동 처리됩니다. -->
+    <div class="mini-sec-title">회의 수정사항</div>
+    <div class="predict-row single">
+      <textarea id="meetingNotes" rows="4" style="width:100%;resize:vertical;" placeholder="예: 옆지퍼로 변경 (큐씨 보기) · 시야게에 핀턱 레직기 잡기"></textarea>
     </div>
 
     <!-- 2026-08-13 추가: 레퍼런스·샘플 토글. 기본값은 레퍼런스입니다.
@@ -4034,6 +4043,8 @@
     "refLink", "refLink2",
     // 2026-08-21 추가: 원샘플 메모(제목·내용)와 코디 링크 3개(주소·메모)도 같은 방식으로 저장
     "sampleNoteTitle",
+    // 2026-09-15 추가: 디자인회의 컨펌 수정사항 메모
+    "meetingNotes",
     "coordiLink1", "coordiNote1", "coordiLink2", "coordiNote2", "coordiLink3", "coordiNote3",
     // 2026-08-25 추가: 코디로 고른 내 제품의 품번. 주소가 아니라 품번을 저장합니다
     "coordiCode1", "coordiCode2", "coordiCode3",
@@ -7000,6 +7011,8 @@
      "fabricSupplier","fabricName","fabricPrice","fabricWidth","fabricSwatchNo","fabricBlend","fabricSupplierPhone","fabricNegoPrice",
      // 2026-08-21 추가: 새 작지는 원샘플 메모와 코디 링크도 비웁니다
      "sampleNoteTitle","coordiLink1","coordiNote1","coordiLink2","coordiNote2","coordiLink3","coordiNote3",
+     // 2026-09-15 추가: 회의 수정사항 메모도 새 작지에서는 비웁니다
+     "meetingNotes",
      // 2026-08-25 추가: 코디로 골라둔 내 제품 품번도 반드시 함께 비웁니다.
      // 안 비우면 새 작지에 직전 작지의 코디가 그대로 딸려옵니다
      "coordiCode1","coordiCode2","coordiCode3"
