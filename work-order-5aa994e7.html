@@ -1,4 +1,7 @@
-<!-- AISEL 작업지시서 v64 (2026-09-20)
+<!-- AISEL 작업지시서 v65 (2026-09-20)
+     [v65] 제품 제작 현황(status.html)에 판매가(타겟 판매가) 표시 — 공유 칸·색인에 targetThreshold 추가, 색인 판 3.
+           배포 주소를 work-order-5aa994e7.html 로 바꿈 (연경님이 옛 주소를 알고 있어서 원가·원단처가 열려 있었음)
+     ─ v64 (2026-09-20)
      [v64] 안정성 수정 5건: 순번·시즌 변경 시 반쪽 기록 · 8초 지연 뒤 직전 작지 덮어쓰기 · 내 저장 되돌림이 마지막 타이핑 지움 ·
            탭 닫기/홈 버튼에 마지막 0.6초 유실 · 다른 기기 삭제 뒤 좀비 작지. 카페24 CSV 자동생성 payload 복원(statusKey·category·colors)
      ─ 이전 머리글 ─ v63 (2026-09-07)
@@ -2655,7 +2658,9 @@
      을 ""로 채워서, 지수/디자이너가 그 작지를 한 번만 저장해도 물류가 적어둔 날짜가
      빈 값으로 덮어써집니다. arrivedAt은 workorders 칸에만 남기고(거기는 바뀐 칸만 보내는
      방식이라 안전합니다), 공유 칸·색인 칸은 물류가 적을 때만 한 번 채워지는 것으로 둡니다. */
-  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt"];
+  // 2026-09-20 추가: targetThreshold(타겟 판매가). 연경님이 판매가를 보러 작업지시서에 들어오지 않게
+  // 제품 제작 현황(status.html)에 판매가를 같이 싣습니다. 원가는 여전히 안 나갑니다.
+  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold"];
   // 코디는 이 작지가 "건" 품번만 적습니다. 반대 방향(남이 이 옷을 건 것)은
   // 공유 화면이 전체를 보고 스스로 이어붙입니다. 양쪽을 다 적어두면 어긋날 수 있습니다.
   /* 2026-08-25 추가: 컬러 칩을 실제 색으로 칠하려면 색값이 있어야 합니다.
@@ -2733,6 +2738,11 @@
       });
       Object.keys(mine).forEach(code=>{
         if(!have[code] && shareKeeps_(mine[code])) updates[code] = woShareEntryFromIndex_(mine[code]);
+        // 2026-09-20 추가: 이미 있는 공유 항목에 판매가가 빠져 있으면 그 칸만 채웁니다 (같은 code 를 통째로 쓰는 중이면 건너뜀)
+        else if(have[code] && updates[code] === undefined && shareKeeps_(mine[code])
+                && have[code].targetThreshold === undefined && mine[code].targetThreshold !== undefined){
+          updates[code + "/targetThreshold"] = mine[code].targetThreshold;
+        }
       });
       if(Object.keys(updates).length) await woShareRoot.update(updates);
 
@@ -2820,7 +2830,7 @@
   const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
   /* 2026-08-25: 공유용 칸은 아래 backfillShare_() 가 목록 색인만 보고 가볍게 채웁니다.
      그래서 원본을 통째로 읽는 무거운 재작성(판 올리기)은 하지 않습니다. */
-  const WO_INDEX_VERSION = 2;
+  const WO_INDEX_VERSION = 3;   // 2026-09-20: 3 — targetThreshold 를 색인에 넣어서 한 번 다시 만듭니다
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
   const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
@@ -2829,7 +2839,9 @@
     "sampleRecoveryStatus","photoStage",
     // 2026-08-25 추가: 코디 품번. 이게 색인에 있어야 "이 옷을 코디로 걸어둔 작지"를
     // 원본 전체를 내려받지 않고 찾을 수 있습니다
-    "coordiCode1","coordiCode2","coordiCode3"];
+    "coordiCode1","coordiCode2","coordiCode3",
+    // 2026-09-20 추가: 판매가. 공유 칸(backfillShare_)이 색인만 보고 채우므로 색인에도 있어야 합니다
+    "targetThreshold"];
   function woIndexEntryFrom_(st){
     const s = st || {};
     const e = {};

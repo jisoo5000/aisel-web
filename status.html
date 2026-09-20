@@ -1,4 +1,8 @@
-<!-- AISEL 제품 진행 현황 (공유용) v4 (2026-09-15)
+<!-- AISEL 제품 진행 현황 (공유용) v5 (2026-09-20)
+     v5 에서 바뀐 것 - 카드에 「💵 판매가」 한 줄. 연경님(MD)이 판매가를 보러 작업지시서에 들어오지 않게 하려고
+                     작업지시서 주소를 바꾸면서 판매가를 여기로 옮겼습니다. 값은 작지의 「타겟 판매가」 칸(targetThreshold)
+                     그대로이고, 원가는 여전히 안 넘어옵니다.
+     ─ v4 (2026-09-15)
      v4 에서 바뀐 것 - 발주생산 카드에 「🚚 도착 확인」 버튼이 생겼습니다.
                     물류가 실제 도착을 보고 직접 눌러 PDP로 넘깁니다(오조작 대비 되돌리기 있음).
                     2026-09-15 지수 지시 — 지금까지는 지수/디자이너가 감으로 눌렀는데,
@@ -91,6 +95,7 @@
   .name{font-size:14px; font-weight:700; line-height:1.3;}
   .code{font-size:11.5px; line-height:1.2; color:var(--muted); font-variant-numeric:tabular-nums;}
   .factory{font-size:12.5px; line-height:1.2; color:var(--ink);}
+  .price{font-size:13px; line-height:1.2; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}   /* 2026-09-20 추가 */
   .colors{display:flex; flex-wrap:wrap; gap:4px;}
   .chip{
     border-radius:4px; padding:2px 7px; font-size:10.5px; line-height:1.35;
@@ -393,7 +398,8 @@ function render(){
     return [x.code, x.e.status, x.e.pumMyeong, x.e.factory,
             x.e.yy, x.e.mm, x.e.dd, JSON.stringify(x.e.colors || []),
             (pairs[x.code] || []).join(","),
-            x.e.thumbUrl || "", (x.e.thumb || "").length, x.e.arrivedAt || ""];
+            x.e.thumbUrl || "", (x.e.thumb || "").length, x.e.arrivedAt || "",
+            x.e.targetThreshold || ""];   /* 2026-09-20: 판매가가 바뀌면 다시 그립니다 */
   })]);
   if(sig === lastSig) return;
   lastSig = sig;
@@ -467,6 +473,13 @@ function render(){
     fac.className = "factory";
     fac.textContent = e.factory ? ("🏭 " + e.factory) : "🏭 공장 미정";
     body.appendChild(fac);
+
+    /* 2026-09-20 추가: 판매가. 작지의 타겟 판매가 칸 값 그대로입니다. 비어 있으면 「판매가 미정」 */
+    var pr = document.createElement("div");
+    pr.className = "price";
+    var pv = String(e.targetThreshold || "").replace(/[^0-9]/g, "");
+    pr.textContent = pv ? ("💵 " + Number(pv).toLocaleString("ko-KR") + "원") : "💵 판매가 미정";
+    body.appendChild(pr);
 
     if(Array.isArray(e.colors) && e.colors.length){
       var cw = document.createElement("div");
