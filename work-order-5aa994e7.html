@@ -1,4 +1,8 @@
-<!-- AISEL 작업지시서 v65 (2026-09-20)
+<!-- AISEL 작업지시서 v66 (2026-09-20)
+     [v66] ★가격 기본값 버그 수정 — targetThreshold 기본값 59,000 을 지웠습니다. 버튼을 누르거나 직접 타이핑해야만
+           priceConfirmed=true 가 되고, 확정된 것만 색인·공유(제품 제작 현황)에 나갑니다. 색인 판 4.
+           (35건 중 24건이 안 건드렸는데 59,000 으로 저장돼 있었습니다 — 지수 지적으로 발견)
+     ─ v65 (2026-09-20)
      [v65] 제품 제작 현황(status.html)에 판매가(타겟 판매가) 표시 — 공유 칸·색인에 targetThreshold 추가, 색인 판 3.
            배포 주소를 work-order-5aa994e7.html 로 바꿈 (연경님이 옛 주소를 알고 있어서 원가·원단처가 열려 있었음)
      ─ v64 (2026-09-20)
@@ -2188,7 +2192,7 @@
         <div class="targetbox-row">
           <div class="targetbox-field">
             <span class="flbl">판매가 (직접 수정 가능)</span>
-            <input type="text" id="targetThreshold" class="won tnum" value="59,000" />
+            <input type="text" id="targetThreshold" class="won tnum" value="" placeholder="아직 안 정함" /><!-- 2026-09-20: 기본값 59,000 을 지웠습니다. 아무도 안 건드렸는데 저장되면 "정한 값"으로 오해받았습니다 -->
           </div>
           <div class="targetbox-field">
             <span class="flbl">계산값 (제조원가×4)</span>
@@ -2660,7 +2664,7 @@
      방식이라 안전합니다), 공유 칸·색인 칸은 물류가 적을 때만 한 번 채워지는 것으로 둡니다. */
   // 2026-09-20 추가: targetThreshold(타겟 판매가). 연경님이 판매가를 보러 작업지시서에 들어오지 않게
   // 제품 제작 현황(status.html)에 판매가를 같이 싣습니다. 원가는 여전히 안 나갑니다.
-  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold"];
+  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold","priceConfirmed"];
   // 코디는 이 작지가 "건" 품번만 적습니다. 반대 방향(남이 이 옷을 건 것)은
   // 공유 화면이 전체를 보고 스스로 이어붙입니다. 양쪽을 다 적어두면 어긋날 수 있습니다.
   /* 2026-08-25 추가: 컬러 칩을 실제 색으로 칠하려면 색값이 있어야 합니다.
@@ -2705,6 +2709,7 @@
       const v = s[k];
       o[k] = (v === undefined || v === null) ? "" : v;
     });
+    if(!o.priceConfirmed) o.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     o.colors = shareColorsOf_(s);
     o.coordi = shareCoordiOf_(s);
     o.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
@@ -2740,7 +2745,7 @@
         if(!have[code] && shareKeeps_(mine[code])) updates[code] = woShareEntryFromIndex_(mine[code]);
         // 2026-09-20 추가: 이미 있는 공유 항목에 판매가가 빠져 있으면 그 칸만 채웁니다 (같은 code 를 통째로 쓰는 중이면 건너뜀)
         else if(have[code] && updates[code] === undefined && shareKeeps_(mine[code])
-                && have[code].targetThreshold === undefined && mine[code].targetThreshold !== undefined){
+                && have[code].targetThreshold === undefined && mine[code].priceConfirmed){
           updates[code + "/targetThreshold"] = mine[code].targetThreshold;
         }
       });
@@ -2821,6 +2826,7 @@
       const v = s[k];
       e[k] = (v === undefined || v === null) ? "" : v;
     });
+    if(!e.priceConfirmed) e.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     e.colors = shareColorsOf_(s);
     e.coordi = shareCoordiOf_(s);
     e.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
@@ -2830,7 +2836,7 @@
   const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
   /* 2026-08-25: 공유용 칸은 아래 backfillShare_() 가 목록 색인만 보고 가볍게 채웁니다.
      그래서 원본을 통째로 읽는 무거운 재작성(판 올리기)은 하지 않습니다. */
-  const WO_INDEX_VERSION = 3;   // 2026-09-20: 3 — targetThreshold 를 색인에 넣어서 한 번 다시 만듭니다
+  const WO_INDEX_VERSION = 4;   // 2026-09-20: 4 — 확정 안 된 가격(기본값 59,000 포함)은 색인에서 비웁니다
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
   const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
@@ -2840,8 +2846,8 @@
     // 2026-08-25 추가: 코디 품번. 이게 색인에 있어야 "이 옷을 코디로 걸어둔 작지"를
     // 원본 전체를 내려받지 않고 찾을 수 있습니다
     "coordiCode1","coordiCode2","coordiCode3",
-    // 2026-09-20 추가: 판매가. 공유 칸(backfillShare_)이 색인만 보고 채우므로 색인에도 있어야 합니다
-    "targetThreshold"];
+    // 2026-09-20 추가: 판매가 + 확정 표시. 공유 칸(backfillShare_)이 색인만 보고 채우므로 색인에도 있어야 합니다
+    "targetThreshold","priceConfirmed"];
   function woIndexEntryFrom_(st){
     const s = st || {};
     const e = {};
@@ -2849,6 +2855,7 @@
       const v = s[k];
       e[k] = (v === undefined || v === null) ? "" : v;
     });
+    if(!e.priceConfirmed) e.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     e.selectedColors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
     const sp = s.sellingPoints || null;
     e.hasSp   = !!sp;
@@ -3361,6 +3368,8 @@
     box.classList.add(target > threshold ? "pink" : "blue");
   }
   ["#gongim","#siyage","#targetThreshold","#costThreshold"].forEach(s=> $(s).addEventListener("input", calc));
+  // 2026-09-20 추가: 판매가 칸을 직접 타이핑해도 확정으로 봅니다 (버튼을 안 눌러도)
+  $("#targetThreshold").addEventListener("input", ()=>{ priceConfirmed_ = true; });
 
   // ---------- 타겟 판매가 퀵버튼(카테고리 → 가격 2단계) ----------
   const PRICE_BY_CATEGORY = {
@@ -3383,6 +3392,7 @@
     priceValRow.querySelectorAll(".price-btn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
         $("#targetThreshold").value = btn.dataset.price;
+        priceConfirmed_ = true;   // 2026-09-20 추가: 계단 버튼을 눌렀다 = 확정
         calc();
         save();
       });
@@ -4167,6 +4177,7 @@
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
+    st.priceConfirmed = !!priceConfirmed_;   // 2026-09-20 추가
     st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
       nm:r.querySelector(".nm").value, unit:r.querySelector(".unit").value, qty:r.querySelector(".qty").value }));
     // 원본은 작업지시서 편집화면 고화질용, 썸네일은 목록·제품조회 화면 가벼운 용도로 둘 다 저장
@@ -4272,6 +4283,9 @@
     woShareRoot.child(code).remove().catch(()=>{});   // 2026-08-25: 공유 칸도 같이
   }
   let justDeletedCode_ = null;
+  // 2026-09-20 추가: targetThreshold 는 기본값이 있던 칸이라 "저장된 값이 있다"만으로는
+  // 지수·디자이너가 실제로 가격을 정했는지 알 수 없습니다. 버튼을 누르거나 직접 타이핑해야만 true 가 됩니다.
+  let priceConfirmed_ = false;
   function save(){
     if(loading || !woRef) return;
     if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
@@ -4386,6 +4400,7 @@
   }
   function applyState(st){
     loading = true;
+    priceConfirmed_ = !!st.priceConfirmed;   // 2026-09-20 추가
     $("#season").value = st.season ?? "26F";
     catSel.value = st.cat ?? 4;
     TXT_IDS.forEach(id=>{
@@ -4930,6 +4945,7 @@
     lastSentJSON = null;
     lastSentUpdatedAt_ = null;
     lastSavedState_ = null;
+    priceConfirmed_ = false;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
     woRef = woRoot.child(code);
