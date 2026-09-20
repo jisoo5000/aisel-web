@@ -1,5 +1,7 @@
-<meta name="robots" content="noindex,nofollow,noarchive" />
-<!-- AISEL 작업지시서 v63 (2026-09-07)
+<!-- AISEL 작업지시서 v64 (2026-09-20)
+     [v64] 안정성 수정 5건: 순번·시즌 변경 시 반쪽 기록 · 8초 지연 뒤 직전 작지 덮어쓰기 · 내 저장 되돌림이 마지막 타이핑 지움 ·
+           탭 닫기/홈 버튼에 마지막 0.6초 유실 · 다른 기기 삭제 뒤 좀비 작지. 카페24 CSV 자동생성 payload 복원(statusKey·category·colors)
+     ─ 이전 머리글 ─ v63 (2026-09-07)
      v44 대비 수정 8건 - 인쇄영역 무변경
      [v63] ★치명적 수정: 공유 화면(status.html) 사진이 특정 작지만 빈 칸으로 보이던 문제.
            backfillShare_() 가 "브라우저 탭 하나당 딱 한 번"만 돌아서, 그 뒤 새로 추가된
@@ -38,6 +40,7 @@
 -->
 <title>AISEL 작업지시서</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
   :root {
     --bg: #E9ECF2;
@@ -3233,6 +3236,7 @@
       const moveUpdates_ = {};
       moveUpdates_[newCode] = data;
       moveUpdates_[oldCode] = null;
+      movingCodeNow_ = true;   // 2026-09-20 추가: 옛 품번 리스너가 null 을 받아도 "삭제됨" 안내를 안 띄웁니다
       await woRoot.update(moveUpdates_);
       // 2026-08-25 추가: 목록 색인도 같은 방식으로 한 번에 옮깁니다
       const idxEntry_ = woIndexEntryFrom_(data);
@@ -3255,6 +3259,7 @@
       justDeletedCode_ = oldCode;
       setTimeout(()=>{ if(justDeletedCode_ === oldCode) justDeletedCode_ = null; }, 3000);
 
+      movingCodeNow_ = false;
       attachWoRef(newCode);
       $("#codeView").textContent = newCode;
       refreshCafe24Bar_();
@@ -3263,6 +3268,7 @@
         ? "카테고리에 맞춰 품번을 " + newCode + " 로 자동으로 옮겼습니다."
         : "품번을 " + newCode + " 로 옮겼습니다. 카페24 자체상품코드도 새 품번으로 바꿔주세요.");
     }catch(err){
+      movingCodeNow_ = false;
       // 2026-08-25 수정: 자동 이동일 때도 반드시 화면에 알립니다.
       // 조용한 실패가 작지 중복의 원인이었습니다.
       if(!silent){
@@ -3742,6 +3748,12 @@
       code: code,
       pumMyeong: pumMyeongVal,
       status: STATUS_LABEL_MAP[currentStatus] || currentStatus,
+      // 2026-09-20 복원: 아래 세 줄은 7dbf457 에서 넣은 것인데 9-15 배포본과 맞추는 커밋(7a4bf03)이 지웠습니다.
+      // 발주서-백엔드.gs 는 statusKey === "pdp" 일 때만 카페24 CSV 생성·드라이브 저장·연경님 시트 알림을 돌리므로
+      // 이 줄이 없으면 인쇄→PDP 전환 때 아무 일도 안 일어납니다 (no-cors 라 앱은 실패를 모릅니다).
+      statusKey: currentStatus,
+      category: (catSel.options[catSel.selectedIndex] ? catSel.options[catSel.selectedIndex].textContent : ""),
+      colors: [...document.querySelectorAll(".colorName")].map(el=>el.value.trim()).filter(Boolean),
       designer: $("#designer").value.trim(),
       designerPhone: $("#phone").value.trim(),
       factory: $("#factory").value.trim(),
@@ -4053,6 +4065,11 @@
     "fabricSupplier","fabricName","fabricPrice","fabricWidth","fabricSwatchNo","fabricBlend","fabricSupplierPhone","fabricNegoPrice"];
   let loading = false;
   let lastSentJSON = null;   // 내가 방금 보낸 내용 (그대로 되돌아오면 다시 그릴 필요 없음)
+  // 2026-09-20 추가: 위 lastSentJSON 비교는 서버가 키를 정렬해서 돌려주고 null 칸은 빼서 돌려주므로
+  // 사실상 맞은 적이 없었습니다. 그래서 내 저장의 되돌림이 전부 "남의 수정"으로 처리돼 보류됐다가
+  // 마지막 0.6초 타이핑을 지웠습니다. 저장 시각(updatedAt)으로 비교하면 정확히 맞습니다.
+  let lastSentUpdatedAt_ = null;
+  let movingCodeNow_ = false;  // 2026-09-20 추가: 품번 옮기기 중에는 옛 품번의 null 스냅샷을 "삭제됨"으로 안 봅니다
   let pendingRemoteState = null; // 입력 중이라 잠깐 미뤄둔 다른 기기의 최신 내용
 
   // ---------- 상태(예정/샘플중/샘플관리/발주생산/PDP/드롭) ----------
@@ -4267,6 +4284,7 @@
     // 통째로 지웠습니다. 이제 각자 고친 칸만 보내므로 서버에서 합쳐집니다.
     const patch = buildPatch_(lastSavedState_, st);
     lastSentJSON = JSON.stringify(st);
+    lastSentUpdatedAt_ = st.updatedAt;   // 2026-09-20 추가: 되돌아온 스냅샷을 이 시각으로 알아봅니다
     if(Object.keys(patch).length === 0){ return; }   // 실제로 바뀐 게 없으면 아무것도 안 보냄
     const sentState = st;
     targetRef.update(patch).then(()=>{
@@ -4883,6 +4901,7 @@
     woRef = null; woListener = null; currentCode = null;
     pendingRemoteState = null;
     lastSentJSON = null;
+    lastSentUpdatedAt_ = null;
     lastSavedState_ = null;   // 2026-08-25 추가: 비교 기준도 함께 비웁니다
   }
   function attachWoRef(code){
@@ -4890,6 +4909,16 @@
     // 저장 전 새 작지라면, 품번이 바뀔 때 앞서 자동으로 만들어진 줄을 정리합니다
     if(newOrderMode_) cleanupAutoCreated_(code);
     if(woRef && woListener) woRef.off("value", woListener);
+    // 2026-09-20 추가: 연결을 갈아끼울 때 비교 기준을 반드시 비우고 저장을 잠급니다.
+    // 예전에는 순번·시즌을 바꿔 여기로 오면 직전 작지의 비교 기준이 남아 있어서
+    // 새 품번에 "바뀐 칸 몇 개"만 저장된 반쪽짜리 기록이 생겼습니다(목록엔 카드가 있는데 열면 빈 작지).
+    // 첫 스냅샷이 오면 아래 리스너가 loading 을 풉니다. 기록이 없는 새 품번이면 null 이 바로 옵니다.
+    try{ clearTimeout(saveT); }catch(e){}
+    pendingRemoteState = null;
+    lastSentJSON = null;
+    lastSentUpdatedAt_ = null;
+    lastSavedState_ = null;
+    loading = true;
     currentCode = code;
     woRef = woRoot.child(code);
     let firstSnapshot = true;
@@ -4905,8 +4934,15 @@
         if(sBtn && sBtn.textContent.indexOf("불러오는 중") !== -1) sBtn.textContent = "💾 저장됨 ✓";
       }
       if(!st){
-        if(isFirst) loading = false;
-        return; // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
+        if(isFirst){ loading = false; return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
+        // 2026-09-20 추가: 열어둔 작지가 밑에서 사라졌습니다(다른 기기에서 삭제·품번 이동).
+        // 예전에는 화면이 그대로 남아서 한 글자만 쳐도 부분 저장이 나가 "품명만 있는 빈 작지"가 되살아났습니다.
+        // 내가 지운 것(justDeletedCode_)과 내가 옮기는 중(movingCodeNow_)은 각자 처리하므로 여기서 제외합니다.
+        if(justDeletedCode_ === code || movingCodeNow_) return;
+        detachWoRefNow_("gone");
+        alert("이 작지(" + code + ")가 다른 기기에서 삭제되거나 품번이 옮겨졌습니다.\n목록으로 돌아갑니다. 이 화면의 내용은 저장되지 않습니다.");
+        showGallery();
+        return;
       }
       // 2026-08-13 추가: "새 작지"를 만드는 중이면, 그 품번에 기존 작지가 있어도 화면에 불러오지 않음.
       // (예전에는 새 작지를 눌렀는데 기존 작지의 사진과 내용이 스르륵 채워지는 문제가 있었음)
@@ -4916,6 +4952,9 @@
         updateCodeConflictUI_();
         return;
       }
+      // 2026-09-20 수정: 내가 방금 보낸 저장이 그대로 돌아온 것이면 다시 그리지 않습니다.
+      // 저장 시각으로 비교합니다 (문자열 비교는 키 순서 때문에 맞은 적이 없었습니다 — 4054줄 주석).
+      if(!isFirst && st.updatedAt && st.updatedAt === lastSentUpdatedAt_){ lastSavedState_ = st; return; }
       const json = JSON.stringify(st);
       if(json === lastSentJSON && !isFirst) return; // 내가 방금 보낸 내용이 그대로 돌아온 것뿐이라 다시 그릴 필요 없음
       if(isTypingNow() && !isFirst){
@@ -7545,10 +7584,13 @@
     const sBtn = $("#saveBtn");
     if(sBtn) sBtn.textContent = "⏳ 불러오는 중...";
     clearTimeout(openWatchdog_);
+    // 2026-09-20 수정: 8초가 지나도 저장 잠금을 풀지 않습니다.
+    // 예전에는 여기서 loading 을 풀었는데, 화면에는 직전 작지 내용이 그대로 남아 있고 비교 기준은 비어 있어서
+    // 칸 하나만 건드려도 A 작지의 품명·사진·원가가 B 품번에 통째로 저장됐습니다(느린 폰 회선에서 실제로 날 수 있는 경로).
+    // 내용이 안 내려온 작지는 저장할 수 없는 게 맞습니다. 안내만 하고 잠금은 첫 스냅샷이 올 때 풀립니다.
     openWatchdog_ = setTimeout(()=>{
       if(loading && currentCode === code){
-        loading = false;
-        if(sBtn) sBtn.textContent = "⚠ 불러오기 지연 (인터넷 확인)";
+        if(sBtn) sBtn.textContent = "⚠ 불러오기 지연 — 인터넷 확인 후 새로고침 (저장 잠김)";
       }
     }, 8000);
     attachWoRef(code);
@@ -7944,6 +7986,15 @@
   // 2026-08-13 수정: 간격을 300ms -> 600ms로 늘려 타이핑 중 저장 호출 횟수를 줄임
   let saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(save, 600); }
   window.triggerWorkOrderSave_ = ()=> saveSoon();
+  // 2026-09-20 추가: 탭을 닫거나 폰에서 홈으로 나가면 600ms 타이머가 그냥 죽어서 마지막 입력이 사라졌습니다.
+  // 화면이 가려지는 순간 예약된 자동저장을 바로 내보냅니다. 예약된 게 없으면 아무것도 안 합니다.
+  function flushPendingSave_(){
+    if(!saveT) return;
+    clearTimeout(saveT); saveT = null;
+    try{ save(); }catch(e){}
+  }
+  window.addEventListener("pagehide", flushPendingSave_);
+  document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState === "hidden") flushPendingSave_(); });
 
   // 2026-08-13 수정: 예전에는 화면 어디에서 타이핑하든(갤러리 검색창·판매현황 등) 자동저장이 걸려서
   // 검색 한 글자마다 작지가 저장되고 -> updatedAt이 바뀌고 -> 목록이 통째로 다시 그려져 깜빡였음.
