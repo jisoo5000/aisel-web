@@ -1,4 +1,13 @@
-<!-- AISEL 작업지시서 v67 (2026-09-22)
+<!-- AISEL 작업지시서 v68 (2026-09-22)
+     [v68] 판매가 자동 계산 — 제조원가×4 를 계단에서 **올려** 타겟 판매가 칸에 그대로 넣습니다.
+           계산값 56,000 → 59,000 · 65,320 → 69,000 · 60,900 → 69,000.
+           넣은 값은 색인·공유 칸을 타고 제품 제작 현황까지 자동으로 갑니다.
+           ★69,000 을 넘는 값(79,000·89,000)은 자동으로 안 넣습니다 — 「수요가 비탄력인가」를
+           사람이 봐야 나오는 값이라 빨간 줄로 알리고 지수님께 넘깁니다.
+           원가가 0이면 아무것도 안 넣습니다 (v66 의 「안 건드렸는데 저장되는」 문제를 그대로 막습니다).
+           컴포트(SK·CP)는 끝자리 900 계단을 씁니다. 검사 = tools/check-auto-price.js 11곳.
+           인쇄영역은 그대로입니다 — 안내 줄은 noprint 안에 있습니다.
+     ─ v67 (2026-09-22)
      [v67] ★치명적 수정: 제품 제작 현황(status.html) 사진이 23개 전부 ▧ 로 비던 문제.
            색인 판을 올릴 때 도는 ensureWoIndex_() 가 공유 칸을 통째로 set 하는데,
            그 payload 에는 사진이 안 담겨서 따로 올려둔 사진 주소(thumbUrl·thumbSig)가 같이 지워졌습니다.
@@ -1023,6 +1032,10 @@
   .targetbox-field { display: flex; flex-direction: column; gap: 4px; }
   .targetbox-field .flbl { font-size: 12px; font-weight: 700; color: var(--muted); }
   #targetThreshold { width: 140px; padding: 8px 10px; font-size: 15px; font-weight: 700; text-align: right; }
+  /* 2026-09-22: 판매가 자동 계산 안내 줄 */
+  .auto-price-note { margin-top: 8px; font-size: 13px; line-height: 1.6; color: #4B5566; }
+  .auto-price-note:empty { display: none; }
+  .auto-price-note.ask { color: #B4232A; font-weight: 700; }
   .targetbox-result {
     font-size: 22px; font-weight: 800; padding: 6px 14px; border-radius: 6px; min-width: 130px; text-align: right;
   }
@@ -2207,6 +2220,8 @@
             <div class="targetbox-result" id="targetPriceView">0원</div>
           </div>
         </div>
+        <!-- 2026-09-22 추가: 계단에서 올린 판매가를 자동으로 넣고, 무엇을 넣었는지 한 줄로 알립니다 -->
+        <div class="auto-price-note" id="autoPriceNote"></div>
         <!-- 2026-08-13 추가: 제조원가 기준선. 제품마다 다르므로 직접 수정 가능하게 둠 (인쇄 미노출 영역) -->
         <div class="targetbox-row">
           <div class="targetbox-field">
@@ -3189,6 +3204,7 @@
       applyCat();
       autoMoveCodeForCategory_();
     }
+    autoPrice_();   // 2026-09-22: 컴포트↔상의·하의 는 계단이 다릅니다
   });
 
   // ---------- 품번 옮기기 (2026-08-13 추가, 2026-08-21 자동화) ----------
@@ -3348,13 +3364,13 @@
       <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면1" value="${qty}"></td>
       <td><span class="amt">0</span></td>
       <td class="noprint"><button class="del" title="삭제">✕</button></td>`;
-    row.querySelector(".del").addEventListener("click", ()=>{ row.remove(); calc(); save(); });
-    row.querySelectorAll("input").forEach(i=> i.addEventListener("input", ()=>{ lineAmt(row); calc(); }));
+    row.querySelector(".del").addEventListener("click", ()=>{ row.remove(); calc(); autoPrice_(); save(); });
+    row.querySelectorAll("input").forEach(i=> i.addEventListener("input", ()=>{ lineAmt(row); calc(); autoPrice_(); }));
     linesWrap.appendChild(row); lineAmt(row);
   }
   // 샘플 기본 라인 (로스는 수량 비움 = 그대로 1,000)
   [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
-  $("#addLine").addEventListener("click", ()=>{ makeLine(); calc(); save(); });
+  $("#addLine").addEventListener("click", ()=>{ makeLine(); calc(); autoPrice_(); save(); });
 
   // 단가/공임/시야게 자동 콤마 (.won)
   document.addEventListener("input", e=>{
@@ -3381,6 +3397,9 @@
     box.classList.add(target > threshold ? "pink" : "blue");
   }
   ["#gongim","#siyage","#targetThreshold","#costThreshold"].forEach(s=> $(s).addEventListener("input", calc));
+  // 2026-09-22: 원가가 바뀌는 칸에서만 판매가를 다시 계산합니다.
+  // 판매가 칸은 뺍니다 — 타이핑하는 족족 자동값이 덮어쓰면 직접 고칠 수가 없습니다.
+  ["#gongim","#siyage"].forEach(s=> $(s).addEventListener("input", autoPrice_));
   // 2026-09-20 추가: 판매가 칸을 직접 타이핑해도 확정으로 봅니다 (버튼을 안 눌러도)
   $("#targetThreshold").addEventListener("input", ()=>{ priceConfirmed_ = true; });
 
@@ -3416,8 +3435,70 @@
       document.querySelectorAll(".price-cat").forEach(b=>b.classList.remove("active"));
       btn.classList.add("active");
       renderPriceValues_(btn.dataset.cat);
+      autoPrice_();   // 2026-09-22: 계단이 바뀌면 판매가도 다시 계산합니다
     });
   });
+
+  /* ---------- 판매가 자동 계산 (2026-09-22 지수 지시) ----------
+     제조원가 × 4 를 계단에서 **올려** 판매가 칸에 그대로 넣습니다.
+     예) 계산값 56,000 → 59,000 · 계산값 65,320 → 69,000 · 계산값 60,900 → 69,000
+     넣은 값은 색인·공유 칸을 타고 제품 제작 현황(status.html)까지 그대로 갑니다.
+
+     고를 게 없어서 자동입니다 — 계단이 두 값뿐이고 올림 규칙도 하나입니다.
+     사람이 판단해야 하는 자리는 딱 하나, **계산값이 69,000 을 넘을 때**입니다.
+     그때 나오는 79,000·89,000 은 「수요가 비탄력인가」를 봐야 나오는 값이라
+     자동으로 넣지 않고 지수님께 넘깁니다 (data/판단기준.json 의 69,000 상한 규칙).
+
+     원가가 0이면 아무것도 넣지 않습니다. 아무도 안 건드렸는데 값이 저장되어
+     「정한 값」으로 오해받던 것이 v66 에서 고친 문제이고, 그 취지를 그대로 지킵니다. */
+  const AUTO_STEPS_BASIC   = ["59,000", "69,000"];                        // 상의·하의 (그 위는 사람이)
+  const AUTO_STEPS_COMFORT = ["59,900", "62,900", "65,900", "69,900"];    // 컴포트 (끝자리 900)
+  // 품번 카테고리 → 어느 계단을 쓰나. 여기 없으면 상의·하의 계단입니다.
+  const AUTO_LADDER_BY_CAT = { "SK":"컴포트", "CP":"컴포트", "OP":"안함", "JK":"안함", "CT":"안함" };
+  function autoLadder_(){
+    // 가격 카테고리 버튼을 눌러놨으면 사람이 고른 것이 이깁니다
+    const picked = document.querySelector(".price-cat.active");
+    if(picked){
+      const c = picked.dataset.cat;
+      if(c === "원피스" || c === "아우터") return null;   // 에이슬이 안 만드는 품목 — 손대지 않습니다
+      return (c === "컴포트팬츠" || c === "컴포트스커트") ? AUTO_STEPS_COMFORT : AUTO_STEPS_BASIC;
+    }
+    const code = (CATS[Number(catSel.value)] || {}).code || "";
+    const kind = AUTO_LADDER_BY_CAT[code];
+    if(kind === "안함") return null;
+    return kind === "컴포트" ? AUTO_STEPS_COMFORT : AUTO_STEPS_BASIC;
+  }
+  function autoPriceNote_(text, ask){
+    const box = $("#autoPriceNote");
+    if(!box) return;
+    box.textContent = text || "";
+    box.classList.toggle("ask", !!ask);
+  }
+  function autoPrice_(){
+    if(loading) return;                       // 작지를 채우는 중에는 건드리지 않습니다
+    const ladder = autoLadder_();
+    if(!ladder){ autoPriceNote_(""); return; }
+    let sum = 0;
+    linesWrap.querySelectorAll(".line").forEach(r=> sum += Number(r.dataset.amt||0));
+    sum += num($("#gongim").value) + num($("#siyage").value);
+    if(sum <= 0){ autoPriceNote_(""); return; }   // 원가를 아직 안 넣었으면 판매가도 안 정합니다
+    const target = sum * 4;
+    const hit = ladder.find(p => target <= num(p));
+    if(!hit){
+      // 계산값이 자동으로 갈 수 있는 끝을 넘었습니다 — 여기서부터는 사람이 정합니다
+      autoPriceNote_("🔴 계산값 " + won(target) + " — " + ladder[ladder.length-1]
+        + " 을 넘습니다. 수요가 비탄력이면 79,000·89,000, 아니면 원가를 깎아 계단 안으로 넣습니다."
+        + " 판매가는 지수님이 직접 넣어주세요.", true);
+      return;                                  // 사람이 넣어둔 값은 그대로 둡니다
+    }
+    const note = "계산값 " + won(target) + " → 계단에서 올려 판매가 " + hit + "원 (자동)";
+    if($("#targetThreshold").value === hit){ autoPriceNote_(note); return; }
+    $("#targetThreshold").value = hit;
+    priceConfirmed_ = true;                    // 원가에서 나온 값이라 정한 값으로 칩니다
+    autoPriceNote_(note);
+    calc();
+    save();
+  }
 
   // ---------- 제품 입고일: 지연 자동계산 ----------
   function calcDelay_(expectedVal, actualVal){
@@ -4521,6 +4602,10 @@
     // 여기서만 기준을 갱신하므로, 입력 중이라 반영을 미뤄둔 남의 수정은 기준에 들어가지
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
+    /* 2026-09-22: 작지를 다 불러온 뒤 판매가를 계단에 맞춰 둡니다.
+       비교 기준(lastSavedState_)을 세운 뒤에 불러야 저장이 정확히 이 한 칸만 보냅니다.
+       원가가 0이면 아무것도 안 하고, 69,000 을 넘으면 값을 건드리지 않고 알리기만 합니다. */
+    autoPrice_();
   }
   function updateRefLinkMode_(){
     updateOneRefLinkMode_("#refLink");
