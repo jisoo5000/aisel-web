@@ -2708,7 +2708,7 @@
      방식이라 안전합니다), 공유 칸·색인 칸은 물류가 적을 때만 한 번 채워지는 것으로 둡니다. */
   // 2026-09-20 추가: targetThreshold(타겟 판매가). 연경님이 판매가를 보러 작업지시서에 들어오지 않게
   // 제품 제작 현황(status.html)에 판매가를 같이 싣습니다. 원가는 여전히 안 나갑니다.
-  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold","priceConfirmed"];
+  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold","priceConfirmed","blend"];
   // 코디는 이 작지가 "건" 품번만 적습니다. 반대 방향(남이 이 옷을 건 것)은
   // 공유 화면이 전체를 보고 스스로 이어붙입니다. 양쪽을 다 적어두면 어긋날 수 있습니다.
   /* 2026-08-25 추가: 컬러 칩을 실제 색으로 칠하려면 색값이 있어야 합니다.
@@ -2793,6 +2793,17 @@
         else if(have[code] && updates[code] === undefined && shareKeeps_(mine[code])
                 && have[code].targetThreshold === undefined && mine[code].priceConfirmed){
           updates[code + "/targetThreshold"] = mine[code].targetThreshold;
+        }
+        /* 2026-09-23: 기존 공유 자료에도 작지의 혼용률·컬러를 채웁니다.
+           전체 항목을 덮어쓰지 않고 두 칸만 비교해서 물류가 기록한 도착일과 사진 주소를 지킵니다. */
+        if(have[code] && updates[code] === undefined && shareKeeps_(mine[code])){
+          const nextShare = woShareEntryFromIndex_(mine[code]);
+          if(String(have[code].blend || "") !== String(nextShare.blend || "")){
+            updates[code + "/blend"] = nextShare.blend || null;
+          }
+          if(JSON.stringify(have[code].colors || null) !== JSON.stringify(nextShare.colors || null)){
+            updates[code + "/colors"] = nextShare.colors || null;
+          }
         }
       });
       if(Object.keys(updates).length) await woShareRoot.update(updates);
