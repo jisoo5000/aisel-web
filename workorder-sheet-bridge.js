@@ -14,6 +14,7 @@ function build(code,v,photo){
  const lines=Array.isArray(v.lines)?v.lines:[],main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
  const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc;
  const cost=fc+other+number(v.gongim)+number(v.siyage),target=cost*4;
+ const history=Array.isArray(v.resampleHistory)?v.resampleHistory:[],recent=history[history.length-1]||{};
  const missing=[];
  if(!number(main.unit))missing.push("원단 단가 미입력");
  if(!filled(main.qty))missing.push("요척 미입력");
@@ -38,7 +39,7 @@ function build(code,v,photo){
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
  lines.map(l=>(l.nm||"")+": "+(l.unit||"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
- Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):""];
+ Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||""];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
 const api={build,signature,lineAmount};root.AiselSheetBridge=api;
