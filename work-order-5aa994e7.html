@@ -1,4 +1,4 @@
-<!-- AISEL 작업지시서 v68 (2026-09-22)
+<!-- AISEL 작업지시서 v69 (2026-09-22)
      [v68] 판매가 자동 계산 — 제조원가×4 를 계단에서 **올려** 타겟 판매가 칸에 그대로 넣습니다.
            계산값 56,000 → 59,000 · 65,320 → 69,000 · 60,900 → 69,000.
            넣은 값은 색인·공유 칸을 타고 제품 제작 현황까지 자동으로 갑니다.
@@ -2212,7 +2212,7 @@
         </div>
         <div class="targetbox-row">
           <div class="targetbox-field">
-            <span class="flbl">판매가 (직접 수정 가능)</span>
+            <span class="flbl">판매가 (5개 가격 중 선택)</span>
             <input type="text" id="targetThreshold" class="won tnum" value="" placeholder="아직 안 정함" /><!-- 2026-09-20: 기본값 59,000 을 지웠습니다. 아무도 안 건드렸는데 저장되면 "정한 값"으로 오해받았습니다 -->
           </div>
           <div class="targetbox-field">
@@ -3401,20 +3401,31 @@
   // 판매가 칸은 뺍니다 — 타이핑하는 족족 자동값이 덮어쓰면 직접 고칠 수가 없습니다.
   ["#gongim","#siyage"].forEach(s=> $(s).addEventListener("input", autoPrice_));
   // 2026-09-20 추가: 판매가 칸을 직접 타이핑해도 확정으로 봅니다 (버튼을 안 눌러도)
-  $("#targetThreshold").addEventListener("input", ()=>{ priceConfirmed_ = true; });
+  $("#targetThreshold").addEventListener("input", ()=>{
+    const p = num($("#targetThreshold").value);
+    priceConfirmed_ = RETAIL_PRICE_STEPS.includes(p) && p >= num($("#totalView").textContent) * 4;
+    if(p && !priceConfirmed_) autoPriceNote_("판매가는 59,000·69,000·79,000·89,000·98,000원 중 선택하세요. 10만원 이상은 적용하지 않습니다.", true);
+  });
+  $("#targetThreshold").addEventListener("change", ()=>{
+    const p = num($("#targetThreshold").value);
+    if(p && (!RETAIL_PRICE_STEPS.includes(p) || p < num($("#totalView").textContent) * 4)){
+      $("#targetThreshold").value = ""; priceConfirmed_ = false; calc(); save();
+    }
+  });
 
   // ---------- 타겟 판매가 퀵버튼(카테고리 → 가격 2단계) ----------
-  const PRICE_BY_CATEGORY = {
-    // 2026-08-29 정정: 상의·하의 공통 계단(원가x4, 끝자리 000). 69,000 넘기려면
-    // 원가룰(원가<=판매가/4) 먼저 통과하고 수요 비탄력일 때만 79,000·89,000 (data/판단기준.json 참고)
-    "상의": ["59,000", "69,000", "79,000", "89,000"],
-    "하의": ["59,000", "69,000", "79,000", "89,000"],
-    // 컴포트 라인은 별도 가격 체계(끝자리 900). 팬츠·스커트 공통 — 실제 매장 판매가 기준
-    "컴포트팬츠": ["59,900", "62,900", "65,900", "69,900", "74,000", "79,000"],
-    "컴포트스커트": ["59,900", "62,900", "65,900", "69,900", "74,000", "79,000"],
-    "원피스": ["89,000", "98,000"],
-    "아우터": ["89,000", "98,000"]
-  };
+  // 2026-09-23: 사용자 확정 가격 구간. 79/89/98천원은 비탄력 수요 예외.
+  const RETAIL_PRICE_STEPS = [59000, 69000, 79000, 89000, 98000];
+  function retailDecision_(cost){
+    const target = Math.round(Number(cost || 0) * 4);
+    if(target <= 0) return {target:0, price:null, exceptional:false};
+    const price = RETAIL_PRICE_STEPS.find(p => p >= target) || null;
+    return {target, price, exceptional:price !== null && price > 69000};
+  }
+  const PRICE_BY_CATEGORY = Object.fromEntries(
+    ["상의","하의","컴포트팬츠","컴포트스커트","원피스","아우터"]
+      .map(c => [c, RETAIL_PRICE_STEPS.map(p => p.toLocaleString("en-US"))])
+  );
   const priceValRow = $("#priceValRow");
   function renderPriceValues_(cat){
     const prices = PRICE_BY_CATEGORY[cat] || [];
@@ -3423,7 +3434,14 @@
     ).join("");
     priceValRow.querySelectorAll(".price-btn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
+        const required = num($("#totalView").textContent) * 4;
+        if(num(btn.dataset.price) < required){
+          autoPriceNote_("선택한 판매가가 제조원가×4보다 낮습니다. 다음 가격 구간을 선택하세요.", true); return;
+        }
         $("#targetThreshold").value = btn.dataset.price;
+        autoPriceNote_(num(btn.dataset.price) > 69000
+          ? "예외 판매가: 특별한 제품·비탄력 수요 판단으로 직접 선택. 원가×4 이상인지 확인하세요."
+          : "일반 판매가 선택 · 원가×4 이상인지 확인하세요.", num(btn.dataset.price) > 69000);
         priceConfirmed_ = true;   // 2026-09-20 추가: 계단 버튼을 눌렀다 = 확정
         calc();
         save();
@@ -3451,23 +3469,8 @@
 
      원가가 0이면 아무것도 넣지 않습니다. 아무도 안 건드렸는데 값이 저장되어
      「정한 값」으로 오해받던 것이 v66 에서 고친 문제이고, 그 취지를 그대로 지킵니다. */
-  const AUTO_STEPS_BASIC   = ["59,000", "69,000"];                        // 상의·하의 (그 위는 사람이)
-  const AUTO_STEPS_COMFORT = ["59,900", "62,900", "65,900", "69,900"];    // 컴포트 (끝자리 900)
-  // 품번 카테고리 → 어느 계단을 쓰나. 여기 없으면 상의·하의 계단입니다.
-  const AUTO_LADDER_BY_CAT = { "SK":"컴포트", "CP":"컴포트", "OP":"안함", "JK":"안함", "CT":"안함" };
-  function autoLadder_(){
-    // 가격 카테고리 버튼을 눌러놨으면 사람이 고른 것이 이깁니다
-    const picked = document.querySelector(".price-cat.active");
-    if(picked){
-      const c = picked.dataset.cat;
-      if(c === "원피스" || c === "아우터") return null;   // 에이슬이 안 만드는 품목 — 손대지 않습니다
-      return (c === "컴포트팬츠" || c === "컴포트스커트") ? AUTO_STEPS_COMFORT : AUTO_STEPS_BASIC;
-    }
-    const code = (CATS[Number(catSel.value)] || {}).code || "";
-    const kind = AUTO_LADDER_BY_CAT[code];
-    if(kind === "안함") return null;
-    return kind === "컴포트" ? AUTO_STEPS_COMFORT : AUTO_STEPS_BASIC;
-  }
+  const AUTO_STEPS_BASIC = ["59,000", "69,000"];
+  function autoLadder_(){ return AUTO_STEPS_BASIC; }
   function autoPriceNote_(text, ask){
     const box = $("#autoPriceNote");
     if(!box) return;
@@ -3475,29 +3478,31 @@
     box.classList.toggle("ask", !!ask);
   }
   function autoPrice_(){
-    if(loading) return;                       // 작지를 채우는 중에는 건드리지 않습니다
-    const ladder = autoLadder_();
-    if(!ladder){ autoPriceNote_(""); return; }
-    let sum = 0;
-    linesWrap.querySelectorAll(".line").forEach(r=> sum += Number(r.dataset.amt||0));
-    sum += num($("#gongim").value) + num($("#siyage").value);
-    if(sum <= 0){ autoPriceNote_(""); return; }   // 원가를 아직 안 넣었으면 판매가도 안 정합니다
-    const target = sum * 4;
-    const hit = ladder.find(p => target <= num(p));
-    if(!hit){
-      // 계산값이 자동으로 갈 수 있는 끝을 넘었습니다 — 여기서부터는 사람이 정합니다
-      autoPriceNote_("🔴 계산값 " + won(target) + " — " + ladder[ladder.length-1]
-        + " 을 넘습니다. 수요가 비탄력이면 79,000·89,000, 아니면 원가를 깎아 계단 안으로 넣습니다."
-        + " 판매가는 지수님이 직접 넣어주세요.", true);
-      return;                                  // 사람이 넣어둔 값은 그대로 둡니다
+    if(loading) return;
+    let cost = 0;
+    linesWrap.querySelectorAll(".line").forEach(r => cost += Number(r.dataset.amt || 0));
+    cost += num($("#gongim").value) + num($("#siyage").value);
+    const result = retailDecision_(cost);
+    if(!result.target){ autoPriceNote_("원가 입력 후 판매가를 계산합니다."); return; }
+    if(!result.price){
+      priceConfirmed_ = false;
+      autoPriceNote_("계산값 " + won(result.target) + " — 최대 판매가 98,000원을 넘습니다. 원가 조정이 필요합니다. 10만원 이상은 적용하지 않습니다.", true);
+      save(); return;
     }
-    const note = "계산값 " + won(target) + " → 계단에서 올려 판매가 " + hit + "원 (자동)";
-    if($("#targetThreshold").value === hit){ autoPriceNote_(note); return; }
-    $("#targetThreshold").value = hit;
-    priceConfirmed_ = true;                    // 원가에서 나온 값이라 정한 값으로 칩니다
-    autoPriceNote_(note);
-    calc();
-    save();
+    const current = num($("#targetThreshold").value);
+    if(result.exceptional){
+      if(!RETAIL_PRICE_STEPS.includes(current) || current < result.price) priceConfirmed_ = false;
+      autoPriceNote_("계산값 " + won(result.target) + " → 기준 판매가 " + won(result.price)
+        + ". 79,000·89,000·98,000원은 특별한 제품이고 수요가 비탄력적일 때만 직접 선택합니다.", true);
+      save(); return;
+    }
+    if(priceConfirmed_ && current > 69000 && RETAIL_PRICE_STEPS.includes(current)){
+      autoPriceNote_("직접 선택한 예외 판매가 " + won(current) + " 유지 · 원가×4 기준 " + won(result.price)); return;
+    }
+    $("#targetThreshold").value = result.price.toLocaleString("en-US");
+    priceConfirmed_ = true;
+    autoPriceNote_("계산값 " + won(result.target) + " → 올림 판매가 " + won(result.price) + " (자동)");
+    calc(); save();
   }
 
   // ---------- 제품 입고일: 지연 자동계산 ----------
@@ -4271,7 +4276,7 @@
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
-    st.priceConfirmed = !!priceConfirmed_;   // 2026-09-20 추가
+    st.priceConfirmed = !!priceConfirmed_ && RETAIL_PRICE_STEPS.includes(num(st.targetThreshold)) && num(st.targetThreshold) >= num($("#totalView").textContent) * 4;   // 2026-09-20 추가
     st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
       nm:r.querySelector(".nm").value, unit:r.querySelector(".unit").value, qty:r.querySelector(".qty").value }));
     // 원본은 작업지시서 편집화면 고화질용, 썸네일은 목록·제품조회 화면 가벼운 용도로 둘 다 저장
