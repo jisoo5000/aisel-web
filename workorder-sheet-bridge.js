@@ -58,13 +58,11 @@ async function thumbnail(code,v){
  if(v.sheetThumb&&v.sheetThumb.signature===sig)return v.sheetThumb.url;
  if(!firebase.auth().currentUser)return /^https:\/\//.test(v.p1||"")?v.p1:"";
  try{
-  const image=await new Promise((res,rej)=>{const im=new Image();im.crossOrigin="anonymous";im.onload=()=>res(im);im.onerror=rej;im.src=src;});
-  const canvas=document.createElement("canvas"),scale=Math.min(1,160/image.height,120/image.width);
-  canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));
-  canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);
-  const blob=await new Promise(res=>canvas.toBlob(res,"image/jpeg",.75));
+  const response=await fetch(src);
+  if(!response.ok)throw new Error("사진 읽기 실패 "+response.status);
+  const blob=await response.blob();
   const ref=firebase.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
-  await ref.put(blob,{contentType:"image/jpeg",cacheControl:"public,max-age=31536000"});
+  await ref.put(blob,{contentType:blob.type||"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
   const url=await ref.getDownloadURL();
   await db.ref("workorders").child(code).child("sheetThumb").set({url,signature:sig});
   return url;
