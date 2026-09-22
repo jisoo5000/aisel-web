@@ -38,7 +38,7 @@ function build(code,v,photo){
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
  lines.map(l=>(l.nm||"")+": "+(l.unit||"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
- Number(v.updatedAt||v.createdAt)||0];
+ Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):""];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
 const api={build,signature,lineAmount};root.AiselSheetBridge=api;
