@@ -3657,7 +3657,7 @@
     box.addEventListener("mouseenter", ()=> pasteBox = box);
     box.querySelector(".clr").addEventListener("click", e=>{
       e.preventDefault(); e.stopPropagation();
-      box.querySelector("img").src=""; box.classList.remove("filled");
+      box.querySelector("img").removeAttribute("src"); box.classList.remove("filled");
       box.dataset.thumb = "";
       inp.value=""; save();
     });
@@ -4272,7 +4272,7 @@
     if(round) round.value=String(resampleHistory_.length+1);
     if(changes) changes.value="";
     resampleDraftPhoto_="";
-    if(preview){ preview.src=""; preview.style.display="none"; }
+    if(preview){ preview.removeAttribute("src"); preview.style.display="none"; }
     if(name) name.textContent="사진 없음";
     const file=$("#resamplePhotoInput"); if(file) file.value="";
   }
@@ -4621,7 +4621,7 @@
       if(img.src !== src) img.src = src;
       box.classList.add("filled");
     } else {
-      if(img.src) img.src = "";
+      if(img.hasAttribute("src")) img.removeAttribute("src");
       box.classList.remove("filled");
     }
     box.dataset.thumb = thumb || "";
