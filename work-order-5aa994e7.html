@@ -1,4 +1,4 @@
-<!-- AISEL 작업지시서 v69 (2026-09-22)
+<!-- AISEL 작업지시서 v70 (2026-09-22)
      [v68] 판매가 자동 계산 — 제조원가×4 를 계단에서 **올려** 타겟 판매가 칸에 그대로 넣습니다.
            계산값 56,000 → 59,000 · 65,320 → 69,000 · 60,900 → 69,000.
            넣은 값은 색인·공유 칸을 타고 제품 제작 현황까지 자동으로 갑니다.
@@ -2222,6 +2222,7 @@
         </div>
         <!-- 2026-09-22 추가: 계단에서 올린 판매가를 자동으로 넣고, 무엇을 넣었는지 한 줄로 알립니다 -->
         <div class="auto-price-note" id="autoPriceNote"></div>
+        <button type="button" class="price-btn" id="priceException69Btn" hidden>69,000원 예외 적용 · 사유 기록</button>
         <!-- 2026-08-13 추가: 제조원가 기준선. 제품마다 다르므로 직접 수정 가능하게 둠 (인쇄 미노출 영역) -->
         <div class="targetbox-row">
           <div class="targetbox-field">
@@ -3395,6 +3396,7 @@
     const threshold = num($("#targetThreshold").value) || 59000;
     box.classList.remove("blue","pink");
     box.classList.add(target > threshold ? "pink" : "blue");
+    if(pricingRulesReady_) showPriceReview_(sum);
   }
   ["#gongim","#siyage","#targetThreshold","#costThreshold"].forEach(s=> $(s).addEventListener("input", calc));
   // 2026-09-22: 원가가 바뀌는 칸에서만 판매가를 다시 계산합니다.
@@ -3402,14 +3404,13 @@
   ["#gongim","#siyage"].forEach(s=> $(s).addEventListener("input", autoPrice_));
   // 2026-09-20 추가: 판매가 칸을 직접 타이핑해도 확정으로 봅니다 (버튼을 안 눌러도)
   $("#targetThreshold").addEventListener("input", ()=>{
-    const p = num($("#targetThreshold").value);
-    priceConfirmed_ = RETAIL_PRICE_STEPS.includes(p) && p >= num($("#totalView").textContent) * 4;
-    if(p && !priceConfirmed_) autoPriceNote_("판매가는 59,000·69,000·79,000·89,000·98,000원 중 선택하세요. 10만원 이상은 적용하지 않습니다.", true);
+    priceConfirmed_ = false; priceException_ = null;
   });
   $("#targetThreshold").addEventListener("change", ()=>{
-    const p = num($("#targetThreshold").value);
-    if(p && (!RETAIL_PRICE_STEPS.includes(p) || p < num($("#totalView").textContent) * 4)){
-      $("#targetThreshold").value = ""; priceConfirmed_ = false; calc(); save();
+    const price = num($("#targetThreshold").value);
+    if(!price){ priceException_=null; priceConfirmed_=false; save(); return; }
+    if(!selectRetailPrice_(price,false)){
+      $("#targetThreshold").value=""; priceConfirmed_=false; priceException_=null; calc(); save();
     }
   });
 
@@ -3422,6 +3423,62 @@
     const price = RETAIL_PRICE_STEPS.find(p => p >= target) || null;
     return {target, price, exceptional:price !== null && price > 69000};
   }
+  function priceReview_(cost){
+    const target = Math.round(Number(cost || 0) * 4);
+    return { target, autoPrice: target > 0 && target <= 69000 ? (target <= 59000 ? 59000 : 69000) : null,
+      review: target > 69000, reduction: Math.max(0, Math.ceil(Number(cost || 0) - 17250)),
+      minimumException: RETAIL_PRICE_STEPS.find(p => p >= target) || null };
+  }
+  function validPriceException_(price, cost){
+    return !!priceException_ && priceException_.price === price && priceException_.cost === cost
+      && !!String(priceException_.reason || "").trim();
+  }
+  function priceAllowed_(price, cost){
+    const r = priceReview_(cost);
+    if(!RETAIL_PRICE_STEPS.includes(price) || !r.target || !r.minimumException) return false;
+    if(price === 69000 && r.review) return validPriceException_(price,cost);
+    return price >= r.target && (price <= 69000 || validPriceException_(price,cost));
+  }
+  function showPriceReview_(cost){
+    const r = priceReview_(cost), price = num($("#targetThreshold").value);
+    const btn = $("#priceException69Btn");
+    if(btn) btn.hidden = !r.review || !r.minimumException;
+    if(!r.target){ autoPriceNote_("원가 입력 후 판매가를 계산합니다."); return; }
+    if(r.review){
+      const approved = priceConfirmed_ && priceAllowed_(price,cost);
+      autoPriceNote_("계산값 " + won(r.target) + " — " + (approved ? "예외 적용 " + won(price) + " · " + priceException_.reason : "자동 확정 중지 · 원가 조정 검토")
+        + ". 69,000원 기준 제조원가 17,250원 이하 / 장당 " + won(r.reduction) + " 절감 필요."
+        + (r.minimumException ? " 조정이 어렵고 특별한 제품·비탄력 수요 근거가 있으면 79,000·89,000·98,000원 중 4배수 이상을 직접 선택하세요."
+          : " 최대 판매가 98,000원도 4배수에 미달합니다. 원가를 조정하세요."), !approved);
+    }else if(priceConfirmed_ && price > 69000 && validPriceException_(price,cost)){
+      autoPriceNote_("예외 판매가 " + won(price) + " · " + priceException_.reason);
+    }else{
+      autoPriceNote_("계산값 " + won(r.target) + " → 올림 판매가 " + won(r.autoPrice) + " (일반 기준)");
+    }
+  }
+  function selectRetailPrice_(price, allowBelowFour){
+    const cost = num($("#totalView").textContent), r = priceReview_(cost);
+    if(!r.target || !r.minimumException || !RETAIL_PRICE_STEPS.includes(price)){
+      showPriceReview_(cost); return false;
+    }
+    if(price < r.target && !(allowBelowFour && price === 69000)){
+      autoPriceNote_("4배수보다 낮은 가격입니다. 원가를 조정하거나 ‘69,000원 예외 적용’으로 사유를 기록하세요.",true); return false;
+    }
+    let exception = null;
+    if(price > 69000 || price < r.target){
+      const reason = window.prompt(price < r.target
+        ? "4배수 미달을 감수하고 69,000원에 판매하는 사유를 입력하세요."
+        : "특별한 제품·비탄력 수요로 예외 판매가를 적용하는 근거를 입력하세요.");
+      if(!reason || !reason.trim()) return false;
+      exception = {price,cost,target:r.target,reason:reason.trim(),at:Date.now(),
+        kind:price < r.target ? "below_four_times" : "premium"};
+    }
+    priceException_ = exception;
+    $("#targetThreshold").value = price.toLocaleString("en-US");
+    priceConfirmed_ = true;
+    calc(); save(); return true;
+  }
+  $("#priceException69Btn").addEventListener("click", ()=>selectRetailPrice_(69000,true));
   const PRICE_BY_CATEGORY = Object.fromEntries(
     ["상의","하의","컴포트팬츠","컴포트스커트","원피스","아우터"]
       .map(c => [c, RETAIL_PRICE_STEPS.map(p => p.toLocaleString("en-US"))])
@@ -3434,17 +3491,7 @@
     ).join("");
     priceValRow.querySelectorAll(".price-btn").forEach(btn=>{
       btn.addEventListener("click", ()=>{
-        const required = num($("#totalView").textContent) * 4;
-        if(num(btn.dataset.price) < required){
-          autoPriceNote_("선택한 판매가가 제조원가×4보다 낮습니다. 다음 가격 구간을 선택하세요.", true); return;
-        }
-        $("#targetThreshold").value = btn.dataset.price;
-        autoPriceNote_(num(btn.dataset.price) > 69000
-          ? "예외 판매가: 특별한 제품·비탄력 수요 판단으로 직접 선택. 원가×4 이상인지 확인하세요."
-          : "일반 판매가 선택 · 원가×4 이상인지 확인하세요.", num(btn.dataset.price) > 69000);
-        priceConfirmed_ = true;   // 2026-09-20 추가: 계단 버튼을 눌렀다 = 확정
-        calc();
-        save();
+        selectRetailPrice_(num(btn.dataset.price), false);
       });
     });
   }
@@ -3479,29 +3526,20 @@
   }
   function autoPrice_(){
     if(loading) return;
-    let cost = 0;
-    linesWrap.querySelectorAll(".line").forEach(r => cost += Number(r.dataset.amt || 0));
-    cost += num($("#gongim").value) + num($("#siyage").value);
-    const result = retailDecision_(cost);
-    if(!result.target){ autoPriceNote_("원가 입력 후 판매가를 계산합니다."); return; }
-    if(!result.price){
-      priceConfirmed_ = false;
-      autoPriceNote_("계산값 " + won(result.target) + " — 최대 판매가 98,000원을 넘습니다. 원가 조정이 필요합니다. 10만원 이상은 적용하지 않습니다.", true);
-      save(); return;
+    let cost=0;
+    linesWrap.querySelectorAll(".line").forEach(r=>cost+=Number(r.dataset.amt||0));
+    cost+=num($("#gongim").value)+num($("#siyage").value);
+    const r=priceReview_(cost), current=num($("#targetThreshold").value);
+    if(priceException_ && !validPriceException_(current,cost)) priceException_=null;
+    if(r.review || !r.target){
+      priceConfirmed_=priceConfirmed_ && priceAllowed_(current,cost);
+      showPriceReview_(cost); save(); return;
     }
-    const current = num($("#targetThreshold").value);
-    if(result.exceptional){
-      if(!RETAIL_PRICE_STEPS.includes(current) || current < result.price) priceConfirmed_ = false;
-      autoPriceNote_("계산값 " + won(result.target) + " → 기준 판매가 " + won(result.price)
-        + ". 79,000·89,000·98,000원은 특별한 제품이고 수요가 비탄력적일 때만 직접 선택합니다.", true);
-      save(); return;
+    if(priceConfirmed_ && validPriceException_(current,cost)){
+      showPriceReview_(cost); return;
     }
-    if(priceConfirmed_ && current > 69000 && RETAIL_PRICE_STEPS.includes(current)){
-      autoPriceNote_("직접 선택한 예외 판매가 " + won(current) + " 유지 · 원가×4 기준 " + won(result.price)); return;
-    }
-    $("#targetThreshold").value = result.price.toLocaleString("en-US");
-    priceConfirmed_ = true;
-    autoPriceNote_("계산값 " + won(result.target) + " → 올림 판매가 " + won(result.price) + " (자동)");
+    $("#targetThreshold").value=r.autoPrice.toLocaleString("en-US");
+    priceException_=null; priceConfirmed_=true;
     calc(); save();
   }
 
@@ -4276,7 +4314,8 @@
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
-    st.priceConfirmed = !!priceConfirmed_ && RETAIL_PRICE_STEPS.includes(num(st.targetThreshold)) && num(st.targetThreshold) >= num($("#totalView").textContent) * 4;   // 2026-09-20 추가
+    st.priceConfirmed = !!priceConfirmed_ && priceAllowed_(num(st.targetThreshold), num($("#totalView").textContent));
+    st.priceException = priceException_ || null;   // 2026-09-20 추가
     st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
       nm:r.querySelector(".nm").value, unit:r.querySelector(".unit").value, qty:r.querySelector(".qty").value }));
     // 원본은 작업지시서 편집화면 고화질용, 썸네일은 목록·제품조회 화면 가벼운 용도로 둘 다 저장
@@ -4385,6 +4424,8 @@
   // 2026-09-20 추가: targetThreshold 는 기본값이 있던 칸이라 "저장된 값이 있다"만으로는
   // 지수·디자이너가 실제로 가격을 정했는지 알 수 없습니다. 버튼을 누르거나 직접 타이핑해야만 true 가 됩니다.
   let priceConfirmed_ = false;
+  let priceException_ = null;
+  var pricingRulesReady_ = true;
   function save(){
     if(loading || !woRef) return;
     if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
@@ -4499,7 +4540,8 @@
   }
   function applyState(st){
     loading = true;
-    priceConfirmed_ = !!st.priceConfirmed;   // 2026-09-20 추가
+    priceConfirmed_ = !!st.priceConfirmed;
+    priceException_ = st.priceException || null;   // 2026-09-20 추가
     $("#season").value = st.season ?? "26F";
     catSel.value = st.cat ?? 4;
     TXT_IDS.forEach(id=>{
@@ -5048,7 +5090,8 @@
     lastSentJSON = null;
     lastSentUpdatedAt_ = null;
     lastSavedState_ = null;
-    priceConfirmed_ = false;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
+    priceConfirmed_ = false;
+    priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
     woRef = woRoot.child(code);
