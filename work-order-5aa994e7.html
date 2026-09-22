@@ -1846,7 +1846,7 @@
   <div class="meta-accordion noprint" id="metaAccordion">
     <button type="button" class="meta-accordion-head" id="metaAccordionHead">
       <span class="meta-accordion-arrow" id="metaAccordionArrow">▶</span>
-      <span>📋 메타 정보 (판매예측 · 기획 가설 · 레퍼런스 · 원샘플 · 코디)</span>
+      <span>📋 메타 정보 (판매예측 · 기획 가설 · 레퍼런스 · 원샘플 · 재샘플 · 코디)</span>
       <span class="meta-missing-tag" id="metaMissingTag" style="display:none;"></span>
     </button>
     <div class="meta-accordion-body" id="metaAccordionBody" style="display:none;">
@@ -1980,6 +1980,26 @@
     <div class="predict-row single">
       <textarea id="meetingNotes" rows="4" style="width:100%;resize:vertical;" placeholder="예: 옆지퍼로 변경 (큐씨 보기) · 시야게에 핀턱 레직기 잡기"></textarea>
     </div>
+
+    <div class="mini-sec-title">재샘플 이력</div>
+    <div id="resamplePanel" style="border:1px solid #d9e2ec;border-radius:10px;padding:12px;background:#f8fafc;">
+      <div class="predict-row">
+        <label>날짜</label><input id="resampleDate" type="date">
+        <label>차수</label><input id="resampleRound" type="number" min="1" step="1" placeholder="1">
+      </div>
+      <div class="predict-row single" style="margin-top:8px;">
+        <label>수정 내용</label>
+        <textarea id="resampleChanges" rows="3" style="width:100%;resize:vertical;" placeholder="예: 앞목 1½″ 올리기 · 소매 통으로 변경 · 블랙에서 크림으로 변경"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
+        <input id="resamplePhotoInput" type="file" accept="image/*" style="display:none;">
+        <button type="button" id="resamplePhotoBtn" class="small-btn">📷 사진 선택</button>
+        <span id="resamplePhotoName" style="font-size:12px;color:#64748b;">사진 없음</span>
+        <img id="resamplePhotoPreview" alt="" style="display:none;width:56px;height:70px;object-fit:cover;border:1px solid #cbd5e1;border-radius:6px;">
+        <button type="button" id="resampleAddBtn" class="small-btn" style="margin-left:auto;background:#223754;color:white;">+ 이력 추가</button>
+      </div>
+    </div>
+    <div id="resampleHistoryList" style="display:grid;gap:8px;margin-top:8px;"></div>
 
     <!-- 2026-08-13 추가: 레퍼런스·샘플 토글. 기본값은 레퍼런스입니다.
          레퍼런스 사진은 참고용이라 형태만 정확하고 촉감·핏은 샘플이 나와야 정확합니다.
@@ -4231,6 +4251,71 @@
   let movingCodeNow_ = false;  // 2026-09-20 추가: 품번 옮기기 중에는 옛 품번의 null 스냅샷을 "삭제됨"으로 안 봅니다
   let pendingRemoteState = null; // 입력 중이라 잠깐 미뤄둔 다른 기기의 최신 내용
 
+  // ---------- 재샘플 이력 ----------
+  let resampleHistory_ = [];
+  let resampleDraftPhoto_ = "";
+  function resampleToday_(){ return new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10); }
+  function resetResampleDraft_(){
+    const date=$("#resampleDate"), round=$("#resampleRound"), changes=$("#resampleChanges"), preview=$("#resamplePhotoPreview"), name=$("#resamplePhotoName");
+    if(date) date.value=resampleToday_();
+    if(round) round.value=String(resampleHistory_.length+1);
+    if(changes) changes.value="";
+    resampleDraftPhoto_="";
+    if(preview){ preview.src=""; preview.style.display="none"; }
+    if(name) name.textContent="사진 없음";
+    const file=$("#resamplePhotoInput"); if(file) file.value="";
+  }
+  function renderResampleHistory_(){
+    const wrap=$("#resampleHistoryList"); if(!wrap) return;
+    wrap.innerHTML="";
+    resampleHistory_.slice().reverse().forEach((item,revIndex)=>{
+      const originalIndex=resampleHistory_.length-1-revIndex;
+      const card=document.createElement("div");
+      card.style.cssText="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:10px;border:1px solid #d9e2ec;border-radius:9px;background:white;";
+      if(item.photo){
+        const img=document.createElement("img"); img.src=item.photo; img.alt="재샘플 "+(item.round||"")+"차";
+        img.style.cssText="width:60px;height:76px;object-fit:cover;border-radius:6px;border:1px solid #d9e2ec;"; card.appendChild(img);
+      }else{
+        const empty=document.createElement("div"); empty.textContent="사진 없음"; empty.style.cssText="width:60px;height:76px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:6px;"; card.appendChild(empty);
+      }
+      const mid=document.createElement("div");
+      const title=document.createElement("div"); title.style.cssText="font-weight:800;color:#223754;margin-bottom:5px;"; title.textContent=(item.round||"?")+"차 재샘플 · "+(item.date||"날짜 미입력");
+      const body=document.createElement("div"); body.style.cssText="white-space:pre-wrap;font-size:13px;line-height:1.5;color:#334155;"; body.textContent=item.changes||"수정 내용 없음";
+      mid.appendChild(title); mid.appendChild(body); card.appendChild(mid);
+      const del=document.createElement("button"); del.type="button"; del.className="small-btn"; del.textContent="삭제"; del.title="잘못 추가한 재샘플 이력 삭제";
+      del.addEventListener("click",()=>{ if(!confirm((item.round||"?")+"차 재샘플 이력을 삭제할까요?")) return; resampleHistory_.splice(originalIndex,1); renderResampleHistory_(); resetResampleDraft_(); save(); });
+      card.appendChild(del); wrap.appendChild(card);
+    });
+  }
+  function resamplePhotoToThumb_(file){
+    if(!file || !(file.type||"").startsWith("image/")){ alert("사진 파일을 선택해주세요."); return; }
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const scale=Math.min(1,240/img.width),canvas=document.createElement("canvas");
+        canvas.width=Math.max(1,Math.round(img.width*scale)); canvas.height=Math.max(1,Math.round(img.height*scale));
+        canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+        resampleDraftPhoto_=canvas.toDataURL("image/jpeg",0.65);
+        $("#resamplePhotoPreview").src=resampleDraftPhoto_; $("#resamplePhotoPreview").style.display="block";
+        $("#resamplePhotoName").textContent=file.name||"사진 선택됨";
+      };
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function addResampleHistory_(){
+    const date=$("#resampleDate").value,round=Math.max(1,parseInt($("#resampleRound").value||"1",10)),changes=$("#resampleChanges").value.trim();
+    if(!date){ alert("재샘플 날짜를 선택해주세요."); return; }
+    if(!changes){ alert("재샘플 수정 내용을 적어주세요."); return; }
+    resampleHistory_.push({id:Date.now(),date,round,changes,photo:resampleDraftPhoto_||""});
+    renderResampleHistory_(); resetResampleDraft_(); save();
+  }
+  $("#resamplePhotoBtn").addEventListener("click",()=>$("#resamplePhotoInput").click());
+  $("#resamplePhotoInput").addEventListener("change",()=>resamplePhotoToThumb_($("#resamplePhotoInput").files[0]));
+  $("#resampleAddBtn").addEventListener("click",addResampleHistory_);
+  resetResampleDraft_();
+
   // ---------- 상태(예정/샘플중/샘플관리/발주생산/PDP/드롭) ----------
   const STATUS_LIST = [
     { key:"planned",     emoji:"📅", label:"예정" },
@@ -4332,6 +4417,7 @@
     st.sampleRecoveryStatus = sampleRecoveryStatus;
     st.sampleFactorySentDate = sampleFactorySentDate;
     st.sampleReturnedDate = sampleReturnedDate;
+    st.resampleHistory = resampleHistory_;
     st.pdpRows = window.getPdpRows_ ? window.getPdpRows_() : [];
     // 2026-08-13 추가: 핵심 키워드와 비고 칸도 작지별로 저장합니다.
     // 예전에는 이 두 칸이 저장 대상에 없어서 작지를 바꿔도 안 지워지고 화면에 계속 남았습니다.
@@ -4586,6 +4672,8 @@
     sampleRecoveryStatus = st.sampleRecoveryStatus || "";
     sampleFactorySentDate = st.sampleFactorySentDate || "";
     sampleReturnedDate = st.sampleReturnedDate || "";
+    resampleHistory_ = Array.isArray(st.resampleHistory) ? st.resampleHistory : [];
+    renderResampleHistory_(); resetResampleDraft_();
     renderSampleRecovery_(); if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
     if(window.setPdpRows_) window.setPdpRows_(st.pdpRows || []);
     if(window.setSellingPoints_) window.setSellingPoints_(st.sellingPoints || null, st.spOrder || null, st.spManual || null);
@@ -5025,6 +5113,7 @@
         // 다음 디자인회의를 위해 다시 요청하는 것이 실제로는 자주 있는 일이라 문구를 바꿨습니다.
         if(!confirm("다음 원샘플 준비를 위해 요청 상태로 되돌릴까요?\n공장·회수 날짜 기록은 지워집니다.")) return;
         sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
+    resampleHistory_ = []; renderResampleHistory_(); resetResampleDraft_();
       } else if(val === "factory"){
         if(!confirm("오늘 날짜로 원샘플을 공장에 보낸 걸로 기록할까요?")) return;
         sampleRecoveryStatus = "factory"; sampleFactorySentDate = todayStr_();
@@ -10376,6 +10465,7 @@ function build(code,v,photo){
  const lines=Array.isArray(v.lines)?v.lines:[],main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
  const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc;
  const cost=fc+other+number(v.gongim)+number(v.siyage),target=cost*4;
+ const history=Array.isArray(v.resampleHistory)?v.resampleHistory:[],recent=history[history.length-1]||{};
  const missing=[];
  if(!number(main.unit))missing.push("원단 단가 미입력");
  if(!filled(main.qty))missing.push("요척 미입력");
@@ -10400,7 +10490,7 @@ function build(code,v,photo){
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
  lines.map(l=>(l.nm||"")+": "+(l.unit||"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
- Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):""];
+ Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||""];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
 const api={build,signature,lineAmount};root.AiselSheetBridge=api;
