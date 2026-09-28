@@ -1,4 +1,8 @@
-<!-- AISEL 제품 진행 현황 (공유용) v6 (2026-09-23)
+<!-- AISEL 제품 진행 현황 (공유용) v7 (2026-09-28)
+     v7 에서 바뀐 것 - PDP 카드에 MD용 「상세페이지 등록 완료」 버튼을 추가했습니다.
+                     누르면 작업지시서·색인·공유 화면이 한 번에 판매 상태로 바뀌고
+                     「최근 완료」 탭에 30일 동안 남습니다. 도착 취소는 오조작 복구용으로 유지합니다.
+     ─ v6 (2026-09-23)
      v6 에서 바뀐 것 - 작업지시서의 혼용률과 컬러를 카드에 함께 표시합니다.
      ─ v5 (2026-09-20)
      v5 에서 바뀐 것 - 카드에 「💵 판매가」 한 줄. 연경님(MD)이 판매가를 보러 작업지시서에 들어오지 않게 하려고
@@ -22,8 +26,8 @@
        화면에서 숨기는 게 아니라 애초에 내려오지도 않습니다.
        넘길 값을 늘리거나 줄이려면 work-order.html 의 WO_SHARE_KEYS 를 고칩니다.
 
-     ★ 편집 기능은 「도착 확인」 버튼 하나뿐입니다. 사진을 누르면 그 사진이 크게만 뜹니다
-       (2026-08-27 추가). 그 외에 값을 고치거나 지울 수 있는 자리는 이 화면에 없습니다.
+     ★ 편집 기능은 상태 이동 버튼뿐입니다: 물류의 「도착 확인」과 MD의
+       「상세페이지 등록 완료」. 사진을 누르면 그 사진이 크게만 뜹니다.
      ★ 판매현황·무드보드·발주서 화면은 이 파일에 존재하지 않습니다.
 -->
 <title>AISEL 제품 진행 현황</title>
@@ -124,14 +128,16 @@
   }
   .coordi .more{font-size:11px; font-weight:700; color:var(--muted); margin-left:2px;}
 
-  /* 2026-09-15 추가: 물류 도착 확인 버튼. 카드 맨 아래 한 줄 */
-  .arrive-row{margin-top:2px;}
+  /* 상태 이동 버튼. PDP에서는 완료와 도착 취소를 세로로 둡니다. */
+  .arrive-row{margin-top:2px; display:flex; flex-direction:column; gap:6px;}
   .arrive-btn{
     width:100%; border:0; border-radius:8px; padding:9px 8px;
     font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer;
   }
   .arrive-btn.go{background:#2F3B52; color:#fff;}
   .arrive-btn.go:hover{background:#232C3D;}
+  .arrive-btn.complete{background:#2F3B52; color:#fff;}
+  .arrive-btn.complete:hover{background:#232C3D;}
   .arrive-btn.undo{background:var(--field); color:var(--muted); border:1px solid var(--hair);}
   .arrive-btn.undo:hover{border-color:var(--navy); color:var(--navy);}
   .arrive-btn:disabled{opacity:.55; cursor:default;}
@@ -228,9 +234,8 @@ var stateOf = function(k){
   return null;
 };
 
-/* ---------- 물류 도착 확인 (2026-09-15 추가) ----------
-   이 화면에서 유일한 편집 기능입니다. 지금까지는 지수/디자이너가 감으로 발주생산→PDP
-   버튼을 눌렀는데, 실제 도착일을 정확히 아는 사람은 물류뿐이라 여기서 직접 누르게 합니다.
+/* ---------- 상태 이동: 물류 도착 확인 + MD 상세페이지 등록 완료 ----------
+   물류는 발주생산→PDP, MD는 PDP→최근 완료(판매)를 직접 처리합니다.
 
    work-order.html 이 저장할 때와 똑같이 workorders · workorderIndex · workorderShare
    세 칸을 같이 고칩니다. 한 곳만 고치면 이 화면과 work-order.html 이 서로 다른 상태를
@@ -248,9 +253,12 @@ function todayStr_(){
 function writeStatusPatch_(code, patch, btn, okText){
   if(btn){ btn.disabled = true; btn.textContent = "처리 중..."; }
   var paths = ["workorders", "workorderIndex", "workorderShare"];
-  Promise.all(paths.map(function(p){
-    return firebase.database().ref(p).child(code).update(patch);
-  })).then(function(){
+  var updates = {};
+  paths.forEach(function(p){
+    Object.keys(patch).forEach(function(k){ updates[p + "/" + code + "/" + k] = patch[k]; });
+  });
+  /* 세 저장소를 원자적으로 바꿉니다. 일부만 바뀌어 화면과 작지 상태가 갈리는 일을 막습니다. */
+  firebase.database().ref().update(updates).then(function(){
     if(btn) btn.textContent = okText;
   }).catch(function(err){
     console.error(err);
@@ -265,6 +273,10 @@ function markArrived_(code, name, btn){
 function undoArrived_(code, name, btn){
   if(!confirm("\"" + (name || code) + "\" 도착 처리를 취소하고 발주생산으로 되돌릴까요?")) return;
   writeStatusPatch_(code, { status:"order", arrivedAt:null }, btn, "↩ 되돌림");
+}
+function completePdp_(code, name, btn){
+  if(!confirm("\"" + (name || code) + "\" 상세페이지 등록을 완료했나요?\n\n최근 완료로 이동합니다.")) return;
+  writeStatusPatch_(code, { status:"sale", updatedAt:Date.now() }, btn, "✓ 최근 완료로 이동됨");
 }
 
 var all = {};
@@ -522,8 +534,8 @@ function render(){
     var cr = coordiRow(x.code);
     if(cr) body.appendChild(cr);
 
-    /* 2026-09-15 추가: 발주생산 카드엔 도착 확인, PDP 카드엔 되돌리기.
-       이 화면에서 유일하게 값을 바꾸는 자리입니다 (위 LOGISTICS 주석 참고). */
+    /* 발주생산은 물류가 도착 확인. PDP는 MD가 상세페이지 등록 완료 처리하며,
+       도착 취소는 오조작 복구용으로 아래에 유지합니다. */
     if(e.status === "order" || e.status === "pdp"){
       var arow = document.createElement("div");
       arow.className = "arrive-row";
@@ -534,6 +546,12 @@ function render(){
         abtn.textContent = "🚚 도착 확인";
         abtn.addEventListener("click", function(){ markArrived_(x.code, e.pumMyeong, abtn); });
       }else{
+        var doneBtn = document.createElement("button");
+        doneBtn.type = "button";
+        doneBtn.className = "arrive-btn complete";
+        doneBtn.textContent = "✓ 상세페이지 등록 완료";
+        doneBtn.addEventListener("click", function(){ completePdp_(x.code, e.pumMyeong, doneBtn); });
+        arow.appendChild(doneBtn);
         abtn.className = "arrive-btn undo";
         abtn.textContent = "↩ 도착 취소";
         abtn.addEventListener("click", function(){ undoArrived_(x.code, e.pumMyeong, abtn); });
