@@ -4484,21 +4484,41 @@
     if(typeof refreshWoCheckBar_ === "function") refreshWoCheckBar_();
     if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
   }
+  let statusChanging_ = false;
   document.querySelectorAll(".status-btn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      currentStatus = btn.dataset.status;
-      updateStatusButtons();
-      refreshCafe24Bar_();
-      save();
-      if(currentStatus === "sampling"){
-        const code = currentCode || $("#codeView").textContent.replace("품번","").trim();
-        ensureSampleMgmtRow_(code, pumInput.value.trim());
+    btn.addEventListener("click", async ()=>{
+      const next = btn.dataset.status;
+      if(statusChanging_ || next === currentStatus) return;
+      if(loading || !woRef || !currentCode || codeConflictNow_()){
+        alert("작지를 불러오는 중이거나 품번이 겹쳐 상태를 저장할 수 없습니다. 잠시 후 다시 시도해주세요.");
+        return;
       }
-      // 2026-08-13 추가: PDP로 넘어가는 시점이 상세설명을 쓰는 자리입니다.
-      // 이때는 원단·샘플·셀링포인트가 모두 확정된 상태라 가장 완전한 정보로 쓸 수 있습니다.
-      // 원단정보가 비어 있어도 묻지 않고 성질만으로 씁니다. 직접 고친 문장은 덮어쓰지 않습니다.
-      if(currentStatus === "pdp" && window.onPdpStageReached_){
-        window.onPdpStageReached_();
+      const code = currentCode;
+      statusChanging_ = true;
+      document.querySelectorAll(".status-btn").forEach(b=> b.disabled = true);
+      try{
+        clearTimeout(saveT); saveT = null;
+        await Promise.all([...pendingSaveWrites_]);
+        if(currentCode !== code) return;
+        // 원본과 목록 색인을 한 번에 바꿉니다. 둘 중 하나만 바뀌면 목록에 이전 상태로 남습니다.
+        await firebase.database().ref().update({
+          ["workorders/" + code + "/status"]: next,
+          ["workorderIndex/" + code + "/status"]: next
+        });
+        if(currentCode !== code) return;
+        currentStatus = next;
+        if(lastSavedState_) lastSavedState_ = {...lastSavedState_, status: next};
+        updateStatusButtons();
+        refreshCafe24Bar_();
+        if(next === "sampling") ensureSampleMgmtRow_(code, pumInput.value.trim());
+        // PDP 진입 시 기존 상세설명 생성 동작은 유지합니다.
+        if(next === "pdp" && window.onPdpStageReached_) window.onPdpStageReached_();
+      }catch(err){
+        alert("상태 변경이 저장되지 않았습니다. 인터넷 연결을 확인하고 다시 눌러주세요.");
+      }finally{
+        statusChanging_ = false;
+        document.querySelectorAll(".status-btn").forEach(b=> b.disabled = false);
+        if(currentCode === code) saveSoon();
       }
     });
   });
@@ -4586,16 +4606,16 @@
   // 색인 쓰기. 목록에 보이는 값이 하나도 안 바뀌었으면 아예 쓰지 않습니다.
   const lastIndexSig_ = {};
   function writeIndexIfChanged_(code, st){
-    if(!code || !st) return;
+    if(!code || !st) return Promise.resolve();
     const e = woIndexEntryFrom_(st);
     const sig = woIndexSig_(e);
     const known = (lastIndexSig_[code] !== undefined)
       ? lastIndexSig_[code]
       : woIndexSig_((allWorkOrders && allWorkOrders[code]) || null);
-    if(known === sig) return;
+    if(known === sig) return Promise.resolve();
     lastIndexSig_[code] = sig;
     e.updatedAt = st.updatedAt || Date.now();
-    woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
+    const indexWrite = woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
     // 2026-08-25 추가: 공유용 칸도 같이 갱신 (실패해도 작지 저장에는 영향 없음)
     // update 를 씁니다. set 이면 따로 올려둔 사진 주소(thumbUrl)까지 지워집니다
     // 2026-08-27 추가: 보관 규칙에 안 맞으면(샘플중·드롭·30일 지난 판매) 칸을 지웁니다.
@@ -4603,10 +4623,11 @@
     if(!shareKeeps_(st)){
       delete shareThumbSigCache_[code];
       woShareRoot.child(code).remove().catch(()=>{});
-      return;
+      return indexWrite;
     }
     woShareRoot.child(code).update(woShareEntryFrom_(st)).catch(()=>{});
     ensureShareThumb_(code, st.p1Thumb || st.p1 || "");
+    return indexWrite;
   }
   function removeIndexEntry_(code){
     if(!code) return;
@@ -4620,8 +4641,9 @@
   let priceConfirmed_ = false;
   let priceException_ = null;
   var pricingRulesReady_ = true;
+  const pendingSaveWrites_ = new Set();
   function save(){
-    if(loading || !woRef) return;
+    if(loading || !woRef || statusChanging_) return;
     if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
     // 2026-08-13 추가: 새 작지를 만드는 중인데 그 품번에 이미 다른 작지가 있으면 저장하지 않음.
     // (예전에는 이 상태에서 저장이 나가서 기존 작지를 통째로 덮어썼음)
@@ -4647,9 +4669,9 @@
     lastSentUpdatedAt_ = st.updatedAt;   // 2026-09-20 추가: 되돌아온 스냅샷을 이 시각으로 알아봅니다
     if(Object.keys(patch).length === 0){ return; }   // 실제로 바뀐 게 없으면 아무것도 안 보냄
     const sentState = st;
-    targetRef.update(patch).then(()=>{
+    const writePromise = targetRef.update(patch).then(async ()=>{
       lastSavedState_ = sentState;
-      writeIndexIfChanged_(targetCode, sentState);
+      await writeIndexIfChanged_(targetCode, sentState);
       if(window.AiselSheetBridge) window.AiselSheetBridge.sync(targetCode);
       // 첫 저장이 끝나면 이제 이 품번은 정식으로 이 작지의 자리이므로 "새로 만드는 중" 표시를 끔
       // (그래야 다른 기기에서 수정한 내용이 실시간으로 반영됨)
@@ -4665,11 +4687,14 @@
       const st2 = {...st, p1:"", p1Thumb:""};
       const patch2 = buildPatch_(lastSavedState_, st2);
       if(woRef === targetRef) lastSentJSON = JSON.stringify(st2);
-      targetRef.update(patch2).then(()=>{
+      return targetRef.update(patch2).then(async ()=>{
         lastSavedState_ = st2;
-        writeIndexIfChanged_(targetCode, st2);
+        await writeIndexIfChanged_(targetCode, st2);
       }).catch(()=>{ s.textContent="⚠ 저장 실패 (인터넷 확인)"; });
     });
+    pendingSaveWrites_.add(writePromise);
+    writePromise.then(()=> pendingSaveWrites_.delete(writePromise));
+    return writePromise;
   }
   $("#saveBtn").addEventListener("click", async ()=>{
     const s = $("#saveBtn");
