@@ -2804,7 +2804,7 @@
      방식이라 안전합니다), 공유 칸·색인 칸은 물류가 적을 때만 한 번 채워지는 것으로 둡니다. */
   // 2026-09-20 추가: targetThreshold(타겟 판매가). 연경님이 판매가를 보러 작업지시서에 들어오지 않게
   // 제품 제작 현황(status.html)에 판매가를 같이 싣습니다. 원가는 여전히 안 나갑니다.
-  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold","priceConfirmed","blend"];
+  const WO_SHARE_KEYS = ["status","pumMyeong","factory","yy","mm","dd","createdAt","targetThreshold","priceConfirmed","priceSource","blend"];
   // 코디는 이 작지가 "건" 품번만 적습니다. 반대 방향(남이 이 옷을 건 것)은
   // 공유 화면이 전체를 보고 스스로 이어붙입니다. 양쪽을 다 적어두면 어긋날 수 있습니다.
   /* 2026-08-25 추가: 컬러 칩을 실제 색으로 칠하려면 색값이 있어야 합니다.
@@ -2852,6 +2852,7 @@
     if(!o.priceConfirmed) o.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     o.colors = shareColorsOf_(s);
     o.coordi = shareCoordiOf_(s);
+    o.thumb = s.thumb || "";   // 공유 화면은 저장소 업로드에 의존하지 않고 색인의 작은 사진을 바로 씁니다
     o.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
     return o;
   }
@@ -2894,6 +2895,9 @@
            전체 항목을 덮어쓰지 않고 두 칸만 비교해서 물류가 기록한 도착일과 사진 주소를 지킵니다. */
         if(have[code] && updates[code] === undefined && shareKeeps_(mine[code])){
           const nextShare = woShareEntryFromIndex_(mine[code]);
+          if(String(have[code].thumb || "") !== String(nextShare.thumb || "")){
+            updates[code + "/thumb"] = nextShare.thumb || null;
+          }
           if(String(have[code].blend || "") !== String(nextShare.blend || "")){
             updates[code + "/blend"] = nextShare.blend || null;
           }
@@ -2904,20 +2908,7 @@
       });
       if(Object.keys(updates).length) await woShareRoot.update(updates);
 
-      /* 아직 파일로 안 올라간 사진을 하나씩 올립니다.
-         한꺼번에 24개를 올리면 저장이 잠깐 버벅이므로 조금씩 띄워서 보냅니다.
-         이미 올라간 사진은 shareThumbSigCache_ 가 걸러서 다시 안 올립니다. */
-      let slot = 0;
-      Object.keys(mine).forEach(code=>{
-        if(!shareKeeps_(mine[code])) return;   // 안 보여줄 것은 사진도 안 올립니다
-        const src = (mine[code] && mine[code].thumb) || "";
-        if(!src) return;
-        /* 2026-09-22 고침: 공유 칸에 사진 주소가 없으면 "이미 올렸다"는 기억을 버리고 다시 올립니다.
-           안 그러면 한 번 주소가 지워진 칸은 그 창을 닫았다 열기 전에는 영영 안 채워집니다. */
-        if(!(have[code] && have[code].thumbUrl)) delete shareThumbSigCache_[code];
-        else if(shareThumbSigCache_[code] === (SHARE_THUMB_VER + ":" + src.length)) return;
-        setTimeout(()=> ensureShareThumb_(code, src), (slot++) * 400);
-      });
+      // 색인의 압축 사진을 공유 칸에 보관하므로 별도 Storage 업로드는 필요 없습니다.
     }catch(err){ console.warn("공유 칸 채우기 실패:", err); }
     finally{ shareBackfillRunning_ = false; }
   }
@@ -2985,8 +2976,10 @@
     if(!e.priceConfirmed) e.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     e.colors = shareColorsOf_(s);
     e.coordi = shareCoordiOf_(s);
+    if(s.p1Thumb) e.thumb = s.p1Thumb;
+    else if(!s.p1) e.thumb = null;   // 원본도 없을 때만 예전 공유 사진을 지웁니다
     e.sampleRecoveryStatus = null;   // 예전에 넘어가 있던 값을 지웁니다
-    // 사진은 여기에 넣지 않습니다. ensureShareThumb_() 가 파일로 올리고 주소만 적습니다
+    // 압축 사진을 공유 데이터에 보관해 별도 파일 업로드 실패에도 표시됩니다.
     return e;
   }
   const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
@@ -3003,7 +2996,7 @@
     // 원본 전체를 내려받지 않고 찾을 수 있습니다
     "coordiCode1","coordiCode2","coordiCode3",
     // 2026-09-20 추가: 판매가 + 확정 표시. 공유 칸(backfillShare_)이 색인만 보고 채우므로 색인에도 있어야 합니다
-    "targetThreshold","priceConfirmed"];
+    "targetThreshold","priceConfirmed","priceSource"];
   function woIndexEntryFrom_(st){
     const s = st || {};
     const e = {};
@@ -3531,7 +3524,7 @@
   ["#gongim","#siyage"].forEach(s=> $(s).addEventListener("input", autoPrice_));
   // 2026-09-20 추가: 판매가 칸을 직접 타이핑해도 확정으로 봅니다 (버튼을 안 눌러도)
   $("#targetThreshold").addEventListener("input", ()=>{
-    priceConfirmed_ = false; priceException_ = null;
+    priceConfirmed_ = false; priceSource_ = ""; priceException_ = null;
   });
   $("#targetThreshold").addEventListener("change", ()=>{
     const price = num($("#targetThreshold").value);
@@ -3570,7 +3563,12 @@
     const r = priceReview_(cost), price = num($("#targetThreshold").value);
     const btn = $("#priceException69Btn");
     if(btn) btn.hidden = !r.review || !r.minimumException;
-    if(!r.target){ autoPriceNote_("원가 입력 후 판매가를 계산합니다."); return; }
+    if(!r.target){
+      autoPriceNote_(priceConfirmed_ && priceSource_ === "manual"
+        ? "판매가를 수동으로 정했습니다. 원가를 입력하면 4배수 기준을 확인할 수 있습니다."
+        : "원가 입력 후 판매가를 계산합니다.");
+      return;
+    }
     if(r.review){
       const approved = priceConfirmed_ && priceAllowed_(price,cost);
       autoPriceNote_("계산값 " + won(r.target) + " — " + (approved ? "예외 적용 " + won(price) + " · " + priceException_.reason : "자동 확정 중지 · 원가 조정 검토")
@@ -3580,14 +3578,22 @@
     }else if(priceConfirmed_ && price > 69000 && validPriceException_(price,cost)){
       autoPriceNote_("예외 판매가 " + won(price) + " · " + priceException_.reason);
     }else{
-      autoPriceNote_("계산값 " + won(r.target) + " → 올림 판매가 " + won(r.autoPrice) + " (일반 기준)");
+      autoPriceNote_("계산값 " + won(r.target) + " → 올림 판매가 " + won(r.autoPrice)
+        + (priceConfirmed_ ? " (확정)" : " (자동 제안 · 확정하려면 가격 버튼 선택)"));
     }
   }
   function selectRetailPrice_(price, allowBelowFour){
     const cost = num($("#totalView").textContent), r = priceReview_(cost);
-    if(!r.target || !r.minimumException || !RETAIL_PRICE_STEPS.includes(price)){
+    if(!RETAIL_PRICE_STEPS.includes(price)){
       showPriceReview_(cost); return false;
     }
+    if(!r.target){
+      priceException_ = null;
+      $("#targetThreshold").value = price.toLocaleString("en-US");
+      priceConfirmed_ = true; priceSource_ = "manual";
+      calc(); save(); return true;
+    }
+    if(!r.minimumException){ showPriceReview_(cost); return false; }
     if(price < r.target && !(allowBelowFour && price === 69000)){
       autoPriceNote_("4배수보다 낮은 가격입니다. 원가를 조정하거나 ‘69,000원 예외 적용’으로 사유를 기록하세요.",true); return false;
     }
@@ -3603,6 +3609,7 @@
     priceException_ = exception;
     $("#targetThreshold").value = price.toLocaleString("en-US");
     priceConfirmed_ = true;
+    priceSource_ = "manual";
     calc(); save(); return true;
   }
   $("#priceException69Btn").addEventListener("click", ()=>selectRetailPrice_(69000,true));
@@ -3659,14 +3666,14 @@
     const r=priceReview_(cost), current=num($("#targetThreshold").value);
     if(priceException_ && !validPriceException_(current,cost)) priceException_=null;
     if(r.review || !r.target){
-      priceConfirmed_=priceConfirmed_ && priceAllowed_(current,cost);
+      if(r.target) priceConfirmed_=priceConfirmed_ && priceAllowed_(current,cost);
       showPriceReview_(cost); save(); return;
     }
-    if(priceConfirmed_ && validPriceException_(current,cost)){
+    if(priceConfirmed_ && priceAllowed_(current,cost)){
       showPriceReview_(cost); return;
     }
     $("#targetThreshold").value=r.autoPrice.toLocaleString("en-US");
-    priceException_=null; priceConfirmed_=true;
+    priceException_=null; priceConfirmed_=false; priceSource_="";
     calc(); save();
   }
 
@@ -4499,11 +4506,22 @@
         clearTimeout(saveT); saveT = null;
         await Promise.all([...pendingSaveWrites_]);
         if(currentCode !== code) return;
-        // 원본과 목록 색인을 한 번에 바꿉니다. 둘 중 하나만 바뀌면 목록에 이전 상태로 남습니다.
-        await firebase.database().ref().update({
+        // 원본·목록·제품 진행 현황을 함께 바꿔 세 화면의 상태가 어긋나지 않게 합니다.
+        const now = Date.now();
+        const sharing = shareKeeps_({...((allWorkOrders || {})[code] || {}), status: next, updatedAt: now});
+        const shared = await woShareRoot.child(code).once("value");
+        if(currentCode !== code) return;
+        const updates = {
           ["workorders/" + code + "/status"]: next,
-          ["workorderIndex/" + code + "/status"]: next
-        });
+          ["workorders/" + code + "/updatedAt"]: now,
+          ["workorderIndex/" + code + "/status"]: next,
+          ["workorderIndex/" + code + "/updatedAt"]: now
+        };
+        if(sharing){
+          if(shared.exists()) updates["workorderShare/" + code + "/status"] = next;
+          else updates["workorderShare/" + code] = woShareEntryFromIndex_({...((allWorkOrders || {})[code] || {}), status: next});
+        }else updates["workorderShare/" + code] = null;
+        await firebase.database().ref().update(updates);
         if(currentCode !== code) return;
         currentStatus = next;
         if(lastSavedState_) lastSavedState_ = {...lastSavedState_, status: next};
@@ -4526,7 +4544,10 @@
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
-    st.priceConfirmed = !!priceConfirmed_ && priceAllowed_(num(st.targetThreshold), num($("#totalView").textContent));
+    const priceNum = num(st.targetThreshold), costNum = num($("#totalView").textContent);
+    st.priceConfirmed = !!priceConfirmed_ && priceSource_ === "manual"
+      && RETAIL_PRICE_STEPS.includes(priceNum) && (!costNum || priceAllowed_(priceNum, costNum));
+    st.priceSource = st.priceConfirmed ? priceSource_ : "";
     st.priceException = priceException_ || null;   // 2026-09-20 추가
     st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
       nm:r.querySelector(".nm").value, unit:r.querySelector(".unit").value, qty:r.querySelector(".qty").value }));
@@ -4625,7 +4646,7 @@
       return indexWrite;
     }
     woShareRoot.child(code).update(woShareEntryFrom_(st)).catch(()=>{});
-    ensureShareThumb_(code, st.p1Thumb || st.p1 || "");
+    // 공유 데이터에 압축 사진이 포함됩니다. Storage 업로드 실패로 사진이 사라지지 않습니다.
     return indexWrite;
   }
   function removeIndexEntry_(code){
@@ -4638,6 +4659,7 @@
   // 2026-09-20 추가: targetThreshold 는 기본값이 있던 칸이라 "저장된 값이 있다"만으로는
   // 지수·디자이너가 실제로 가격을 정했는지 알 수 없습니다. 버튼을 누르거나 직접 타이핑해야만 true 가 됩니다.
   let priceConfirmed_ = false;
+  let priceSource_ = "";
   let priceException_ = null;
   var pricingRulesReady_ = true;
   const pendingSaveWrites_ = new Set();
@@ -4760,6 +4782,7 @@
   function applyState(st){
     loading = true;
     priceConfirmed_ = !!st.priceConfirmed;
+    priceSource_ = st.priceSource || "";
     priceException_ = st.priceException || null;   // 2026-09-20 추가
     $("#season").value = st.season ?? "26F";
     catSel.value = st.cat ?? 4;
@@ -4873,7 +4896,7 @@
     /* 2026-09-22: 작지를 다 불러온 뒤 판매가를 계단에 맞춰 둡니다.
        비교 기준(lastSavedState_)을 세운 뒤에 불러야 저장이 정확히 이 한 칸만 보냅니다.
        원가가 0이면 아무것도 안 하고, 69,000 을 넘으면 값을 건드리지 않고 알리기만 합니다. */
-    autoPrice_();
+    showPriceReview_(num($("#totalView").textContent));
   }
   function updateRefLinkMode_(){
     updateOneRefLinkMode_("#refLink");
@@ -5313,6 +5336,7 @@
     lastSentUpdatedAt_ = null;
     lastSavedState_ = null;
     priceConfirmed_ = false;
+    priceSource_ = "";
     priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
