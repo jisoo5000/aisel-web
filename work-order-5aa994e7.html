@@ -680,9 +680,15 @@
   .gallery-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .gallery-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
   .gallery-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
-  .gallery-tabs-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-  .gallery-tabs-row .gallery-tabs { margin-bottom: 16px; flex: 1; }
-  .gallery-tabs-row #galleryExportSheetBtn { margin-bottom: 16px; flex-shrink: 0; }
+  .gallery-tabs-row { display: block; }
+  #galleryTabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+  #galleryTabs .gtab { width: 100%; min-width: 0; padding: 9px 2px; white-space: nowrap; border-radius: 9px; }
+  .gallery-tabs-row #galleryExportSheetBtn { display: block; margin: 0 0 16px auto; }
+  @media (max-width: 560px) {
+    #galleryTabs { gap: 3px; }
+    #galleryTabs .gtab { padding-inline: 0; font-size: clamp(10px, 2.8vw, 11px); }
+    #galleryTabs .gtab .tab-icon { display: none; }
+  }
   .gallery-search { display: flex; gap: 8px; margin-bottom: 16px; }
   .gallery-search select {
     border: 1.5px solid var(--line); border-radius: 9px; padding: 9px 10px; font-size: 13px;
@@ -1611,14 +1617,12 @@
   <div class="gallery-summary" id="gallerySummary"></div>
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
-      <button type="button" class="gtab active" data-status="all">전체</button>
-      <button type="button" class="gtab" data-status="planned">📅 예정</button>
-      <button type="button" class="gtab" data-status="sampling">🧵 샘플중</button>
-      <button type="button" class="gtab" data-status="samplemgmt">🗂️ 샘플관리</button>
-      <button type="button" class="gtab" data-status="order">🏭 발주생산</button>
-      <button type="button" class="gtab" data-status="pdp">🖼️ PDP</button>
-      <button type="button" class="gtab" data-status="sale">🛍️ 판매</button>
-      <button type="button" class="gtab" data-status="drop">⏸️ 드롭</button>
+      <button type="button" class="gtab active" data-status="sampling"><span class="tab-icon">🧵 </span>샘플중</button>
+      <button type="button" class="gtab" data-status="order"><span class="tab-icon">🏭 </span>발주생산</button>
+      <button type="button" class="gtab" data-status="pdp"><span class="tab-icon">🖼️ </span>PDP</button>
+      <button type="button" class="gtab" data-status="sale"><span class="tab-icon">🛍️ </span>판매</button>
+      <button type="button" class="gtab" data-status="drop"><span class="tab-icon">⏸️ </span>드롭</button>
+      <button type="button" class="gtab" data-status="all">전체</button>
     </div>
     <button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button>
   </div>
@@ -1821,7 +1825,6 @@
   </div>
 
   <div class="statusbar noprint" id="statusBar">
-    <button type="button" class="status-btn" data-status="planned">📅 예정</button>
     <button type="button" class="status-btn" data-status="sampling">🧵 샘플중</button>
     <button type="button" class="status-btn" data-status="samplemgmt">🗂️ 샘플관리</button>
     <button type="button" class="status-btn" data-status="order">🏭 발주생산</button>
@@ -4342,7 +4345,7 @@
     { key:"drop",        emoji:"⏸️", label:"드롭" },
   ];
   const STATUS_MAP = Object.fromEntries(STATUS_LIST.map(s=> [s.key, s]));
-  let currentStatus = "planned";
+  let currentStatus = "sampling";
   const STATUS_LABEL_MAP = {
     planned: "📅 예정", sampling: "🧵 샘플중", samplemgmt: "🗂️ 샘플관리",
     order: "🏭 발주생산", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
@@ -4680,7 +4683,7 @@
     if(window.refreshCopygenOutput_) window.refreshCopygenOutput_();
     $("#materials").value = st.materials || "";
     pumInput.dataset.auto = st.pumAuto || "1";
-    currentStatus = st.status || "planned";
+    currentStatus = st.status === "planned" ? "sampling" : (st.status || "sampling");
     updateStatusButtons();
     photoStage_ = st.photoStage || "reference";
     renderPhotoStage_();
@@ -7360,7 +7363,7 @@
       outputEl.value = "";
       outputEl.classList.add("copygen-empty");
     }
-    currentStatus = "planned"; updateStatusButtons();
+    currentStatus = "sampling"; updateStatusButtons();
     // 2026-08-13 추가: 새 작지의 시야게 기본값을 0으로 둠 (인쇄영역 HTML은 그대로 두고 값만 지정)
     $("#siyage").value = "0";
     $("#costThreshold").value = "15,000";
@@ -7389,7 +7392,10 @@
 
   // ---------- 갤러리 카드 목록 렌더링 ----------
   let allWorkOrders = {};
-  let galleryFilter = "all";
+  let galleryFilter = "sampling";
+  function galleryStatus_(st){
+    return !st.status || st.status === "planned" ? "sampling" : st.status;
+  }
   // 2026-08-13 추가: 목록 상단 요약과 한꺼번에 채우기
   function renderGallerySummary_(){
     const box = $("#gallerySummary");
@@ -7484,7 +7490,7 @@
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const type = $("#gallerySearchType").value;
     const list = Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> galleryFilter === "all" || (st.status || "planned") === galleryFilter)
+      .filter(([code, st])=> galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>{
         if(!q) return true;
         const target = type === "code" ? code : (st.pumMyeong || "");
@@ -7606,7 +7612,7 @@
     grid.appendChild(newCard);
 
     Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> galleryFilter === "all" || (st.status || "planned") === galleryFilter)
+      .filter(([code, st])=> galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>{
         if(!q) return true;
         const target = type === "code" ? code : (st.pumMyeong || "");
@@ -7614,7 +7620,7 @@
       })
       .sort((a,b)=> (sortKeyForOrder_(b[1]) - sortKeyForOrder_(a[1])))
       .forEach(([code, st])=>{
-        const statusInfo = STATUS_MAP[st.status] || STATUS_MAP.planned;
+        const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
         const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
         // 2026-08-13 수정: 카드 아래 표시를 품번에서 날짜로 변경.
         // 작지에 적힌 등록일(yy/mm/dd)을 우선 쓰고, 없으면 마지막 저장 시각으로 대신함.
@@ -7908,8 +7914,8 @@
   // 나중에 다시 쓸 수 있어서), 버튼이 없어도 오류가 안 나게 존재 여부를 확인하고 연결합니다.
   if($("#prevBtnEditor")) $("#prevBtnEditor").addEventListener("click", ()=> stepWorkOrder_(-1));
   if($("#nextBtnEditor")) $("#nextBtnEditor").addEventListener("click", ()=> stepWorkOrder_(1));
-  // 목록 화면의 이전/다음은 상태 탭을 순환 (전체가 첫 자리이므로 그 다음부터 순환)
-  const STATUS_TAB_ORDER = ["all","planned","sampling","samplemgmt","order","pdp","sale","drop"];
+  // 목록 화면의 이전/다음은 화면에 보이는 상태 탭 순서대로 순환
+  const STATUS_TAB_ORDER = ["sampling","order","pdp","sale","drop","all"];
   function stepGalleryTab_(direction){
     let idx = STATUS_TAB_ORDER.indexOf(galleryFilter);
     if(idx === -1) idx = 0;
