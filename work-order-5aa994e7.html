@@ -1557,6 +1557,65 @@
     display:inline-block;background:var(--accent-soft);color:var(--accent);
     font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:8px;
   }
+/* 화면 전용 입력 도구만 모바일에서 다시 배치합니다. #sheet의 인쇄 서식은 건드리지 않습니다. */
+@media screen and (max-width: 600px) {
+  /* A4 서식의 고정 폭이 페이지 전체를 옆으로 밀지 않도록 화면에서만 가둡니다. */
+  #editorView > #sheet { overflow-x: auto; overscroll-behavior-x: contain; }
+  #editorView .meta-accordion-head { flex-wrap: wrap; min-height: 44px; }
+  #editorView .meta-accordion-head .meta-missing-tag { margin-left: 0; }
+  #editorView .predict-panel { padding: 14px 12px; margin: 10px auto 16px; }
+  #editorView .predict-row {
+    grid-template-columns: minmax(0, 1fr); gap: 5px; margin-bottom: 14px;
+  }
+  #editorView .predict-row > label,
+  #editorView .predict-row > input:not([type="hidden"]),
+  #editorView .predict-row > textarea,
+  #editorView .predict-row > .copygen-chip-group,
+  #editorView .predict-row > .sp-summary-line { grid-column: 1; min-width: 0; }
+  #editorView .predict-row > input:not([type="hidden"]),
+  #editorView .predict-row > textarea { width: 100%; min-height: 40px; }
+  #editorView .ref-link-row {
+    display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 7px;
+  }
+  #editorView .ref-link-row > label { grid-column: 1 / -1; }
+  #editorView .ref-link-row > input[type="text"] { grid-column: 1; min-width: 0; }
+  #editorView .ref-link-row > .ref-actions { grid-column: 2; grid-row: 2; }
+  #editorView .ref-icon-btn { width: 40px; height: 40px; flex-basis: 40px; }
+  #editorView .coordi-row > .coordi-pick-btn { grid-column: 1 / -1; grid-row: 2; min-height: 40px; }
+  #editorView .coordi-row > input.coordi-link { grid-column: 1 / -1; grid-row: 3; }
+  #editorView .coordi-row > input.coordi-note { grid-column: 1; grid-row: 4; }
+  #editorView .coordi-row > .ref-actions { grid-column: 2; grid-row: 4; }
+  #editorView .coordi-picked { flex-wrap: wrap; }
+  #editorView .coordi-picked-acts { width: 100%; justify-content: flex-end; }
+  #sheet .targetbox, .order.noprint { padding: 14px 12px; }
+  #sheet .targetbox-card, #sheet .arrival-group { padding: 12px; }
+  #sheet .price-cat-row, #sheet .price-val-row {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+  }
+  #sheet .price-cat, #sheet .price-btn { min-width: 0; min-height: 40px; padding: 8px 4px; }
+  #sheet .targetbox-row, #sheet .arrival-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  #sheet .targetbox-field, #sheet .arrival-row > * { min-width: 0; }
+  #sheet #targetThreshold, #sheet .targetbox-result, #sheet .arrival-row input[type="date"] { width: 100%; }
+  .order.noprint .size-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px; }
+  .order.noprint .size-row input, .order.noprint .color-block-head input,
+  .order.noprint .fabric-block-head input { min-width: 0; }
+  .order.noprint .fabric-calc-row { grid-template-columns: minmax(0, 1fr); }
+  .order.noprint .fabric-calc-row > * { min-width: 0; }
+  #sheet .copygen-wrap { padding: 14px 12px; }
+  #sheet .copygen-card { padding: 14px 12px; }
+  #sheet .copygen-label-row { flex-wrap: wrap; gap: 8px; }
+  #sheet .copygen-label-row > div { display: flex; flex-wrap: wrap; width: 100%; min-width: 0; }
+  #sheet .copygen-output-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #sheet .copygen-output-actions > button { min-width: 0; min-height: 40px; }
+  #sheet .copygen-output-actions #addBtn { grid-column: 1 / -1; }
+  #sheet .copygen-table-tools { flex-wrap: wrap; gap: 10px; }
+  #sheet .copygen-table-tools > div { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+  #sheet .copygen-table-tools button { flex: 1 1 auto; min-height: 40px; }
+  #sheet #tableWrap { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ref-card { flex-direction: column; }
+  .ref-photo-box { flex: 0 0 auto; width: 100%; min-height: 190px; height: 240px; border-right: 0; border-bottom: 1.5px solid var(--hair); }
+  .ref-calc-fields > * { min-width: 0; }
+}
 </style>
 
 
