@@ -1,4 +1,6 @@
-<!-- AISEL 작업지시서 v71 (2026-09-22)
+<!-- AISEL 작업지시서 v72 (2026-09-29)
+     [v72] 상단 메뉴에서 수배요청을 제거하고 판매·작업지시서·발주 3개를 같은 너비로 배치합니다.
+           수배요청 화면과 Firebase 데이터는 삭제하지 않아 기존 자료는 그대로 보존됩니다.
      [v68] 판매가 자동 계산 — 제조원가×4 를 계단에서 **올려** 타겟 판매가 칸에 그대로 넣습니다.
            계산값 56,000 → 59,000 · 65,320 → 69,000 · 60,900 → 69,000.
            넣은 값은 색인·공유 칸을 타고 제품 제작 현황까지 자동으로 갑니다.
@@ -368,7 +370,10 @@
   /* 2026-08-13 수정: 홈 화면 추가 버튼이 세로 공간을 차지해 아래 화면이 통째로 내려가는 문제.
      버튼을 흐름에서 빼내(position:absolute) 메인바 높이는 발주서 버튼 기준으로 유지하고,
      버튼 위치만 아래로 내려 작업지시서 제목과 같은 높이에서 시작하게 함. */
-  .mainbar-order-col { display: flex; flex-direction: column; flex: 1; min-width: 0; position: relative; }
+  /* 2026-09-29: 수배요청 탭을 뺀 뒤 남은 세 칸을 정확히 같은 비율로 나눕니다.
+     발주는 홈 화면 추가 버튼 때문에 div로 한 번 감싸져 있으므로 직계 자식 둘을 함께 지정합니다. */
+  .mainbar > .maintab, .mainbar > .mainbar-order-col { flex: 1 1 0; min-width: 0; }
+  .mainbar-order-col { display: flex; flex-direction: column; position: relative; }
   .mainbar-order-col .home-add-btn { position: absolute; top: calc(100% + 22px); right: 0; z-index: 5; }
   .home-add-btn {
     /* 2026-08-13 수정: 열 전체 폭으로 늘어나지 않게 가운데 정렬하되, 손가락으로 누를 수 있는 크기는 확보
@@ -386,23 +391,23 @@
   .home-add-modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
   .home-add-modal-body { font-size: 13.5px; line-height: 1.7; color: var(--ink); margin-bottom: 18px; white-space: pre-line; }
   .maintab {
-    flex: 1; min-width: 0; padding: 10px 10px; border-radius: 6px; border: 1px solid var(--field-line);
+    min-width: 0; padding: 10px 10px; border-radius: 6px; border: 1px solid var(--field-line);
     background: var(--field); font-weight: 700; font-size: 14px; cursor: pointer; color: var(--muted);
     /* 2026-08-21 정정: 지난번 box-sizing 설명은 틀렸습니다 — 이 파일은 이미 * { box-sizing:border-box }
        가 전체에 걸려 있어서 그게 원인이 아니었습니다. 진짜 원인은 min-width가 없어서 "발주서"
        글자 너비가 최소 폭으로 잡혀 다른 탭들과 다르게 줄어드는 flex 레이아웃의 흔한 함정이었습니다.
-       모든 탭에 min-width:0을 줘서 넷이 항상 똑같이 나눠 갖게 만듭니다. */
+       모든 탭에 min-width:0을 줘서 같은 비율로 나눠 갖게 만듭니다. */
   }
   /* 2026-08-21 추가: 발주서 탭은 홈 화면에 추가 버튼과 같이 묶는 세로 칸(mainbar-order-col)
-     안에 한 번 더 감싸여 있어서 다른 세 탭과 너비가 미묘하게 달라 보였습니다.
-     그 칸을 꽉 채우도록 명시적으로 지정해 네 탭 너비를 똑같이 맞춥니다. */
+     안에 한 번 더 감싸여 있어서 다른 탭과 너비가 미묘하게 달라 보였습니다.
+     그 칸을 꽉 채우도록 명시적으로 지정해 세 탭 너비를 똑같이 맞춥니다. */
   .maintab.mainbar-order { width: 100%; box-sizing: border-box; }
   /* 2026-08-13 수정: 눌린 탭만 800으로 더 굵어서 탭마다 글자 두께가 달라 보이던 문제.
      눌렸을 때와 안 눌렸을 때 모두 700으로 통일하고, 눌린 표시는 배경색으로만 구분함. */
   .maintab.active { background: #2F3B52; border-color: #2F3B52; color: #fff; font-weight: 700; }
   /* 2026-08-29 추가: 좁은 화면에서 탭 글자가 「작업지시 서」처럼 두 줄로 쪼개지던 문제.
      줄바꿈을 막고, 폭이 모자라면 아이콘을 먼저 접은 뒤 글자 크기를 줄입니다.
-     탭이 4개라 360px 화면에서 한 탭이 약 73px 밖에 안 됩니다. */
+     모바일에서는 아이콘을 접어 세 메뉴 이름이 한 줄로 유지되게 합니다. */
   .maintab { white-space: nowrap; }
   .tabicon { margin-right: 5px; }
   @media (max-width: 480px) {
@@ -1535,7 +1540,6 @@
 
 <div class="mainbar noprint" id="mainBar">
   <button type="button" class="maintab active" data-main="sales"><span class="tabicon">📈</span>판매</button>
-  <button type="button" class="maintab" data-main="moodboard"><span class="tabicon">🧵</span>수배요청</button>
   <button type="button" class="maintab" data-main="orders"><span class="tabicon">📋</span>작업지시서</button>
   <div class="mainbar-order-col">
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder"><span class="tabicon">🧾</span>발주</button>
