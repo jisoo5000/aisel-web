@@ -246,6 +246,7 @@
     max-width: 820px; margin: 14px auto 26px; padding: 12px 14px; background: #fff;
     border: 1.4px solid var(--hair); border-radius: 12px;
   }
+  #editorView #refPanel { margin-top: 14px; margin-bottom: 12px; }
   .predict-row { display: grid; grid-template-columns: 92px 1fr 92px 1fr; gap: 8px 10px; align-items: center; margin-bottom: 8px; }
   .predict-row label { font-size: 12px; color: var(--muted); font-weight: 700; }
   .predict-row input {
@@ -1937,13 +1938,13 @@
     <label class="cafe24-check"><input type="checkbox" id="cafe24Done"/> 입력 완료</label>
   </div>
 
-  <!-- 2026-08-21 추가: 메타 정보(판매예측·기획가설·레퍼런스·원샘플·코디)를 접었다 펴는 카드로 묶습니다.
+  <!-- 메타 정보는 접어두되, 자주 여는 레퍼런스 링크는 인쇄 영역 바로 위에 따로 둡니다.
        예전에는 이 넷이 전부 펼쳐져 있어서 스크롤이 길어 정작 작지(인쇄영역)까지 내려가는 게 힘들었습니다.
        기본은 접힌 상태로 시작해 작지가 바로 보이게 하고, 제목 줄은 항상 남겨둬 존재 자체를 잊지 않게 합니다. -->
   <div class="meta-accordion noprint" id="metaAccordion">
     <button type="button" class="meta-accordion-head" id="metaAccordionHead">
       <span class="meta-accordion-arrow" id="metaAccordionArrow">▶</span>
-      <span>📋 메타 정보 (판매예측 · 기획 가설 · 레퍼런스 · 원샘플 · 재샘플 · 코디)</span>
+      <span>📋 메타 정보 (판매예측 · 기획 가설 · 원샘플 · 재샘플 · 코디)</span>
       <span class="meta-missing-tag" id="metaMissingTag" style="display:none;"></span>
     </button>
     <div class="meta-accordion-body" id="metaAccordionBody" style="display:none;">
@@ -2015,29 +2016,6 @@
     <div class="predict-row single">
       <label>기획 한 줄</label>
       <input id="planWhy" type="text" placeholder="왜 이걸 만드는지 (3개월 뒤 결과를 해석할 때 필요합니다)">
-    </div>
-  </div>
-
-  <!-- 레퍼런스 링크 (화면 전용, 인쇄 미노출) -->
-  <div class="predict-panel noprint" id="refPanel">
-    <div class="sec-title-np">🔗 레퍼런스</div>
-    <div class="predict-row single ref-link-row ref-actions-row">
-      <label>링크</label>
-      <input id="refLink" type="text" placeholder="https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)">
-      <div class="ref-actions">
-        <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제">🗑</button>
-      </div>
-    </div>
-    <!-- 2026-08-13 추가: 레퍼런스를 두 개까지 넣을 수 있게 링크 칸을 하나 더 둡니다.
-         상의·하의를 따로 참고하시거나 비교할 레퍼런스가 두 개일 때 씁니다. -->
-    <div class="predict-row single ref-link-row ref-actions-row">
-      <label>링크 2</label>
-      <input id="refLink2" type="text" placeholder="https://... (두 번째 레퍼런스, 선택)">
-      <div class="ref-actions">
-        <button type="button" id="refEditBtn2" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="refLinkDelBtn2" class="ref-icon-btn danger" title="삭제">🗑</button>
-      </div>
     </div>
   </div>
 
@@ -2159,6 +2137,27 @@
     </div>
   </div>
 
+    </div>
+  </div>
+
+  <!-- 레퍼런스 링크는 자주 여는 화면 도구라 접힌 메타 정보 밖, 인쇄 영역 바로 위에 둡니다. -->
+  <div class="predict-panel noprint" id="refPanel">
+    <div class="sec-title-np">🔗 레퍼런스</div>
+    <div class="predict-row single ref-link-row ref-actions-row">
+      <label>링크</label>
+      <input id="refLink" type="text" placeholder="https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)">
+      <div class="ref-actions">
+        <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정">✎</button>
+        <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제">🗑</button>
+      </div>
+    </div>
+    <div class="predict-row single ref-link-row ref-actions-row">
+      <label>링크 2</label>
+      <input id="refLink2" type="text" placeholder="https://... (두 번째 레퍼런스, 선택)">
+      <div class="ref-actions">
+        <button type="button" id="refEditBtn2" class="ref-icon-btn" title="수정">✎</button>
+        <button type="button" id="refLinkDelBtn2" class="ref-icon-btn danger" title="삭제">🗑</button>
+      </div>
     </div>
   </div>
 
@@ -5505,8 +5504,7 @@
 
   // ---------- 메타 정보 접었다 펴기 (2026-08-21 추가) ----------
   // 기본은 접힌 채로 시작해 작지(인쇄영역)가 바로 보이게 합니다. 제목 줄은 항상 남아 있고,
-  // 레퍼런스·기획가설·원샘플 메모 중 하나라도 비어 있으면 제목 줄 자체가 주황색으로 바뀌어
-  // 접힌 채로 둬도 뭔가 빠졌다는 걸 알 수 있습니다.
+  // 접힌 메타 정보의 기획 가설이 비어 있으면 제목의 작은 배지로 알려줍니다.
   let metaAccordionOpen_ = false;
   function toggleMetaAccordion_(forceOpen){
     metaAccordionOpen_ = (forceOpen !== undefined) ? forceOpen : !metaAccordionOpen_;
@@ -5523,7 +5521,6 @@
     const head = $("#metaAccordionHead");
     if(!head) return;
     const missing = [];
-    if(!($("#refLink").value || "").trim() && !($("#refLink2").value || "").trim()) missing.push("레퍼런스");
     if(!($("#planWhy").value || "").trim()) missing.push("기획 가설");
     // 2026-08-21 수정: 배경 전체를 바꾸지 않고, 제목 오른쪽에 작은 태그만 붙입니다.
     const tag = $("#metaMissingTag");
