@@ -130,14 +130,16 @@
     align-items: flex-end; background: var(--sheet); border: 1px solid var(--hair); border-bottom: none;
     border-radius: var(--radius) var(--radius) 0 0; padding: 12px 16px;
   }
-  /* 2026-08-21 추가: 홈 화면에 추가 버튼(위치 유지, mainBar 아래 절대위치로 떠 있음)과
-     첫 줄(시즌·카테고리·순번)이 겹쳤습니다. 버튼 위치는 그대로 두고, 툴바 전체를 아래로 밉니다.
-     2026-08-21 재수정: 안쪽 여백(padding)을 늘리면 내용물만 내려가고 박스 테두리 자체는 원래
-     자리에 그대로 남습니다. 박스 테두리째로 밀려면 바깥 여백(margin-top)을 써야 합니다. */
-  /* 2026-08-21 재수정: 76px은 눈대중으로 넉넉하게 잡은 값이었습니다. 홈 화면에 추가 버튼의
-     실제 높이(36px)와 뜨는 지점(22px)을 계산하면 최소 66px이면 충분히 안 겹칩니다.
-     박스가 필요 이상으로 아래로 안 밀리게 정확한 값으로 줄였습니다. */
   .toolbar { margin-top: 66px; }
+  .toolbar-fields {
+    display: grid; grid-template-columns: 88px minmax(0, 1fr) 82px 112px;
+    align-items: end; gap: 10px; width: 100%;
+  }
+  .toolbar-fields .tf { min-width: 0; }
+  .toolbar-fields .grow { max-width: none; }
+  .toolbar-fields select, .toolbar-fields input { width: 100%; min-width: 0; }
+  .toolbar-fields #genBtn { min-height: 34px; white-space: nowrap; }
+  .toolbar-fields #moveCodeBtn { grid-column: 1 / -1; justify-self: start; }
   .tb-row { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 8px; width: 100%; }
   .toolbar .tf { display: flex; flex-direction: column; gap: 4px; }
   .toolbar label { font-size: 11px; letter-spacing: .04em; color: var(--muted); font-weight: 600; }
@@ -159,7 +161,7 @@
   /* 2026-08-21 재수정: 가로 간격을 8px→6px로 줄이고 버튼 안쪽 여백도 살짝 줄여서
      "타겟판매가"처럼 마지막 버튼이 박스 테두리 밖으로 삐져나오지 않게 여유를 더 확보했습니다.
      max-width 900px는 이제 의미가 없어 정리했습니다 (부모 툴바가 이미 820px로 제한됨). */
-  .jump-btn-row { width: 100%; margin: 0 0 7px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-start; }
+  .jump-btn-row { width: 100%; margin: 0; display: flex; flex-wrap: wrap; gap: 6px; }
   /* 2026-08-21 재수정: 최소 너비 강제를 없앴습니다. 발주처럼 짧은 글자에 억지로 넓은 폭을
      맞추면 양옆에 빈 여백만 생깁니다. 새 작지~PDF로 저장/인쇄 줄과 똑같이 각자 글자 길이에
      맞는 자연스러운 크기로 나오게, 그 줄과 같은 padding·font-size를 그대로 씁니다. */
@@ -167,11 +169,21 @@
   /* 2026-08-21 추가: 버튼마다 이모지+글자 조합의 높이가 미묘하게 달라서(원샘플처럼 짧은 글자가
      찌그러져 보이는 등) 줄마다 삐뚤어 보였습니다. 안쪽 정렬 기준을 명확히 고정해서 글자 길이와
      상관없이 모든 버튼의 높이와 세로 중심이 똑같이 맞게 만듭니다. */
-  .jump-btn-row .jump-btn { display: inline-flex; align-items: center; justify-content: center; line-height: 1.2; white-space: nowrap; }
+  .jump-btn-row .jump-btn {
+    display: inline-flex; flex: 1 1 0; min-width: 0; align-items: center; justify-content: center;
+    min-height: 38px; line-height: 1.2; white-space: nowrap;
+  }
   /* 2026-08-21 추가: flex-wrap 줄바꿈은 화면 폭에 따라 자동으로 정해져서 위치가 들쭉날쭉했습니다.
      너비 100%짜리 투명 요소를 사이에 끼워 넣으면 그 뒤 버튼들이 화면 폭과 상관없이
      항상 강제로 다음 줄로 넘어갑니다. */
-  .jump-btn-break { flex-basis: 100%; height: 0; }
+  .jump-btn-break { flex: 0 0 100%; height: 0; }
+  .tb-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .tb-row .btn { min-width: 0; min-height: 38px; padding-inline: 6px; white-space: nowrap; }
+  @media (max-width: 820px) {
+    .jump-btn-row .jump-btn { flex-basis: calc((100% - 12px) / 3); }
+    .tb-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .tb-row .btn { white-space: normal; }
+  }
   /* 2026-08-29 추가: 폰(480px 아래)에서 버튼 줄이 화면 밖으로 삐져나가던 문제.
      줄바꿈은 원래 켜져 있었지만 버튼 하나가 화면보다 넓으면 줄바꿈으로 못 막습니다.
      최소 너비를 풀고 글자를 줄이고, 폰에서 안 쓰는 버튼은 「더보기」로 접습니다.
@@ -179,15 +191,17 @@
   .mfold-toggle { display: none; }
   @media (max-width: 480px) {
     .toolbar { padding: 10px 10px; gap: 6px 8px; }
+    .toolbar-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px; }
+    .toolbar-fields #moveCodeBtn { width: 100%; }
     .jump-btn-row { gap: 5px; }
-    .jump-btn-row .jump-btn { min-width: auto; font-size: 11.5px; padding: 6px 9px; }
-    .tb-row .btn { font-size: 12px; padding: 7px 10px; }
+    .jump-btn-row .jump-btn { flex-basis: calc((100% - 5px) / 2); font-size: 11.5px; padding: 6px 5px; }
+    .tb-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+    .tb-row .btn { font-size: 12px; padding: 7px 5px; }
     .mfold { display: none !important; }
     .mfold-toggle { display: inline-flex; }
     body.mfold-open .mfold { display: inline-flex !important; }
-    /* 상태는 7개나 되는데 하나만 고르는 것이라 옆으로 미는 게 자연스럽습니다 */
-    .statusbar { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .statusbar .status-btn { flex: 0 0 auto; }
+    #saveBtn { order: -2; }
+    #mfoldToggle { order: -1; }
   }
   .btn.drop-btn { color: #A03B1E; border-color: #A03B1E; }
   .btn:active { transform: translateY(1px); }
@@ -195,15 +209,22 @@
 
   /* ---------- 상태 버튼 (편집 화면 안, 안내문구 아래) ---------- */
   .statusbar {
-    max-width: 820px; margin: 0 auto 16px; display: flex; flex-wrap: wrap; gap: 8px;
+    max-width: 820px; margin: 0 auto 16px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px;
     background: var(--sheet); border: 1px solid var(--hair); border-top: none;
     border-radius: 0 0 var(--radius) var(--radius); padding: 10px 12px;
   }
   .status-btn {
     background: var(--field); border: 1.4px solid var(--field-line); color: var(--muted);
-    border-radius: 20px; padding: 7px 14px; font-size: 13px; font-weight: 700; cursor: pointer;
+    border-radius: 20px; min-width: 0; min-height: 38px; padding: 7px 4px;
+    font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
   }
   .status-btn.active { background: #2F3B52; border-color: #2F3B52; color: #fff; }
+  @media (max-width: 700px) {
+    .statusbar { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  }
+  @media (max-width: 480px) {
+    .statusbar .status-btn { font-size: 12px; padding-inline: 2px; }
+  }
 
   /* ---------- 갤러리 (노션 갤러리 스타일 목록 화면) ---------- */
   /* 2026-08-21 수정: 오른쪽 뷰포트 끝(right:18px)에 고정돼 있어서 화면이 넓을수록 작지 내용(가운데 정렬된
@@ -764,7 +785,7 @@
   /* 2026-08-13 추가: 카페24 자체상품코드 안내 바 */
   .cafe24-bar {
     display: none; align-items: center; gap: 10px; flex-wrap: wrap;
-    max-width: 1100px; margin: 10px auto 0; padding: 9px 14px;
+    max-width: 820px; margin: 10px auto 0; padding: 9px 14px;
     border-radius: 8px; background: #EAF1FB; color: #1D5FD6;
     font-size: 13px; font-weight: 700;
   }
@@ -780,7 +801,7 @@
 
   /* 2026-08-13 추가: 작지 점검 요약 */
   .wo-check {
-    display: none; max-width: 1100px; margin: 10px auto 0; padding: 10px 14px;
+    display: none; max-width: 820px; margin: 10px auto 0; padding: 10px 14px;
     border-radius: 9px; font-size: 12.5px; line-height: 1.8;
     background: #F3F4F6; color: #444; border: 1.4px solid #E3E5E8;
   }
@@ -794,7 +815,7 @@
 
   /* 2026-08-13 추가: 품번 미정 안내 */
   .code-pending-hint {
-    display: none; max-width: 1100px; margin: 10px auto 0; padding: 8px 14px;
+    display: none; max-width: 820px; margin: 10px auto 0; padding: 8px 14px;
     border-radius: 8px; background: #EAF1FB; color: #1D5FD6;
     font-size: 12.5px; font-weight: 700;
   }
@@ -1767,6 +1788,7 @@
   <div class="code-pending-hint" id="codePendingHint"></div>
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
+    <div class="toolbar-fields">
     <div class="tf">
       <label>시즌</label>
       <select id="season">
@@ -1782,11 +1804,12 @@
     </div>
     <div class="tf">
       <label>순번 (자동)</label>
-      <input id="seq" type="text" inputmode="numeric" placeholder="001" style="width:70px" />
+      <input id="seq" type="text" inputmode="numeric" placeholder="001" />
     </div>
     <button class="btn" id="genBtn">다음 번호 ▷</button>
     <!-- 2026-08-13 추가: 저장된 작지에서 카테고리를 바꿨을 때만 나타납니다 -->
     <button class="btn" id="moveCodeBtn" style="display:none;background:#8A5A18;border-color:#8A5A18;color:#fff;">품번 옮기기</button>
+    </div>
 
     <!-- 2026-08-21 재구성: 이전/다음 작지 이동 버튼(◀▶)을 삭제하고, 그 자리로 바로가기 버튼 줄을
          옮겼습니다. 예전 위쪽 4버튼(타겟판매가·발주·PDP생성·원단정보)과 판매예측 카드 위에
