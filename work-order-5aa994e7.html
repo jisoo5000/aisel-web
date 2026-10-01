@@ -1,4 +1,5 @@
-<!-- AISEL 작업지시서 v73 (2026-10-01)
+<!-- AISEL 작업지시서 v74 (2026-10-01)
+     [v74] 안내 박스 제거 · 선호 가격으로 4배수 올림 · 화면 전용 모바일 헤더 정리.
      [v73] 작업지시서 안내 박스를 제거하고 상태 탭 아래에 상태별 개수를 표시합니다.
      [v72] 상단 메뉴에서 수배요청을 제거하고 판매·작업지시서·발주 3개를 같은 너비로 배치합니다.
            수배요청 화면과 Firebase 데이터는 삭제하지 않아 기존 자료는 그대로 보존됩니다.
@@ -1553,6 +1554,25 @@
   }
 /* 화면 전용 입력 도구만 모바일에서 다시 배치합니다. #sheet의 인쇄 서식은 건드리지 않습니다. */
 @media screen and (max-width: 600px) {
+  #editorView .toolbar-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  #editorView .toolbar-fields .grow { max-width: none; }
+  #editorView .jump-btn-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #editorView .jump-btn-break { display: none; }
+  #editorView .jump-btn { white-space: normal; overflow-wrap: anywhere; min-height: 44px; }
+  #editorView .tb-row { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #sheet > .title-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px; }
+  #sheet > .title-row h1 { grid-column: 1; grid-row: 1; font-size: clamp(18px, 5vw, 24px); letter-spacing: .03em; text-align: left; white-space: normal; }
+  #sheet > .title-row .date-box { grid-column: 1; grid-row: 2; justify-self: start; }
+  #sheet > .title-row .date-box::before { content: "작성"; font-size: 12px; margin-right: 8px; color: var(--muted); }
+  #sheet > .title-row .title-spacer { grid-column: 1; grid-row: 3; justify-self: start; }
+  #sheet > .title-row .date-row { font-size: 16px; gap: 3px; letter-spacing: 0; }
+  #sheet > .title-row .date-row input { width: 34px; min-height: 36px; font-size: 16px; }
+  #sheet > .title-row .date-row input.y { width: 58px; }
+  #sheet > .meta { grid-template-columns: minmax(0, 1fr); }
+  #sheet > .meta > .cell { min-width: 0; border-right: 0; }
+  #sheet > .meta .designer, #sheet > .meta .fabric-row, #sheet > .meta .stylecode { min-width: 0; flex-wrap: wrap; }
+  #sheet > .meta input { min-width: 0; max-width: 100%; }
+
   /* A4 서식의 고정 폭이 페이지 전체를 옆으로 밀지 않도록 화면에서만 가둡니다. */
   #editorView > #sheet { overflow-x: auto; overscroll-behavior-x: contain; }
   #editorView .meta-accordion-head { flex-wrap: wrap; min-height: 44px; }
@@ -1917,19 +1937,7 @@
     <button type="button" class="status-btn" data-status="drop">⏸️ 드롭</button>
   </div>
 
-  <!-- 2026-08-13 추가: 작지 점검 요약 (화면 전용, 인쇄 미노출)
-       지금 상태에서 있어야 하는데 빠진 것과 팔릴 근거 등급을 한 줄로 보여줍니다.
-       흩어져 있는 핑크색 표시를 스크롤로 찾을 필요가 없어집니다. -->
-  <div class="wo-check noprint" id="woCheckBar"></div>
-
-  <!-- 2026-08-13 추가: 카페24 자체상품코드 안내 (화면 전용, 인쇄 미노출)
-       PDP 상태로 바꿀 때 자동으로 펼쳐집니다. 자체상품코드에 품번을 넣어두지 않으면
-       나중에 판매 데이터를 작지와 연결할 수 없습니다. -->
-  <div class="cafe24-bar noprint" id="cafe24Bar">
-    <span class="cafe24-msg">카페24 자체상품코드에 <b id="cafe24Code">—</b> 를 넣어주세요</span>
-    <button type="button" class="cafe24-copy" id="cafe24CopyBtn">품번 복사</button>
-    <label class="cafe24-check"><input type="checkbox" id="cafe24Done"/> 입력 완료</label>
-  </div>
+  <input type="checkbox" id="cafe24Done" hidden aria-hidden="true" tabindex="-1">
 
   <!-- 메타 정보는 접어두되, 자주 여는 레퍼런스 링크는 인쇄 영역 바로 위에 따로 둡니다.
        예전에는 이 넷이 전부 펼쳐져 있어서 스크롤이 길어 정작 작지(인쇄영역)까지 내려가는 게 힘들었습니다.
@@ -2321,7 +2329,11 @@
         </div>
         <div class="targetbox-row">
           <div class="targetbox-field">
-            <span class="flbl">판매가 (5개 가격 중 선택)</span>
+            <span class="flbl">제조원가</span>
+            <div class="targetbox-result" id="retailCostView">0원</div>
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">판매가</span>
             <input type="text" id="targetThreshold" class="won tnum" value="" placeholder="아직 안 정함" /><!-- 2026-09-20: 기본값 59,000 을 지웠습니다. 아무도 안 건드렸는데 저장되면 "정한 값"으로 오해받았습니다 -->
           </div>
           <div class="targetbox-field">
@@ -2329,18 +2341,7 @@
             <div class="targetbox-result" id="targetPriceView">0원</div>
           </div>
         </div>
-        <!-- 2026-09-22 추가: 계단에서 올린 판매가를 자동으로 넣고, 무엇을 넣었는지 한 줄로 알립니다 -->
-        <div class="auto-price-note" id="autoPriceNote"></div>
-        <button type="button" class="price-btn" id="priceException69Btn" hidden>69,000원 예외 적용 · 사유 기록</button>
-        <!-- 2026-08-13 추가: 제조원가 기준선. 제품마다 다르므로 직접 수정 가능하게 둠 (인쇄 미노출 영역) -->
-        <div class="targetbox-row">
-          <div class="targetbox-field">
-            <span class="flbl">제조원가 기준 (넘으면 핑크)</span>
-            <input type="text" id="costThreshold" class="won tnum" value="15,000" />
-          </div>
-        </div>
       </div>
-      <div class="ohint">판매가 이하면 파란색, 판매가 초과하면 핑크색으로 표시됩니다. 위 버튼을 누르면 해당 카테고리 표준가로 바로 채워집니다.</div>
     </div>
 
     <!-- 제품 입고일 (인쇄 안 됨) -->
@@ -3500,9 +3501,8 @@
     linesWrap.querySelectorAll(".line").forEach(r=> sum += Number(r.dataset.amt||0));
     sum += num($("#gongim").value) + num($("#siyage").value);
     $("#totalView").textContent = won(sum);
-    // 2026-08-13 추가: 제조원가가 기준 금액을 넘으면 화면에서만 핑크로 표시 (인쇄물은 그대로)
-    const costLimit = num($("#costThreshold").value) || 15000;
-    $("#totalView").classList.toggle("overcost", sum > costLimit);
+    $("#retailCostView").textContent = won(sum);
+
     const target = sum * 4;
     const box = $("#targetPriceView");
     box.textContent = won(target);
@@ -3511,7 +3511,7 @@
     box.classList.add(target > threshold ? "pink" : "blue");
     if(pricingRulesReady_) showPriceReview_(sum);
   }
-  ["#gongim","#siyage","#targetThreshold","#costThreshold"].forEach(s=> $(s).addEventListener("input", calc));
+  ["#gongim","#siyage","#targetThreshold"].forEach(s=> $(s).addEventListener("input", calc));
   // 2026-09-22: 원가가 바뀌는 칸에서만 판매가를 다시 계산합니다.
   // 판매가 칸은 뺍니다 — 타이핑하는 족족 자동값이 덮어쓰면 직접 고칠 수가 없습니다.
   ["#gongim","#siyage"].forEach(s=> $(s).addEventListener("input", autoPrice_));
@@ -3528,84 +3528,35 @@
   });
 
   // ---------- 타겟 판매가 퀵버튼(카테고리 → 가격 2단계) ----------
-  // 2026-09-23: 사용자 확정 가격 구간. 79/89/98천원은 비탄력 수요 예외.
-  const RETAIL_PRICE_STEPS = [59000, 69000, 79000, 89000, 98000];
+  // 제조원가 × 4 이상인 선호 가격 중 가장 낮은 값. 기존 저장 가격은 열기만으로 바꾸지 않습니다.
+  const RETAIL_PRICE_STEPS = [59000, 64000, 69000, 74000, 79000, 84000, 89000, 94000, 98000];
   function retailDecision_(cost){
-    const target = Math.round(Number(cost || 0) * 4);
-    if(target <= 0) return {target:0, price:null, exceptional:false};
-    const price = RETAIL_PRICE_STEPS.find(p => p >= target) || null;
-    return {target, price, exceptional:price !== null && price > 69000};
+    const target = Math.ceil(Number(cost || 0) * 4);
+    return {target, price: target > 0 ? RETAIL_PRICE_STEPS.find(p => p >= target) || null : null};
   }
   function priceReview_(cost){
-    const target = Math.round(Number(cost || 0) * 4);
-    return { target, autoPrice: target > 0 && target <= 69000 ? (target <= 59000 ? 59000 : 69000) : null,
-      review: target > 69000, reduction: Math.max(0, Math.ceil(Number(cost || 0) - 17250)),
-      minimumException: RETAIL_PRICE_STEPS.find(p => p >= target) || null };
-  }
-  function validPriceException_(price, cost){
-    return !!priceException_ && priceException_.price === price && priceException_.cost === cost
-      && !!String(priceException_.reason || "").trim();
+    const r = retailDecision_(cost);
+    return {target:r.target, autoPrice:r.price, review:r.target > 0 && r.price === null};
   }
   function priceAllowed_(price, cost){
-    const r = priceReview_(cost);
-    if(!RETAIL_PRICE_STEPS.includes(price) || !r.target || !r.minimumException) return false;
-    if(price === 69000 && r.review) return validPriceException_(price,cost);
-    return price >= r.target && (price <= 69000 || validPriceException_(price,cost));
+    return Number.isInteger(price) && price > 0 && price >= Math.ceil(Number(cost || 0) * 4);
   }
   function showPriceReview_(cost){
-    const r = priceReview_(cost), price = num($("#targetThreshold").value);
-    const btn = $("#priceException69Btn");
-    if(btn) btn.hidden = !r.review || !r.minimumException;
-    if(!r.target){
-      autoPriceNote_(priceConfirmed_ && priceSource_ === "manual"
-        ? "판매가를 수동으로 정했습니다. 원가를 입력하면 4배수 기준을 확인할 수 있습니다."
-        : "원가 입력 후 판매가를 계산합니다.");
-      return;
-    }
-    if(r.review){
-      const approved = priceConfirmed_ && priceAllowed_(price,cost);
-      autoPriceNote_("계산값 " + won(r.target) + " — " + (approved ? "예외 적용 " + won(price) + " · " + priceException_.reason : "자동 확정 중지 · 원가 조정 검토")
-        + ". 69,000원 기준 제조원가 17,250원 이하 / 장당 " + won(r.reduction) + " 절감 필요."
-        + (r.minimumException ? " 조정이 어렵고 특별한 제품·비탄력 수요 근거가 있으면 79,000·89,000·98,000원 중 4배수 이상을 직접 선택하세요."
-          : " 최대 판매가 98,000원도 4배수에 미달합니다. 원가를 조정하세요."), !approved);
-    }else if(priceConfirmed_ && price > 69000 && validPriceException_(price,cost)){
-      autoPriceNote_("예외 판매가 " + won(price) + " · " + priceException_.reason);
-    }else{
-      autoPriceNote_("계산값 " + won(r.target) + " → 올림 판매가 " + won(r.autoPrice)
-        + (priceConfirmed_ ? " (확정)" : " (자동 제안 · 확정하려면 가격 버튼 선택)"));
-    }
+    const input = $("#targetThreshold"), price = num(input.value);
+    input.setCustomValidity(price && !priceAllowed_(price,cost) ? "판매가는 제조원가의 4배 이상이어야 합니다." : "");
   }
-  function selectRetailPrice_(price, allowBelowFour){
-    const cost = num($("#totalView").textContent), r = priceReview_(cost);
-    if(!RETAIL_PRICE_STEPS.includes(price)){
-      showPriceReview_(cost); return false;
+  function selectRetailPrice_(price){
+    const cost = num($("#totalView").textContent);
+    if(!priceAllowed_(price,cost)){
+      $("#targetThreshold").setCustomValidity("판매가는 제조원가의 4배 이상이어야 합니다.");
+      $("#targetThreshold").reportValidity();
+      return false;
     }
-    if(!r.target){
-      priceException_ = null;
-      $("#targetThreshold").value = price.toLocaleString("en-US");
-      priceConfirmed_ = true; priceSource_ = "manual";
-      calc(); save(); return true;
-    }
-    if(!r.minimumException){ showPriceReview_(cost); return false; }
-    if(price < r.target && !(allowBelowFour && price === 69000)){
-      autoPriceNote_("4배수보다 낮은 가격입니다. 원가를 조정하거나 ‘69,000원 예외 적용’으로 사유를 기록하세요.",true); return false;
-    }
-    let exception = null;
-    if(price > 69000 || price < r.target){
-      const reason = window.prompt(price < r.target
-        ? "4배수 미달을 감수하고 69,000원에 판매하는 사유를 입력하세요."
-        : "특별한 제품·비탄력 수요로 예외 판매가를 적용하는 근거를 입력하세요.");
-      if(!reason || !reason.trim()) return false;
-      exception = {price,cost,target:r.target,reason:reason.trim(),at:Date.now(),
-        kind:price < r.target ? "below_four_times" : "premium"};
-    }
-    priceException_ = exception;
+    priceException_ = null;
     $("#targetThreshold").value = price.toLocaleString("en-US");
-    priceConfirmed_ = true;
-    priceSource_ = "manual";
+    priceConfirmed_ = true; priceSource_ = "manual";
     calc(); save(); return true;
   }
-  $("#priceException69Btn").addEventListener("click", ()=>selectRetailPrice_(69000,true));
   const PRICE_BY_CATEGORY = Object.fromEntries(
     ["상의","하의","컴포트팬츠","컴포트스커트","원피스","아우터"]
       .map(c => [c, RETAIL_PRICE_STEPS.map(p => p.toLocaleString("en-US"))])
@@ -3631,43 +3582,21 @@
     });
   });
 
-  /* ---------- 판매가 자동 계산 (2026-09-22 지수 지시) ----------
-     제조원가 × 4 를 계단에서 **올려** 판매가 칸에 그대로 넣습니다.
-     예) 계산값 56,000 → 59,000 · 계산값 65,320 → 69,000 · 계산값 60,900 → 69,000
-     넣은 값은 색인·공유 칸을 타고 제품 제작 현황(status.html)까지 그대로 갑니다.
-
-     고를 게 없어서 자동입니다 — 계단이 두 값뿐이고 올림 규칙도 하나입니다.
-     사람이 판단해야 하는 자리는 딱 하나, **계산값이 69,000 을 넘을 때**입니다.
-     그때 나오는 79,000·89,000 은 「수요가 비탄력인가」를 봐야 나오는 값이라
-     자동으로 넣지 않고 지수님께 넘깁니다 (data/판단기준.json 의 69,000 상한 규칙).
-
-     원가가 0이면 아무것도 넣지 않습니다. 아무도 안 건드렸는데 값이 저장되어
-     「정한 값」으로 오해받던 것이 v66 에서 고친 문제이고, 그 취지를 그대로 지킵니다. */
-  const AUTO_STEPS_BASIC = ["59,000", "69,000"];
-  function autoLadder_(){ return AUTO_STEPS_BASIC; }
-  function autoPriceNote_(text, ask){
-    const box = $("#autoPriceNote");
-    if(!box) return;
-    box.textContent = text || "";
-    box.classList.toggle("ask", !!ask);
-  }
-  function autoPrice_(){
+  // 원가 편집 시 자동 올림. 수동 확정한 4배수 이상의 가격은 유지합니다.
+  function autoPrice_(persist=true){
     if(loading) return;
     let cost=0;
     linesWrap.querySelectorAll(".line").forEach(r=>cost+=Number(r.dataset.amt||0));
     cost+=num($("#gongim").value)+num($("#siyage").value);
     const r=priceReview_(cost), current=num($("#targetThreshold").value);
-    if(priceException_ && !validPriceException_(current,cost)) priceException_=null;
-    if(r.review || !r.target){
-      if(r.target) priceConfirmed_=priceConfirmed_ && priceAllowed_(current,cost);
-      showPriceReview_(cost); save(); return;
-    }
-    if(priceConfirmed_ && priceAllowed_(current,cost)){
+    priceException_=null;
+    if(priceConfirmed_ && priceSource_ === "manual" && priceAllowed_(current,cost)){
       showPriceReview_(cost); return;
     }
-    $("#targetThreshold").value=r.autoPrice.toLocaleString("en-US");
-    priceException_=null; priceConfirmed_=false; priceSource_="";
-    calc(); save();
+    $("#targetThreshold").value=r.autoPrice ? r.autoPrice.toLocaleString("en-US") : "";
+    $("#targetThreshold").placeholder=r.review ? "98,000원 초과 · 직접 입력" : "원가 입력 후 계산";
+    priceConfirmed_=!!r.autoPrice; priceSource_=r.autoPrice ? "auto" : "";
+    calc(); if(persist !== false) save();
   }
 
   // ---------- 제품 입고일: 지연 자동계산 ----------
@@ -4335,7 +4264,7 @@
   window.getEditLog_ = () => editLog_;
   window.setEditLog_ = (v) => { editLog_ = Array.isArray(v) ? v : []; };
 
-  const TXT_IDS = ["yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","costThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
+  const TXT_IDS = ["yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
     "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
     "planChecksData","planGrade","planWhy","planCheckCustom",
     "refLink", "refLink2",
@@ -4538,8 +4467,8 @@
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
     const priceNum = num(st.targetThreshold), costNum = num($("#totalView").textContent);
-    st.priceConfirmed = !!priceConfirmed_ && priceSource_ === "manual"
-      && RETAIL_PRICE_STEPS.includes(priceNum) && (!costNum || priceAllowed_(priceNum, costNum));
+    st.priceConfirmed = !!priceConfirmed_ && ["manual", "auto"].includes(priceSource_)
+      && priceAllowed_(priceNum, costNum);
     st.priceSource = st.priceConfirmed ? priceSource_ : "";
     st.priceException = priceException_ || null;   // 2026-09-20 추가
     st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
@@ -4886,9 +4815,8 @@
     // 여기서만 기준을 갱신하므로, 입력 중이라 반영을 미뤄둔 남의 수정은 기준에 들어가지
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
-    /* 2026-09-22: 작지를 다 불러온 뒤 판매가를 계단에 맞춰 둡니다.
-       비교 기준(lastSavedState_)을 세운 뒤에 불러야 저장이 정확히 이 한 칸만 보냅니다.
-       원가가 0이면 아무것도 안 하고, 69,000 을 넘으면 값을 건드리지 않고 알리기만 합니다. */
+    // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
+    if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
   }
   function updateRefLinkMode_(){
@@ -5392,29 +5320,7 @@
   // ---------- 카페24 자체상품코드 안내 (2026-08-13 추가) ----------
   // 자체상품코드에 품번을 넣어두지 않으면 판매 데이터를 작지와 연결할 수 없습니다.
   // PDP 상태로 넘어갈 때 자동으로 펼쳐지고, 입력 완료를 체크하면 초록색으로 바뀝니다.
-  function refreshCafe24Bar_(){
-    const bar = $("#cafe24Bar");
-    if(!bar) return;
-    const code = (currentCode || $("#codeView").textContent.replace("품번","").trim() || "").trim();
-    $("#cafe24Code").textContent = code || "—";
-    const done = $("#cafe24Done").checked;
-    const show = (currentStatus === "pdp" || currentStatus === "sale") && !!code;
-    bar.className = "cafe24-bar noprint" + (show ? " on" : "") + (done ? " done" : "");
-    $("#cafe24Bar").querySelector(".cafe24-msg").innerHTML = done
-      ? "카페24 자체상품코드 입력 완료 · <b id=\"cafe24Code\">" + code + "</b>"
-      : "카페24 자체상품코드에 <b id=\"cafe24Code\">" + code + "</b> 를 넣어주세요";
-  }
-  $("#cafe24CopyBtn").addEventListener("click", ()=>{
-    const code = (currentCode || $("#codeView").textContent.replace("품번","").trim() || "").trim();
-    if(!code) return;
-    navigator.clipboard.writeText(code).then(()=>{
-      const b = $("#cafe24CopyBtn");
-      const old = b.textContent;
-      b.textContent = "복사됨";
-      setTimeout(()=>{ b.textContent = old; }, 1200);
-    }).catch(()=> alert("복사에 실패했습니다. 품번: " + code));
-  });
-  $("#cafe24Done").addEventListener("change", ()=>{ refreshCafe24Bar_(); save(); });
+  function refreshCafe24Bar_(){}
 
   // 2026-08-13 추가: 디자이너 이름 두 글자 이상 치면 겹치는 이름을 찾아 전화번호를 자동으로 채웁니다.
   // 겹치는 이름이 둘 이상이면(이씨·김씨처럼 흔한 성) 자동으로 안 채우고 더 치실 때까지 기다립니다.
@@ -5490,33 +5396,7 @@
   };
 
   // 지금 화면의 값으로 점검 요약을 갱신합니다
-  function refreshWoCheckBar_(){
-    const bar = $("#woCheckBar");
-    if(!bar) return;
-    if(currentStatus === "planned" || currentStatus === "drop"){ bar.className = "wo-check noprint"; return; }
-
-    const st = {
-      status: currentStatus,
-      fabricNameField: $("#fabricNameField").value,
-      blend: $("#blend").value,
-      factory: $("#factory").value,
-      designer: $("#designer").value,
-      pumMyeong: $("#pumMyeong").value,
-      predExpectedQty: $("#predExpectedQty").value,
-      sizeSpecRows: (typeof collectSizeSpecRows_ === "function" ? collectSizeSpecRows_() : []),
-      sellingPoints: (window.getSellingPoints_ ? window.getSellingPoints_() : null)
-    };
-    const r = window.checkWorkOrder_(st);
-    const gCls = r.grade.grade === "A" ? "g-a" : (r.grade.grade === "B" ? "g-b" : "g-c");
-    const missHtml = r.missing.length
-      ? `<span class="miss">빠진 것 · ${r.missing.join(" · ")}</span>`
-      : `<span class="ok">빠진 것 없음</span>`;
-    const gradeHtml = r.grade.grade
-      ? `<b class="${gCls}">${r.grade.label}</b> · ${r.grade.why}`
-      : `<b class="g-c">셀링포인트 미입력</b> · 사진을 넣으면 자동으로 채워집니다`;
-    bar.innerHTML = `${missHtml}<br>${gradeHtml}`;
-    bar.className = "wo-check noprint on";
-  }
+  function refreshWoCheckBar_(){}
   window.refreshWoCheckBar_ = refreshWoCheckBar_;
 
   // ---------- 메타 정보 접었다 펴기 (2026-08-21 추가) ----------
@@ -7495,7 +7375,6 @@
     currentStatus = "sampling"; updateStatusButtons();
     // 2026-08-13 추가: 새 작지의 시야게 기본값을 0으로 둠 (인쇄영역 HTML은 그대로 두고 값만 지정)
     $("#siyage").value = "0";
-    $("#costThreshold").value = "15,000";
     setToday(); setModifiedToday(); calc(); applySizeSpecDefault(); refreshAllDelays_();
     // 2026-08-13 수정: 새 작지는 품번을 바로 매기지 않고 "미정"으로 둡니다.
     // 사진을 넣어 카테고리가 판별되거나, 카테고리를 직접 고르는 순간 번호가 매겨집니다.
@@ -10531,7 +10410,7 @@ let wordsRedrawTimer_ = null;
 /* AISEL Sheets bridge v1: product snapshots, no Google credentials in the browser. */
 (function(root){
 "use strict";
-const steps=[59000,69000,79000,89000,98000];
+const steps=[59000,64000,69000,74000,79000,84000,89000,94000,98000];
 const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
 function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
@@ -10550,13 +10429,10 @@ function build(code,v,photo){
  if(!filled(main.qty))missing.push("요척 미입력");
  if(!filled(v.gongim))missing.push("공임 미입력");
  if(!filled(v.siyage))missing.push("시야게 미입력");
- const ex=v.priceException,price=number(v.targetThreshold);
- const approved=!!v.priceConfirmed;
- const exc=ex&&ex.price===price&&ex.cost===cost&&String(ex.reason||"").trim();
- let review=!cost?"원가 미입력":missing.length?"원가 미완료":target>69000
- ?(exc?"예외 적용: "+ex.reason:"자동 확정 중지 · 장당 "+Math.ceil(cost-17250)+"원 절감 검토")
- :!approved?"판매가 미확정":price<target?"기존 판매가 재검토":"기준 충족";
- if(target>98000)review="98,000원 상한 초과 · 원가 조정";
+ const price=number(v.targetThreshold),suggested=steps.find(p=>p>=target)||null;
+ const approved=!!v.priceConfirmed && price>=target;
+ let review=!cost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
+ !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
  const status={sampling:"샘플중",planned:"예정",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
@@ -10564,7 +10440,7 @@ function build(code,v,photo){
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
  filled(main.unit)?fc:"",lines.length?other:"",filled(v.gongim)?number(v.gongim):"",filled(v.siyage)?number(v.siyage):"",
- cost||"",target||"",!cost||missing.length?"":target<=59000?59000:target<=69000?69000:"검토",
+ cost||"",target||"",!cost||missing.length?"":suggested||"직접 입력",
  approved?price:"",review,missing.join(" · ")||"등록값 합산 · 실지급 원가 미검증",
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,

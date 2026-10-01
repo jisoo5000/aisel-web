@@ -1,7 +1,7 @@
 /* AISEL Sheets bridge v1: product snapshots, no Google credentials in the browser. */
 (function(root){
 "use strict";
-const steps=[59000,69000,79000,89000,98000];
+const steps=[59000,64000,69000,74000,79000,84000,89000,94000,98000];
 const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
 function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
@@ -20,13 +20,10 @@ function build(code,v,photo){
  if(!filled(main.qty))missing.push("요척 미입력");
  if(!filled(v.gongim))missing.push("공임 미입력");
  if(!filled(v.siyage))missing.push("시야게 미입력");
- const ex=v.priceException,price=number(v.targetThreshold);
- const approved=!!v.priceConfirmed;
- const exc=ex&&ex.price===price&&ex.cost===cost&&String(ex.reason||"").trim();
- let review=!cost?"원가 미입력":missing.length?"원가 미완료":target>69000
- ?(exc?"예외 적용: "+ex.reason:"자동 확정 중지 · 장당 "+Math.ceil(cost-17250)+"원 절감 검토")
- :!approved?"판매가 미확정":price<target?"기존 판매가 재검토":"기준 충족";
- if(target>98000)review="98,000원 상한 초과 · 원가 조정";
+ const price=number(v.targetThreshold),suggested=steps.find(p=>p>=target)||null;
+ const approved=!!v.priceConfirmed && price>=target;
+ let review=!cost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
+ !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
  const status={sampling:"샘플중",planned:"예정",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
@@ -34,7 +31,7 @@ function build(code,v,photo){
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
  filled(main.unit)?fc:"",lines.length?other:"",filled(v.gongim)?number(v.gongim):"",filled(v.siyage)?number(v.siyage):"",
- cost||"",target||"",!cost||missing.length?"":target<=59000?59000:target<=69000?69000:"검토",
+ cost||"",target||"",!cost||missing.length?"":suggested||"직접 입력",
  approved?price:"",review,missing.join(" · ")||"등록값 합산 · 실지급 원가 미검증",
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
