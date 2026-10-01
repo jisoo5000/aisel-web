@@ -1,4 +1,5 @@
-<!-- AISEL 작업지시서 v72 (2026-09-29)
+<!-- AISEL 작업지시서 v73 (2026-10-01)
+     [v73] 작업지시서 안내 박스를 제거하고 상태 탭 아래에 상태별 개수를 표시합니다.
      [v72] 상단 메뉴에서 수배요청을 제거하고 판매·작업지시서·발주 3개를 같은 너비로 배치합니다.
            수배요청 화면과 Firebase 데이터는 삭제하지 않아 기존 자료는 그대로 보존됩니다.
      [v68] 판매가 자동 계산 — 제조원가×4 를 계단에서 **올려** 타겟 판매가 칸에 그대로 넣습니다.
@@ -705,7 +706,11 @@
   .gallery-tabs-row { display: block; }
   #galleryTabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
   #galleryTabs .gtab { width: 100%; min-width: 0; padding: 9px 2px; white-space: nowrap; border-radius: 9px; }
-  .gallery-tabs-row #galleryExportSheetBtn { display: block; margin: 0 0 16px auto; }
+  .gallery-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; }
+  .gallery-counts { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .gallery-counts span { white-space: nowrap; }
+  .gallery-counts .active { color: var(--accent); font-weight: 800; }
+  .gallery-tabs-row #galleryExportSheetBtn { flex-shrink: 0; margin-left: auto; }
   @media (max-width: 560px) {
     #galleryTabs { gap: 3px; }
     #galleryTabs .gtab { padding-inline: 0; font-size: clamp(10px, 2.8vw, 11px); }
@@ -905,19 +910,6 @@
   .photo-stage-seg button.active[data-value="reference"] { background: #EDE7F6; border-color: #B39DDB; color: #5E35B1; }
   .photo-stage-seg button.active[data-value="sample"] { background: #FCE4EC; border-color: #F48FB1; color: #AD1457; }
   .photo-stage-hint { font-size: 11.5px; color: #8A5A18; font-weight: 600; }
-
-  /* 2026-08-13 추가: 목록 상단 요약 */
-  .gallery-summary {
-    display: none; margin: 0 0 12px; padding: 11px 14px; border-radius: 9px;
-    background: #F3F4F6; border: 1.4px solid #E3E5E8; font-size: 12.5px; line-height: 1.9; color: #444;
-  }
-  .gallery-summary.on { display: block; }
-  .gallery-summary .miss { color: #B3261E; font-weight: 700; }
-  .gallery-summary .gc { color: #B3261E; font-weight: 700; }
-  .gallery-summary button {
-    margin-top: 8px; border: 1px solid #E5C489; border-radius: 7px; padding: 6px 12px;
-    background: #FFF3DC; color: #8A5A18; font-size: 12px; font-weight: 700; cursor: pointer;
-  }
 
   .title-spacer { grid-column: 3; justify-self: end; }
   /* 2026-08-13 추가: 수정일 앞에 붙는 작은 글씨. 같은 줄에 놓여 줄 높이를 늘리지 않습니다. */
@@ -1702,8 +1694,6 @@
   <div class="gallery-head">
     <h2>📋 작업지시서</h2>
   </div>
-  <!-- 2026-08-13 추가: 상태별 요약 한 줄. 오늘 뭘 해야 하는지 목록에서 바로 보입니다 -->
-  <div class="gallery-summary" id="gallerySummary"></div>
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
       <button type="button" class="gtab active" data-status="sampling"><span class="tab-icon">🧵 </span>샘플중</button>
@@ -1713,7 +1703,10 @@
       <button type="button" class="gtab" data-status="drop"><span class="tab-icon">⏸️ </span>드롭</button>
       <button type="button" class="gtab" data-status="all">전체</button>
     </div>
-    <button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button>
+    <div class="gallery-toolbar">
+      <div id="galleryCounts" class="gallery-counts" role="status" aria-live="polite" aria-label="상태별 작업지시서 개수"></div>
+      <button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button>
+    </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
     <select id="gallerySearchType">
@@ -7532,93 +7525,22 @@
   function galleryStatus_(st){
     return !st.status || st.status === "planned" ? "sampling" : st.status;
   }
-  // 2026-08-13 추가: 목록 상단 요약과 한꺼번에 채우기
-  function renderGallerySummary_(){
-    const box = $("#gallerySummary");
+  // 탭과 같은 상태 기준으로 집계합니다. 검색 중에도 상태별 전체 개수를 유지합니다.
+  function renderGalleryCounts_(){
+    const box = $("#galleryCounts");
     if(!box) return;
-    const all = allWorkOrders || {};
-    const codes = Object.keys(all);
-    if(codes.length === 0){ box.className = "gallery-summary"; return; }
-
-    const missMap = {};   // 항목별 빠진 개수
-    let gradeC = 0, noSp = 0, canFill = 0;
-    codes.forEach(code=>{
-      const st = all[code] || {};
-      if(!["sampling","order","pdp","sale"].includes(st.status)) return;
-      const r = window.checkWorkOrder_(st);
-      r.missing.forEach(m=>{ missMap[m] = (missMap[m] || 0) + 1; });
-      if(r.grade.grade === "C") gradeC++;
-      if(!st.hasSp){
-        noSp++;
-        if(st.hasPhoto) canFill++;   // 사진이 있어야 판독할 수 있습니다
-      }
+    const orders = Object.values(allWorkOrders || {});
+    const counts = { all: orders.length };
+    orders.forEach(st=>{
+      const status = galleryStatus_(st);
+      counts[status] = (counts[status] || 0) + 1;
     });
-
-    const parts = [];
-    const missList = Object.entries(missMap).sort((a,b)=> b[1]-a[1]).map(([k,v])=> `${k} ${v}개`);
-    if(missList.length) parts.push(`<span class="miss">빠진 항목 · ${missList.join(" · ")}</span>`);
-    else parts.push(`<span style="color:#1E7A46;font-weight:700;">빠진 항목 없음</span>`);
-    if(gradeC) parts.push(`<span class="gc">C 근거 없음 ${gradeC}개</span> · 반전 디테일이 없어 살 이유가 약한 제품입니다`);
-    if(noSp) parts.push(`셀링포인트 미입력 ${noSp}개` + (canFill ? ` (사진이 있어 자동으로 채울 수 있는 것 ${canFill}개)` : ""));
-
-    let html = parts.join("<br>");
-    if(canFill > 0){
-      html += `<br><button id="fillAllSpBtn">셀링포인트 비어 있는 작지 채우기 (${canFill}개)</button>`;
-    }
-    box.innerHTML = html;
-    box.className = "gallery-summary on";
-    const btn = $("#fillAllSpBtn");
-    if(btn) btn.addEventListener("click", ()=> fillAllSellingPoints_());
-  }
-
-  // 셀링포인트가 비어 있는 작지를 한 번에 판독해 채웁니다.
-  // 작지를 하나씩 열지 않고 목록에서 순서대로 처리합니다.
-  async function fillAllSellingPoints_(){
-    const all = allWorkOrders || {};
-    const targets = Object.keys(all).filter(code=>{
-      const st = all[code] || {};
-      if(!["sampling","order","pdp","sale"].includes(st.status)) return false;
-      if(st.hasSp) return false;
-      return !!st.hasPhoto;
-    });
-    if(targets.length === 0){ alert("채울 수 있는 작지가 없습니다."); return; }
-    if(!confirm(targets.length + "개를 사진으로 읽어 셀링포인트를 채웁니다.\n\n약 " + (targets.length * 4) + "원이 들고 " + Math.ceil(targets.length * 4 / 60) + "분쯤 걸립니다.\n진행할까요?")) return;
-
-    const box = $("#gallerySummary");
-    let done = 0, filled = 0, failed = 0;
-    const noEvidence = [];
-
-    for(const code of targets){
-      done++;
-      if(box) box.innerHTML = `읽는 중 · ${done} / ${targets.length} · ${code}`;
-      try{
-        // 2026-08-25 수정: 사진은 색인에 원본이 없으므로 이 작지 것만 그때 한 장 읽습니다
-        const photoSnap = await woRoot.child(code).child("p1").once("value");
-        const photo = photoSnap.val() || (all[code] || {}).thumb || "";
-        if(!photo){ failed++; continue; }
-        const sp = window.analyzePhotoForBatch_ ? await window.analyzePhotoForBatch_(photo) : null;
-        if(!sp){ failed++; continue; }
-        await woRoot.child(code).child("sellingPoints").set(sp);
-        // 목록 색인에도 결과를 반영합니다 (안 하면 목록 등급 표시가 그대로 남습니다)
-        delete lastIndexSig_[code];
-        await woIndexRoot.child(code).update({
-          hasSp: true,
-          spTwist: (sp.twist || []).length,
-          spSlim:  (sp.slim  || []).length,
-          updatedAt: Date.now()
-        });
-        filled++;
-        if((sp.twist || []).length === 0 && (sp.slim || []).length === 0) noEvidence.push(code);
-      }catch(err){ failed++; }
-    }
-
-    let msg = "채워진 것 " + filled + "개";
-    if(failed) msg += " · 못 읽은 것 " + failed + "개";
-    if(noEvidence.length) msg += "\n\n반전 디테일과 날씬이 모두 없는 작지 " + noEvidence.length + "개\n" + noEvidence.join("\n")
-      + "\n\n이 제품들은 AISEL에서 사야 할 이유가 약합니다.\n실제로 디테일이 있는데 못 읽은 것이면 직접 눌러 채워주세요.";
-    alert(msg);
-    renderGallerySummary_();
-    renderGallery();
+    const labels = [["sampling", "샘플중"], ["order", "발주생산"], ["pdp", "PDP"],
+      ["sale", "판매"], ["drop", "드롭"], ["all", "전체"]];
+    const html = labels.map(([status, label])=>
+      `<span class="${galleryFilter === status ? "active" : ""}">${label} ${counts[status] || 0}개</span>`
+    ).join("");
+    if(box.innerHTML !== html) box.innerHTML = html;
   }
 
   let lastGallerySig_ = null;
@@ -7735,7 +7657,7 @@
     if(sig === lastGallerySig_) return; // 실제로 바뀐 게 없으면 다시 그리지 않음 (썸네일 깜빡임 방지)
     lastGallerySig_ = sig;
     const coordiPairs_ = buildCoordiPairs_();   // 2026-08-25: 카드마다 훑지 않게 한 번만
-    renderGallerySummary_();
+    renderGalleryCounts_();
     const grid = $("#galleryGrid");
     grid.innerHTML = "";
     const newCard = document.createElement("div");
