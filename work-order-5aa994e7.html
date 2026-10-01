@@ -1,4 +1,5 @@
-<!-- AISEL 작업지시서 v76 (2026-10-01)
+<!-- AISEL 작업지시서 v77 (2026-10-01)
+     [v77] 컬러와 판매가 도구를 A4 작업지시서 바깥으로 분리.
      [v76] 작지 화면 간소화 · 컬러 독립 · 모바일 헤더와 더보기 정리.
      [v75] 원부자재 메모에서 원단 헤더 자동 입력 · 브라우저 뒤로/앞으로 이동과 목록 복원.
      [v74] 안내 박스 제거 · 선호 가격으로 4배수 올림 · 화면 전용 모바일 헤더 정리.
@@ -1603,15 +1604,15 @@
   #editorView .coordi-row > .ref-actions { grid-column: 2; grid-row: 4; }
   #editorView .coordi-picked { flex-wrap: wrap; }
   #editorView .coordi-picked-acts { width: 100%; justify-content: flex-end; }
-  #sheet .targetbox, .order.noprint { padding: 14px 12px; }
-  #sheet .targetbox-card, #sheet .arrival-group { padding: 12px; }
-  #sheet .price-cat-row, #sheet .price-val-row {
+  #editorProductTools .targetbox, .order.noprint { padding: 14px 12px; }
+  #editorProductTools .targetbox-card, #sheet .arrival-group { padding: 12px; }
+  #editorProductTools .price-cat-row, #editorProductTools .price-val-row {
     display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
   }
-  #sheet .price-cat, #sheet .price-btn { min-width: 0; min-height: 40px; padding: 8px 4px; }
-  #sheet .targetbox-row, #sheet .arrival-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  #sheet .targetbox-field, #sheet .arrival-row > * { min-width: 0; }
-  #sheet #targetThreshold, #sheet .targetbox-result, #sheet .arrival-row input[type="date"] { width: 100%; }
+  #editorProductTools .price-cat, #editorProductTools .price-btn { min-width: 0; min-height: 40px; padding: 8px 4px; }
+  #editorProductTools .targetbox-row, #sheet .arrival-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  #editorProductTools .targetbox-field, #sheet .arrival-row > * { min-width: 0; }
+  #editorProductTools #targetThreshold, #editorProductTools .targetbox-result, #sheet .arrival-row input[type="date"] { width: 100%; }
   .order.noprint .size-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px; }
   .order.noprint .size-row input, .order.noprint .color-block-head input,
   .order.noprint .fabric-block-head input { min-width: 0; }
@@ -1641,7 +1642,8 @@
 }
 
 .editor-mobile-head, .mobile-print-label { display:none; }
-#productColors { padding:12px; border-bottom:1px solid var(--hair); }
+#editorProductTools { max-width:820px; margin:16px auto 0; }
+#productColors { padding:12px; margin-bottom:12px; border:1px solid var(--hair); border-radius:10px; background:var(--sheet); }
 #productColors .copygen-card { margin:0; padding:12px; border:0; }
 #productColors summary { cursor:pointer; font-size:13px; padding:8px 0; }
 #productColors h2 { margin:0 0 8px; font-size:15px; }
@@ -2163,21 +2165,7 @@
     </div>
 
     <!-- 사진 + 원가계산서 (나란히) -->
-    <section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
-<h2>컬러</h2>
-<div class="copygen-selected-colors" id="selectedColors"></div>
-<details id="colorPicker"><summary>+ 컬러 선택</summary>
-<div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
-<div class="copygen-swatch-grid" id="colorSwatches"></div>
-<div class="copygen-inline-add" id="addColorRow">
-<input id="newColorInput" placeholder="직접 입력할 컬러명" type="text"/>
-<button class="copygen-btn-secondary" id="newColorConfirm">추가</button>
-</div>
-<div id="variantPanel"></div>
 
-<input id="colors" style="display:none;" type="text"/>
-</details>
-</div></section>
 <div class="photos">
       <div class="photo" id="ph1">
         <span class="tag noprint">도식화</span>
@@ -2265,7 +2253,33 @@
     </div>
 
     <!-- 타겟 판매가 (인쇄 안 됨) -->
-    <div class="targetbox noprint" id="jumpTargetPrice">
+
+
+    <!-- 제품 입고일 (인쇄 안 됨) -->
+
+
+    <!-- 발주 (order-form.html 통합) -->
+
+
+
+  </div>
+  <div id="editorProductTools" class="noprint">
+<section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
+<h2>컬러</h2>
+<div class="copygen-selected-colors" id="selectedColors"></div>
+<details id="colorPicker"><summary>+ 컬러 선택</summary>
+<div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
+<div class="copygen-swatch-grid" id="colorSwatches"></div>
+<div class="copygen-inline-add" id="addColorRow">
+<input id="newColorInput" placeholder="직접 입력할 컬러명" type="text"/>
+<button class="copygen-btn-secondary" id="newColorConfirm">추가</button>
+</div>
+<div id="variantPanel"></div>
+
+<input id="colors" style="display:none;" type="text"/>
+</details>
+</div></section>
+<div class="targetbox noprint" id="jumpTargetPrice">
       <div class="sec-title-np">타겟 판매가</div>
       <div class="targetbox-card">
         <div class="price-quick" id="priceQuick">
@@ -2295,14 +2309,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 제품 입고일 (인쇄 안 됨) -->
-
-
-    <!-- 발주 (order-form.html 통합) -->
-
-
-
   </div>
 </div>
 <div id="retiredEditorFields" hidden inert class="noprint" style="display:none!important"><div class="copygen-scope copygen-wrap noprint" id="jumpPdp">
