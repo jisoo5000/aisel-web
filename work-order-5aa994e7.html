@@ -1,4 +1,5 @@
-<!-- AISEL 작업지시서 v74 (2026-10-01)
+<!-- AISEL 작업지시서 v75 (2026-10-01)
+     [v75] 원부자재 메모에서 원단 헤더 자동 입력 · 브라우저 뒤로/앞으로 이동과 목록 복원.
      [v74] 안내 박스 제거 · 선호 가격으로 4배수 올림 · 화면 전용 모바일 헤더 정리.
      [v73] 작업지시서 안내 박스를 제거하고 상태 탭 아래에 상태별 개수를 표시합니다.
      [v72] 상단 메뉴에서 수배요청을 제거하고 판매·작업지시서·발주 3개를 같은 너비로 배치합니다.
@@ -1869,6 +1870,7 @@
   <div class="code-pending-hint" id="codePendingHint"></div>
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
+    <button type="button" class="btn ghost nav-btn" id="backToListBtn">← 목록으로</button>
     <div class="toolbar-fields">
     <div class="tf">
       <label>시즌</label>
@@ -2288,6 +2290,7 @@
 #10미리 로나 무광 @30  3EA
 #단추고리 @1500  1y=5~60EA"></textarea>
         <div class="tip">원단·부자재·요척·컬러를 자유롭게. 금액은 원가계산서에 숫자로 넣으면 자동 합산됩니다.</div>
+        <div id="fabricMemoActions" class="noprint" hidden style="font-size:12px;line-height:1.8;margin-top:8px;"></div>
       </div>
 
       <div class="sizespec">
@@ -4462,9 +4465,82 @@
     });
   });
 
+  // 메모의 원단 구역만 읽습니다. 부자재/사이즈/요척은 원단으로 추측하지 않습니다.
+  function parseFabricMemo_(text){
+    const candidates=[];
+    let inFabric=false, role="", supplier="";
+    const clean=v=>v.replace(/^[\s■▪●•*※\-]+/,"").trim();
+    for(const raw of String(text||"").split(/\r?\n/)){
+      const line=clean(raw);
+      const section=line.match(/^[\[【](.*?)[\]】]/);
+      if(section){
+        inFabric=/원단|겉감|안감/.test(section[1])&&!/부자재/.test(section[1]);
+        role=/겉감/.test(section[1])?"겉감":/안감/.test(section[1])?"안감":"";
+        supplier=""; continue;
+      }
+      if(!inFabric||!line)continue;
+      if(/^(?:부자재|봉제|사이즈|요척)\s*[:：]/.test(line)){if(/^부자재/.test(line))inFabric=false;continue;}
+      const explicitSupplier=line.match(/^(?:원단처|거래처|업체)\s*[:：]\s*(.+)/);
+      if(explicitSupplier){supplier=explicitSupplier[1].split(/\s*\/\s*/)[0].trim();continue;}
+      if(/^[■▪●•]/.test(raw.trim()) && !/^(?:컬러|색상|혼용률|폭|단가|겉감\s*[:：]|안감\s*[:：])/.test(line)){
+        const parts=line.split(/\s*\/\s*/);
+        if(parts.length>1||/tex|텍스|텍스타일|원단/i.test(parts[0])){supplier=parts[0].trim();continue;}
+      }
+      const roleMatch=line.match(/^(겉감|안감)\s*[:：]\s*/);
+      const item=line.replace(/^(?:원단명|품명|겉감|안감)\s*[:：]\s*/,"");
+      const match=item.match(/^(.+?)\s*[:：]\s*(?:\d|폭|@)/);
+      const explicitName=/^(?:원단명|품명)\s*[:：]/.test(line);
+      const name=match?match[1].trim():explicitName?item.trim():"";
+      if(supplier&&name&&!/^(?:혼용률|컬러|색상|단가|폭|요척|사이즈|전화)/.test(name)){
+        const candidate={supplier,name,role:roleMatch?roleMatch[1]:role};
+        if(!candidates.some(c=>c.supplier===supplier&&c.name===name))candidates.push(candidate);
+      }
+    }
+    const outer=candidates.filter(c=>c.role==="겉감");
+    return {candidates,selected:outer.length===1?outer[0]:candidates.length===1?candidates[0]:null};
+  }
+  let fabricMemoSync_={};
+  function syncFabricFromMemo_(chosen, force=false){
+    if(loading)return;
+    const parsed=parseFabricMemo_($("#materials").value), candidate=chosen||parsed.candidates.find(c=>fabricMemoSync_.selectedKey===c.supplier+"|"+c.name)||parsed.selected;
+    const panel=$("#fabricMemoActions");
+    if(chosen)fabricMemoSync_.selectedKey=chosen.supplier+"|"+chosen.name;
+    let conflict=false;
+    if(candidate){
+      [["fabricSupplierField",candidate.supplier],["fabricNameField",candidate.name]].forEach(([id,value])=>{
+        const el=document.getElementById(id),owned=fabricMemoSync_[id];
+        if(force||(!el.value.trim()&&!owned?.manual)||(owned&&!owned.manual&&owned.value===el.value)){
+          if(el.value!==value)el.value=value;
+          fabricMemoSync_[id]={value,manual:false};
+        }else if(el.value.trim()!==value)conflict=true;
+      });
+    }
+    const signature=JSON.stringify({candidates:parsed.candidates,conflict});
+    if(panel.dataset.signature===signature)return;
+    panel.dataset.signature=signature;panel.replaceChildren();
+    panel.hidden=!(conflict||(!candidate&&parsed.candidates.length>1));
+    if(panel.hidden)return;
+    const label=document.createElement("span");
+    label.textContent=conflict?"직접 입력한 원단을 유지합니다. ":"헤더에 표시할 원단을 선택하세요. ";
+    panel.append(label);
+    for(const choice of candidate?[candidate]:parsed.candidates){
+      const button=document.createElement("button");button.type="button";button.className="small-btn";
+      button.textContent=`메모 값 적용: ${choice.supplier} · ${choice.name}`;
+      button.addEventListener("click",()=>{syncFabricFromMemo_(choice,true);saveSoon();});
+      panel.append(button);
+    }
+  }
+  $("#materials").addEventListener("blur",()=>{syncFabricFromMemo_();saveSoon();});
+  ["fabricSupplierField","fabricNameField"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{
+    fabricMemoSync_[id]={value:document.getElementById(id).value,manual:true};
+    syncFabricFromMemo_();
+  }));
+
   function collect(){
+    syncFabricFromMemo_();
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
+    st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
     const priceNum = num(st.targetThreshold), costNum = num($("#totalView").textContent);
     st.priceConfirmed = !!priceConfirmed_ && ["manual", "auto"].includes(priceSource_)
@@ -4613,7 +4689,7 @@
     if(Object.keys(patch).length === 0){ return; }   // 실제로 바뀐 게 없으면 아무것도 안 보냄
     const sentState = st;
     const writePromise = targetRef.update(patch).then(async ()=>{
-      lastSavedState_ = sentState;
+      if(woRef===targetRef)lastSavedState_ = sentState;
       await writeIndexIfChanged_(targetCode, sentState);
       if(window.AiselSheetBridge) window.AiselSheetBridge.sync(targetCode);
       // 첫 저장이 끝나면 이제 이 품번은 정식으로 이 작지의 자리이므로 "새로 만드는 중" 표시를 끔
@@ -4622,18 +4698,10 @@
       autoCreatedCode_ = null;   // 정식 작지가 되었으므로 더 이상 정리 대상이 아닙니다
       s.textContent="💾 저장됨 ✓"; s.style.opacity="1";
       clearTimeout(save._t); save._t=setTimeout(()=> s.style.opacity=".7", 900);
+      return true;
     }).catch(()=>{
-      // 사진이 너무 커서 실패한 경우 사진 없이 한 번 더 시도
-      // 2026-08-25 수정: 재시도도 반드시 처음에 고정해둔 targetRef 로 보냅니다.
-      // 예전에는 여기서 전역 woRef 를 다시 읽어서, 그 사이 다른 작지로 옮겼다면
-      // 엉뚱한 작지에 "사진이 지워진 남의 내용"이 저장됐습니다.
-      const st2 = {...st, p1:"", p1Thumb:""};
-      const patch2 = buildPatch_(lastSavedState_, st2);
-      if(woRef === targetRef) lastSentJSON = JSON.stringify(st2);
-      return targetRef.update(patch2).then(async ()=>{
-        lastSavedState_ = st2;
-        await writeIndexIfChanged_(targetCode, st2);
-      }).catch(()=>{ s.textContent="⚠ 저장 실패 (인터넷 확인)"; });
+      s.textContent="⚠ 저장 실패 (인터넷 확인)";
+      return false;
     });
     pendingSaveWrites_.add(writePromise);
     writePromise.then(()=> pendingSaveWrites_.delete(writePromise));
@@ -4703,6 +4771,7 @@
   }
   function applyState(st){
     loading = true;
+    fabricMemoSync_=JSON.parse(JSON.stringify(st.fabricMemoSync||{}));
     priceConfirmed_ = !!st.priceConfirmed;
     priceSource_ = st.priceSource || "";
     priceException_ = st.priceException || null;   // 2026-09-20 추가
@@ -4815,6 +4884,7 @@
     // 여기서만 기준을 갱신하므로, 입력 중이라 반영을 미뤄둔 남의 수정은 기준에 들어가지
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
+    syncFabricFromMemo_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
@@ -5261,6 +5331,9 @@
     priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
+    if(typeof appRoute_!=="undefined" && appRoute_.view==="editor" && !restoringRoute_){
+      appRoute_={...appRoute_,code};history.replaceState({...history.state,...appRoute_},"");
+    }
     woRef = woRoot.child(code);
     let firstSnapshot = true;
     woListener = (snapshot)=>{
@@ -7333,6 +7406,7 @@
     // dataset.auto도 "1"로 되돌려서 카테고리를 고르면 다시 자동으로 이름이 채워지게 합니다.
     $("#pumMyeong").value = ""; pumInput.dataset.auto = "1";
     $("#materials").value="";
+    fabricMemoSync_={};$("#fabricMemoActions").hidden=true;delete $("#fabricMemoActions").dataset.signature;
     $("#fabricExpectedArrivalDate").value=""; $("#fabricActualArrivalDate").value=""; $("#fabricDelayReason").value="";
     $("#factoryExpectedShipDate").value=""; $("#factoryActualShipDate").value=""; $("#factoryDelayReason").value="";
     $("#productExpectedArrivalDate").value=""; $("#productActualArrivalDate").value=""; $("#productDelayReason").value="";
@@ -8221,7 +8295,7 @@
 
   // 자동저장 (디바운스)
   // 2026-08-13 수정: 간격을 300ms -> 600ms로 늘려 타이핑 중 저장 호출 횟수를 줄임
-  let saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(save, 600); }
+  let saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(()=>{saveT=null;save();}, 600); }
   window.triggerWorkOrderSave_ = ()=> saveSoon();
   // 2026-09-20 추가: 탭을 닫거나 폰에서 홈으로 나가면 600ms 타이머가 그냥 죽어서 마지막 입력이 사라졌습니다.
   // 화면이 가려지는 순간 예약된 자동저장을 바로 내보냅니다. 예약된 게 없으면 아무것도 안 합니다.
@@ -8242,6 +8316,105 @@
   document.addEventListener("input", (e)=>{ if(isInsideEditor_(e.target)) saveSoon(); });
   document.addEventListener("input", updateSampleFieldHighlights_);
   document.addEventListener("change", (e)=>{ if(isInsideEditor_(e.target)) saveSoon(); });
+
+  // 같은 문서 안의 화면 이동을 브라우저 방문 기록과 연결합니다.
+  let appRoute_={aisel:true,view:"gallery",step:0},restoringRoute_=false,navigationBusy_=false;
+  let skipHistoryPop_=false;
+  function snapshotRoute_(){
+    return {...appRoute_,scroll:window.scrollY,filter:galleryFilter,
+      query:$("#gallerySearchInput").value,searchType:$("#gallerySearchType").value};
+  }
+  function recordRoute_(view,code){
+    if(restoringRoute_)return;
+    if(appRoute_.view===view&&(view!=="editor"||appRoute_.code===code))return;
+    const previous=snapshotRoute_();history.replaceState(previous,"");
+    appRoute_={aisel:true,view,code:code||null,step:(appRoute_.step||0)+1,
+      parent:previous.view==="editor"?previous.parent:previous};
+    history.pushState(appRoute_,"");
+  }
+  async function settleEditorSave_(){
+    if(!isViewVisible_("editorView"))return true;
+    if(isInsideEditor_(document.activeElement))document.activeElement.blur();
+    clearTimeout(saveT);saveT=null;
+    if(!loading&&woRef&&currentCode!==justDeletedCode_){
+      if(codeConflictNow_()||statusChanging_){alert("현재 작업 처리가 끝난 뒤 다시 이동해주세요.");return false;}
+      const done=await save();
+      if(done===false){alert("저장하지 못해 현재 작지를 유지합니다. 연결을 확인하고 다시 시도해주세요.");return false;}
+    }
+    const results=await Promise.all([...pendingSaveWrites_]);
+    if(results.includes(false)){alert("저장 실패로 이동을 멈췄습니다. 다시 저장해주세요.");return false;}
+    return true;
+  }
+  // 목록으로 이동하기 전에 현재 품번의 저장을 끝냅니다.
+  for(const [name,view] of [["showGallery","gallery"],["showSales","sales"],["showMoodboard","moodboard"],["showQuickOrder","quickorder"],["showSampleMgmt2","samplemgmt"]]){
+    const original=({showGallery,showSales,showMoodboard,showQuickOrder,showSampleMgmt2})[name];
+    const wrapped=async()=>{
+      if(navigationBusy_&&!restoringRoute_)return;
+      if(!restoringRoute_){
+        navigationBusy_=true;
+        try{if(!await settleEditorSave_())return;recordRoute_(view);detachWoRefNow_("목록 이동");original();}
+        finally{navigationBusy_=false;}
+      }else original();
+    };
+    if(name==="showGallery")showGallery=wrapped;
+    else if(name==="showSales")showSales=wrapped;
+    else if(name==="showMoodboard")showMoodboard=wrapped;
+    else if(name==="showQuickOrder")showQuickOrder=wrapped;
+    else showSampleMgmt2=wrapped;
+  }
+  const showEditorBeforeHistory_=showEditor;
+  showEditor=()=>{if(appRoute_.view!=="editor")recordRoute_("editor");showEditorBeforeHistory_();};
+  const openWorkOrderBeforeHistory_=openWorkOrderByCode_;
+  openWorkOrderByCode_=async code=>{
+    if(!code||!allWorkOrders[code]||navigationBusy_)return;
+    navigationBusy_=true;
+    try{
+      if(!await settleEditorSave_())return;
+      recordRoute_("editor",code);
+      openWorkOrderBeforeHistory_(code);
+      window.scrollTo(0,0);
+    }finally{navigationBusy_=false;}
+  };
+  async function restoreRoute_(state){
+    restoringRoute_=true;
+    try{
+      galleryFilter=state.filter||"sampling";
+      $("#gallerySearchInput").value=state.query||"";
+      $("#gallerySearchType").value=state.searchType||"pumMyeong";
+      $("#galleryTabs").querySelectorAll(".gtab").forEach(b=>b.classList.toggle("active",b.dataset.status===galleryFilter));
+      detachWoRefNow_("뒤로/앞으로 이동");
+      if(state.view==="editor"&&state.code&&allWorkOrders[state.code])openWorkOrderBeforeHistory_(state.code);
+      else if(state.view==="sales")await showSales();
+      else if(state.view==="quickorder")await showQuickOrder();
+      else if(state.view==="moodboard")await showMoodboard();
+      else if(state.view==="samplemgmt")await showSampleMgmt2();
+      else await showGallery();
+      appRoute_=state;
+      requestAnimationFrame(()=>window.scrollTo(0,state.scroll||0));
+    }finally{restoringRoute_=false;}
+  }
+  window.addEventListener("popstate",async event=>{
+    if(skipHistoryPop_){skipHistoryPop_=false;return;}
+    const target=event.state;if(!target?.aisel)return;
+    const previous=snapshotRoute_();
+    if(navigationBusy_){
+      skipHistoryPop_=true;history.go((previous.step||0)-(target.step||0));return;
+    }
+    navigationBusy_=true;
+    try{
+      if(!await settleEditorSave_()){
+        skipHistoryPop_=true;history.go((previous.step||0)-(target.step||0));return;
+      }
+      await restoreRoute_(target);
+    }finally{navigationBusy_=false;}
+  });
+  $("#backToListBtn").addEventListener("click",async()=>{
+    const parent=appRoute_.parent;
+    if(appRoute_.view==="editor"&&parent?.aisel){history.go(parent.step-appRoute_.step);return;}
+    await showGallery();
+  });
+  history.scrollRestoration="manual";
+  history.replaceState(appRoute_,"");
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
   // 카드를 클릭하거나 "+ 새 작지"를 누를 때 그 시점에 준비됩니다.
