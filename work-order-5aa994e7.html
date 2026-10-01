@@ -1,4 +1,5 @@
-<!-- AISEL 작업지시서 v75 (2026-10-01)
+<!-- AISEL 작업지시서 v76 (2026-10-01)
+     [v76] 작지 화면 간소화 · 컬러 독립 · 모바일 헤더와 더보기 정리.
      [v75] 원부자재 메모에서 원단 헤더 자동 입력 · 브라우저 뒤로/앞으로 이동과 목록 복원.
      [v74] 안내 박스 제거 · 선호 가격으로 4배수 올림 · 화면 전용 모바일 헤더 정리.
      [v73] 작업지시서 안내 박스를 제거하고 상태 탭 아래에 상태별 개수를 표시합니다.
@@ -1638,6 +1639,41 @@
   .scroll-fab { width: 44px; min-width: 44px; height: 44px; padding: 0; opacity: .55; }
   .scroll-fab:focus-visible, .scroll-fab:active { opacity: 1; }
 }
+
+.editor-mobile-head, .mobile-print-label { display:none; }
+#productColors { padding:12px; border-bottom:1px solid var(--hair); }
+#productColors .copygen-card { margin:0; padding:12px; border:0; }
+#productColors summary { cursor:pointer; font-size:13px; padding:8px 0; }
+#productColors h2 { margin:0 0 8px; font-size:15px; }
+#productColors .copygen-swatch-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
+#retiredEditorFields, #metaMissingTag { display:none!important; }
+@media screen and (max-width:600px) {
+  .editor-mobile-head { display:block; margin:66px auto 0; padding:12px; border:1px solid var(--hair); border-radius:10px 10px 0 0; }
+  .editor-mobile-title { display:flex; align-items:flex-start; gap:10px; }
+  #mobileBackToListBtn { flex-shrink:0; border:0; background:none; padding:2px 0; font-size:13px; }
+  #mobileProductName { min-width:0; overflow-wrap:anywhere; font-size:16px; line-height:1.5; }
+  .editor-mobile-caption { display:flex; gap:10px; flex-wrap:wrap; margin-top:5px; color:var(--muted); font-size:12px; }
+  #mobileProductStatus { font-weight:700; }
+  #editorView .toolbar { margin-top:0; border-radius:0; padding:8px 12px; }
+  #editorView #backToListBtn { display:none; }
+  #editorView .toolbar-fields, #editorView .jump-btn-row, #editorView .statusbar,
+  #editorView #metaAccordion, #editorView #refPanel, #sheet > .title-row, #sheet > .meta { display:none; }
+  body.mfold-open #editorView .toolbar-fields, body.mfold-open #editorView .jump-btn-row,
+  body.mfold-open #editorView .statusbar, body.mfold-open #sheet > .title-row, body.mfold-open #sheet > .meta { display:grid; }
+  body.mfold-open #editorView #metaAccordion, body.mfold-open #editorView #refPanel { display:block; }
+  #editorView .tb-row { display:flex; flex-wrap:wrap; gap:6px; width:100%; }
+  #editorView .tb-row > .btn { display:none!important; flex:1 1 28%; min-height:40px; }
+  #editorView .tb-row #saveBtn, #editorView .tb-row #printBtn, #editorView .tb-row #mfoldToggle { display:inline-flex!important; justify-content:center; align-items:center; }
+  #editorView .tb-row #saveBtn { order:-3; }
+  #editorView .tb-row #printBtn { order:-2; border-width:1px!important; }
+  #editorView .tb-row #mfoldToggle { order:-1; }
+  body.mfold-open #editorView .tb-row > .btn { display:inline-flex!important; }
+  .desktop-print-label { display:none; } .mobile-print-label { display:inline; }
+  #productColors .copygen-swatch-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  #productColors .copygen-swatch-btn { min-width:0; min-height:36px; padding:6px 2px; }
+  #productColors .copygen-sub { display:none; }
+  #productColors .copygen-inline-add input { min-width:0; }
+}
 </style>
 
 
@@ -1868,6 +1904,10 @@
        두 번 말하고 있었습니다. 이 칸 자체는 남겨둡니다 — 저장된 작지에서 카테고리를 바꿨을 때
        뜨는 다른 경고(setCodeChangeNotice_)가 이 자리를 그대로 씁니다. -->
   <div class="code-pending-hint" id="codePendingHint"></div>
+  <div class="editor-mobile-head noprint">
+    <div class="editor-mobile-title"><button type="button" id="mobileBackToListBtn" aria-label="목록으로">← 목록</button><strong id="mobileProductName">작업지시서</strong></div>
+    <div class="editor-mobile-caption"><span id="mobileProductCode"></span><span id="mobileProductStatus"></span></div>
+  </div>
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
     <button type="button" class="btn ghost nav-btn" id="backToListBtn">← 목록으로</button>
@@ -1899,21 +1939,21 @@
          따로 있던 11버튼 줄이 겹쳐 있던 걸 하나로 합쳤습니다. 버튼이 많아 두 줄로 자연스럽게
          접힙니다(화면이 넓으면 한 줄, 좁으면 더 여러 줄). -->
     <div class="jump-btn-row noprint">
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="predictPanel">📊 판매예측/실적</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="planPanel">🎯 기획 가설</button>
+
+
       <button type="button" class="btn ghost nav-btn jump-btn" data-jump="refPanel">🔗 레퍼런스</button>
       <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sampleRecoverySection">🧺 원샘플</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="coordiSection">👗 코디</button>
+
       <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sheet">📋 작업지시서</button>
       <!-- 2026-08-21 재수정: 화면 폭에 따라 타겟판매가가 1줄 끝에 걸치거나 2줄로 넘어가거나
            들쭉날쭉했습니다. 여기 강제 줄바꿈을 넣어서 화면 폭과 상관없이 항상
            정확히 6개/5개로 나뉘게 고정했습니다. -->
       <div class="jump-btn-break"></div>
       <button type="button" class="btn ghost nav-btn jump-btn" data-jump="jumpTargetPrice">💵 타겟판매가</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="productArrivalGroup">📦 제품 입고일</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="jumpOrder">📦 발주</button>
-      <button type="button" class="btn ghost nav-btn jump-btn mfold" data-jump="jumpPdp">📝 상세페이지 카피생성기</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="jumpFabricInfo">🧵 원단정보</button>
+
+
+
+
     </div>
 
     <div class="tb-row">
@@ -1923,7 +1963,7 @@
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">🏭 공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
-      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:3px;font-weight:800;">🖨 PDF로 저장 / 인쇄</button>
+      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:3px;font-weight:800;"><span class="desktop-print-label">🖨 PDF로 저장 / 인쇄</span><span class="mobile-print-label">인쇄</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
       <button type="button" class="btn ghost nav-btn mfold-toggle" id="mfoldToggle">⋯ 더보기</button>
@@ -1947,85 +1987,23 @@
   <div class="meta-accordion noprint" id="metaAccordion">
     <button type="button" class="meta-accordion-head" id="metaAccordionHead">
       <span class="meta-accordion-arrow" id="metaAccordionArrow">▶</span>
-      <span>📋 메타 정보 (판매예측 · 기획 가설 · 원샘플 · 재샘플 · 코디)</span>
+      <span>원샘플 · 재샘플</span>
       <span class="meta-missing-tag" id="metaMissingTag" style="display:none;"></span>
     </button>
     <div class="meta-accordion-body" id="metaAccordionBody" style="display:none;">
 
   <!-- 판매 예측/실적 (화면 전용, 인쇄 미노출) -->
-  <div class="predict-panel noprint" id="predictPanel">
-    <div class="sec-title-np">📊 판매 예측 / 실적</div>
-    <div class="predict-row">
-      <label>예상 판매량 (장)</label>
-      <input id="predExpectedQty" type="text" inputmode="numeric" placeholder="예) 300">
-      <label>예상 소진 기간 (일)</label>
-      <input id="predExpectedDays" type="text" inputmode="numeric" placeholder="예) 14">
-    </div>
-    <div class="predict-row single">
-      <label>예측 근거</label>
-      <input id="predNote" type="text" placeholder="왜 이 수치를 예측했는지 한 줄로">
-    </div>
 
-    <div class="predict-row">
-      <label>실제 판매량 (장)</label>
-      <input id="predActualQty" type="text" inputmode="numeric" placeholder="수동 입력">
-      <label>실제 소진 기간 (일)</label>
-      <input id="predActualDays" type="text" inputmode="numeric" placeholder="수동 입력">
-    </div>
-    <div class="predict-row single">
-      <label>반성 메모</label>
-      <input id="predReflection" type="text" placeholder="예측과 실제가 왜 차이났는지 한두 줄">
-    </div>
-  </div>
 
   <!-- 2026-08-21 재배치: 만들기 전에 채우는 기획 가설을, 팔고 난 뒤 채우는 실제 판매량·반성 메모보다
        뒤로 옮겼더니 순서가 헷갈렸습니다. 시간 순서(예측→실적→반성) 뒤에 오도록 여기로 이동했습니다.
        레퍼런스·원샘플·코디 같은 다른 메모성 항목들과도 한 묶음으로 자연스럽게 모입니다. -->
-  <div class="predict-panel noprint" id="planPanel">
-    <!-- 2026-08-21 재구성: 다른 카드(판매예측/실적, 레퍼런스 등)와 완전히 같은 흰 배경·같은
-         제목 크기로 통일했습니다. 크림색 배경과 작은 제목 글씨는 이번에 없앴습니다. -->
-    <div class="sec-title-np">🎯 기획 가설 ⭐</div>
-    <!-- 2026-08-21 전면 재구성: 이전 버전은 "날씬함" 버튼을 누르면 실제 셀링포인트를 건드렸는데,
-         혼란을 드렸습니다. 지수님이 원하신 건 순수한 체크(메모)였습니다.
-         이제 날씬함·릴렉스핏 두 체크는 위쪽 셀링포인트 카드를 전혀 건드리지 않고,
-         이 작지를 기획할 때 그 요소를 고려했는지만 기록으로 남깁니다.
-         등급 자동 판정과는 무관합니다 — 자동 등급은 여전히 실제로 고르신 셀링포인트만 봅니다. -->
-    <div class="predict-row single">
-      <label>기획 체크</label>
-      <div class="copygen-chip-group" id="planChecksChips" style="margin-top:0;"></div>
-      <!-- 2026-08-21 추가: 체크한 항목들을 콤마로 이어붙여 담아두는 숨은 칸. 저장 통로(TXT_IDS)가
-           다른 칸들과 똑같이 동작하도록 이 값을 그대로 씁니다. -->
-      <input type="hidden" id="planChecksData" value="">
-    </div>
-    <div class="predict-row single" id="planCheckCustomRow" style="display:none;">
-      <label>직접 입력</label>
-      <input id="planCheckCustom" type="text" placeholder="예: 오버핏 고려함">
-    </div>
-    <!-- 2026-08-21 추가: 위쪽 셀링포인트 카드에서 실제로 고르신 것 전체를 한 줄로 보여주는
-         읽기 전용 요약입니다. 직접 손대는 칸이 아니라 참고용이라 회색으로 옅게 표시합니다. -->
-    <div class="predict-row single">
-      <label>셀링포인트 요약</label>
-      <div id="spSummaryLine" class="sp-summary-line">아직 고른 셀링포인트가 없습니다</div>
-    </div>
-    <!-- 2026-08-21 전면 재구성: 예측 기획점수(노란 박스)와 예상 등급(드롭다운)을 하나로
-         합쳤습니다. 기획 체크 5개 중 3개 이상이면 A, 2개면 B, 1개면 C가 이 자리에 자동으로
-         뜹니다. 지수님이 자동 계산과 다르게 느끼시면 버튼을 눌러 직접 바꾸실 수 있고,
-         같은 버튼을 다시 누르면 자동 계산으로 되돌아갑니다. -->
-    <div class="predict-row single">
-      <label>예상 등급</label>
-      <div class="copygen-chip-group" id="planGradeChips" style="margin-top:0;"></div>
-      <input type="hidden" id="planGrade" value="">
-    </div>
-    <div class="predict-row single">
-      <label>기획 한 줄</label>
-      <input id="planWhy" type="text" placeholder="왜 이걸 만드는지 (3개월 뒤 결과를 해석할 때 필요합니다)">
-    </div>
-  </div>
+
 
   <!-- 2026-08-21 재구성: 원샘플 회수·사진 단계·코디 링크를 카드 하나로 통합.
        예전에는 세 카드로 나뉘어 있어서 시선이 위아래로 계속 오갔습니다. -->
   <div class="predict-panel noprint" id="sampleCoordiPanel">
-    <div class="sec-title-np">🧺 원샘플 · 코디</div>
+    <div class="sec-title-np">원샘플 · 재샘플</div>
 
     <div class="mini-sec-title" id="sampleRecoverySection">원샘플 회수</div>
     <div class="sample-recovery-row" id="sampleRecoveryRow">
@@ -2094,51 +2072,7 @@
     <!-- 2026-08-21 추가: 코디 링크. 한 줄 안에 링크 칸과 메모 칸을 나란히 둡니다.
          레퍼런스 링크(주소만 있는 형태)와 달리 코디는 무엇을 코디할지 짧은 메모가 항상 같이 필요해서
          줄을 나누지 않고 한 줄에 배분했습니다. -->
-    <div class="mini-sec-title" id="coordiSection">코디 (최대 3개)</div>
-    <div class="ohint" style="margin:-4px 0 8px;">내 제품은 <b>🔍 내 제품</b>으로 골라주세요. 주소 대신 품번으로 저장돼서 사진을 바꿔도 항상 최신 사진이 뜨고 링크가 죽지 않습니다. 남의 제품만 주소를 붙여넣습니다.</div>
-    <div class="coordi-backlinks" id="coordiBacklinks" style="display:none"></div>
-    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow1">
-      <label>코디 1</label>
-      <input type="hidden" id="coordiCode1">
-      <button type="button" class="coordi-pick-btn" id="coordiPickBtn1">🔍 내 제품</button>
-      <input id="coordiLink1" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
-      <input id="coordiNote1" class="coordi-note" type="text" placeholder="예: 니트탑에 매치할 와이드 팬츠">
-      <div class="ref-actions">
-        <button type="button" id="coordiEditBtn1" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="coordiDelBtn1" class="ref-icon-btn danger" title="삭제">🗑</button>
-      </div>
     </div>
-    <div class="coordi-picked" id="coordiPicked1" style="display:none"></div>
-    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow2">
-      <label>코디 2</label>
-      <input type="hidden" id="coordiCode2">
-      <button type="button" class="coordi-pick-btn" id="coordiPickBtn2">🔍 내 제품</button>
-      <input id="coordiLink2" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
-      <input id="coordiNote2" class="coordi-note" type="text" placeholder="예: 세트로 매치할 스카프">
-      <div class="ref-actions">
-        <button type="button" id="coordiEditBtn2" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="coordiDelBtn2" class="ref-icon-btn danger" title="삭제">🗑</button>
-      </div>
-    </div>
-    <div class="coordi-picked" id="coordiPicked2" style="display:none"></div>
-    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow3">
-      <label>코디 3</label>
-      <input type="hidden" id="coordiCode3">
-      <button type="button" class="coordi-pick-btn" id="coordiPickBtn3">🔍 내 제품</button>
-      <input id="coordiLink3" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
-      <input id="coordiNote3" class="coordi-note" type="text" placeholder="예: 가을 시즌 니트와 레이어드">
-      <div class="ref-actions">
-        <button type="button" id="coordiEditBtn3" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="coordiDelBtn3" class="ref-icon-btn danger" title="삭제">🗑</button>
-      </div>
-    </div>
-    <div class="coordi-picked" id="coordiPicked3" style="display:none"></div>
-    <!-- 2026-08-25 추가: 내 제품 고르는 창. 고르는 칸 바로 아래로 옮겨 붙습니다 -->
-    <div class="coordi-pick-panel" id="coordiPickPanel" style="display:none">
-      <input id="coordiPickSearch" type="text" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
-      <div class="coordi-pick-results" id="coordiPickResults"></div>
-    </div>
-  </div>
 
     </div>
   </div>
@@ -2229,7 +2163,22 @@
     </div>
 
     <!-- 사진 + 원가계산서 (나란히) -->
-    <div class="photos">
+    <section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
+<h2>컬러</h2>
+<div class="copygen-selected-colors" id="selectedColors"></div>
+<details id="colorPicker"><summary>+ 컬러 선택</summary>
+<div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
+<div class="copygen-swatch-grid" id="colorSwatches"></div>
+<div class="copygen-inline-add" id="addColorRow">
+<input id="newColorInput" placeholder="직접 입력할 컬러명" type="text"/>
+<button class="copygen-btn-secondary" id="newColorConfirm">추가</button>
+</div>
+<div id="variantPanel"></div>
+
+<input id="colors" style="display:none;" type="text"/>
+</details>
+</div></section>
+<div class="photos">
       <div class="photo" id="ph1">
         <span class="tag noprint">도식화</span>
         <button class="clr" type="button">✕ 삭제</button>
@@ -2348,111 +2297,15 @@
     </div>
 
     <!-- 제품 입고일 (인쇄 안 됨) -->
-    <div class="targetbox noprint" id="arrivalBox">
-      <div class="sec-title-np">제품 입고일</div>
 
-      <div class="arrival-group">
-        <div class="arrival-group-title">🧵 원단</div>
-        <div class="arrival-row">
-          <div class="targetbox-field">
-            <span class="flbl">예상입고일</span>
-            <input type="date" id="fabricExpectedArrivalDate">
-          </div>
-          <div class="targetbox-field">
-            <span class="flbl">실제입고일</span>
-            <input type="date" id="fabricActualArrivalDate">
-          </div>
-          <div class="targetbox-field">
-            <span class="flbl">지연</span>
-            <div class="delay-view" id="fabricDelayView">-</div>
-          </div>
-        </div>
-        <div class="arrival-reason">
-          <span class="flbl">사유</span>
-          <input type="text" id="fabricDelayReason" placeholder="예) 원단처 생산 지연">
-        </div>
-      </div>
-
-      <div class="arrival-group" id="factoryArrivalGroup">
-        <div class="arrival-group-title">🏭 공장</div>
-        <div class="arrival-row">
-          <div class="targetbox-field">
-            <span class="flbl">예상출고일 (디자이너 예측)</span>
-            <input type="date" id="factoryExpectedShipDate">
-          </div>
-          <div class="targetbox-field">
-            <span class="flbl">실제출고일</span>
-            <input type="date" id="factoryActualShipDate">
-          </div>
-          <div class="targetbox-field">
-            <span class="flbl">지연</span>
-            <div class="delay-view" id="factoryDelayView">-</div>
-          </div>
-        </div>
-        <div class="arrival-reason">
-          <span class="flbl">사유</span>
-          <input type="text" id="factoryDelayReason" placeholder="예) 원단 늦게 도착해서 공장도 지연">
-        </div>
-      </div>
-
-      <div class="arrival-group" id="productArrivalGroup">
-        <div class="arrival-group-title">📦 제품</div>
-        <div class="arrival-row">
-          <div class="targetbox-field">
-            <span class="flbl">입고예정일</span>
-            <input type="date" id="productExpectedArrivalDate">
-          </div>
-          <div class="targetbox-field">
-            <span class="flbl">실제입고일</span>
-            <input type="date" id="productActualArrivalDate">
-          </div>
-          <div class="targetbox-field">
-            <span class="flbl">지연</span>
-            <div class="delay-view" id="productDelayView">-</div>
-          </div>
-        </div>
-        <div class="arrival-reason">
-          <span class="flbl">사유</span>
-          <input type="text" id="productDelayReason" placeholder="예) 배송 지연">
-        </div>
-      </div>
-    </div>
 
     <!-- 발주 (order-form.html 통합) -->
-    <div class="order noprint" id="jumpOrder">
-      <div class="sec-title-np">발 주</div>
 
-      <div class="field">
-        <span class="flbl">발주 구분</span>
-        <div class="seg" id="orderType">
-          <button type="button" data-value="초기발주" class="active">초기발주</button>
-          <button type="button" data-value="리오더">리오더</button>
-        </div>
-      </div>
 
-      <div class="field">
-        <span class="flbl">컬러별 사이즈·수량</span>
-        <div id="colorBlocks"></div>
-        <button type="button" class="add-color" id="addColor">+ 컬러 추가</button>
-        <div class="ohint">컬러마다 블록을 하나씩 추가하고 그 안에서 사이즈를 늘리세요. 숫자만 입력하면 "번"이 자동으로 붙습니다(예: 1 → 1번). S M L 같은 문자는 대문자로 저장됩니다. 수량 칸에는 숫자만 입력하세요.</div>
-      </div>
 
-      <div class="field">
-        <span class="flbl">발주일</span>
-        <input type="date" id="orderDate">
-      </div>
-
-      <div class="field">
-        <span class="flbl">비고 (선택)</span>
-        <textarea id="orderMemo" rows="2" placeholder="특이사항이 있으면 적어주세요"></textarea>
-      </div>
-
-      <button type="button" class="order-submit-btn" id="orderSubmitBtn">발주 제출</button>
-      <div class="order-status" id="orderStatusBox"></div>
-      <div class="ohint">품번·아이템명·공장 정보는 위 작업지시서 내용을 그대로 사용합니다. 제출하면 구글시트에 자동 기록되고 슬랙으로 알림이 갑니다.</div>
-    </div>
-
-<div class="copygen-scope copygen-wrap noprint" id="jumpPdp">
+  </div>
+</div>
+<div id="retiredEditorFields" hidden inert class="noprint" style="display:none!important"><div class="copygen-scope copygen-wrap noprint" id="jumpPdp">
 <div class="sec-title-np">상세페이지 카피 생성기</div>
 <div class="copygen-grid">
 <div>
@@ -2570,18 +2423,7 @@
 <label style="margin-top:14px;">품명 (직접 수정 가능)</label>
 <input id="name" placeholder="조합된 품명이 여기 채워집니다. 직접 수정도 가능합니다." type="text"/>
 </div>
-<div class="copygen-card">
-<h2>2. 컬러 고르기</h2>
-<div class="copygen-sub">기본 컬러를 클릭하면 감성 컬러명 변형 5가지가 아래에 뜹니다. 여러 개 선택 가능합니다.</div>
-<div class="copygen-swatch-grid" id="colorSwatches"></div>
-<div class="copygen-inline-add" id="addColorRow">
-<input id="newColorInput" placeholder="직접 입력할 컬러명" type="text"/>
-<button class="copygen-btn-secondary" id="newColorConfirm">추가</button>
-</div>
-<div id="variantPanel"></div>
-<div class="copygen-selected-colors" id="selectedColors"></div>
-<input id="colors" style="display:none;" type="text"/>
-</div>
+
 </div>
 <div>
 <div class="copygen-card">
@@ -2594,7 +2436,7 @@
 <button class="copygen-btn-primary" id="copygenGenBtn" style="background:#2F3B52;border-color:#2F3B52;">Claude AI</button>
 <!-- 2026-08-13 추가: 재료가 바뀌면 상세설명을 자동으로 다시 쓰는 스위치 -->
 <label class="copygen-auto-row" for="autoRegen">
-<input id="autoRegen" type="checkbox" checked/>
+<input id="autoRegen" type="checkbox"/>
 <span>자동 갱신 · 셀링포인트나 원단, 품명, 컬러가 바뀌면 상세설명을 알아서 다시 씁니다. 직접 고친 문장이 있으면 덮어쓰지 않고 물어봅니다.</span>
 </label>
 <div class="copygen-status" id="status"></div>
@@ -2683,8 +2525,217 @@
 </div>
 </div>
 </div>
+<div class="predict-panel noprint" id="predictPanel">
+    <div class="sec-title-np">📊 판매 예측 / 실적</div>
+    <div class="predict-row">
+      <label>예상 판매량 (장)</label>
+      <input id="predExpectedQty" type="text" inputmode="numeric" placeholder="예) 300">
+      <label>예상 소진 기간 (일)</label>
+      <input id="predExpectedDays" type="text" inputmode="numeric" placeholder="예) 14">
+    </div>
+    <div class="predict-row single">
+      <label>예측 근거</label>
+      <input id="predNote" type="text" placeholder="왜 이 수치를 예측했는지 한 줄로">
+    </div>
+
+    <div class="predict-row">
+      <label>실제 판매량 (장)</label>
+      <input id="predActualQty" type="text" inputmode="numeric" placeholder="수동 입력">
+      <label>실제 소진 기간 (일)</label>
+      <input id="predActualDays" type="text" inputmode="numeric" placeholder="수동 입력">
+    </div>
+    <div class="predict-row single">
+      <label>반성 메모</label>
+      <input id="predReflection" type="text" placeholder="예측과 실제가 왜 차이났는지 한두 줄">
+    </div>
   </div>
-</div>
+<div class="predict-panel noprint" id="planPanel">
+    <!-- 2026-08-21 재구성: 다른 카드(판매예측/실적, 레퍼런스 등)와 완전히 같은 흰 배경·같은
+         제목 크기로 통일했습니다. 크림색 배경과 작은 제목 글씨는 이번에 없앴습니다. -->
+    <div class="sec-title-np">🎯 기획 가설 ⭐</div>
+    <!-- 2026-08-21 전면 재구성: 이전 버전은 "날씬함" 버튼을 누르면 실제 셀링포인트를 건드렸는데,
+         혼란을 드렸습니다. 지수님이 원하신 건 순수한 체크(메모)였습니다.
+         이제 날씬함·릴렉스핏 두 체크는 위쪽 셀링포인트 카드를 전혀 건드리지 않고,
+         이 작지를 기획할 때 그 요소를 고려했는지만 기록으로 남깁니다.
+         등급 자동 판정과는 무관합니다 — 자동 등급은 여전히 실제로 고르신 셀링포인트만 봅니다. -->
+    <div class="predict-row single">
+      <label>기획 체크</label>
+      <div class="copygen-chip-group" id="planChecksChips" style="margin-top:0;"></div>
+      <!-- 2026-08-21 추가: 체크한 항목들을 콤마로 이어붙여 담아두는 숨은 칸. 저장 통로(TXT_IDS)가
+           다른 칸들과 똑같이 동작하도록 이 값을 그대로 씁니다. -->
+      <input type="hidden" id="planChecksData" value="">
+    </div>
+    <div class="predict-row single" id="planCheckCustomRow" style="display:none;">
+      <label>직접 입력</label>
+      <input id="planCheckCustom" type="text" placeholder="예: 오버핏 고려함">
+    </div>
+    <!-- 2026-08-21 추가: 위쪽 셀링포인트 카드에서 실제로 고르신 것 전체를 한 줄로 보여주는
+         읽기 전용 요약입니다. 직접 손대는 칸이 아니라 참고용이라 회색으로 옅게 표시합니다. -->
+    <div class="predict-row single">
+      <label>셀링포인트 요약</label>
+      <div id="spSummaryLine" class="sp-summary-line">아직 고른 셀링포인트가 없습니다</div>
+    </div>
+    <!-- 2026-08-21 전면 재구성: 예측 기획점수(노란 박스)와 예상 등급(드롭다운)을 하나로
+         합쳤습니다. 기획 체크 5개 중 3개 이상이면 A, 2개면 B, 1개면 C가 이 자리에 자동으로
+         뜹니다. 지수님이 자동 계산과 다르게 느끼시면 버튼을 눌러 직접 바꾸실 수 있고,
+         같은 버튼을 다시 누르면 자동 계산으로 되돌아갑니다. -->
+    <div class="predict-row single">
+      <label>예상 등급</label>
+      <div class="copygen-chip-group" id="planGradeChips" style="margin-top:0;"></div>
+      <input type="hidden" id="planGrade" value="">
+    </div>
+    <div class="predict-row single">
+      <label>기획 한 줄</label>
+      <input id="planWhy" type="text" placeholder="왜 이걸 만드는지 (3개월 뒤 결과를 해석할 때 필요합니다)">
+    </div>
+  </div>
+<div class="targetbox noprint" id="arrivalBox">
+      <div class="sec-title-np">제품 입고일</div>
+
+      <div class="arrival-group">
+        <div class="arrival-group-title">🧵 원단</div>
+        <div class="arrival-row">
+          <div class="targetbox-field">
+            <span class="flbl">예상입고일</span>
+            <input type="date" id="fabricExpectedArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">실제입고일</span>
+            <input type="date" id="fabricActualArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">지연</span>
+            <div class="delay-view" id="fabricDelayView">-</div>
+          </div>
+        </div>
+        <div class="arrival-reason">
+          <span class="flbl">사유</span>
+          <input type="text" id="fabricDelayReason" placeholder="예) 원단처 생산 지연">
+        </div>
+      </div>
+
+      <div class="arrival-group" id="factoryArrivalGroup">
+        <div class="arrival-group-title">🏭 공장</div>
+        <div class="arrival-row">
+          <div class="targetbox-field">
+            <span class="flbl">예상출고일 (디자이너 예측)</span>
+            <input type="date" id="factoryExpectedShipDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">실제출고일</span>
+            <input type="date" id="factoryActualShipDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">지연</span>
+            <div class="delay-view" id="factoryDelayView">-</div>
+          </div>
+        </div>
+        <div class="arrival-reason">
+          <span class="flbl">사유</span>
+          <input type="text" id="factoryDelayReason" placeholder="예) 원단 늦게 도착해서 공장도 지연">
+        </div>
+      </div>
+
+      <div class="arrival-group" id="productArrivalGroup">
+        <div class="arrival-group-title">📦 제품</div>
+        <div class="arrival-row">
+          <div class="targetbox-field">
+            <span class="flbl">입고예정일</span>
+            <input type="date" id="productExpectedArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">실제입고일</span>
+            <input type="date" id="productActualArrivalDate">
+          </div>
+          <div class="targetbox-field">
+            <span class="flbl">지연</span>
+            <div class="delay-view" id="productDelayView">-</div>
+          </div>
+        </div>
+        <div class="arrival-reason">
+          <span class="flbl">사유</span>
+          <input type="text" id="productDelayReason" placeholder="예) 배송 지연">
+        </div>
+      </div>
+    </div>
+<div class="order noprint" id="jumpOrder">
+      <div class="sec-title-np">발 주</div>
+
+      <div class="field">
+        <span class="flbl">발주 구분</span>
+        <div class="seg" id="orderType">
+          <button type="button" data-value="초기발주" class="active">초기발주</button>
+          <button type="button" data-value="리오더">리오더</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="flbl">컬러별 사이즈·수량</span>
+        <div id="colorBlocks"></div>
+        <button type="button" class="add-color" id="addColor">+ 컬러 추가</button>
+        <div class="ohint">컬러마다 블록을 하나씩 추가하고 그 안에서 사이즈를 늘리세요. 숫자만 입력하면 "번"이 자동으로 붙습니다(예: 1 → 1번). S M L 같은 문자는 대문자로 저장됩니다. 수량 칸에는 숫자만 입력하세요.</div>
+      </div>
+
+      <div class="field">
+        <span class="flbl">발주일</span>
+        <input type="date" id="orderDate">
+      </div>
+
+      <div class="field">
+        <span class="flbl">비고 (선택)</span>
+        <textarea id="orderMemo" rows="2" placeholder="특이사항이 있으면 적어주세요"></textarea>
+      </div>
+
+      <button type="button" class="order-submit-btn" id="orderSubmitBtn">발주 제출</button>
+      <div class="order-status" id="orderStatusBox"></div>
+      <div class="ohint">품번·아이템명·공장 정보는 위 작업지시서 내용을 그대로 사용합니다. 제출하면 구글시트에 자동 기록되고 슬랙으로 알림이 갑니다.</div>
+    </div>
+<div class="mini-sec-title" id="coordiSection">코디 (최대 3개)</div>
+    <div class="ohint" style="margin:-4px 0 8px;">내 제품은 <b>🔍 내 제품</b>으로 골라주세요. 주소 대신 품번으로 저장돼서 사진을 바꿔도 항상 최신 사진이 뜨고 링크가 죽지 않습니다. 남의 제품만 주소를 붙여넣습니다.</div>
+    <div class="coordi-backlinks" id="coordiBacklinks" style="display:none"></div>
+    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow1">
+      <label>코디 1</label>
+      <input type="hidden" id="coordiCode1">
+      <button type="button" class="coordi-pick-btn" id="coordiPickBtn1">🔍 내 제품</button>
+      <input id="coordiLink1" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
+      <input id="coordiNote1" class="coordi-note" type="text" placeholder="예: 니트탑에 매치할 와이드 팬츠">
+      <div class="ref-actions">
+        <button type="button" id="coordiEditBtn1" class="ref-icon-btn" title="수정">✎</button>
+        <button type="button" id="coordiDelBtn1" class="ref-icon-btn danger" title="삭제">🗑</button>
+      </div>
+    </div>
+    <div class="coordi-picked" id="coordiPicked1" style="display:none"></div>
+    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow2">
+      <label>코디 2</label>
+      <input type="hidden" id="coordiCode2">
+      <button type="button" class="coordi-pick-btn" id="coordiPickBtn2">🔍 내 제품</button>
+      <input id="coordiLink2" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
+      <input id="coordiNote2" class="coordi-note" type="text" placeholder="예: 세트로 매치할 스카프">
+      <div class="ref-actions">
+        <button type="button" id="coordiEditBtn2" class="ref-icon-btn" title="수정">✎</button>
+        <button type="button" id="coordiDelBtn2" class="ref-icon-btn danger" title="삭제">🗑</button>
+      </div>
+    </div>
+    <div class="coordi-picked" id="coordiPicked2" style="display:none"></div>
+    <div class="predict-row single ref-link-row ref-actions-row coordi-row" id="coordiRow3">
+      <label>코디 3</label>
+      <input type="hidden" id="coordiCode3">
+      <button type="button" class="coordi-pick-btn" id="coordiPickBtn3">🔍 내 제품</button>
+      <input id="coordiLink3" class="coordi-link" type="text" placeholder="https://... (외부 제품 주소)">
+      <input id="coordiNote3" class="coordi-note" type="text" placeholder="예: 가을 시즌 니트와 레이어드">
+      <div class="ref-actions">
+        <button type="button" id="coordiEditBtn3" class="ref-icon-btn" title="수정">✎</button>
+        <button type="button" id="coordiDelBtn3" class="ref-icon-btn danger" title="삭제">🗑</button>
+      </div>
+    </div>
+    <div class="coordi-picked" id="coordiPicked3" style="display:none"></div>
+    <!-- 2026-08-25 추가: 내 제품 고르는 창. 고르는 칸 바로 아래로 옮겨 붙습니다 -->
+    <div class="coordi-pick-panel" id="coordiPickPanel" style="display:none">
+      <input id="coordiPickSearch" type="text" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
+      <div class="coordi-pick-results" id="coordiPickResults"></div>
+    </div>
+  </div>
+
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -4410,6 +4461,7 @@
     document.querySelectorAll(".status-btn").forEach(btn=>{
       btn.classList.toggle("active", btn.dataset.status === currentStatus);
     });
+    renderMobileHeader_();
     updateSampleFieldHighlights_();
     if(typeof refreshCafe24Bar_ === "function") refreshCafe24Bar_();
     if(typeof refreshWoCheckBar_ === "function") refreshWoCheckBar_();
@@ -4885,6 +4937,7 @@
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
     syncFabricFromMemo_();
+    renderMobileHeader_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
@@ -7343,6 +7396,7 @@
     $("#quickOrderView").style.display = "none";
     $("#sampleMgmtView").style.display = "none";
     $("#editorView").style.display = "block";
+    renderMobileHeader_();
     $("#mainBar").style.display = "flex";
   }
   // 2026-08-29 추가: 폰에서 접어둔 버튼을 펴고 접습니다 (PC 에서는 이 버튼이 안 보입니다)
@@ -8416,6 +8470,18 @@
   history.scrollRestoration="manual";
   history.replaceState(appRoute_,"");
 
+
+  function renderMobileHeader_(){
+    const name=document.getElementById("mobileProductName");if(!name)return;
+    name.textContent=document.getElementById("pumMyeong").value.trim()||"새 작업지시서";
+    document.getElementById("mobileProductCode").textContent=document.getElementById("codeView").textContent.trim();
+    const active=document.querySelector("#statusBar .status-btn.active");
+    document.getElementById("mobileProductStatus").textContent=active?active.textContent.trim():"";
+  }
+  document.getElementById("mobileBackToListBtn").addEventListener("click",()=>document.getElementById("backToListBtn").click());
+  document.getElementById("pumMyeong").addEventListener("input",renderMobileHeader_);
+  renderMobileHeader_();
+
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
   // 카드를 클릭하거나 "+ 새 작지"를 누를 때 그 시점에 준비됩니다.
 </script>
@@ -9395,6 +9461,7 @@ function renderAiCounter_(){
 
 let lastPhotoDataUrl_ = "";
 window.analyzeWorkOrderPhoto_ = async function(dataUrl){
+  if(document.getElementById("retiredEditorFields")) return;
   if(!dataUrl || dataUrl.indexOf("base64,") === -1) return;
   lastPhotoDataUrl_ = dataUrl;
   if(COPYGEN_RELAY_URL.indexOf("PASTE_YOUR") === 0){
@@ -9660,7 +9727,7 @@ function renderVariantPanel(){
   wrap.className = "copygen-variant-panel";
   const label = document.createElement("div");
   label.className = "copygen-label";
-  label.textContent = openBase + " 계열 변형 — 클릭해서 추가 (이 자리에서만 쓰는 값, 저장되지 않음)";
+  label.textContent = openBase + " 계열 — 선택한 컬러는 이 작지에 저장됩니다";
   wrap.appendChild(label);
   const chipRow = document.createElement("div");
   chipRow.className = "copygen-chip-group";
@@ -9951,6 +10018,7 @@ const SYSTEM_PROMPT = `당신은 AISEL(에이슬)이라는 여성복 D2C 브랜�
 입력으로 핵심 키워드가 주어지면, 위 규칙에 맞춘 상세페이지 설명만 출력하세요. 다른 말은 하지 마세요.`;
 
 async function generateDescription(){
+  if(document.getElementById("retiredEditorFields")) return;
   // 2026-08-13 추가: 생성 직전에 셀링포인트를 키워드에 한 번 더 반영.
   // 어떤 경로로 들어와도 셀링포인트를 골랐다면 "핵심 키워드를 입력해주세요"로 막히지 않게 합니다.
   syncKeywordsFromSellingPoints_();
@@ -10125,6 +10193,7 @@ function setStaleBar_(on){
 }
 // 재료가 바뀔 때마다 호출
 function onMaterialChanged_(){
+  if(document.getElementById("retiredEditorFields")) return;
   const auto = $("autoRegen");
   if(!auto || !auto.checked) return;
   const sig = materialSignature_();
