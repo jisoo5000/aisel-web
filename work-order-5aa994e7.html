@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v91 (2026-10-03)
+<!-- AISEL 작업지시서 v92 (2026-10-03)
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -2814,6 +2814,14 @@
 }
 
 </style>
+<style id="aisel-v92-save-feedback">
+@media screen {
+  #editorView #saveBtn { color:#788294; opacity:1; }
+  #editorView #saveBtn[data-save-state="saving"] { color:#2F3B52; }
+  #editorView #saveBtn[data-save-state="error"],
+  #editorView #saveBtn[data-save-state="sheet-error"] { color:#8D3946; }
+}
+</style>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -3071,7 +3079,7 @@
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn">+ 새 작지</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
-      <button class="btn ghost nav-btn" id="saveBtn">저장됨 ✓</button>
+      <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
@@ -3160,7 +3168,7 @@
 <section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
 <div class="color-heading"><h2>컬러</h2>
 <div class="copygen-selected-colors" id="selectedColors"></div>
-<button type="button" id="colorPickerToggle" aria-controls="colorPicker" aria-expanded="false">선택 ▾</button></div>
+<button type="button" id="colorPickerToggle" aria-controls="colorPicker" aria-expanded="false"><span class="color-picker-label">선택</span><span class="color-picker-arrow" aria-hidden="true">▾</span></button></div>
 <details id="colorPicker"><summary>+ 컬러 선택</summary>
 <div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
 <div class="copygen-swatch-grid" id="colorSwatches"></div>
@@ -4222,8 +4230,8 @@
     }).then(()=> true).catch(()=> false);
   };
   // 2026-08-13 추가: 디자이너 이름 → 전화번호 등록소.
-  // 인쇄영역 안 이름·전화번호 칸은 그대로 두고, 두 글자 이상 치면 대조해서
-  // 겹치는 이름이 하나뿐일 때만 자동으로 채웁니다. 등록은 따로 안 하셔도 되고
+  // 이름 입력을 마친 뒤 정확히 일치하는 연락처의 전화번호만 빈 칸에 채웁니다.
+  // 입력 중인 이름은 바꾸지 않습니다. 등록은 따로 안 하셔도 되고
   // 이름과 전화번호를 같이 입력하시면 그 조합이 자동으로 저장됩니다.
   const designerRoot = firebase.database().ref("designerPhones");
   function designerKeyOf_(name){
@@ -4462,7 +4470,7 @@
     } else {
       warnEl.style.display = "none";
       if(seqEl){ seqEl.style.borderColor = ""; seqEl.style.background = ""; }
-      if(saveEl && saveEl.textContent === "⚠ 품번 중복"){ saveEl.disabled = false; saveEl.textContent = "저장됨 ✓"; }
+      if(saveEl && saveEl.textContent === "⚠ 품번 중복"){ saveEl.disabled=false;renderEditorSaveState_(editorSaveState_()); }
     }
   }
 
@@ -4990,12 +4998,11 @@
   });
 
   $("#designer").addEventListener("blur", () => {
-    const name = $("#designer").value.trim();
-    const phoneField = $("#phone");
-    if(name && !phoneField.value.trim() && designerContactsMap_[name]){
-      phoneField.value = designerContactsMap_[name];
-      phoneField.dispatchEvent(new Event("input", { bubbles: true }));
-    }
+    const code = currentCode;
+    // iOS can commit the final Korean syllable while blur is being dispatched.
+    setTimeout(()=>{
+      if(currentCode === code && !isEditorComposing_()) fillDesignerPhoneForExactName_();
+    }, 0);
   });
 
   // ---------- 작업지시서/사이즈 AISEL_공용 저장 ----------
@@ -5386,6 +5393,9 @@
   });
 
   $("#printBtn").addEventListener("click", async ()=>{
+    if(!await waitForEditorComposition_()){
+      alert("한글 입력을 마친 뒤 다시 인쇄해주세요."); return;
+    }
     setModifiedToday();
     // 2026-08-29 추가: 인쇄(=작업지시서 확정) 시점에 상태를 PDP로 자동 전환.
     // 이미 PDP·판매·드롭이면 되돌리지 않음(재인쇄 시 상태가 거꾸로 가지 않게).
@@ -5395,7 +5405,9 @@
       updateStatusButtons();
       refreshCafe24Bar_();
     }
-    save();
+    if(await save() === false){
+      alert("저장하지 못해 인쇄를 멈췄습니다. 연결을 확인한 뒤 다시 눌러주세요."); return;
+    }
     await syncToAiselSheets_(); // 디자이너 최종 확정 시점 → 같은 품번이면 시트 줄을 덮어씀
     window.print();
   });
@@ -5994,6 +6006,7 @@
     return patch;
   }
   // 색인 쓰기. 목록에 보이는 값이 하나도 안 바뀌었으면 아예 쓰지 않습니다.
+  const pendingIndexWrites_ = {};
   const lastIndexSig_ = {};
   function writeIndexIfChanged_(code, st){
     if(!code || !st) return Promise.resolve();
@@ -6002,10 +6015,12 @@
     const known = (lastIndexSig_[code] !== undefined)
       ? lastIndexSig_[code]
       : woIndexSig_((allWorkOrders && allWorkOrders[code]) || null);
-    if(known === sig) return Promise.resolve();
+    if(known === sig) return pendingIndexWrites_[code] || Promise.resolve();
     lastIndexSig_[code] = sig;
     e.updatedAt = st.updatedAt || Date.now();
-    const indexWrite = woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; });
+    const indexWrite = woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; return false; });
+    pendingIndexWrites_[code]=indexWrite;
+    indexWrite.then(()=>{if(pendingIndexWrites_[code]===indexWrite)delete pendingIndexWrites_[code];});
     // 2026-08-25 추가: 공유용 칸도 같이 갱신 (실패해도 작지 저장에는 영향 없음)
     // update 를 씁니다. set 이면 따로 올려둔 사진 주소(thumbUrl)까지 지워집니다
     // 2026-08-27 추가: 보관 규칙에 안 맞으면(샘플중·드롭·30일 지난 판매) 칸을 지웁니다.
@@ -6032,89 +6047,110 @@
   let priceSource_ = "";
   let priceException_ = null;
   var pricingRulesReady_ = true;
+  // Save feedback belongs to this exact record connection and edit revision.
+  let editorSaveFeedback_ = null;
+  function editorSaveState_(){
+    if(!editorSaveFeedback_ || editorSaveFeedback_.ref !== woRef || editorSaveFeedback_.code !== currentCode){
+      editorSaveFeedback_={ref:woRef,code:currentCode,revision:0,serial:0,latest:0,result:null,queued:false,confirmed:false,manual:false,sheetError:false,indexFailed:false,pending:new Map(),failedKeys:new Map(),fieldSuccess:new Map()};
+    }
+    return editorSaveFeedback_;
+  }
+  function isCurrentSaveState_(state){return state===editorSaveFeedback_ && state.ref===woRef && state.code===currentCode;}
+  function renderEditorSaveState_(state,allowLoading=false){
+    if(!isCurrentSaveState_(state) || (loading&&!allowLoading))return;
+    const button=$("#saveBtn");if(!button || codeConflictNow_())return;
+    let phase="idle",label="저장";
+    if(state.queued || state.result==="pending" || (state.result!==false && (state.pending.size || state.manual))){phase="saving";label="저장 중…";}
+    else if(state.result===false){phase="error";label="저장 실패 · 재시도";}
+    else if(state.confirmed){phase=state.sheetError?"sheet-error":"saved";label=state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
+    button.dataset.saveState=phase;button.textContent=label;button.disabled=state.manual;
+    button.style.opacity="1";
+    button.title=state.sheetError?"앱 저장 완료 · 구글시트 전송 실패. 눌러 다시 전송합니다.":phase==="error"?"작업지시서 저장에 실패했습니다. 눌러 다시 저장합니다.":"";
+  }
+  function resetEditorSaveFeedback_(confirmed){
+    editorSaveFeedback_=null;const state=editorSaveState_();state.confirmed=!!confirmed;
+    renderEditorSaveState_(state,true);
+  }
+  function markEditorSavePending_(){
+    if(loading || !woRef || statusChanging_ || codeConflictNow_() || currentCode===justDeletedCode_)return;
+    const state=editorSaveState_();state.revision++;state.queued=true;
+    renderEditorSaveState_(state);
+  }
   const pendingSaveWrites_ = new Set();
   function save(){
-    if(loading || !woRef || statusChanging_) return;
-    if(justDeletedCode_ && currentCode === justDeletedCode_) return; // 방금 삭제한 걸 자동저장이 되살리지 않게
-    // 2026-08-13 추가: 새 작지를 만드는 중인데 그 품번에 이미 다른 작지가 있으면 저장하지 않음.
-    // (예전에는 이 상태에서 저장이 나가서 기존 작지를 통째로 덮어썼음)
-    if(codeConflictNow_()){ updateCodeConflictUI_(); return; }
-    // 2026-08-25 추가: 저장 대상을 이 시점에 고정합니다.
-    // 예전에는 저장이 실행되는 사이 다른 작지로 옮겨가면 전역 woRef가 이미 바뀌어 있어서
-    // A작지 내용이 B작지에 저장되는 일이 있었습니다.
-    const targetRef = woRef;
-    const targetCode = currentCode;
-    const st = collect();
-    // collect() 뒤에도 대상이 그대로인지 다시 확인합니다. 달라졌으면 이 저장은 버립니다.
-    if(woRef !== targetRef || currentCode !== targetCode) return;
-    const s = $("#saveBtn");
-    // 저장 전 새 작지에서 처음 자동 저장되는 품번을 기억해둡니다.
-    // 품번이 바뀌면 이 줄을 지워서 같은 사진의 작지가 여러 개 생기지 않게 합니다.
-    if(newOrderMode_ && !autoCreatedCode_) autoCreatedCode_ = targetCode;
-
-    // 2026-08-25 수정 (중요): 객체 전체를 set 하던 것을 "바뀐 칸만" update 로 바꿉니다.
-    // 예전에는 디자이너와 지수님이 서로 다른 칸을 고쳐도 나중에 저장한 쪽이 상대 수정을
-    // 통째로 지웠습니다. 이제 각자 고친 칸만 보내므로 서버에서 합쳐집니다.
-    const patch = buildPatch_(lastSavedState_, st);
-    lastSentJSON = JSON.stringify(st);
-    lastSentUpdatedAt_ = st.updatedAt;   // 2026-09-20 추가: 되돌아온 스냅샷을 이 시각으로 알아봅니다
-    if(Object.keys(patch).length === 0){ return; }   // 실제로 바뀐 게 없으면 아무것도 안 보냄
-    const sentState = st;
-    const writePromise = targetRef.update(patch).then(async ()=>{
-      if(woRef===targetRef)lastSavedState_ = sentState;
-      await writeIndexIfChanged_(targetCode, sentState);
-      if(window.AiselSheetBridge) window.AiselSheetBridge.sync(targetCode);
-      // 첫 저장이 끝나면 이제 이 품번은 정식으로 이 작지의 자리이므로 "새로 만드는 중" 표시를 끔
-      // (그래야 다른 기기에서 수정한 내용이 실시간으로 반영됨)
-      newOrderMode_ = false;
-      autoCreatedCode_ = null;   // 정식 작지가 되었으므로 더 이상 정리 대상이 아닙니다
-      s.textContent="저장됨 ✓"; s.style.opacity="1";
-      clearTimeout(save._t); save._t=setTimeout(()=> s.style.opacity=".7", 900);
+    if(loading || !woRef || statusChanging_)return false;
+    if(typeof isEditorComposing_==="function" && isEditorComposing_()){saveSoon();return false;}
+    if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
+    if(codeConflictNow_()){updateCodeConflictUI_();return false;}
+    const targetRef=woRef,targetCode=currentCode,st=collect();
+    if(woRef!==targetRef || currentCode!==targetCode)return false;
+    const state=editorSaveState_(),id=++state.serial,revision=state.revision;
+    state.latest=id;state.queued=false;state.result="pending";
+    if(newOrderMode_ && !autoCreatedCode_)autoCreatedCode_=targetCode;
+    const patch=buildPatch_(lastSavedState_,st);
+    // A retry also includes unacknowledged fields, even if Firebase emitted its optimistic snapshot.
+    const unresolved=new Set(state.failedKeys.keys());
+    for(const entry of state.pending.values())for(const key of entry.keys)unresolved.add(key);
+    for(const key of unresolved)if(Object.prototype.hasOwnProperty.call(st,key))patch[key]=st[key]===undefined?null:st[key];
+    lastSentJSON=JSON.stringify(st);lastSentUpdatedAt_=st.updatedAt;
+    if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;renderEditorSaveState_(state);return Promise.resolve(true);}
+    const keys=Object.keys(patch);state.pending.set(id,{keys,revision});renderEditorSaveState_(state);
+    let originalWritten=false;
+    const writePromise=Promise.resolve().then(()=>keys.length?targetRef.update(patch):undefined).then(async()=>{
+      originalWritten=true;
+      for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
+      if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;newOrderMode_=false;autoCreatedCode_=null;}
+      if(state.latest===id){
+        if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
+        state.indexFailed=false;
+        try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode)).catch(()=>{});}catch(e){}
+      }
+      if(state.latest===id){state.result=true;state.confirmed=true;}
       return true;
     }).catch(()=>{
-      s.textContent="⚠ 저장 실패 (인터넷 확인)";
+      if(originalWritten && state.latest===id)state.indexFailed=true;
+      for(const key of keys)if((state.fieldSuccess.get(key)||0)<id)state.failedKeys.set(key,Math.max(id,state.failedKeys.get(key)||0));
+      if(state.latest===id)state.result=false;
       return false;
+    }).finally(()=>{
+      state.pending.delete(id);renderEditorSaveState_(state);
     });
     pendingSaveWrites_.add(writePromise);
-    writePromise.then(()=> pendingSaveWrites_.delete(writePromise));
+    writePromise.then(()=>pendingSaveWrites_.delete(writePromise));
     return writePromise;
   }
-  $("#saveBtn").addEventListener("click", async ()=>{
-    const s = $("#saveBtn");
-    // 2026-08-13 추가: 품번이 이미 쓰이고 있으면 저장하지 않고 알려줌 (기존 작지 덮어쓰기 방지)
+  $("#saveBtn").addEventListener("click",async()=>{
     if(codeConflictNow_()){
       updateCodeConflictUI_();
-      alert("이미 사용 중인 품번입니다.\n\n다른 번호로 바꾼 뒤 저장해주세요.\n('다음 번호 ▷' 버튼을 누르면 안 쓰인 번호가 자동으로 채워집니다)");
-      return;
+      alert("이미 사용 중인 품번입니다.\n\n다른 번호로 바꾼 뒤 저장해주세요.\n('다음 번호 ▷' 버튼을 누르면 안 쓰인 번호가 자동으로 채워집니다)");return;
     }
-    setModifiedToday();
-    save();
-    // 2026-08-13 추가: 원단정보 섹션에 원단처명과 원단명이 채워져 있으면
-    // 작지 저장과 동시에 원단 마스터에도 등록됨 (원단정보 저장 버튼을 따로 누르지 않아도 됨)
-    if(window.saveFabricMaster_){
-      window.saveFabricMaster_({
-        supplier: $("#fabricSupplier").value,
-        name: $("#fabricName").value,
-        price: $("#fabricPrice").value,
-        width: $("#fabricWidth").value,
-        blend: $("#fabricBlend").value,
-        supplierPhone: $("#fabricSupplierPhone").value,
-        negoPrice: $("#fabricNegoPrice").value
-      });
-    }
-    s.textContent = "💾 저장 중...";
-    s.disabled = true;
-    sendScorecard_();   // 성적표 시트에도 기획칸을 함께 보냅니다 (주소가 비어 있으면 아무 일도 안 함)
-    const result = await syncToAiselSheets_();
-    s.disabled = false;
-    if(result.ok){
-      s.textContent = "💾 방금 저장함!";
-    } else {
-      s.textContent = "⚠ 시트 저장 실패";
-      alert("개인 작업 내용은 저장됐지만 구글시트 저장에 문제가 있었습니다: " + result.message);
-    }
-    setTimeout(()=> s.textContent="저장됨 ✓", 1500);
+    const state=editorSaveState_();if(state.manual || loading || !woRef)return;
+    state.manual=true;renderEditorSaveState_(state);let originalSaved=false;
+    try{
+      if(typeof waitForEditorComposition_==="function" && !await waitForEditorComposition_())return;
+      if(!isCurrentSaveState_(state))return;
+      clearTimeout(saveT);saveT=null;
+      setModifiedToday();
+      originalSaved=await save()===true;
+      if(!originalSaved || !isCurrentSaveState_(state))return;
+      // External transfers start only after this record's original write succeeded.
+      if(window.saveFabricMaster_)Promise.resolve(window.saveFabricMaster_({
+        supplier:$("#fabricSupplier").value,name:$("#fabricName").value,price:$("#fabricPrice").value,
+        width:$("#fabricWidth").value,blend:$("#fabricBlend").value,supplierPhone:$("#fabricSupplierPhone").value,negoPrice:$("#fabricNegoPrice").value
+      })).catch(()=>{});
+      Promise.resolve(sendScorecard_()).catch(()=>{});
+      const result=await syncToAiselSheets_();
+      if(!isCurrentSaveState_(state))return;
+      state.sheetError=!result.ok;
+      if(!result.ok)alert("작업지시서는 앱에 저장됐지만 구글시트 전송에 문제가 있었습니다: "+result.message);
+    }catch(err){
+      if(isCurrentSaveState_(state)){
+        if(originalSaved){state.sheetError=true;alert("작업지시서는 앱에 저장됐지만 추가 전송에 문제가 있었습니다: "+err.message);}
+        else{state.result=false;alert("작업지시서를 저장하지 못했습니다. 다시 저장해주세요: "+err.message);}
+      }
+    }finally{state.manual=false;renderEditorSaveState_(state);}
   });
+
   function setPhoto(boxSel, src, thumb){
     const box = document.querySelector(boxSel);
     const img = box.querySelector("img");
@@ -6362,7 +6398,7 @@
       const shortLink = refRow.querySelector(".ref-short-link");
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
-        shortLink.textContent = val ? (index ? "링크 " + (index + 1) + " ↗" : "링크 ↗") : "링크 입력";
+        shortLink.textContent = val || "링크 입력";
         shortLink.title = val || "레퍼런스 링크 입력";
         if(val){ shortLink.href = /^https?:\/\//i.test(val) ? val : "https://" + val; shortLink.removeAttribute("role"); shortLink.removeAttribute("tabindex"); }
         else { shortLink.removeAttribute("href"); shortLink.setAttribute("role", "button"); shortLink.tabIndex = 0; }
@@ -6740,7 +6776,7 @@
 
   function isTypingNow(){
     const el = document.activeElement;
-    return !!(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA"));
+    return isEditorComposing_() || !!(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA"));
   }
   // ---------- 품번마다 각자 저장 위치에 실시간으로 연결 ----------
   let currentCode = null;
@@ -6806,8 +6842,7 @@
       firstSnapshot = false;
       if(isFirst){
         clearTimeout(openWatchdog_);
-        const sBtn = $("#saveBtn");
-        if(sBtn && sBtn.textContent.indexOf("불러오는 중") !== -1) sBtn.textContent = "저장됨 ✓";
+        resetEditorSaveFeedback_(!!st);
       }
       if(!st){
         if(isFirst){ loading = false; return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
@@ -6858,20 +6893,20 @@
   // PDP 상태로 넘어갈 때 자동으로 펼쳐지고, 입력 완료를 체크하면 초록색으로 바뀝니다.
   function refreshCafe24Bar_(){}
 
-  // 2026-08-13 추가: 디자이너 이름 두 글자 이상 치면 겹치는 이름을 찾아 전화번호를 자동으로 채웁니다.
-  // 겹치는 이름이 둘 이상이면(이씨·김씨처럼 흔한 성) 자동으로 안 채우고 더 치실 때까지 기다립니다.
-  $("#designer").addEventListener("input", ()=>{
-    const typed = $("#designer").value.trim();
-    if(typed.length < 2) return;
-    if($("#phone").value.trim()) return;   // 전화번호를 이미 직접 넣으셨으면 안 건드림
-    const list = designerListCache_ || {};
-    const matches = Object.values(list).filter(v => v && v.name && v.name.startsWith(typed));
-    if(matches.length === 1){
-      $("#designer").value = matches[0].name;
-      $("#phone").value = matches[0].phone;
-      saveSoon();
-    }
-  });
+  // v92: never replace a name while Korean IME is still composing it.
+  // Only an exact, completed name may fill an empty telephone field on blur.
+  function fillDesignerPhoneForExactName_(){
+    const name = $("#designer").value.trim(), phoneField = $("#phone");
+    if(!name || phoneField.value.trim() || isEditorComposing_()) return;
+    const phones = [...new Set(Object.values(designerListCache_ || {})
+      .filter(contact=>contact && String(contact.name || "").trim() === name)
+      .map(contact=>String(contact.phone || "").trim()).filter(Boolean))];
+    const phone = phones.length === 1 ? phones[0]
+      : phones.length === 0 ? designerContactsMap_[name] : "";
+    if(!phone) return;
+    phoneField.value = phone;
+    phoneField.dispatchEvent(new Event("input", {bubbles:true}));
+  }
   // 이름과 전화번호를 같이 입력하신 채로 다른 칸으로 넘어가면 그 조합을 등록소에 저장
   $("#phone").addEventListener("blur", ()=>{
     if(window.saveDesignerPhone_) window.saveDesignerPhone_($("#designer").value, $("#phone").value);
@@ -9635,9 +9670,14 @@
   });
 
   // ---------- 공장 저장/인쇄 (원가계산서는 빈 박스로 두고 시트기록 + 인쇄까지) ----------
-  $("#factorySaveBtn").addEventListener("click", ()=>{
+  $("#factorySaveBtn").addEventListener("click", async ()=>{
+    if(!await waitForEditorComposition_()){
+      alert("한글 입력을 마친 뒤 다시 인쇄해주세요."); return;
+    }
     setModifiedToday();
-    save();
+    if(await save() === false){
+      alert("저장하지 못해 인쇄를 멈췄습니다. 연결을 확인한 뒤 다시 눌러주세요."); return;
+    }
     document.body.classList.add("factory-print-mode");
     window.print();
   });
@@ -9846,11 +9886,60 @@
 
   // 자동저장 (디바운스)
   // 2026-08-13 수정: 간격을 300ms -> 600ms로 늘려 타이핑 중 저장 호출 횟수를 줄임
-  let saveT; function saveSoon(){ clearTimeout(saveT); saveT = setTimeout(()=>{saveT=null;save();}, 600); }
+  let saveT;
+  const editorComposingTargets_ = new Set();
+  let editorCompositionSettling_ = false, editorCompositionEndTimer_ = null;
+  function isEditorComposing_(){
+    return editorComposingTargets_.size > 0 || editorCompositionSettling_;
+  }
+  function saveSoon(){
+    clearTimeout(saveT); saveT = null;
+    if(typeof markEditorSavePending_ === "function") markEditorSavePending_();
+    if(isEditorComposing_()) return;
+    saveT = setTimeout(()=>{saveT=null;save();}, 600);
+  }
+  async function waitForEditorComposition_(){
+    const active = document.activeElement;
+    if(isInsideEditor_(active) && typeof active.blur === "function") active.blur();
+    // Let compositionend, its final input, and exact-name blur lookup finish.
+    await new Promise(resolve=>setTimeout(resolve, 0));
+    // Some iOS keyboards dispatch compositionend a task after blur.
+    for(let attempt=0; isEditorComposing_() && attempt<10; attempt++){
+      await new Promise(resolve=>setTimeout(resolve, 16));
+    }
+    return !isEditorComposing_();
+  }
+  document.addEventListener("compositionstart", e=>{
+    if(!isInsideEditor_(e.target)) return;
+    editorComposingTargets_.add(e.target);
+    clearTimeout(editorCompositionEndTimer_); editorCompositionSettling_ = false;
+    saveSoon();
+  }, true);
+  // Capture before per-field input handlers, some of which save immediately.
+  document.addEventListener("input", e=>{
+    if(isInsideEditor_(e.target) && e.isComposing){
+      editorComposingTargets_.add(e.target);
+      clearTimeout(saveT); saveT = null;
+    }
+  }, true);
+  document.addEventListener("compositionend", e=>{
+    if(!isInsideEditor_(e.target)) return;
+    const target = e.target, code = currentCode;
+    editorComposingTargets_.delete(target);
+    editorCompositionSettling_ = true;
+    clearTimeout(editorCompositionEndTimer_);
+    editorCompositionEndTimer_ = setTimeout(()=>{
+      editorCompositionEndTimer_ = null; editorCompositionSettling_ = false;
+      if(currentCode !== code || isEditorComposing_()) return;
+      if(target.id === "designer" && document.activeElement !== target) fillDesignerPhoneForExactName_();
+      saveSoon();
+    }, 0);
+  }, true);
   window.triggerWorkOrderSave_ = ()=> saveSoon();
   // 2026-09-20 추가: 탭을 닫거나 폰에서 홈으로 나가면 600ms 타이머가 그냥 죽어서 마지막 입력이 사라졌습니다.
   // 화면이 가려지는 순간 예약된 자동저장을 바로 내보냅니다. 예약된 게 없으면 아무것도 안 합니다.
   function flushPendingSave_(){
+    if(isEditorComposing_()) return;
     if(!saveT) return;
     clearTimeout(saveT); saveT = null;
     try{ save(); }catch(e){}
@@ -9885,7 +9974,9 @@
   }
   async function settleEditorSave_(){
     if(!isViewVisible_("editorView"))return true;
-    if(isInsideEditor_(document.activeElement))document.activeElement.blur();
+    if(!await waitForEditorComposition_()){
+      alert("한글 입력을 마친 뒤 다시 이동해주세요."); return false;
+    }
     clearTimeout(saveT);saveT=null;
     if(!loading&&woRef&&currentCode!==justDeletedCode_){
       if(codeConflictNow_()||statusChanging_){alert("현재 작업 처리가 끝난 뒤 다시 이동해주세요.");return false;}
@@ -11290,7 +11381,8 @@ const colorPickerToggle=$("colorPickerToggle"), colorPicker=$("colorPicker");
 colorPickerToggle.addEventListener("click",()=>{colorPicker.open=!colorPicker.open;});
 colorPicker.addEventListener("toggle",()=>{
   colorPickerToggle.setAttribute("aria-expanded",String(colorPicker.open));
-  colorPickerToggle.textContent=colorPicker.open?"접기 ▴":"선택 ▾";
+  colorPickerToggle.querySelector(".color-picker-label").textContent=colorPicker.open?"접기":"선택";
+  colorPickerToggle.querySelector(".color-picker-arrow").textContent=colorPicker.open?"▴":"▾";
 });
 
 function renderSwatches(){
@@ -12472,5 +12564,24 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
   }
   #editorView #refPanel #refLinksList > .ref-link-row.is-editing > input[type="text"] { display:block; }
   #editorView #refPanel #refLinksList > .ref-link-row > input[type="text"]:focus { border-color:#2F3B52; outline:1px solid #2F3B52; outline-offset:0; box-shadow:none; }
+}
+</style>
+
+<style id="aisel-v92-screen-ui">
+@media screen {
+  #editorView #refPanel .ref-link-row > .ref-short-link {
+    display:block; overflow:hidden; text-overflow:ellipsis;
+    text-align:left; white-space:nowrap; padding:0 8px; line-height:34px;
+  }
+  #editorView #productColors #colorPickerToggle { gap:2px; }
+  #editorView #productColors #colorPickerToggle .color-picker-arrow {
+    display:inline-block; flex:0 0 16px; width:16px; font-size:16px; line-height:1; text-align:center;
+  }
+}
+@media screen and (min-width:601px) {
+  #editorView #backToListBtn { display:none; }
+  #editorView .toolbar { row-gap:16px; padding-bottom:8px; }
+  #editorView #statusBar { padding-top:8px; padding-bottom:7px; margin-bottom:8px; }
+  #editorView #metaAccordion { margin-top:8px; }
 }
 </style>
