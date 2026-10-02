@@ -10,7 +10,8 @@ function colorNames(list){
  if(typeof root.colorNames_==="function")return root.colorNames_(list);
  const aliases={"멜란지그레이":"멜란지 그레이","라이트그레이":"라이트 그레이"};
  return [...new Set((Array.isArray(list)?list:[]).filter(v=>typeof v==="string").map(v=>{
-  const name=v.trim().replace(/\s+/g," ");return aliases[name.replace(/\s+/g,"")]||name;
+  const name=v.trim().replace(/\s+/g," "),key=name.replace(/\s+/g,"");
+  return Object.prototype.hasOwnProperty.call(aliases,key)?aliases[key]:name;
  }).filter(Boolean))];
 }
 function safe(v){
