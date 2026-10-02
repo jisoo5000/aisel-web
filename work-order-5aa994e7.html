@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v89 (2026-10-03)
+<!-- AISEL 작업지시서 v90 (2026-10-03)
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -2694,6 +2694,17 @@
 #trashUndoNotice>span{min-width:0}#trashUndoNotice button{flex-shrink:0;background:transparent;border:0;color:white;padding:8px 2px;font:inherit;font-weight:700;cursor:pointer}#trashUndoBtn{text-decoration:underline}#trashUndoDismissBtn{font-size:20px!important}
 @media print{#workOrderTrashPanel,#trashUndoNotice,#galleryTrashBtn{display:none!important}}
 </style>
+
+<style id="aisel-v90-dates">
+@media screen {
+  #editorView .sample-date-field {position:relative;display:flex;align-items:center;justify-content:center;gap:5px;width:100%;min-width:0;max-width:100%;height:36px;box-sizing:border-box;border:1px solid #CBD3DF;border-radius:4px;background:#F3F6FA;overflow:hidden;}
+  #editorView .sample-date-label {min-width:0;overflow:hidden;white-space:nowrap;font-size:12px;font-weight:500;line-height:1;color:#2F3B52;pointer-events:none;}
+  #editorView .sample-date-icon {flex:0 0 13px;width:13px;height:13px;fill:none;stroke:#637089;stroke-width:1.6;pointer-events:none;}
+  #editorView .sample-log-entry .sample-date-field input[type="date"] {position:absolute;inset:0;display:block;box-sizing:border-box;width:100%!important;max-width:100%!important;min-width:0!important;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px!important;cursor:pointer;}
+  #editorView .sample-date-field input::-webkit-calendar-picker-indicator {position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer;}
+  #editorView .sample-date-field:focus-within {outline:2px solid #2F3B52;outline-offset:-2px;}
+}
+</style>
 <style id="aisel-v89-screen">
 @media screen {
   #mainBar { display:flex; }
@@ -2744,6 +2755,41 @@
   #editorView #refPanel .ref-action-icon { width:18px; height:18px; flex:0 0 18px; }
   #editorView #refPanel .ref-link-row > input { display:none; grid-column:1 / -1; grid-row:2; width:100%; min-width:0; height:36px; min-height:36px; margin:0; padding:6px 8px; }
   #editorView #refPanel .ref-link-row.is-editing > input { display:block; }
+}
+
+</style>
+<style id="aisel-v90-screen">
+@media screen {
+  #editorView #metaAccordionHead,
+  #editorView .sample-log-toggle > summary,
+  #editorView #refPanel .sec-title-np,
+  #editorView #productColors h2 {
+    font-family:var(--kfont); font-size:13px; font-weight:700;
+    line-height:1.4; letter-spacing:0; color:#2F3B52;
+  }
+  #editorView .sample-log-toggle > summary { display:flex; align-items:center; gap:6px; list-style:none; min-height:26px; }
+  #editorView .sample-log-toggle > summary::-webkit-details-marker { display:none; }
+  #editorView .sample-log-toggle > summary::marker { content:""; }
+  #editorView .sample-log-toggle > summary::before { content:"▶"; display:inline-flex; align-items:center; justify-content:center; flex:0 0 10px; width:10px; font-size:10px; line-height:1; }
+  #editorView .sample-log-toggle[open] > summary::before { content:"▼"; }
+  #editorView #metaAccordionArrow { display:inline-flex; align-items:center; justify-content:center; flex:0 0 10px; width:10px; font-size:10px; line-height:1; }
+  #editorView #refPanel .sec-title-np,
+  #editorView #productColors h2 { padding-left:16px; }
+  #editorView #refPanel .ref-short-link { width:100%; max-width:none; min-height:36px; padding:0 3px; border-radius:4px; }
+  #editorView #refPanel .ref-short-link:hover,
+  #editorView #refPanel .ref-short-link:focus-visible { background:#F3F6FA; outline:1px solid #CBD3DF; }
+  #galleryView .gallery-toolbar { margin-bottom:10px; }
+}
+@media screen and (max-width:900px) {
+  /* Native iPhone focus zoom is triggered by small editable text. Print CSS is separate. */
+  body #editorView input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="hidden"]),
+  body #editorView textarea,
+  body #editorView select,
+  body #galleryView input,
+  body #galleryView select,
+  body #salesView input,
+  body #salesView select { font-size:16px !important; }
+  #sheet > .detail2 > .cell.mat textarea { height:360px; min-height:320px; }
 }
 
 </style>
@@ -2806,7 +2852,7 @@
 <div class="gallery notranslate" id="galleryView" style="display:none" lang="ko" translate="no">
   <div class="gallery-head">
     <h2>📋 작업지시서</h2>
-    <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제한 작지 복원</button>
+    <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제 복원</button>
   </div>
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
@@ -2819,7 +2865,6 @@
     </div>
     <div class="gallery-toolbar">
       <div id="galleryCounts" class="gallery-counts" role="status" aria-live="polite" aria-label="상태별 작업지시서 개수"></div>
-      <details id="galleryMoreMenu"><summary>목록 더보기</summary><div class="gallery-more-actions"><button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button></div></details>
     </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
@@ -2830,7 +2875,7 @@
     <input type="text" id="gallerySearchInput" placeholder="검색어 입력">
   </div>
   <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
-    <h3>삭제한 작지 복원</h3>
+    <h3>삭제 복원</h3>
     <p id="workOrderTrashStatus" role="status">불러오는 중…</p>
     <div id="workOrderTrashList"></div>
   </section>
@@ -3049,7 +3094,7 @@
         <details class="sample-log-toggle" id="meetingHistoryToggle">
           <summary>회의 수정사항</summary>
           <div class="sample-log-entry">
-            <input id="meetingDate" type="date" aria-label="회의 날짜">
+            <span class="sample-date-field"><span class="sample-date-label" data-date-for="meetingDate" aria-hidden="true">날짜 선택</span><svg class="sample-date-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h14v17H5zM8 2v4M16 2v4M5 9h14"/></svg><input id="meetingDate" type="date" aria-label="회의 날짜"></span>
             <input id="meetingChanges" type="text" aria-label="회의 수정 내용" placeholder="수정사항">
             <button type="button" id="meetingAddBtn" class="small-btn" aria-label="회의 수정사항 추가">추가</button>
           </div>
@@ -3060,7 +3105,7 @@
         <details class="sample-log-toggle" id="resampleHistoryToggle">
           <summary>재샘플 이력</summary>
           <div id="resamplePanel" class="sample-log-entry">
-            <input id="resampleDate" type="date" aria-label="재샘플 날짜">
+            <span class="sample-date-field"><span class="sample-date-label" data-date-for="resampleDate" aria-hidden="true">날짜 선택</span><svg class="sample-date-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4h14v17H5zM8 2v4M16 2v4M5 9h14"/></svg><input id="resampleDate" type="date" aria-label="재샘플 날짜"></span>
             <input id="resampleChanges" type="text" aria-label="재샘플 수정 내용" placeholder="수정사항">
             <button type="button" id="resampleAddBtn" class="small-btn" aria-label="재샘플 이력 추가">추가</button>
           </div>
@@ -3226,8 +3271,8 @@
     <!-- 주의사항 + SIZE: 화면은 세로, 인쇄는 나란히 -->
     <div class="detail2">
       <div class="cell mat">
-        <div class="sec-title sheet-section-title">봉제·재단 주의사항</div>
-        <textarea id="materials" aria-label="봉제·재단 주의사항, 원부자재 견본, 라벨" placeholder="예)
+        <div class="sec-title sheet-section-title">봉제 재단 주의사항 / swatch / 라벨</div>
+        <textarea id="materials" aria-label="봉제 재단 주의사항 / swatch / 라벨" placeholder="예)
 셀프 C/3270
 #A73 58-60&quot; @6,200 → @5,000
 요척 : 1y
@@ -5392,10 +5437,28 @@
   let resampleHistory_ = [];
   let sampleChangeBaseline_ = null;
   let sampleChangeBaselineCode_ = null;
+  // Native date controls stay bounded on iOS; the actual input retains its value and calendar.
+  function renderSampleDateLabels_(){
+    document.querySelectorAll(".sample-date-label[data-date-for]").forEach(label=>{
+      const input=document.getElementById(label.dataset.dateFor), value=input?.value||"";
+      label.textContent=/^\d{4}-\d{2}-\d{2}$/.test(value)?value.replace(/-/g,"."):"날짜 선택";
+    });
+  }
+  ["meetingDate","resampleDate"].forEach(id=>{
+    const input=document.getElementById(id);
+    input.addEventListener("input",renderSampleDateLabels_);
+    input.addEventListener("change",renderSampleDateLabels_);
+    input.addEventListener("click",()=>{
+      if(typeof input.showPicker === "function"){
+        try { input.showPicker(); } catch (_) { /* Native tap/focus remains available. */ }
+      }
+    });
+  });
   function resampleToday_(){ return new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10); }
   function resetResampleDraft_(){
     $("#resampleDate").value=resampleToday_(); $("#resampleChanges").value="";
     $("#meetingDate").value=resampleToday_(); $("#meetingChanges").value="";
+    renderSampleDateLabels_();
   }
   function sampleChangeState_(st){
     const get=id=>st ? String(st[id]||"") : String($("#"+id)?.value||"");
@@ -6272,7 +6335,7 @@
       const shortLink = refRow.querySelector(".ref-short-link");
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
-        shortLink.textContent = val ? (index ? "링크 " + (index + 1) + " ↗" : "링크 ↗") : "링크 입력";
+        shortLink.textContent = val ? (index ? "링크 " + (index + 1) + " ↗" : "링크 열기 ↗") : "링크 입력";
         shortLink.title = val || "레퍼런스 링크 입력";
         if(val){ shortLink.href = /^https?:\/\//i.test(val) ? val : "https://" + val; shortLink.removeAttribute("role"); shortLink.removeAttribute("tabindex"); }
         else { shortLink.removeAttribute("href"); shortLink.setAttribute("role", "button"); shortLink.tabIndex = 0; }
@@ -8862,7 +8925,7 @@
   }
 
   let lastGallerySig_ = null;
-  $("#galleryExportSheetBtn").addEventListener("click", async ()=>{
+  $("#galleryExportSheetBtn")?.addEventListener("click", async ()=>{
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const type = $("#gallerySearchType").value;
     const list = Object.entries(allWorkOrders || {})
@@ -9563,7 +9626,7 @@
     const list=$("#workOrderTrashList"); if(!list) return;
     list.replaceChildren();
     const entries=Object.entries(trashEntries_).filter(([,v])=>v&&v.phase!=="restored").sort((a,b)=>(b[1].deletedAt||0)-(a[1].deletedAt||0));
-    $("#galleryTrashBtn").textContent=trashOpen_ ? "작지 목록" : "삭제한 작지 복원"+(entries.length?" ("+entries.length+")":"");
+    $("#galleryTrashBtn").textContent=trashOpen_ ? "작지 목록" : "삭제 복원"+(entries.length?" ("+entries.length+")":"");
     const status=$("#workOrderTrashStatus");
     status.textContent=trashReadError_ || (entries.length ? "삭제한 작지는 자동으로 영구 삭제되지 않습니다." : "휴지통이 비어 있습니다.");
     entries.forEach(([id,e])=>{
@@ -9587,7 +9650,7 @@
   }
   function toggleTrash_(open){
     trashOpen_=open;$("#workOrderTrashPanel").hidden=!open;
-    $("#galleryGrid").hidden=open;$("#gallerySearchRow").hidden=open;$("#galleryExportSheetBtn").hidden=open;
+    $("#galleryGrid").hidden=open;$("#gallerySearchRow").hidden=open;
     $("#galleryTrashBtn").setAttribute("aria-expanded",String(open));
     if(open) listenTrash_();renderTrash_();
   }
