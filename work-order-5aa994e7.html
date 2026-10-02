@@ -1,5 +1,8 @@
+<html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v85 (2026-10-02)
+<meta name="google" content="notranslate">
+<!-- AISEL 작업지시서 v86 (2026-10-02)
+     [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
      [v85] 모바일 오른쪽 여백 제거. 연락처 이름/전화 폭 2:3, 원단처/원단명 동등 폭. 그레이 컬러 표기/색상 정리. 상태와 무관한 전체 품명/품번 검색.
      [v84] 화면·인쇄 기본정보 칸과 글자 비율 통일, 사진 아래 인쇄 구분선 복원.
      [v83] 데스크톱 A4 배치·인쇄 마지막 행 보존·모바일 이동 버튼·목록 카드 및 내보내기 통일.
@@ -2422,6 +2425,69 @@
 
 </style>
 
+<style id="aisel-v86-screen">
+/* v86: consistent section titles and persistent mobile actions. */
+@media screen {
+  #editorView #refPanel .sec-title-np,
+  #editorView #productColors h2 {
+    font-family: var(--kfont); font-size: 15px; font-weight: 700;
+    line-height: 1.4; letter-spacing: 0; color: #2F3B52;
+    margin: 0 0 8px;
+  }
+}
+@media screen and (max-width: 600px) {
+  #editorView .editor-mobile-head { position: relative; padding-right: 76px; }
+  #editorView .editor-mobile-head > #deleteBtn {
+    position: absolute; top: 12px; right: 12px;
+    display: inline-flex !important; align-items: center; justify-content: center;
+    box-sizing: border-box; width: 52px; height: 40px; min-height: 40px;
+    padding: 4px; border-radius: 4px; font-size: 12px; line-height: 1.25;
+  }
+  #editorView .toolbar-fields { display: grid; }
+  #editorView .toolbar-fields > .tf { display: none; }
+  body.mfold-open #editorView .toolbar-fields > .tf { display: flex; }
+  body:not(.mfold-open) #editorView #moveCodeBtn { display: none !important; }
+  #editorView .toolbar-sequence {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+  }
+  #editorView .toolbar-sequence > .jump-btn { display: none !important; }
+  #editorView .toolbar-sequence > #mfoldToggle {
+    display: inline-flex !important; order: 0;
+    align-items: center; justify-content: center;
+    box-sizing: border-box; width: 100%; min-width: 0;
+    height: 40px; min-height: 40px; max-height: 40px;
+    padding: 4px 6px; border: 1px solid #2F3B52; border-radius: 4px;
+    font-size: 12px; line-height: 1.25; letter-spacing: 0;
+  }
+  #editorView .tb-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  #editorView .tb-row > #saveBtn,
+  #editorView .tb-row > #newBtn,
+  #editorView .tb-row > #factorySaveBtn {
+    display: inline-flex !important; align-items: center; justify-content: center;
+    font-size: 11.5px; padding: 4px 2px;
+  }
+  #editorView .tb-row > #saveBtn { order: 0; }
+  #editorView .tb-row > #newBtn { order: 1; }
+  #editorView .tb-row > #factorySaveBtn { order: 2; }
+  body #editorView .tb-row > #printBtn { display: none !important; }
+  #editorView .toolbar, body.mfold-open #editorView .toolbar {
+    border-bottom: 1px solid var(--hair); border-radius: 0 0 10px 10px;
+  }
+  #editorView #refPanel, #editorView #metaAccordion { display: block; }
+  #sheet > .title-row, #sheet > .meta { display: grid; }
+}
+@media screen and (min-width: 601px) and (max-width: 900px) {
+  #sheet > .title-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px; }
+  #sheet > .title-row h1 { grid-column: 1 / -1; grid-row: 1; margin: 0 0 4px; }
+  #sheet > .title-row .date-box { grid-column: 1; grid-row: 2; min-width: 0; justify-self: start; }
+  #sheet > .title-row .title-spacer { grid-column: 2; grid-row: 2; min-width: 0; justify-self: end; }
+  #sheet > .title-row .date-row { gap: 0; font-size: 16px; letter-spacing: 0; }
+  #sheet > .title-row .date-row input { width: 28px; min-width: 0; height: 28px; padding: 0; font-size: 16px; }
+  #sheet > .title-row .date-row input.y { width: 48px; }
+}
+
+</style>
+
 <div class="mainbar noprint" id="mainBar">
   <button type="button" class="maintab active" data-main="sales">판매</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -2642,7 +2708,7 @@
   <div class="toolbar">
     <button type="button" class="btn ghost nav-btn" id="backToListBtn">← 목록으로</button>
     <div class="toolbar-fields">
-    <div class="tf">
+    <div class="tf" id="seasonField">
       <label>시즌</label>
       <select id="season">
         <option value="26S">26 S/S</option>
@@ -2651,7 +2717,7 @@
         <option value="27F">27 F/W</option>
       </select>
     </div>
-    <div class="tf grow">
+    <div class="tf grow" id="categoryField">
       <label>카테고리 (품명 자동)</label>
       <select id="cat"></select>
     </div>
@@ -2677,7 +2743,7 @@
       <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장/인쇄</span><span class="mobile-print-label">인쇄</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
-      <button type="button" class="btn ghost nav-btn mfold-toggle" id="mfoldToggle">⋯ 더보기</button>
+      <button type="button" class="btn ghost nav-btn mfold-toggle" id="mfoldToggle" aria-expanded="false" aria-controls="seasonField categoryField statusBar moveCodeBtn">더보기</button>
     </div>
   </div>
 
@@ -2790,7 +2856,7 @@
 
   <!-- 레퍼런스 링크는 자주 여는 화면 도구라 접힌 메타 정보 밖, 인쇄 영역 바로 위에 둡니다. -->
   <div class="predict-panel noprint" id="refPanel">
-    <div class="sec-title-np">🔗 레퍼런스</div>
+    <div class="sec-title-np">레퍼런스</div>
     <div class="predict-row single ref-link-row ref-actions-row">
       <label>링크</label>
       <input id="refLink" type="text" placeholder="https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)">
@@ -3594,13 +3660,16 @@
     const result = [];
     list.forEach(color=>{
       const name = window.colorName_ && color ? window.colorName_(color.n) : (color && color.n);
-      if(name !== "멜란지 그레이" && name !== "라이트 그레이"){
+      // Swatch lookup changes alone must not rewrite existing shared records.
+      // Compare recognized names with the same swatch on both sides; changed
+      // selections still differ by name/order, and unknown entries stay intact.
+      const info = window.colorHex_ ? window.colorHex_(name) : null;
+      if(!info){
         result.push(color); return;
       }
       if(seen.has(name)) return;
       seen.add(name);
-      const info = window.colorHex_ ? window.colorHex_(name) : null;
-      result.push(info ? {n:name, h:info.hex, t:info.text} : {...color, n:name});
+      result.push({n:name, h:info.hex, t:info.text});
     });
     return result.length ? result : null;
   }
@@ -8146,7 +8215,8 @@
     if(!t) return;
     t.addEventListener("click", function(){
       var 열림 = document.body.classList.toggle("mfold-open");
-      t.textContent = 열림 ? "⋯ 접기" : "⋯ 더보기";
+      t.textContent = 열림 ? "접기" : "더보기";
+      t.setAttribute("aria-expanded", String(열림));
     });
   })();
 
@@ -9145,6 +9215,31 @@
   document.getElementById("mobileBackToListBtn").addEventListener("click",()=>document.getElementById("backToListBtn").click());
   document.getElementById("pumMyeong").addEventListener("input",renderMobileHeader_);
   renderMobileHeader_();
+
+  // Keep the existing buttons and their listeners while adapting their placement.
+  (function placeMobileTools_(){
+    const toggle = document.getElementById('mfoldToggle');
+    const remove = document.getElementById('deleteBtn');
+    const sequence = document.querySelector('#editorView .toolbar-sequence');
+    const header = document.querySelector('#editorView .editor-mobile-head');
+    const toggleHome = document.createComment('mobile toggle desktop position');
+    const removeHome = document.createComment('delete button desktop position');
+    toggle.before(toggleHome);
+    remove.before(removeHome);
+    const mobile = window.matchMedia('(max-width: 600px)');
+    function place(){
+      if(mobile.matches){
+        sequence.appendChild(toggle);
+        header.appendChild(remove);
+      }else{
+        toggleHome.after(toggle);
+        removeHome.after(remove);
+      }
+    }
+    place();
+    if(mobile.addEventListener) mobile.addEventListener('change', place);
+    else mobile.addListener(place);
+  })();
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
   // 카드를 클릭하거나 "+ 새 작지"를 누를 때 그 시점에 준비됩니다.
@@ -10274,7 +10369,6 @@ const BASE_COLORS = [
   { key:"딥네이비", hex:"#22314f", text:"#ffffff" },
   { key:"회소라", hex:"#a9b7c2", text:"#1a2530" },
   { key:"라이트 그레이", hex:"#cfcecb", text:"#33322f" },
-  { key:"멜란지 그레이", hex:"#9CA3A8", text:"#25303A" },
   { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
   { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
   { key:"베이지", hex:"#d9c6a8", text:"#4a3c26" },
@@ -10349,7 +10443,8 @@ const COLOR_NAME_ALIASES = Object.freeze({
 function normalizeColorName_(name){
   if(typeof name !== "string") return "";
   const value = name.trim().replace(/\s+/g, " ");
-  return COLOR_NAME_ALIASES[value.replace(/\s+/g, "")] || value;
+  const key = value.replace(/\s+/g, "");
+  return Object.prototype.hasOwnProperty.call(COLOR_NAME_ALIASES, key) ? COLOR_NAME_ALIASES[key] : value;
 }
 function normalizeColorList_(list){
   return [...new Set((Array.isArray(list) ? list : []).map(normalizeColorName_).filter(Boolean))];
@@ -10359,7 +10454,62 @@ function normalizeColorText_(text){
 }
 window.colorName_ = normalizeColorName_;
 window.colorNames_ = normalizeColorList_;
-window.colorHex_ = (name) => COLOR_VARIANT_HEX[normalizeColorName_(name)] || null;
+// v86: custom names use whole-name matches, without adding palette buttons.
+function customColorKey_(name){
+  return name.toLowerCase().replace(/[\s_-]+/g, "");
+}
+const CUSTOM_COLOR_HEX = Object.freeze(Object.fromEntries([
+  ["#7B5A46", ["브라운", "갈색", "밤색", "brown"]],
+  ["#1A1A1A", ["블랙", "검정", "검정색", "검은색", "black"]],
+  ["#FFFFFF", ["화이트", "흰색", "하양", "white"]],
+  ["#8E9499", ["그레이", "회색", "gray", "grey"]],
+  ["#3A3D40", ["차콜", "차콜 그레이", "charcoal", "charcoal gray", "charcoal grey"]],
+  ["#F3F0E7", ["아이보리", "ivory"]],
+  ["#F2EAD9", ["크림", "cream"]],
+  ["#D9C6A8", ["베이지", "beige"]],
+  ["#2F3B52", ["네이비", "남색", "navy"]],
+  ["#4A78A8", ["블루", "파랑", "파란색", "blue"]],
+  ["#B74C4C", ["레드", "빨강", "빨간색", "red"]],
+  ["#D8A4B3", ["핑크", "분홍", "분홍색", "pink"]],
+  ["#DFCA75", ["옐로우", "옐로", "노랑", "노란색", "yellow"]],
+  ["#7C8B6F", ["그린", "초록", "초록색", "green"]],
+  ["#8C7AA9", ["퍼플", "보라", "보라색", "purple"]],
+  ["#CB8C59", ["오렌지", "주황", "주황색", "orange"]],
+  ["#77785F", ["카키", "khaki"]],
+  ["#743E50", ["와인", "버건디", "wine", "burgundy"]],
+  ["#B68D5C", ["카멜", "camel"]],
+  ["#AFC9BC", ["민트", "mint"]],
+  ["#A9C8DA", ["스카이 블루", "하늘색", "sky blue"]],
+  ["#707C6A", ["올리브", "olive"]],
+  ["#B8A7C8", ["라벤더", "lavender"]],
+  ["#A69A90", ["토프", "taupe"]],
+  ["#5B3B2A", ["초콜릿", "초코", "chocolate"]],
+].flatMap(([hex, names]) => names.map(name => [customColorKey_(name), hex]))));
+function customColorSwatch_(hex){
+  const channels = hex.match(/[a-f\d]{2}/gi).map(v => parseInt(v, 16) / 255);
+  const luminance = channels.map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2)
+    .reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+  return { hex, text: luminance > .179 ? "#25303A" : "#FFFFFF" };
+}
+function resolveColorSwatch_(name){
+  const normalized = normalizeColorName_(name);
+  // Existing palette values and canonical gray aliases always take precedence.
+  if(Object.prototype.hasOwnProperty.call(COLOR_VARIANT_HEX, normalized)) return COLOR_VARIANT_HEX[normalized];
+  const key = customColorKey_(normalized);
+  if(["melangegray", "melangegrey", "heathergray", "heathergrey"].includes(key)) return COLOR_VARIANT_HEX["멜란지 그레이"];
+  if(["lightgray", "lightgrey"].includes(key)) return COLOR_VARIANT_HEX["라이트 그레이"];
+  if(Object.prototype.hasOwnProperty.call(CUSTOM_COLOR_HEX, key)) return customColorSwatch_(CUSTOM_COLOR_HEX[key]);
+  // One brightness modifier is allowed, only when the remaining name is known.
+  const modifier = key.match(/^(light|pale|deep|dark|라이트|밝은|연한|연|딥|다크|진한|진|어두운)(.+)$/);
+  if(!modifier || !Object.prototype.hasOwnProperty.call(CUSTOM_COLOR_HEX, modifier[2])) return null;
+  const light = /^(light|pale|라이트|밝은|연한|연)$/.test(modifier[1]);
+  const hex = "#" + CUSTOM_COLOR_HEX[modifier[2]].slice(1).match(/../g).map(channel => {
+    const value = parseInt(channel, 16);
+    return Math.round(light ? value + (255 - value) * .25 : value * .75).toString(16).padStart(2, "0");
+  }).join("").toUpperCase();
+  return customColorSwatch_(hex);
+}
+window.colorHex_ = resolveColorSwatch_;
 
 const COLOR_VARIANTS = {
   "블랙": ["블랙","딥 블랙","소프트 블랙","스모키 블랙","미드나잇 블랙","펄 블랙"],
@@ -11355,7 +11505,8 @@ function colorNames(list){
  if(typeof root.colorNames_==="function")return root.colorNames_(list);
  const aliases={"멜란지그레이":"멜란지 그레이","라이트그레이":"라이트 그레이"};
  return [...new Set((Array.isArray(list)?list:[]).filter(v=>typeof v==="string").map(v=>{
-  const name=v.trim().replace(/\s+/g," ");return aliases[name.replace(/\s+/g,"")]||name;
+  const name=v.trim().replace(/\s+/g," "),key=name.replace(/\s+/g,"");
+  return Object.prototype.hasOwnProperty.call(aliases,key)?aliases[key]:name;
  }).filter(Boolean))];
 }
 function safe(v){
