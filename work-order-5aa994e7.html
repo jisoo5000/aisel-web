@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v93 (2026-10-03)
+<!-- AISEL 작업지시서 v94 (2026-10-03)
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -2822,6 +2822,64 @@
   #editorView #saveBtn[data-save-state="sheet-error"] { color:#8D3946; }
 }
 </style>
+<style id="aisel-sales-dashboard">
+#salesView { color:#2F3B52; }
+#salesView .gallery-head { align-items:baseline; gap:6px 16px; margin-bottom:18px; }
+#salesView .gallery-head h2 { color:#202733; font-size:20px; letter-spacing:-.4px; }
+#salesView .sales-source-note { margin:0; color:#7B8494; font-size:11px; line-height:1.5; }
+#salesView #salesTabs { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); max-width:none; gap:6px; margin:0 0 12px; }
+#salesView #salesTabs .gtab { min-width:0; width:100%; height:38px; padding:6px 2px; border:1px solid #D6DCE6; border-radius:4px; background:#fff; color:#69758A; font-size:12px; }
+#salesView #salesTabs .gtab.active { background:#2F3B52; border-color:#2F3B52; color:#fff; }
+#salesView .sales-toolbar { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:8px; margin-bottom:10px; }
+#salesView .sales-toolbar input, #salesView .sales-toolbar select { box-sizing:border-box; width:100%; min-width:0; height:40px; border:1px solid #CBD3DF; border-radius:4px; padding:7px 10px; background:#F3F6FA; color:#2F3B52; font-family:inherit; font-size:13px; }
+#salesView .sales-toolbar input::placeholder { color:#8B93A1; }
+#salesView .sales-toolbar select { background:#fff; padding-right:4px; }
+#salesView .sales-counts { min-height:17px; margin:0 0 12px; color:#7B8494; font-size:11px; line-height:1.5; }
+#salesView .sales-table-wrap { overflow:visible; }
+#salesView .sales-table { width:100%; table-layout:fixed; border:0; border-collapse:collapse; border-radius:0; overflow:visible; }
+#salesView .sales-table th { padding:10px 8px; background:#F3F6FA; border:0; border-top:1px solid #D6DCE6; border-bottom:1px solid #D6DCE6; color:#677286; font-size:11px; font-weight:600; }
+#salesView .sales-table th:nth-child(1) { width:68px; }
+#salesView .sales-table th:nth-child(2) { width:auto; }
+#salesView .sales-table th:nth-child(n+3) { width:110px; text-align:right; }
+#salesView .sales-table td { box-sizing:border-box; padding:13px 8px; border:0; border-bottom:1px solid #E3E7EE; background:#fff; text-align:left; vertical-align:middle; }
+#salesView .sales-table td:nth-child(n+3) { text-align:right; }
+#salesView .sales-table tr.srow:hover td { background:#F8FAFC; }
+#salesView .sales-table tr.srow:focus-visible { outline:2px solid #2F3B52; outline-offset:2px; }
+#salesView .srow-thumb { width:52px; height:64px; border:1px solid #E8EBF0; border-radius:4px; background:#F3F6FA; }
+#salesView .srow-thumb img { object-fit:cover; }
+#salesView .srow-thumb .empty { font-size:9px; color:#9AA2AF; }
+#salesView .srow-name { color:#2F3B52; font-size:12px; font-weight:700; line-height:1.5; overflow-wrap:anywhere; }
+#salesView .srow-code { font-size:10.5px; font-weight:500; color:#8B93A1; overflow-wrap:anywhere; }
+#salesView .srow-status { display:inline-block; margin-top:5px; color:#69758A; font-size:10px; line-height:1.4; }
+#salesView .srow-num, #salesView .srow-diff { font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; white-space:normal; line-height:1.45; overflow-wrap:anywhere; color:#2F3B52; }
+#salesView .srow-diff.good { color:#2F3B52; }
+#salesView .srow-diff.neutral { color:#8B93A1; font-size:11px; font-weight:500; }
+#salesView .srow-period { display:block; margin-top:4px; font-size:10px; line-height:1.45; font-weight:400; color:#8B93A1; white-space:normal; }
+#salesView .sales-empty { padding:44px 16px; color:#8B93A1; font-size:12px; line-height:1.6; }
+@media screen and (max-width:600px) {
+  #salesView .gallery-head { margin-bottom:14px; }
+  #salesView .gallery-head h2 { font-size:19px; }
+  #salesView .sales-source-note { width:100%; font-size:10px; }
+  #salesView .sales-toolbar { grid-template-columns:minmax(0,1fr) 112px; gap:6px; }
+  #salesView .sales-toolbar input, #salesView .sales-toolbar select { padding-left:8px; padding-right:4px; }
+  #salesView .sales-counts { margin-bottom:9px; }
+  #salesView .sales-table, #salesView .sales-table tbody { display:block; }
+  #salesView .sales-table thead { display:none; }
+  #salesView .sales-table tr.srow { position:relative; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:13px 0; border:1px solid #DCE1E9; border-radius:6px; padding:14px; margin-bottom:10px; }
+  #salesView .sales-table tr.srow td { display:block; border:0; padding:0; min-width:0; background:transparent; }
+  #salesView .sales-table tr.srow:hover { background:#F8FAFC; }
+  #salesView .sales-table tr.srow td:nth-child(1) { position:absolute; top:14px; left:14px; }
+  #salesView .sales-table tr.srow td:nth-child(2) { grid-column:1/-1; min-height:64px; padding-left:64px; }
+  #salesView .sales-table tr.srow td:nth-child(n+3) { border-top:1px solid #E9EDF2; padding-top:10px; padding-right:5px; text-align:left; }
+  #salesView .sales-table tr.srow td:nth-child(n+3)::before { content:attr(data-label); display:block; margin-bottom:5px; color:#8B93A1; font-size:10px; font-weight:400; }
+  #salesView .srow-name { font-size:12px; }
+  #salesView .srow-code { font-size:10px; }
+  #salesView .srow-num, #salesView .srow-diff { font-size:14px; }
+  #salesView .srow-diff.neutral { font-size:11px; }
+  #salesView .sales-empty { border:1px solid #E3E7EE; border-radius:6px; }
+}
+</style>
+
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -2861,16 +2919,26 @@
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no">
   <div class="gallery-head">
-    <h2>📈 판매성과</h2>
+    <h2>판매성과</h2>
+    <p class="sales-source-note">작지에 입력한 수량·기간 기준</p>
   </div>
-  <div class="gallery-tabs" id="salesTabs">
-    <button type="button" class="gtab active" data-sort="recent">최신순</button>
-    <button type="button" class="gtab" data-sort="steady">스테디셀러</button>
+  <div class="gallery-tabs" id="salesTabs" aria-label="판매 상태">
+    <button type="button" class="gtab active" data-status="sale" aria-pressed="true">판매 중</button>
+    <button type="button" class="gtab" data-status="prep" aria-pressed="false">판매 준비</button>
+    <button type="button" class="gtab" data-status="all" aria-pressed="false">전체</button>
   </div>
+  <div class="sales-toolbar">
+    <input id="salesSearchInput" type="search" placeholder="품명 또는 품번 검색" aria-label="품명 또는 품번 검색" autocomplete="off">
+    <select id="salesSort" aria-label="판매성과 정렬">
+      <option value="recent">최근 수정순</option>
+      <option value="quantity">판매량순</option>
+    </select>
+  </div>
+  <div id="salesCounts" class="sales-counts" role="status" aria-live="polite"></div>
   <div class="sales-table-wrap">
-    <table class="sales-table" id="salesTable">
+    <table class="sales-table" id="salesTable" aria-label="상품별 판매성과">
       <thead>
-        <tr><th>사진</th><th>제품</th><th>예상</th><th>실제</th><th>차이</th></tr>
+        <tr><th scope="col">사진</th><th scope="col">상품</th><th scope="col">목표 수량</th><th scope="col">판매 수량</th><th scope="col">달성률</th></tr>
       </thead>
       <tbody id="salesTableBody"></tbody>
     </table>
@@ -4158,7 +4226,7 @@
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
   const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
     "fabricNameField","fabricSupplierField","designer","blend","factory",
-    "predExpectedQty","predActualQty","predActualDays",
+    "predExpectedQty","predExpectedDays","predActualQty","predActualDays",
     "sampleRecoveryStatus","photoStage",
     // 2026-08-25 추가: 코디 품번. 이게 색인에 있어야 "이 옷을 코디로 걸어둔 작지"를
     // 원본 전체를 내려받지 않고 찾을 수 있습니다
@@ -8836,6 +8904,7 @@
     $("#sampleMgmtView").style.display = "none";
     $("#editorView").style.display = "block";
     renderMobileHeader_();
+    setMainTabActive_("orders");
     $("#mainBar").style.display = "flex";
   }
   // 2026-08-29 추가: 폰에서 접어둔 버튼을 펴고 접습니다 (PC 에서는 이 버튼이 안 보입니다)
@@ -9138,73 +9207,156 @@
         grid.appendChild(card);
       });
   }
-  // ---------- 판매현황 대시보드 렌더링 ----------
+  // ---------- 판매성과: 작지에 직접 입력한 수량·기간 비교 ----------
   let salesSort = "recent";
-  function ratioOf_(st){
-    const exp = Number(st.predExpectedQty)||0;
-    const act = Number(st.predActualQty)||0;
-    if(!exp) return null;
-    return act/exp;
-  }
-  function isSteady_(st){
-    const r = ratioOf_(st);
-    const days = Number(st.predActualDays)||0;
-    return r !== null && r >= 0.9 && days >= 14;
-  }
+  let salesFilter = "sale";
+  let salesSearch = "";
   let lastSalesSig_ = null;
+  const salesPeriodCache_ = new Map();
+  const salesPeriodQueue_ = [];
+  let salesPeriodReads_ = 0;
+  function salesNumber_(value){
+    if(typeof value === "number") return Number.isFinite(value) && value >= 0 ? value : null;
+    if(typeof value !== "string") return null;
+    const text = value.trim();
+    if(!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(text)) return null;
+    const number = Number(text.replace(/,/g, ""));
+    return Number.isFinite(number) && number >= 0 ? number : null;
+  }
+  function salesPeriodKey_(st){
+    return JSON.stringify([st.updatedAt,st.status,st.pumMyeong,st.predExpectedQty,st.predExpectedDays,st.predActualQty,st.predActualDays]);
+  }
+  function salesExpectedPeriod_(code, st){
+    if(Object.prototype.hasOwnProperty.call(st,"predExpectedDays")) return {state:"ready",value:st.predExpectedDays};
+    const cached = salesPeriodCache_.get(code);
+    return cached && cached.key === salesPeriodKey_(st) ? cached : {state:"pending",value:null};
+  }
+  function queueSalesPeriodReads_(list){
+    // Old indices omitted this one field. Read only that leaf, without rebuilding or writing any record.
+    for(const [code,st] of list){
+      if(Object.prototype.hasOwnProperty.call(st,"predExpectedDays")) continue;
+      const key = salesPeriodKey_(st), old = salesPeriodCache_.get(code);
+      if(old && old.key === key) continue;
+      const request = {code,key,state:"pending",value:null};
+      salesPeriodCache_.set(code,request);
+      salesPeriodQueue_.push(request);
+    }
+    pumpSalesPeriodReads_();
+  }
+  function pumpSalesPeriodReads_(){
+    while(salesPeriodReads_ < 4 && salesPeriodQueue_.length){
+      const request = salesPeriodQueue_.shift();
+      const current = allWorkOrders[request.code];
+      if(!current || salesPeriodCache_.get(request.code) !== request || salesPeriodKey_(current) !== request.key) continue;
+      salesPeriodReads_++;
+      woRoot.child(request.code).child("predExpectedDays").once("value").then(snapshot=>{
+        const live = allWorkOrders[request.code];
+        if(!live || salesPeriodCache_.get(request.code) !== request || salesPeriodKey_(live) !== request.key || Object.prototype.hasOwnProperty.call(live,"predExpectedDays")) return;
+        request.state = "ready";
+        request.value = snapshot.val();
+      }).catch(()=>{
+        const live = allWorkOrders[request.code];
+        if(live && salesPeriodCache_.get(request.code) === request && salesPeriodKey_(live) === request.key) request.state = "error";
+      }).finally(()=>{
+        salesPeriodReads_--;
+        if(isViewVisible_("salesView")) renderSalesView();
+        pumpSalesPeriodReads_();
+      });
+    }
+  }
+  function salesMetrics_(code, st){
+    const target = salesNumber_(st.predExpectedQty), actual = salesNumber_(st.predActualQty);
+    const period = salesExpectedPeriod_(code,st);
+    const expectedDays = period.state === "ready" ? salesNumber_(period.value) : null;
+    const actualDays = salesNumber_(st.predActualDays);
+    let label, percent = null;
+    if(target === null) label = "목표 미입력";
+    else if(target === 0) label = "목표 0장";
+    else if(actual === null) label = "실적 미입력";
+    else if(period.state === "pending") label = "기간 확인 중";
+    else if(period.state === "error") label = "기간 확인 실패";
+    else if(!(expectedDays > 0) || !(actualDays > 0)) label = "기간 미입력";
+    else if(expectedDays !== actualDays) label = "기간 다름";
+    else {
+      percent = actual / target * 100;
+      label = Number.isFinite(percent) ? Math.round(percent).toLocaleString("ko-KR") + "%" : "수량 확인 필요";
+      if(!Number.isFinite(percent)) percent = null;
+    }
+    const expectedPeriodLabel = period.state === "pending" ? "기간 확인 중" : period.state === "error" ? "기간 확인 실패" : expectedDays > 0 ? expectedDays.toLocaleString("ko-KR") + "일 입력" : "기간 미입력";
+    const actualPeriodLabel = actualDays > 0 ? actualDays.toLocaleString("ko-KR") + "일 입력" : "기간 미입력";
+    return {target,actual,expectedDays,actualDays,label,percent,expectedPeriodLabel,actualPeriodLabel,periodState:period.state};
+  }
+  function salesList_(){
+    const query = salesSearch.trim().toLocaleLowerCase("ko-KR").replace(/\s+/g, "");
+    const list = Object.entries(allWorkOrders || {}).filter(([code,st])=>{
+      if(!st || !["sale","order","pdp"].includes(st.status)) return false;
+      if(salesFilter === "sale" && st.status !== "sale") return false;
+      if(salesFilter === "prep" && !["order","pdp"].includes(st.status)) return false;
+      if(!query) return true;
+      return [code,st.pumMyeong].some(value=>String(value || "").toLocaleLowerCase("ko-KR").replace(/\s+/g, "").includes(query));
+    });
+    list.sort((a,b)=>{
+      if(salesSort === "quantity"){
+        const first = salesNumber_(a[1].predActualQty), second = salesNumber_(b[1].predActualQty);
+        if(first === null && second !== null) return 1;
+        if(first !== null && second === null) return -1;
+        if(first !== null && second !== null && first !== second) return second - first;
+      }
+      const first = Number(a[1].updatedAt) || 0, second = Number(b[1].updatedAt) || 0;
+      return second - first || String(a[0]).localeCompare(String(b[0]),"ko-KR");
+    });
+    return list;
+  }
   function renderSalesView(){
     const body = $("#salesTableBody");
     if(!body) return;
-    let list = Object.entries(allWorkOrders || {}).filter(([code, st])=> st.status === "order" || st.status === "pdp" || st.status === "sale");
-    const sig = JSON.stringify({
-      sort: salesSort,
-      items: list.map(([code, st])=> [code, st.updatedAt, st.pumMyeong, st.predExpectedQty, st.predActualQty, st.predActualDays, (st.thumb||"").length])
-    });
+    const list = salesList_();
+    queueSalesPeriodReads_(list);
+    const sig = JSON.stringify({filter:salesFilter,sort:salesSort,query:salesSearch,items:list.map(([code,st])=>[code,salesPeriodKey_(st),st.thumb,salesExpectedPeriod_(code,st)])});
     if(sig === lastSalesSig_) return;
     lastSalesSig_ = sig;
-    if(salesSort === "steady") list = list.filter(([code, st])=> isSteady_(st));
-    list.sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0));
+    const count = $("#salesCounts");
+    if(count) count.textContent = (salesFilter === "sale" ? "판매 중" : salesFilter === "prep" ? "판매 준비" : "전체") + " " + list.length + "개" + (salesSearch.trim() ? " · 검색 결과" : "");
     if(!list.length){
-      body.innerHTML = `<tr><td colspan="5"><div class="sales-empty">${salesSort==='steady' ? '스테디셀러 조건(연속 14일 이상 · 예상 대비 90% 이상)을 만족하는 작지가 아직 없습니다' : '발주생산 · PDP · 판매 상태인 작지가 아직 없습니다'}</div></td></tr>`;
+      const empty = salesSearch.trim() ? "검색 결과가 없습니다. 품명이나 품번을 확인해 주세요." : salesFilter === "sale" ? "판매 중인 상품이 없습니다." : salesFilter === "prep" ? "발주생산·PDP 상태의 상품이 없습니다." : "발주생산·PDP·판매 상태의 상품이 없습니다.";
+      body.innerHTML = `<tr><td colspan="5"><div class="sales-empty">${empty}</div></td></tr>`;
       return;
     }
     const frag = document.createDocumentFragment();
-    list.forEach(([code, st])=>{
-      const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
-      const exp = Number(st.predExpectedQty)||0;
-      const act = Number(st.predActualQty)||0;
-      const r = ratioOf_(st);
-      let diffLabel = "예측 미입력", diffClass = "neutral";
-      if(r !== null){
-        const diffPct = Math.round((r-1)*100);
-        diffLabel = (diffPct>=0? "+":"") + diffPct + "%";
-        diffClass = r >= 1 ? "good" : (r >= 0.7 ? "mid" : "bad");
-      }
+    const qtyLabel = value => value === null ? "미입력" : value.toLocaleString("ko-KR") + "장";
+    list.forEach(([code,st])=>{
+      const m = salesMetrics_(code,st), name = String(st.pumMyeong || "(품명 미정)");
+      const thumb = typeof st.thumb === "string" && /^(data:image\/[^,]+,|https?:\/\/|blob:)/i.test(st.thumb) ? st.thumb : "";
       const tr = document.createElement("tr");
       tr.className = "srow";
-      tr.innerHTML = `
-        <td><div class="srow-thumb">${thumb ? `<img loading="lazy" src="${thumb}">` : `<span class="empty">✎</span>`}</div></td>
-        <td><div class="srow-name">${st.pumMyeong || "(품명 미정)"}</div><div class="srow-code">${code}</div></td>
-        <td class="srow-num">${exp ? exp + "장" : "-"}</td>
-        <td class="srow-num">${act ? act + "장" : "-"}</td>
-        <td class="srow-diff ${diffClass}">${diffLabel}</td>
-      `;
-      tr.addEventListener("click", ()=>{
-        // 2026-08-13 수정: 기존 작지 열기 경로 통일 (새 작지 모드 표시가 확실히 꺼지게)
-        openWorkOrderByCode_(code);
-      });
+      tr.dataset.code = code;
+      tr.tabIndex = 0;
+      tr.setAttribute("role","button");
+      tr.setAttribute("aria-label",name + " · " + code + " 작업지시서 열기");
+      tr.innerHTML = `<td><div class="srow-thumb">${thumb ? `<img loading="lazy" alt="${esc_(name)}" src="${esc_(thumb)}">` : '<span class="empty" aria-label="사진 없음">—</span>'}</div></td>
+        <td><div class="srow-name">${esc_(name)}</div><div class="srow-code">${esc_(code)}</div><span class="srow-status">${st.status === "sale" ? "판매 중" : st.status === "order" ? "발주생산" : "PDP"}</span></td>
+        <td class="srow-num" data-label="목표 수량"><span class="srow-value">${qtyLabel(m.target)}</span><span class="srow-period">${m.expectedPeriodLabel}</span></td>
+        <td class="srow-num" data-label="판매 수량"><span class="srow-value">${qtyLabel(m.actual)}</span><span class="srow-period">${m.actualPeriodLabel}</span></td>
+        <td class="srow-diff ${m.percent === null ? "neutral" : "good"}" data-label="달성률"><span class="srow-value">${m.label}</span>${m.percent !== null ? `<span class="srow-period">${m.expectedDays.toLocaleString("ko-KR")}일 기준</span>` : ""}</td>`;
+      tr.addEventListener("click",()=>openWorkOrderByCode_(code));
+      tr.addEventListener("keydown",event=>{if(event.key === "Enter" || event.key === " "){event.preventDefault();openWorkOrderByCode_(code);}});
       frag.appendChild(tr);
     });
-    body.innerHTML = "";
-    body.appendChild(frag);
+    body.replaceChildren(frag);
   }
-  $("#salesTabs").addEventListener("click", (e)=>{
-    const btn = e.target.closest(".gtab");
-    if(!btn) return;
-    salesSort = btn.dataset.sort;
-    $("#salesTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b===btn));
+  $("#salesTabs").addEventListener("click",event=>{
+    const button = event.target.closest(".gtab[data-status]");
+    if(!button || !["sale","prep","all"].includes(button.dataset.status)) return;
+    salesFilter = button.dataset.status;
+    $("#salesTabs").querySelectorAll(".gtab").forEach(item=>{
+      item.classList.toggle("active",item === button);
+      item.setAttribute("aria-pressed",String(item === button));
+    });
     renderSalesView();
   });
+  $("#salesSearchInput").addEventListener("input",event=>{salesSearch = event.target.value;renderSalesView();});
+  $("#salesSort").addEventListener("change",event=>{salesSort = event.target.value === "quantity" ? "quantity" : "recent";renderSalesView();});
+
 
   let renderListsTimer_ = null;
   // 2026-08-13 수정: 예전에는 값이 바뀔 때마다 갤러리와 판매현황을 둘 다 다시 그렸음.
