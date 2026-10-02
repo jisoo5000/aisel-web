@@ -70,8 +70,15 @@ async function thumbnail(code,v){
   const ref=firebase.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
   await ref.put(blob,{contentType:blob.type||"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
   const url=await ref.getDownloadURL();
-  await db.ref("workorders").child(code).child("sheetThumb").set({url,signature:sig});
-  return url;
+  // An upload may finish after the work order was deleted or its photo changed.
+  // Update only the existing matching original; never recreate a deleted record.
+  const original=db.ref("workorders").child(code);
+  await original.once("value");
+  const result=await original.transaction(current=>{
+    if(!current || signature(current.p1Thumb||current.p1||"")!==sig)return;
+    return {...current,sheetThumb:{url,signature:sig}};
+  },undefined,false);
+  return result.committed?url:"";
  }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return /^https:\/\//.test(v.p1||"")?v.p1:"";}
 }
 async function perform(code){
@@ -87,11 +94,12 @@ async function perform(code){
  await rows.child(code).set(build(code,latest,photo));
  await meta.update({version:1,updatedAt:firebase.database.ServerValue.TIMESTAMP});
  document.getElementById("sheetBridgeStatus")?.remove();
+ return true;
 }
 function sync(code){
  if(!code)return Promise.resolve();
  const prev=running.get(code)||Promise.resolve();
- const next=prev.catch(()=>{}).then(()=>perform(code)).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);}).finally(()=>{if(running.get(code)===next)running.delete(code);});
+ const next=prev.catch(()=>{}).then(()=>perform(code)).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);return false;}).finally(()=>{if(running.get(code)===next)running.delete(code);});
  running.set(code,next);return next;
 }
 api.sync=sync;
