@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v92 (2026-10-03)
+<!-- AISEL 작업지시서 v93 (2026-10-03)
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -12583,5 +12583,11 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
   #editorView .toolbar { row-gap:16px; padding-bottom:8px; }
   #editorView #statusBar { padding-top:8px; padding-bottom:7px; margin-bottom:8px; }
   #editorView #metaAccordion { margin-top:8px; }
+}
+</style>
+<style id="aisel-v93-gallery-colors">
+@media screen {
+  #galleryView #galleryGrid .gcard.newcard .gcard-title,
+  #galleryView #galleryCounts .active { color:#2F3B52; }
 }
 </style>
