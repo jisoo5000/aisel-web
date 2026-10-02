@@ -34,7 +34,7 @@ function build(code,v,photo){
  !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
- const status={sampling:"샘플중",planned:"예정",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
+ const status={sampling:"샘플중",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
