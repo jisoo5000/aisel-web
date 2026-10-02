@@ -1,4 +1,6 @@
-<!-- AISEL 작업지시서 v78 (2026-10-01)
+<meta charset="utf-8">
+<!-- AISEL 작업지시서 v79 (2026-10-02)
+     [v79] 모바일 정렬·아이콘·발주 필터·브랜드 색상 및 인쇄 연락처·구분선 개선.
      [v78] 원가 화면 높이 고정, 판매가 바로가기 제거, 레퍼런스 아래 원형 컬러칩.
      [v76] 작지 화면 간소화 · 컬러 독립 · 모바일 헤더와 더보기 정리.
      [v75] 원부자재 메모에서 원단 헤더 자동 입력 · 브라우저 뒤로/앞으로 이동과 목록 복원.
@@ -135,7 +137,7 @@
     align-items: flex-end; background: var(--sheet); border: 1px solid var(--hair); border-bottom: none;
     border-radius: var(--radius) var(--radius) 0 0; padding: 12px 16px;
   }
-  .toolbar { margin-top: 66px; }
+  .toolbar { margin-top: 14px; }
   .toolbar-fields {
     display: grid; grid-template-columns: 88px minmax(0, 1fr) 82px 112px;
     align-items: end; gap: 10px; width: 100%;
@@ -401,22 +403,6 @@
      발주는 홈 화면 추가 버튼 때문에 div로 한 번 감싸져 있으므로 직계 자식 둘을 함께 지정합니다. */
   .mainbar > .maintab, .mainbar > .mainbar-order-col { flex: 1 1 0; min-width: 0; }
   .mainbar-order-col { display: flex; flex-direction: column; position: relative; }
-  .mainbar-order-col .home-add-btn { position: absolute; top: calc(100% + 22px); right: 0; z-index: 5; }
-  .home-add-btn {
-    /* 2026-08-13 수정: 열 전체 폭으로 늘어나지 않게 가운데 정렬하되, 손가락으로 누를 수 있는 크기는 확보
-       (터치 목표 최소 높이를 위해 min-height 지정. 폭은 발주서 버튼보다 좁게 유지) */
-    align-self: center; padding: 8px 18px; min-height: 36px; border-radius: 8px; border: none;
-    background: #2F3B52; color: #fff; display: inline-flex; align-items: center; justify-content: center;
-    font-size: 12px; line-height: 1.3; font-weight: 700; cursor: pointer; text-align: center; white-space: nowrap;
-  }
-  .home-add-btn:hover { opacity: .9; }
-  .home-add-modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 500;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-  }
-  .home-add-modal { background: var(--sheet); border-radius: 14px; padding: 22px; max-width: 380px; width: 100%; }
-  .home-add-modal-title { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
-  .home-add-modal-body { font-size: 13.5px; line-height: 1.7; color: var(--ink); margin-bottom: 18px; white-space: pre-line; }
   .maintab {
     min-width: 0; padding: 10px 10px; border-radius: 6px; border: 1px solid var(--field-line);
     background: var(--field); font-weight: 700; font-size: 14px; cursor: pointer; color: var(--muted);
@@ -708,17 +694,17 @@
   .gallery-head h2 { margin: 0; font-size: 20px; font-weight: 800; }
   .gallery-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
   .gallery-tabs-row { display: block; }
-  #galleryTabs { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
-  #galleryTabs .gtab { width: 100%; min-width: 0; padding: 9px 2px; white-space: nowrap; border-radius: 9px; }
+  #galleryTabs, #qoStatusFilter { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; margin-bottom: 10px; }
+  :is(#galleryTabs, #qoStatusFilter) .gtab { width: 100%; min-width: 0; padding: 9px 2px; white-space: nowrap; border-radius: 9px; }
   .gallery-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 16px; }
   .gallery-counts { display: flex; flex-wrap: wrap; gap: 6px 12px; color: var(--muted); font-size: 12px; line-height: 1.6; }
   .gallery-counts span { white-space: nowrap; }
   .gallery-counts .active { color: var(--accent); font-weight: 800; }
   .gallery-tabs-row #galleryExportSheetBtn { flex-shrink: 0; margin-left: auto; }
   @media (max-width: 560px) {
-    #galleryTabs { gap: 3px; }
-    #galleryTabs .gtab { padding-inline: 0; font-size: clamp(10px, 2.8vw, 11px); }
-    #galleryTabs .gtab .tab-icon { display: none; }
+    #galleryTabs, #qoStatusFilter { gap: 3px; }
+    :is(#galleryTabs, #qoStatusFilter) .gtab { padding-inline: 0; font-size: clamp(10px, 2.8vw, 11px); }
+    :is(#galleryTabs, #qoStatusFilter) .gtab .tab-icon { display: none; }
   }
   .gallery-search { display: flex; gap: 8px; margin-bottom: 16px; }
   .gallery-search select {
@@ -744,7 +730,7 @@
     background: var(--sheet); border: 1.4px solid var(--hair); border-radius: 10px; overflow: hidden;
     cursor: pointer; display: flex; flex-direction: column;
   }
-  .gcard:hover { border-color: var(--accent); }
+  .gcard:hover, .gcard.has-photo { border-color: var(--btn-dark); }
   /* 2026-08-27 수정: 정사각 칸에 잘라 채우던 것을 3:4 칸에 전체 보이기로 바꿨습니다.
      도식화는 대부분 3:4 근처(0.70~0.91)인데 정사각 칸에 맞추느라 위아래가 잘렸고,
      가로로 넓은 것은 좌우가 잘렸습니다 — AS-26F-KT-022(피노 하이넥 셔츠)는
@@ -911,7 +897,7 @@
   }
   .photo-stage-seg button:first-child { border-radius: 7px 0 0 7px; }
   .photo-stage-seg button:last-child { border-radius: 0 7px 7px 0; border-left: none; }
-  .photo-stage-seg button.active[data-value="reference"] { background: #EDE7F6; border-color: #B39DDB; color: #5E35B1; }
+  .photo-stage-seg button.active[data-value="reference"] { background: var(--btn-dark); border-color: var(--btn-dark); color: #fff; }
   .photo-stage-seg button.active[data-value="sample"] { background: #FCE4EC; border-color: #F48FB1; color: #AD1457; }
   .photo-stage-hint { font-size: 11.5px; color: #8A5A18; font-weight: 600; }
 
@@ -1317,6 +1303,7 @@
     .cost-fixed, .cost-table tr, .sizespec table tr, .total-row, .cell.mat, .cell.cost { page-break-inside: avoid; break-inside: avoid; }
     .ss-table-wrap { overflow: hidden !important; margin-top: 1mm !important; }
   }
+
 </style>
 <style>
 /* ---------- 상세페이지 카피 생성기 + 원단정보 인식 (통합, copygen- 접두사로 격리) ---------- */
@@ -1656,7 +1643,7 @@
 #productColors .copygen-swatch-grid { grid-template-columns:repeat(5,minmax(0,1fr)); }
 #retiredEditorFields, #metaMissingTag { display:none!important; }
 @media screen and (max-width:600px) {
-  .editor-mobile-head { display:block; margin:66px auto 0; padding:12px; border:1px solid var(--hair); border-radius:10px 10px 0 0; }
+  .editor-mobile-head { display:block; margin:14px auto 0; padding:12px; border:1px solid var(--hair); border-radius:10px 10px 0 0; }
   .editor-mobile-title { display:flex; align-items:flex-start; gap:10px; }
   #mobileBackToListBtn { flex-shrink:0; border:0; background:none; padding:2px 0; font-size:13px; }
   #mobileProductName { min-width:0; overflow-wrap:anywhere; font-size:16px; line-height:1.5; }
@@ -1682,6 +1669,113 @@
   #productColors .copygen-sub { display:none; }
   #productColors .copygen-inline-add input { min-width:0; }
 }
+/* v79: shared controls and compact mobile editor. */
+.toolbar-fields { grid-template-columns: 100px minmax(0, 1fr); }
+.toolbar-sequence {
+  grid-column: 1 / -1; display: grid;
+  grid-template-columns: minmax(64px, .8fr) repeat(2, minmax(0, 1fr));
+  align-items: end; gap: 8px; min-width: 0;
+}
+.toolbar-sequence > *, .toolbar-sequence .tf { min-width: 0; }
+.toolbar-sequence .btn, .toolbar-sequence input {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; min-height: 40px; padding: 7px 4px; white-space: nowrap;
+}
+.toolbar-sequence #seq { text-align: center; }
+.tb-row .btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  text-align: center; line-height: 1.3; gap: 4px;
+}
+.tb-row .mfold-toggle { display: none; }
+#qoCounts { margin-bottom: 16px; }
+#refPanel .ref-icon-btn { width: 40px; height: 40px; flex-basis: 40px; }
+.ref-action-icon {
+  display: block; width: 20px; height: 20px; flex: 0 0 20px;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.resample-heading-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 10px; }
+.resample-heading-fields > div { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.resample-heading-fields label { font-size: 12px; font-weight: 700; color: var(--muted); text-align: center; }
+.resample-heading-fields input {
+  box-sizing: border-box; width: 100%; min-width: 0; max-width: 100%; min-height: 40px;
+  padding: 6px; font-size: 16px; line-height: 1.3; text-align: center;
+  border: 1.4px solid var(--line); appearance: none; -webkit-appearance: none;
+}
+#resampleDate::-webkit-date-and-time-value { min-width: 0; text-align: center; }
+#resampleDate::-webkit-datetime-edit { padding: 0; text-align: center; }
+@media screen and (max-width: 600px) {
+  #editorView .toolbar-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  #editorView .toolbar-sequence { gap: 6px; }
+  #editorView .toolbar-sequence .btn { min-height: 40px; font-size: 12px; padding-inline: 2px; }
+  #editorView .toolbar-sequence #seq { height: 40px; }
+  #editorView .toolbar { border-bottom: 1px solid var(--hair); border-radius: 0 0 10px 10px; }
+  body.mfold-open #editorView .toolbar { border-bottom: 0; border-radius: 0; }
+  #editorView .tb-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: minmax(48px, 1fr); align-items: stretch; gap: 6px; }
+  #editorView .tb-row > .btn { align-items: center; justify-content: center; min-height: 48px; height: 100%; padding: 7px 3px; font-size: 11.5px; }
+  #editorView .tb-row #factorySaveBtn { order: 1; }
+  #editorView .tb-row #printBtn { font-weight: 700; }
+}
+
+/* Document layout: shared horizontal boundaries are drawn once across both columns. */
+#sheet > .photos { border-bottom: 1.5px solid var(--line); }
+#sheet > .photos #costCell { border-bottom: 0; }
+#sheet > .detail2 { border-top: 0; }
+#sheet > .detail2 > .cell.mat { border-bottom: 0; }
+#sheet > .detail2 > .cell.mat > .sec-title { letter-spacing: 0; }
+
+@media screen and (max-width: 600px) {
+  #sheet > .title-row { gap: 2px; padding: 8px 12px; }
+  #sheet > .title-row h1 { margin: 0 0 2px; line-height: 1.25; }
+  #sheet > .title-row .date-row { align-items: center; line-height: 1.2; }
+  #sheet > .title-row .date-row input { min-height: 28px; height: 28px; }
+  #sheet > .title-row .date-box::before,
+  #sheet > .title-row .mod-label {
+    display: inline-block; width: 28px; flex: 0 0 28px;
+    margin-right: 8px; font-size: 12px; font-weight: 600;
+  }
+  #sheet > .title-row .title-spacer .date-row { column-gap: 3px; }
+  #sheet > .title-row .mod-label { margin-right: 5px; }
+
+  /* Keep a common label column, including rows with a second input. */
+  #sheet > .meta > .cell { padding: 10px 12px; }
+  #sheet > .meta .designer {
+    display: grid; grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center; gap: 6px 8px; margin-top: 10px;
+  }
+  #sheet > .meta .designer:first-child { margin-top: 0; }
+  #sheet > .meta .designer > .k { grid-column: 1; grid-row: 1; }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code {
+    grid-column: 2; width: 100% !important; min-width: 0; max-width: 100%;
+    min-height: 34px; margin: 0; padding: 6px 8px; font-size: 14px;
+  }
+  #sheet > .meta .designer > .code { display: flex; align-items: center; }
+}
+
+@media print {
+  #sheet > .meta { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #sheet > .meta > .cell { min-width: 0; }
+  #sheet > .meta > .cell:first-child .designer {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) 96px;
+    align-items: center; gap: 4px;
+  }
+  #sheet > .meta > .cell:first-child .designer:first-child { margin-top: 0 !important; }
+  #sheet > .meta > .cell:first-child .designer > .k { font-size: 9.5px; }
+  #sheet #designer, #sheet #phone, #sheet #factory, #sheet #factoryPhone {
+    width: 100% !important; min-width: 0; padding: 4px;
+    font-size: 11px; line-height: 1.25; letter-spacing: 0;
+  }
+  #sheet #phone, #sheet #factoryPhone { font-variant-numeric: tabular-nums; }
+  /* Remove inline input baseline gaps so all default size rows fit on A4. */
+  #sheet .sizespec td input { display: block; line-height: 1.15; }
+  #sheet > .detail2 > .cell.mat > .sec-title {
+    white-space: nowrap; font-size: 12px; line-height: 1.3;
+    letter-spacing: 0; margin-bottom: 8px;
+  }
+}
+
+
 </style>
 
 
@@ -1695,15 +1789,6 @@
   <button type="button" class="maintab" data-main="orders"><span class="tabicon">📋</span>작업지시서</button>
   <div class="mainbar-order-col">
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder"><span class="tabicon">🧾</span>발주</button>
-    <button type="button" class="home-add-btn" id="homeAddBtn">📱 홈 화면에 추가</button>
-  </div>
-</div>
-
-<div class="home-add-modal-overlay" id="homeAddModalOverlay" style="display:none">
-  <div class="home-add-modal">
-    <div class="home-add-modal-title">📱 홈 화면에 추가하기</div>
-    <div class="home-add-modal-body" id="homeAddModalBody"></div>
-    <button type="button" class="btn ghost nav-btn" id="homeAddModalCloseBtn">닫기</button>
   </div>
 </div>
 
@@ -1841,9 +1926,8 @@
   <div class="gallery-head">
     <h2>🧾 발주</h2>
   </div>
-  <div class="qo-status-filter" id="qoStatusFilter">
-    <button type="button" class="active" data-qostatus="all">전체</button>
-  </div>
+  <div class="gallery-tabs" id="qoStatusFilter"></div>
+  <div id="qoCounts" class="gallery-counts" role="status" aria-live="polite" aria-label="상태별 발주 대상 개수"></div>
   <div class="qo-search-wrap">
     <input type="text" id="qoSearchInput" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
     <div class="qo-search-results" id="qoSearchResults" style="display:none"></div>
@@ -1933,34 +2017,16 @@
       <label>카테고리 (품명 자동)</label>
       <select id="cat"></select>
     </div>
-    <div class="tf">
-      <label>순번 (자동)</label>
-      <input id="seq" type="text" inputmode="numeric" placeholder="001" />
+    <div class="toolbar-sequence">
+      <div class="tf">
+        <label for="seq">순번 (자동)</label>
+        <input id="seq" type="text" inputmode="numeric" placeholder="001" />
+      </div>
+      <button class="btn" id="genBtn">다음 번호 ▷</button>
+      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sampleRecoverySection">🧺 원샘플</button>
     </div>
-    <button class="btn" id="genBtn">다음 번호 ▷</button>
     <!-- 2026-08-13 추가: 저장된 작지에서 카테고리를 바꿨을 때만 나타납니다 -->
     <button class="btn" id="moveCodeBtn" style="display:none;background:#8A5A18;border-color:#8A5A18;color:#fff;">품번 옮기기</button>
-    </div>
-
-    <!-- 2026-08-21 재구성: 이전/다음 작지 이동 버튼(◀▶)을 삭제하고, 그 자리로 바로가기 버튼 줄을
-         옮겼습니다. 예전 위쪽 4버튼(타겟판매가·발주·PDP생성·원단정보)과 판매예측 카드 위에
-         따로 있던 11버튼 줄이 겹쳐 있던 걸 하나로 합쳤습니다. 버튼이 많아 두 줄로 자연스럽게
-         접힙니다(화면이 넓으면 한 줄, 좁으면 더 여러 줄). -->
-    <div class="jump-btn-row noprint">
-
-
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="refPanel">🔗 레퍼런스</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sampleRecoverySection">🧺 원샘플</button>
-
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sheet">📋 작업지시서</button>
-      <!-- 2026-08-21 재수정: 화면 폭에 따라 타겟판매가가 1줄 끝에 걸치거나 2줄로 넘어가거나
-           들쭉날쭉했습니다. 여기 강제 줄바꿈을 넣어서 화면 폭과 상관없이 항상
-           정확히 6개/5개로 나뉘게 고정했습니다. -->
-      <div class="jump-btn-break"></div>
-
-
-
-
     </div>
 
     <div class="tb-row">
@@ -2046,9 +2112,9 @@
 
     <div class="mini-sec-title">재샘플 이력</div>
     <div id="resamplePanel" style="border:1px solid #d9e2ec;border-radius:10px;padding:12px;background:#f8fafc;">
-      <div class="predict-row">
-        <label>날짜</label><input id="resampleDate" type="date">
-        <label>차수</label><input id="resampleRound" type="number" min="1" step="1" placeholder="1">
+      <div class="resample-heading-fields">
+        <div><label for="resampleDate">날짜</label><input id="resampleDate" type="date"></div>
+        <div><label for="resampleRound">차수</label><input id="resampleRound" type="number" min="1" step="1" placeholder="1"></div>
       </div>
       <div class="predict-row single" style="margin-top:8px;">
         <label>수정 내용</label>
@@ -2091,16 +2157,16 @@
       <label>링크</label>
       <input id="refLink" type="text" placeholder="https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)">
       <div class="ref-actions">
-        <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제">🗑</button>
+        <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정" aria-label="링크 수정"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button>
+        <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제" aria-label="링크 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
       </div>
     </div>
     <div class="predict-row single ref-link-row ref-actions-row">
       <label>링크 2</label>
       <input id="refLink2" type="text" placeholder="https://... (두 번째 레퍼런스, 선택)">
       <div class="ref-actions">
-        <button type="button" id="refEditBtn2" class="ref-icon-btn" title="수정">✎</button>
-        <button type="button" id="refLinkDelBtn2" class="ref-icon-btn danger" title="삭제">🗑</button>
+        <button type="button" id="refEditBtn2" class="ref-icon-btn" title="수정" aria-label="링크 2 수정"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button>
+        <button type="button" id="refLinkDelBtn2" class="ref-icon-btn danger" title="삭제" aria-label="링크 2 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
       </div>
     </div>
   </div>
@@ -2237,7 +2303,7 @@
     <!-- 봉제/재단시 주의사항 및 원부자재 | SIZE (나란히, 각 9cm) -->
     <div class="detail2">
       <div class="cell mat">
-        <div class="sec-title">&lt; 봉제/재단시 주의사항 및 원부자재 swatch · 라벨 위치 &gt;</div>
+        <div class="sec-title">&lt; 봉제/재단시 주의사항, 원부자재 swatch, 라벨 &gt;</div>
         <textarea id="materials" placeholder="예)
 셀프 C/3270
 #A73 58-60&quot; @6,200 → @5,000
@@ -2284,8 +2350,9 @@
 
 
   </div>
-  <div id="editorProductTools" class="noprint">
-
+</div>
+<div id="retiredEditorFields" hidden inert class="noprint" style="display:none!important">
+<!-- Legacy price fields retained for saved-record compatibility. -->
 <div class="targetbox noprint" id="jumpTargetPrice">
       <div class="sec-title-np">타겟 판매가</div>
       <div class="targetbox-card">
@@ -2316,9 +2383,7 @@
         </div>
       </div>
     </div>
-  </div>
-</div>
-<div id="retiredEditorFields" hidden inert class="noprint" style="display:none!important"><div class="copygen-scope copygen-wrap noprint" id="jumpPdp">
+<div class="copygen-scope copygen-wrap noprint" id="jumpPdp">
 <div class="sec-title-np">상세페이지 카피 생성기</div>
 <div class="copygen-grid">
 <div>
@@ -5896,6 +5961,7 @@
     $("#quickOrderView").style.display = "block";
     $("#mainBar").style.display = "flex";
     setMainTabActive_("quickorder");
+    qoRenderSearchResults_($("#qoSearchInput").value);
   }
   function showSampleMgmt2(){
     $("#editorView").style.display = "none";
@@ -7432,27 +7498,6 @@
     });
   });
 
-  // ---------- 홈 화면에 추가 (iOS/Android는 브라우저 정책상 자동 설치가 안 돼서 안내 팝업으로 안내) ----------
-  $("#homeAddBtn").addEventListener("click", ()=>{
-    const ua = navigator.userAgent || "";
-    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const isAndroid = /Android/.test(ua);
-    let msg;
-    if(isIOS){
-      msg = "1. 화면 아래(또는 위) 공유 버튼 ⬆️ 을 눌러주세요\n2. 아래로 스크롤해서 '홈 화면에 추가'를 선택해주세요\n3. 이름 확인하고 '추가'를 누르면 아이콘이 홈 화면에 생깁니다";
-    } else if(isAndroid){
-      msg = "1. 오른쪽 위 점 3개(⋮) 메뉴를 눌러주세요\n2. '홈 화면에 추가' 또는 '앱 설치'를 선택해주세요\n3. 이름 확인하고 추가하면 아이콘이 홈 화면에 생깁니다";
-    } else {
-      msg = "컴퓨터에서는 브라우저 주소창 오른쪽의 설치 아이콘(⊕ 또는 화면 모양 아이콘)을 눌러 '설치'를 선택하시면 됩니다. 안 보이면 브라우저 메뉴(⋮ 또는 ···)에서 '앱 설치'를 찾아주세요.\n\n아이패드·아이폰에서는 공유 버튼을 눌러 '홈 화면에 추가'를 선택해주세요.";
-    }
-    $("#homeAddModalBody").textContent = msg;
-    $("#homeAddModalOverlay").style.display = "flex";
-  });
-  $("#homeAddModalCloseBtn").addEventListener("click", ()=> $("#homeAddModalOverlay").style.display = "none");
-  $("#homeAddModalOverlay").addEventListener("click", (e)=>{
-    if(e.target.id === "homeAddModalOverlay") $("#homeAddModalOverlay").style.display = "none";
-  });
-
   function startNewWorkOrder(){
     // 2026-08-25 추가 (중요): 직전 작지를 편집하다가 600ms 안에 새 작지를 누르면
     // 예약돼 있던 자동저장이 "비워진 화면"을 읽어서 직전 작지에 덮어쓰는 사고가 있었습니다.
@@ -7542,12 +7587,12 @@
   // ---------- 갤러리 카드 목록 렌더링 ----------
   let allWorkOrders = {};
   let galleryFilter = "sampling";
+  let qoStatusFilterVal = "sampling";
   function galleryStatus_(st){
     return !st.status || st.status === "planned" ? "sampling" : st.status;
   }
   // 탭과 같은 상태 기준으로 집계합니다. 검색 중에도 상태별 전체 개수를 유지합니다.
-  function renderGalleryCounts_(){
-    const box = $("#galleryCounts");
+  function renderStatusCounts_(box, activeFilter){
     if(!box) return;
     const orders = Object.values(allWorkOrders || {});
     const counts = { all: orders.length };
@@ -7558,9 +7603,14 @@
     const labels = [["sampling", "샘플중"], ["order", "발주생산"], ["pdp", "PDP"],
       ["sale", "판매"], ["drop", "드롭"], ["all", "전체"]];
     const html = labels.map(([status, label])=>
-      `<span class="${galleryFilter === status ? "active" : ""}">${label} ${counts[status] || 0}개</span>`
+      `<span class="${activeFilter === status ? "active" : ""}">${label} ${counts[status] || 0}개</span>`
     ).join("");
     if(box.innerHTML !== html) box.innerHTML = html;
+  }
+
+  function renderGalleryCounts_(){
+    renderStatusCounts_($("#galleryCounts"), galleryFilter);
+    renderStatusCounts_($("#qoCounts"), qoStatusFilterVal);
   }
 
   let lastGallerySig_ = null;
@@ -7710,7 +7760,7 @@
           dateLabel = `${String(d.getFullYear()).slice(2)}.${d.getMonth()+1}.${d.getDate()}`;
         }
         const card = document.createElement("div");
-        card.className = "gcard";
+        card.className = "gcard" + (thumb ? " has-photo" : "");
         // 2026-08-13 추가: 품번을 품명과 날짜 사이에 표시.
         // 카페24 자체상품코드를 채울 때 목록에서 바로 보고 옮겨 적을 수 있습니다.
         // PDP·판매 상태인데 입력 완료 체크가 안 된 작지는 옆에 표시가 뜹니다.
@@ -7865,6 +7915,10 @@
     renderListsTimer_ = setTimeout(()=>{
       if(isViewVisible_("galleryView")) renderGallery();
       if(isViewVisible_("salesView")) renderSalesView();
+      if(isViewVisible_("quickOrderView")){
+        renderStatusCounts_($("#qoCounts"), qoStatusFilterVal);
+        if(!selectedQO_) qoRenderSearchResults_($("#qoSearchInput").value);
+      }
     }, 250);
   });
 
@@ -8007,14 +8061,13 @@
   // ---------- 발주서 (품명 검색 → 바로 아래에 발주 폼, 공장/원단은 골라둔 품목 정보로 자동 채움) ----------
   let selectedQO_ = null; // { code, pumMyeong, factory, fabricSupplierField, fabricNameField }
 
-  let qoStatusFilterVal = "all";
   (function initQoStatusFilter_(){
     const wrap = $("#qoStatusFilter");
-    STATUS_LIST.forEach(s=>{
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.dataset.qostatus = s.key;
-      btn.textContent = s.emoji + " " + s.label;
+    $("#galleryTabs").querySelectorAll(".gtab").forEach(source=>{
+      const btn = source.cloneNode(true);
+      btn.dataset.qostatus = source.dataset.status;
+      delete btn.dataset.status;
+      btn.classList.toggle("active", btn.dataset.qostatus === qoStatusFilterVal);
       wrap.appendChild(btn);
     });
     wrap.querySelectorAll("button[data-qostatus]").forEach(btn=>{
@@ -8022,6 +8075,7 @@
         wrap.querySelectorAll("button").forEach(b=> b.classList.remove("active"));
         btn.classList.add("active");
         qoStatusFilterVal = btn.dataset.qostatus;
+        renderStatusCounts_($("#qoCounts"), qoStatusFilterVal);
         qoRenderSearchResults_($("#qoSearchInput").value);
       });
     });
@@ -8030,9 +8084,10 @@
   function qoRenderSearchResults_(query){
     const box = $("#qoSearchResults");
     const q = query.trim().toLowerCase();
+    renderStatusCounts_($("#qoCounts"), qoStatusFilterVal);
     if(!q && qoStatusFilterVal === "all"){ box.style.display = "none"; box.innerHTML = ""; return; }
     const matches = Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> qoStatusFilterVal === "all" || (st.status || "planned") === qoStatusFilterVal)
+      .filter(([code, st])=> qoStatusFilterVal === "all" || galleryStatus_(st) === qoStatusFilterVal)
       .filter(([code, st])=> !q || code.toLowerCase().includes(q) || (st.pumMyeong || "").toLowerCase().includes(q))
       .sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0))
       .slice(0, 8);
@@ -10749,7 +10804,7 @@ async function perform(code){
   signature(src)===signature(v.p1Thumb||v.p1||"")?image:"";
  await rows.child(code).set(build(code,latest,photo));
  await meta.update({version:1,updatedAt:firebase.database.ServerValue.TIMESTAMP});
- show("공용 시트용 데이터 저장됨 · 시트가 열려 있는 동안 약 1시간 주기로 갱신");
+ document.getElementById("sheetBridgeStatus")?.remove();
 }
 function sync(code){
  if(!code)return Promise.resolve();
@@ -10776,3 +10831,4 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 })(typeof globalThis!=="undefined"?globalThis:this);
 
 </script>
+
