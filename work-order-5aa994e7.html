@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v83 (2026-10-02)
+<!-- AISEL 작업지시서 v84 (2026-10-02)
+     [v84] 화면·인쇄 기본정보 칸과 글자 비율 통일, 사진 아래 인쇄 구분선 복원.
      [v83] 데스크톱 A4 배치·인쇄 마지막 행 보존·모바일 이동 버튼·목록 카드 및 내보내기 통일.
      [v82] 화면 도식화·원가계산서·주의사항·사이즈표 세로 배치. PDF/인쇄 A4 배치 유지.
      [v81] 화면 사이즈 표 전체 표시·모바일 한 열 배치·이동 버튼 겹침 제거·블러시 핑크 입력칸.
@@ -2353,6 +2354,69 @@
   body.aisel-print-ready:not(.factory-print-mode) #sheet #costCell .lines-scroll {
     flex: 0 0 auto;
     overflow: visible !important;
+  }
+}
+
+</style>
+
+<style id="aisel-v84-layout">
+/* One proportional metadata layout for the desktop sheet and its A4 printout. */
+@media print, screen and (min-width: 901px) {
+  #sheet > .meta {
+    container-type: inline-size;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, auto); row-gap: 0;
+  }
+  #sheet > .meta > .cell {
+    --meta-unit: calc(100cqw / 816);
+    display: grid; grid-row: 1 / span 2; grid-template-rows: subgrid;
+    min-width: 0; padding: calc(6 * var(--meta-unit)) !important;
+    row-gap: calc(6 * var(--meta-unit));
+  }
+  #sheet > .meta .designer {
+    display: grid; grid-template-columns: calc(44 * var(--meta-unit)) minmax(0, 1fr);
+    align-items: stretch; gap: calc(4 * var(--meta-unit));
+    margin: 0 !important; min-height: calc(26 * var(--meta-unit));
+  }
+  #sheet > .meta > .cell:first-child .designer {
+    grid-template-columns: calc(44 * var(--meta-unit)) minmax(0, 1fr) calc(96 * var(--meta-unit));
+    gap: calc(4 * var(--meta-unit));
+  }
+  #sheet > .meta > .cell:last-child .designer:first-child {
+    grid-template-columns: calc(44 * var(--meta-unit)) minmax(0, 1fr) minmax(0, 1fr);
+  }
+  #sheet > .meta .designer > .k,
+  #sheet > .meta > .cell:first-child .designer > .k {
+    align-self: center; font-family: var(--kfont);
+    font-size: calc(10 * var(--meta-unit)); line-height: 1.25;
+  }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code,
+  #sheet > .meta .designer > .print-field-value {
+    box-sizing: border-box; width: 100% !important; min-width: 0;
+    height: auto; min-height: calc(26 * var(--meta-unit));
+    margin: 0; padding: calc(4 * var(--meta-unit));
+    border-width: var(--meta-unit) !important;
+    border-radius: calc(4 * var(--meta-unit));
+    font-family: var(--kfont); font-size: calc(11 * var(--meta-unit)) !important;
+    font-weight: 600; line-height: 1.25; letter-spacing: 0;
+  }
+  #sheet > .meta .designer > .code { align-items: center; }
+}
+
+@media print {
+  body.aisel-print-ready #sheet > .meta .designer > .print-field-value {
+    display: flex; align-items: center;
+  }
+  #sheet .print-field-value[data-print-for="phone"],
+  #sheet .print-field-value[data-print-for="factoryPhone"] {
+    white-space: nowrap; overflow-wrap: normal;
+  }
+  /* Paint the shared boundary above the positioned photo, with one continuous stroke. */
+  #sheet > .photos { border-bottom: 0; }
+  #sheet > .detail2 {
+    position: relative; z-index: 1;
+    border-top: 1.5px solid var(--line);
   }
 }
 
