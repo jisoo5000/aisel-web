@@ -6,6 +6,13 @@ const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
 function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
 function signature(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
+function colorNames(list){
+ if(typeof root.colorNames_==="function")return root.colorNames_(list);
+ const aliases={"멜란지그레이":"멜란지 그레이","라이트그레이":"라이트 그레이"};
+ return [...new Set((Array.isArray(list)?list:[]).filter(v=>typeof v==="string").map(v=>{
+  const name=v.trim().replace(/\s+/g," ");return aliases[name.replace(/\s+/g,"")]||name;
+ }).filter(Boolean))];
+}
 function safe(v){
  if(v===undefined||v===null||v==="")return "∅";
  return String(v).replace(/¦/g,"｜").replace(/,/g,"，").replace(/"/g,"″").replace(/\\/g,"＼").replace(/[\r\n]+/g," ↵ ").slice(0,18000);
@@ -27,7 +34,7 @@ function build(code,v,photo){
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
  const status={sampling:"샘플중",planned:"예정",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
- const fields=[p,code,v.pumMyeong,status,v.factory,(v.selectedColors||[]).join(" / "),
+ const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
  filled(main.unit)?fc:"",lines.length?other:"",filled(v.gongim)?number(v.gongim):"",filled(v.siyage)?number(v.siyage):"",
