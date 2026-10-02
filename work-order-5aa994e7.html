@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v90 (2026-10-03)
+<!-- AISEL 작업지시서 v91 (2026-10-03)
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -2793,6 +2793,27 @@
 }
 
 </style>
+<style id="aisel-v91-screen">
+@media screen {
+  #editorView #statusBar { grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
+  #editorView #statusBar .status-btn { width:100%; min-width:0; white-space:nowrap; padding:6px 2px; }
+  #editorView #sampleRecoverySeg button { height:36px; min-height:36px; border:1px solid #CBD3DF; border-radius:4px; background:#fff; color:#2F3B52; }
+  #editorView #sampleRecoverySeg button.active[data-value="factory"],
+  #editorView #sampleRecoverySeg button.active[data-value="returned"] { background:#2F3B52; border-color:#2F3B52; color:#fff; }
+  #editorView #productColors #colorPickerToggle { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:60px; min-width:60px; height:36px; min-height:36px; padding:4px 6px; border:1px solid #CBD3DF; border-radius:4px; background:#fff; color:#2F3B52; font-size:12px; line-height:1.2; white-space:nowrap; }
+}
+@media screen and (max-width:900px) {
+  #sheet > .title-row .date-row,
+  #sheet > .title-row .title-spacer .date-row { gap:0; letter-spacing:0; white-space:nowrap; }
+  #sheet > .title-row .date-row input { flex:0 0 22px; width:22px; min-width:22px; padding:0; text-indent:0; font-variant-numeric:tabular-nums; }
+  #sheet > .title-row .date-row input.y { flex-basis:48px; width:48px; min-width:48px; }
+}
+@media screen and (max-width:700px) {
+  #editorView #statusBar { gap:4px; padding:8px 6px; }
+  #editorView #statusBar .status-btn { font-size:11px; }
+}
+
+</style>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -2810,7 +2831,6 @@
     <button type="button" class="gtab" data-status="all">전체</button>
     <button type="button" class="gtab" data-status="planned">📅 예정</button>
     <button type="button" class="gtab" data-status="sampling">🧵 샘플중</button>
-    <button type="button" class="gtab active" data-status="samplemgmt">🗂️ 샘플관리</button>
     <button type="button" class="gtab" data-status="order">🏭 발주생산</button>
     <button type="button" class="gtab" data-status="pdp">🖼️ PDP</button>
     <button type="button" class="gtab" data-status="sale">🛍️ 판매</button>
@@ -3064,7 +3084,6 @@
 
   <div class="statusbar noprint" id="statusBar">
     <button type="button" class="status-btn" data-status="sampling">샘플중</button>
-    <button type="button" class="status-btn" data-status="samplemgmt">샘플관리</button>
     <button type="button" class="status-btn" data-status="order">발주생산</button>
     <button type="button" class="status-btn" data-status="pdp">PDP</button>
     <button type="button" class="status-btn" data-status="sale">판매</button>
@@ -3141,7 +3160,7 @@
 <section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
 <div class="color-heading"><h2>컬러</h2>
 <div class="copygen-selected-colors" id="selectedColors"></div>
-<button type="button" id="colorPickerToggle" aria-controls="colorPicker" aria-expanded="false">▸ 선택</button></div>
+<button type="button" id="colorPickerToggle" aria-controls="colorPicker" aria-expanded="false">선택 ▾</button></div>
 <details id="colorPicker"><summary>+ 컬러 선택</summary>
 <div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
 <div class="copygen-swatch-grid" id="colorSwatches"></div>
@@ -3968,6 +3987,7 @@
       const v = s[k];
       o[k] = (v === undefined || v === null) ? "" : v;
     });
+    o.status = normalizeLegacySampleStatus_(o.status);
     if(!o.priceConfirmed) o.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     o.colors = shareColorsOf_(s);
     o.coordi = shareCoordiOf_(s);
@@ -4112,6 +4132,7 @@
       const v = s[k];
       e[k] = (v === undefined || v === null) ? "" : v;
     });
+    e.status = normalizeLegacySampleStatus_(e.status);
     if(!e.priceConfirmed) e.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     e.colors = shareColorsOf_(s);
     e.coordi = shareCoordiOf_(s);
@@ -4143,6 +4164,7 @@
       const v = s[k];
       e[k] = (v === undefined || v === null) ? "" : v;
     });
+    e.status = normalizeLegacySampleStatus_(e.status);
     if(!e.priceConfirmed) e.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     e.selectedColors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
     const sp = s.sellingPoints || null;
@@ -5529,9 +5551,7 @@
 
   // ---------- 상태(예정/샘플중/샘플관리/발주생산/PDP/드롭) ----------
   const STATUS_LIST = [
-    { key:"planned",     emoji:"📅", label:"예정" },
     { key:"sampling",    emoji:"🧵", label:"샘플중" },
-    { key:"samplemgmt",  emoji:"🗂️", label:"샘플관리" },
     { key:"order",       emoji:"🏭", label:"발주생산" },
     { key:"pdp",         emoji:"🖼️", label:"PDP" },
     { key:"sale",        emoji:"🛍️", label:"판매" },
@@ -5540,7 +5560,7 @@
   const STATUS_MAP = Object.fromEntries(STATUS_LIST.map(s=> [s.key, s]));
   let currentStatus = "sampling";
   const STATUS_LABEL_MAP = {
-    planned: "📅 예정", sampling: "🧵 샘플중", samplemgmt: "🗂️ 샘플관리",
+    planned: "🧵 샘플중", sampling: "🧵 샘플중", samplemgmt: "🧵 샘플중",
     order: "🏭 발주생산", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
   };
   // 2026-08-13 수정: 예전에는 "샘플중"일 때만 필수칸이 핑크색으로 표시됐음. 이제 "발주생산"일 때도 같이 표시됨.
@@ -6171,7 +6191,7 @@
     $("#materials").value = st.materials || "";
     fabricMemoLastText_=$("#materials").value;
     pumInput.dataset.auto = st.pumAuto || "1";
-    currentStatus = st.status === "planned" ? "sampling" : (st.status || "sampling");
+    currentStatus = normalizeWorkOrderStatus_(st.status);
     updateStatusButtons();
     photoStage_ = st.photoStage || "reference";
     renderPhotoStage_();
@@ -6286,6 +6306,13 @@
     shortLink.addEventListener("keydown", e=>{
       if(!(input.value || "").trim() && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openReferenceEditor_(input); }
     });
+    // The editor follows its toolbar in the grid, spanning the whole card.
+    // Keep the original input in its reference row for legacy loading and saving.
+    row.appendChild(input);
+    input.autocomplete = "url";
+    input.inputMode = "url";
+    input.spellcheck = false;
+    input.placeholder = "https:// 링크 주소를 붙여넣으세요";
     input.id = "refLink" + suffix;
     label.textContent = index === 0 ? "링크" : "링크 " + (index + 1);
     label.htmlFor = input.id;
@@ -6335,7 +6362,7 @@
       const shortLink = refRow.querySelector(".ref-short-link");
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
-        shortLink.textContent = val ? (index ? "링크 " + (index + 1) + " ↗" : "링크 열기 ↗") : "링크 입력";
+        shortLink.textContent = val ? (index ? "링크 " + (index + 1) + " ↗" : "링크 ↗") : "링크 입력";
         shortLink.title = val || "레퍼런스 링크 입력";
         if(val){ shortLink.href = /^https?:\/\//i.test(val) ? val : "https://" + val; shortLink.removeAttribute("role"); shortLink.removeAttribute("tabindex"); }
         else { shortLink.removeAttribute("href"); shortLink.setAttribute("role", "button"); shortLink.tabIndex = 0; }
@@ -6421,7 +6448,7 @@
   }
   // 2026-08-25: 드롭된 제품도 목록에는 보이게 하되 상태를 같이 적어 헷갈리지 않게 합니다
   function coordiStatusText_(entry){
-    const k = (entry && entry.status) || "planned";
+    const k = normalizeWorkOrderStatus_(entry && entry.status);
     return (typeof STATUS_LABEL_MAP !== "undefined" && STATUS_LABEL_MAP[k]) ? STATUS_LABEL_MAP[k] : "";
   }
   function coordiThumbEl_(entry){
@@ -6810,6 +6837,7 @@
         pendingRemoteState = st; // 지금 어딘가 칸에 입력 중이면 화면을 다시 그리지 않고 잠깐 보류
         return;
       }
+      queueLegacySampleStatuses_({[code]:st});
       applyState(st);
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
       if(isFirst) syncIndexFromFull_(code, st);
@@ -6881,7 +6909,7 @@
     return { grade: "C", stars: "⭐", label: "⭐ C 근거 없음", why: "반전 디테일도 날씬도 없어 AISEL에서 사야 할 이유가 약합니다." };
   }
   function missingOf_(st){
-    const status = (st && st.status) || "planned";
+    const status = normalizeWorkOrderStatus_(st && st.status);
     const out = [];
     CHECK_FIELDS.forEach(f=>{
       if(!f.from.includes(status)) return;
@@ -7269,15 +7297,8 @@
     qoRenderSearchResults_($("#qoSearchInput").value);
   }
   function showSampleMgmt2(){
-    $("#editorView").style.display = "none";
-    $("#salesView").style.display = "none";
-    $("#galleryView").style.display = "none";
-    $("#moodboardView").style.display = "none";
-    $("#quickOrderView").style.display = "none";
-    $("#sampleMgmtView").style.display = "block";
-    $("#mainBar").style.display = "flex";
-    setMainTabActive_("orders"); // 샘플관리는 작업지시서 안에 있는 화면이라 상단 탭은 작업지시서로 표시
-    initSampleMgmt_();
+    galleryFilter = "sampling";
+    return showGallery();
   }
 
   // ---------- 무드보드 > 회의 목록 (날짜별, 사진은 Firebase Storage에 저장 · DB엔 주소만) ----------
@@ -7735,7 +7756,6 @@
   $("#smStatusTabs").addEventListener("click", (e)=>{
     const btn = e.target.closest(".gtab");
     if(!btn) return;
-    if(btn.dataset.status === "samplemgmt") return; // 이미 이 화면
     galleryFilter = btn.dataset.status;
     showGallery();
     $("#galleryTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b.dataset.status===galleryFilter));
@@ -8799,7 +8819,6 @@
       if(btn.dataset.main === "sales") showSales();
       else if(btn.dataset.main === "moodboard") showMoodboard();
       else if(btn.dataset.main === "quickorder") showQuickOrder();
-      else if(btn.dataset.main === "samplemgmt2") showSampleMgmt2();
       else showGallery();
     });
   });
@@ -8895,12 +8914,56 @@
     startNewWorkOrder();
   });
 
+  // v91: 샘플관리는 샘플중으로 통합합니다. 저장된 사진/메모/이력에는 손대지 않습니다.
+  function normalizeLegacySampleStatus_(status){
+    return status === "samplemgmt" ? "sampling" : status;
+  }
+  function normalizeWorkOrderStatus_(status){
+    return !status || status === "planned" ? "sampling" : normalizeLegacySampleStatus_(status);
+  }
+  const legacyStatusAttempts_ = new Set();
+  function legacyStatusMigrationAllowed_(){
+    if(!LOGIN_GATE_ENABLED) return true;
+    const user = firebase.auth().currentUser;
+    return !!user && ALLOWED_EMAILS.some(email=>email.toLowerCase() === String(user.email||"").toLowerCase());
+  }
+  async function migrateLegacySampleStatus_(code){
+    const source = woRoot.child(code).child("status");
+    // Cache warmup prevents a first null callback from obscuring an existing legacy value.
+    await source.once("value");
+    const changed = await source.transaction(value=>value === "samplemgmt" ? "sampling" : undefined, undefined, false);
+    // A different editor may have advanced or deleted this record while we waited.
+    if((await source.once("value")).val() !== "sampling") return false;
+    for(const root of [woIndexRoot, woShareRoot]){
+      if((await source.once("value")).val() !== "sampling") break;
+      const status = root.child(code).child("status");
+      await status.once("value");
+      // Never create a deleted index/share row, or replace a newer status.
+      await status.transaction(value=>value === "samplemgmt" ? "sampling" : undefined, undefined, false);
+    }
+    if(window.AiselSheetBridge && (await source.once("value")).val() === "sampling")
+      await window.AiselSheetBridge.sync(code);
+    return !!changed.committed;
+  }
+  function queueLegacySampleStatuses_(records){
+    if(!legacyStatusMigrationAllowed_()) return;
+    const codes=Object.keys(records||{}).filter(code=>records[code]?.status === "samplemgmt" && !legacyStatusAttempts_.has(code));
+    if(!codes.length) return;
+    // Mark before starting writes, since successful transactions trigger the index listener again.
+    codes.forEach(code=>legacyStatusAttempts_.add(code));
+    const writes=codes.map(code=>migrateLegacySampleStatus_(code).catch(err=>{
+      console.warn("[AISEL] 샘플 상태 변환을 다음 접속 때 다시 확인합니다.", code, err);return false;
+    }));
+    for(const write of writes){pendingSaveWrites_.add(write);write.finally(()=>pendingSaveWrites_.delete(write));}
+    Promise.all(writes).then(results=>console.info("[AISEL] 샘플관리 → 샘플중 변환: " + results.filter(Boolean).length + "개"));
+  }
+
   // ---------- 갤러리 카드 목록 렌더링 ----------
   let allWorkOrders = {};
   let galleryFilter = "sampling";
   let qoStatusFilterVal = "sampling";
   function galleryStatus_(st){
-    return !st.status || st.status === "planned" ? "sampling" : st.status;
+    return normalizeWorkOrderStatus_(st && st.status);
   }
   // 탭과 같은 상태 기준으로 집계합니다. 검색 중에도 상태별 전체 개수를 유지합니다.
   function renderStatusCounts_(box, activeFilter){
@@ -9123,6 +9186,7 @@
   // 이제 목록 화면은 가벼운 색인만 구독합니다. 사진 원본은 작지를 열었을 때만 내려옵니다.
   woIndexRoot.on("value", (snapshot)=>{
     allWorkOrders = snapshot.val() || {};
+    queueLegacySampleStatuses_(allWorkOrders);
     backfillShare_();   // 2026-08-25: 공유 칸이 비어 있으면 색인에서 가볍게 채웁니다
     updateCodeConflictUI_(); // 2026-08-13 추가: 목록이 늦게 도착한 경우에도 품번 중복 경고가 정확히 뜨게
     clearTimeout(renderListsTimer_);
@@ -9198,10 +9262,6 @@
   $("#galleryTabs").addEventListener("click", (e)=>{
     const btn = e.target.closest(".gtab");
     if(!btn) return;
-    if(btn.dataset.status === "samplemgmt"){
-      showSampleMgmt2(); // "샘플관리" 필터는 목록 필터링 대신 샘플관리 표로 이동
-      return;
-    }
     galleryFilter = btn.dataset.status;
     $("#galleryTabs").querySelectorAll(".gtab").forEach(b=> b.classList.toggle("active", b===btn));
     renderGallery();
@@ -9726,6 +9786,7 @@
       if(!archive || !archive.code || !archive.workorder) throw new Error("복원할 백업을 찾지 못했습니다.");
       const code=archive.code,ref=woRoot.child(code);
       const record={...trashClone_(archive.workorder),_trashRestoreId:id};
+      record.status=normalizeLegacySampleStatus_(record.status);
       // Warm the cache before the transaction; Firebase may otherwise first invoke it with null.
       await ref.once("value");
       const created=await ref.transaction(value=>value==null?record:undefined,undefined,false);
@@ -9836,7 +9897,7 @@
     return true;
   }
   // 목록으로 이동하기 전에 현재 품번의 저장을 끝냅니다.
-  for(const [name,view] of [["showGallery","gallery"],["showSales","sales"],["showMoodboard","moodboard"],["showQuickOrder","quickorder"],["showSampleMgmt2","samplemgmt"]]){
+  for(const [name,view] of [["showGallery","gallery"],["showSales","sales"],["showMoodboard","moodboard"],["showQuickOrder","quickorder"]]){
     const original=({showGallery,showSales,showMoodboard,showQuickOrder,showSampleMgmt2})[name];
     const wrapped=async()=>{
       if(navigationBusy_&&!restoringRoute_)return;
@@ -9868,7 +9929,7 @@
   async function restoreRoute_(state){
     restoringRoute_=true;
     try{
-      galleryFilter=state.filter||"sampling";
+      galleryFilter=state.filter === "all" ? "all" : normalizeWorkOrderStatus_(state.filter);
       $("#gallerySearchInput").value=state.query||"";
       $("#gallerySearchType").value=state.searchType||"pumMyeong";
       $("#galleryTabs").querySelectorAll(".gtab").forEach(b=>b.classList.toggle("active",b.dataset.status===galleryFilter));
@@ -9877,7 +9938,7 @@
       else if(state.view==="sales")await showSales();
       else if(state.view==="quickorder")await showQuickOrder();
       else if(state.view==="moodboard")await showMoodboard();
-      else if(state.view==="samplemgmt")await showSampleMgmt2();
+      else if(state.view==="samplemgmt"){galleryFilter="sampling";await showGallery();}
       else await showGallery();
       appRoute_=state;
       requestAnimationFrame(()=>window.scrollTo(0,state.scroll||0));
@@ -9937,6 +9998,8 @@
     place();
     if(mobile.addEventListener)mobile.addEventListener('change',place);else mobile.addListener(place);
   })();
+
+  firebase.auth().onAuthStateChanged(()=>queueLegacySampleStatuses_(allWorkOrders));
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
   // 카드를 클릭하거나 "+ 새 작지"를 누를 때 그 시점에 준비됩니다.
@@ -11227,7 +11290,7 @@ const colorPickerToggle=$("colorPickerToggle"), colorPicker=$("colorPicker");
 colorPickerToggle.addEventListener("click",()=>{colorPicker.open=!colorPicker.open;});
 colorPicker.addEventListener("toggle",()=>{
   colorPickerToggle.setAttribute("aria-expanded",String(colorPicker.open));
-  colorPickerToggle.textContent=colorPicker.open?"▾ 접기":"▸ 선택";
+  colorPickerToggle.textContent=colorPicker.open?"접기 ▴":"선택 ▾";
 });
 
 function renderSwatches(){
@@ -12231,7 +12294,7 @@ function build(code,v,photo){
  !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
- const status={sampling:"샘플중",planned:"예정",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
+ const status={sampling:"샘플중",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
@@ -12366,3 +12429,48 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 })();
 
 </script>
+
+<style id="aisel-v91-references">
+@media screen {
+  /* One shared grid: toolbar stays on one line; the URL editor gets a full row. */
+  #editorView #refPanel,
+  body.mfold-open #editorView #refPanel {
+    display:grid; grid-template-columns:auto minmax(0,1fr) auto 36px;
+    align-items:center; gap:6px; padding:8px 10px;
+  }
+  #editorView #refPanel .ref-panel-heading,
+  #editorView #refPanel #refLinksList { display:contents; }
+  #editorView #refPanel #refLinksList > .ref-link-row { display:contents !important; }
+  #editorView #refPanel #refLinksList > .ref-link-row[hidden] { display:none !important; }
+  #editorView #refPanel .ref-panel-heading .sec-title-np { grid-column:1; grid-row:1; }
+  #editorView #refPanel #refAddBtn { grid-column:4; grid-row:1; }
+  #editorView #refPanel .ref-link-row > .ref-short-link {
+    grid-column:2; grid-row:auto; display:flex; align-items:center; justify-content:center;
+    width:100%; max-width:none; min-width:0; height:36px; min-height:36px;
+    padding:0 6px; box-sizing:border-box; color:#2F3B52; background:#F3F6FA;
+    border:1px solid #CBD3DF; border-radius:4px; text-decoration:none;
+    font-size:12px; font-weight:600; line-height:1; white-space:nowrap;
+  }
+  #editorView #refPanel .ref-link-row > .ref-short-link:hover { background:#E8EDF4; }
+  #editorView #refPanel .ref-link-row > .ref-short-link:focus-visible { outline:2px solid #2F3B52; outline-offset:2px; }
+  #editorView #refPanel .ref-link-row > .ref-actions { grid-column:3; grid-row:auto; display:flex; gap:4px; }
+  #editorView #refPanel .ref-actions .ref-icon-btn,
+  #editorView #refPanel .ref-actions .ref-icon-btn.danger {
+    display:inline-flex; align-items:center; justify-content:center;
+    width:36px; min-width:36px; height:36px; min-height:36px; flex:0 0 36px;
+    padding:4px; color:#2F3B52; background:#fff; border:1px solid #CBD3DF;
+    border-radius:4px; box-shadow:none;
+  }
+  #editorView #refPanel .ref-actions .ref-icon-btn:hover { background:#F3F6FA; }
+  #editorView #refPanel .ref-action-icon { width:18px; height:18px; flex:0 0 18px; }
+  #editorView #refPanel #refLinksList > .ref-link-row > input[type="text"] {
+    display:none; grid-column:1 / -1; grid-row:auto;
+    width:100%; max-width:100%; min-width:0; height:40px; min-height:40px;
+    margin:0; padding:8px 10px; box-sizing:border-box;
+    font-size:16px; font-weight:400; line-height:1.4; color:#2F3B52;
+    border:1px solid #CBD3DF; border-radius:4px; background:#F3F6FA;
+  }
+  #editorView #refPanel #refLinksList > .ref-link-row.is-editing > input[type="text"] { display:block; }
+  #editorView #refPanel #refLinksList > .ref-link-row > input[type="text"]:focus { border-color:#2F3B52; outline:1px solid #2F3B52; outline-offset:0; box-shadow:none; }
+}
+</style>
