@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v87 (2026-10-02)
+<!-- AISEL 작업지시서 v88 (2026-10-02)
+     [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
      [v85] 모바일 오른쪽 여백 제거. 연락처 이름/전화 폭 2:3, 원단처/원단명 동등 폭. 그레이 컬러 표기/색상 정리. 상태와 무관한 전체 품명/품번 검색.
@@ -2568,6 +2569,131 @@
 
 </style>
 
+<style id="aisel-v88-screen">
+/* v88: keep the mobile editor's document within easy reach. */
+@media screen {
+  #editorView #refPanel #refAddBtn {
+    width:36px; height:36px; min-height:36px; flex-basis:36px;
+    border:0; background:transparent; box-shadow:none; border-radius:0;
+    color:#2F3B52; font-size:24px;
+  }
+  #editorView #productColors .copygen-swatch-btn,
+  #editorView #productColors .copygen-swatch-btn.copygen-add-color {
+    box-sizing:border-box; display:flex; align-items:center; justify-content:center;
+    width:100%; min-width:0; height:52px; min-height:52px; padding:6px;
+    border:1px solid #2F3B52; border-radius:4px; background:#fff;
+    color:#2F3B52; font-family:var(--kfont); font-size:12px; line-height:1.3;
+  }
+  #colorPickerToggle { display:none; }
+}
+@media screen and (max-width:600px) {
+  #editorView .toolbar { padding:8px 10px; gap:6px; }
+  body #editorView .toolbar > .tb-row { order:-1; margin:0; }
+  body #editorView .tb-row > #newBtn { order:0; }
+  body #editorView .tb-row > #saveBtn { order:1; }
+  body #editorView .tb-row > #mfoldToggle { order:2; }
+  body #editorView .tb-row > #newBtn,
+  body #editorView .tb-row > #saveBtn,
+  body #editorView .tb-row > #mfoldToggle {
+    display:inline-flex !important; justify-content:center; align-items:center;
+    height:40px; min-height:40px; max-height:40px; width:100%; min-width:0;
+    padding:4px 2px; border-radius:4px; font-size:11.5px; line-height:1.25;
+  }
+  body:not(.mfold-open) #editorView .toolbar-fields { display:none !important; }
+  body.mfold-open #editorView .toolbar-fields { display:grid; gap:6px; }
+  #editorView .toolbar-sequence { order:-1; align-items:end; }
+  #editorView .toolbar-sequence > .tf > label { font-size:10px; line-height:1.2; }
+  #editorView .toolbar-sequence > #factorySaveBtn {
+    display:inline-flex !important; width:100%; min-width:0; height:40px;
+    min-height:40px; max-height:40px; padding:4px 1px; font-size:11px;
+    align-items:center; justify-content:center; line-height:1.25; border-radius:4px;
+  }
+  #editorView #refPanel { padding:8px 10px; margin:6px auto; }
+  #editorView #refPanel .ref-panel-heading { margin-bottom:2px; min-height:28px; }
+  #editorView #refPanel #refAddBtn { height:32px; min-height:32px; }
+  #editorView #refPanel .ref-link-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; margin-top:0; margin-bottom:6px; }
+  #editorView #refPanel .ref-link-row > label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  #editorView #refPanel .ref-link-row > input { grid-column:1; grid-row:1; width:100%; min-width:0; height:38px; min-height:38px; margin:0; }
+  #editorView #refPanel .ref-link-row > .ref-actions { grid-column:2; grid-row:1; display:flex; gap:6px; }
+  #editorView #refPanel .ref-actions .ref-icon-btn { width:36px; height:38px; min-height:38px; padding:4px; }
+  #editorView #productColors { margin:6px auto; }
+  #editorView #productColors > .copygen-card { padding:8px 10px; }
+  #editorView #productColors .color-heading { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; min-height:32px; }
+  #editorView #productColors h2 { margin:0; }
+  #editorView #productColors #selectedColors { display:flex; gap:4px; min-width:0; margin:0; }
+  #editorView #productColors #selectedColors .copygen-color-chip { padding:3px 4px 3px 6px; gap:4px; font-size:11px; min-height:28px; max-width:100%; overflow-wrap:anywhere; }
+  #editorView #productColors #selectedColors .color-dot { width:20px; height:20px; flex-shrink:0; }
+  #editorView #productColors #selectedColors .copygen-color-chip button { min-width:24px; min-height:24px; }
+  #editorView #productColors #colorPickerToggle { display:inline-flex; align-items:center; min-height:32px; padding:4px 0 4px 4px; border:0; background:transparent; color:#2F3B52; font-size:11px; cursor:pointer; }
+  #editorView #productColors #colorPicker > summary { display:none; }
+  #editorView #productColors .copygen-sub { margin:4px 0; font-size:11px; }
+  #editorView #productColors .copygen-swatch-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  #editorView #productColors .copygen-swatch-btn .color-dot { width:24px; height:24px; flex-shrink:0; }
+}
+
+</style>
+
+<style id="aisel-v88-samples">
+@media screen {
+  #editorView #metaAccordion {border:1px solid #d6dce6;border-radius:10px;background:#fff;margin:8px auto;overflow:hidden;}
+  #editorView #metaAccordion .sample-heading-row {display:flex;align-items:center;gap:8px;padding:6px 10px;min-height:48px;box-sizing:border-box;}
+  #editorView #metaAccordionHead {display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;width:auto;padding:0;border:0;border-radius:0;background:#fff;color:#2F3B52;font-size:15px;font-weight:700;letter-spacing:normal;white-space:nowrap;flex-wrap:nowrap;min-height:36px;}
+  #editorView #metaAccordionHead:hover {background:#fff;}
+  #editorView #metaAccordionArrow {font-size:10px;transform:none;}
+  #editorView #sampleRecoverySeg {display:flex;gap:4px;flex:0 0 auto;border:0;background:transparent;}
+  #editorView #sampleRecoverySeg button {display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:46px;height:36px;min-height:36px;padding:0;border:1px solid #CBD3DF;border-radius:4px;background:#fff;color:#2F3B52;font-size:12px;font-weight:700;}
+  #editorView #sampleRecoverySeg button.active[data-value="factory"] {background:#7A3048;border-color:#7A3048;color:#fff;}
+  #editorView #sampleRecoverySeg button.active[data-value="returned"] {background:#2F3B52;border-color:#2F3B52;color:#fff;}
+  #editorView #metaAccordionBody {padding:0 10px 8px;border-top:1px solid #e4e8ef;}
+  #editorView #sampleRecoveryRow {margin:0;padding:0;border:0;background:transparent;}
+  #editorView #sampleRecoveryDates {font-size:11px;line-height:1.5;margin:8px 0;color:#637089;}
+  #editorView #sampleRecoveryDates:empty {display:none;}
+  #editorView #sampleRecoveryRow.overdue #sampleRecoveryDates {color:#7A3048;}
+  #editorView .sample-log-toggle {border-top:1px solid #e4e8ef;padding:8px 0;}
+  #editorView .sample-log-toggle summary {cursor:pointer;font-size:13px;font-weight:700;color:#2F3B52;padding:3px 0;}
+  #editorView .sample-log-entry {display:grid;grid-template-columns:124px minmax(0,1fr) 42px;gap:6px;align-items:center;margin-top:8px;min-width:0;}
+  #editorView .sample-log-entry input {width:100%;min-width:0;height:36px;min-height:36px;box-sizing:border-box;border:1px solid #CBD3DF;border-radius:4px;padding:5px 6px;font-size:13px;color:#2F3B52;background:#F3F6FA;}
+  #editorView .sample-log-entry input[type="date"]::-webkit-datetime-edit {min-width:0;padding:0;}
+  #editorView .sample-log-entry button {width:42px;height:36px;min-height:36px;padding:0;border:1px solid #2F3B52;border-radius:4px;background:#2F3B52;color:white;font-size:12px;}
+  #editorView .sample-diff-btn {display:block;margin:7px 0 0;padding:3px 0;background:none;border:0;color:#637089;font-size:11px;text-decoration:underline;cursor:pointer;}
+  #editorView .sample-log-list {display:grid;gap:6px;margin-top:8px;}
+  #editorView .sample-meeting-record {white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.65;color:#2F3B52;}
+  #editorView .sample-history-record {display:grid;grid-template-columns:80px minmax(0,1fr) 24px;gap:6px;align-items:start;border-top:1px solid #edf0f5;padding:7px 0;font-size:12px;line-height:1.5;color:#2F3B52;}
+  #editorView .sample-history-record time {font-size:11px;}
+  #editorView .sample-history-content {white-space:pre-wrap;overflow-wrap:anywhere;min-width:0;}
+  #editorView .sample-history-content img {display:block;width:60px;height:76px;object-fit:cover;margin-top:5px;border-radius:4px;}
+  #editorView .sample-history-delete {width:24px;height:24px;padding:0;background:#fff;border:1px solid #d6dce6;border-radius:4px;color:#637089;}
+  #editorView [hidden] {display:none!important;}
+  #galleryGrid .gcard-info {display:grid;grid-template-rows:16px 16px 18px 16px;gap:2px;padding:8px;min-width:0;}
+  #galleryGrid .gcard-name {font-size:11.5px;line-height:16px;font-weight:700;color:#2F3B52;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;min-width:0;}
+  #galleryGrid .gcard-code-row {display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;overflow:hidden;font-size:10px;line-height:16px;color:#7b8594;}
+  #galleryGrid .gcard-code-value {min-width:0;overflow:hidden;text-overflow:ellipsis;}
+  #galleryGrid .gcard-sample-pickup {flex:0 0 auto;background:none;color:#7A3048;font-size:10px;font-weight:700;padding:0;border-radius:0;}
+  #galleryGrid .gcard-colors-row {display:flex;align-items:center;gap:3px;min-width:0;white-space:nowrap;overflow:hidden;font-size:10px;line-height:16px;color:#7b8594;}
+  #galleryGrid .gcard-color-chip {flex:0 1 auto;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px;line-height:16px;}
+  #galleryGrid .gcard-color-more {flex:0 0 auto;font-size:10px;color:#637089;}
+  #galleryGrid .gcard-date {font-size:10px;line-height:16px;color:#637089;white-space:nowrap;overflow:hidden;}
+}
+@media screen and (max-width:420px) {
+  #editorView .sample-log-entry {grid-template-columns:108px minmax(0,1fr) 38px;gap:4px;}
+  #editorView .sample-log-entry input {font-size:12px;padding:5px 3px;}
+  #editorView .sample-log-entry button {width:38px;}
+}
+</style>
+
+
+<style id="aisel-v88-trash">
+#workOrderTrashPanel[hidden],#galleryGrid[hidden],#gallerySearchRow[hidden],#galleryExportSheetBtn[hidden],#trashUndoNotice[hidden]{display:none!important}
+#workOrderTrashPanel{padding:14px;border:1px solid #CBD3DF;border-radius:8px;color:#2F3B52}
+#workOrderTrashPanel h3{font-size:15px;margin:0 0 8px}
+#workOrderTrashStatus{font-size:12px;color:#667085;line-height:1.5;margin:0 0 12px}
+.trash-row{display:flex;align-items:center;gap:12px;border-top:1px solid #E2E7ED;padding:12px 0}
+.trash-row>div{flex:1;min-width:0}.trash-row strong{display:block;font-size:13px;overflow-wrap:anywhere}.trash-row small{display:block;font-size:11px;color:#667085;margin-top:4px;overflow-wrap:anywhere}
+.trash-row>.btn{flex:0 0 60px;min-height:40px;padding:6px;color:#2F3B52;border-color:#CBD3DF}
+#trashUndoNotice{position:fixed;z-index:1500;bottom:max(16px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;display:flex;align-items:center;gap:10px;background:#2F3B52;color:#fff;padding:12px 14px;border-radius:8px;font-size:12px;box-shadow:0 4px 14px #0002}
+#trashUndoNotice>span{min-width:0}#trashUndoNotice button{flex-shrink:0;background:transparent;border:0;color:white;padding:8px 2px;font:inherit;font-weight:700;cursor:pointer}#trashUndoBtn{text-decoration:underline}#trashUndoDismissBtn{font-size:20px!important}
+@media print{#workOrderTrashPanel,#trashUndoNotice,#galleryTrashBtn{display:none!important}}
+</style>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -2640,6 +2766,7 @@
     <div class="gallery-toolbar">
       <div id="galleryCounts" class="gallery-counts" role="status" aria-live="polite" aria-label="상태별 작업지시서 개수"></div>
       <button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button>
+      <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">휴지통</button>
     </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
@@ -2649,7 +2776,17 @@
     </select>
     <input type="text" id="gallerySearchInput" placeholder="검색어 입력">
   </div>
+  <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
+    <h3>휴지통</h3>
+    <p id="workOrderTrashStatus" role="status">불러오는 중…</p>
+    <div id="workOrderTrashList"></div>
+  </section>
   <div class="gallery-grid" id="galleryGrid"></div>
+  <div id="trashUndoNotice" class="noprint" role="status" hidden>
+    <span id="trashUndoText"></span>
+    <button type="button" id="trashUndoBtn">되돌리기</button>
+    <button type="button" id="trashUndoDismissBtn" aria-label="알림 닫기">×</button>
+  </div>
 </div>
 
 <div class="gallery" id="moodboardView" style="display:none">
@@ -2842,99 +2979,45 @@
        예전에는 이 넷이 전부 펼쳐져 있어서 스크롤이 길어 정작 작지(인쇄영역)까지 내려가는 게 힘들었습니다.
        기본은 접힌 상태로 시작해 작지가 바로 보이게 하고, 제목 줄은 항상 남겨둬 존재 자체를 잊지 않게 합니다. -->
   <div class="meta-accordion noprint" id="metaAccordion">
-    <button type="button" class="meta-accordion-head" id="metaAccordionHead">
-      <span class="meta-accordion-arrow" id="metaAccordionArrow">▶</span>
-      <span>원샘플 · 재샘플</span>
-      <span class="meta-missing-tag" id="metaMissingTag" style="display:none;"></span>
-    </button>
+    <div class="sample-heading-row" id="sampleRecoverySection">
+      <button type="button" class="meta-accordion-head" id="metaAccordionHead" aria-expanded="false" aria-controls="metaAccordionBody">
+        <span class="meta-accordion-arrow" id="metaAccordionArrow" aria-hidden="true">▶</span><span>원샘플 · 재샘플</span>
+      </button>
+      <div id="sampleRecoverySeg" class="sample-recovery-seg" role="group" aria-label="원샘플 위치">
+        <button type="button" data-value="factory" aria-pressed="false">공장</button>
+        <button type="button" data-value="returned" aria-pressed="false">회수</button>
+      </div>
+    </div>
     <div class="meta-accordion-body" id="metaAccordionBody" style="display:none;">
-
-  <!-- 판매 예측/실적 (화면 전용, 인쇄 미노출) -->
-
-
-  <!-- 2026-08-21 재배치: 만들기 전에 채우는 기획 가설을, 팔고 난 뒤 채우는 실제 판매량·반성 메모보다
-       뒤로 옮겼더니 순서가 헷갈렸습니다. 시간 순서(예측→실적→반성) 뒤에 오도록 여기로 이동했습니다.
-       레퍼런스·원샘플·코디 같은 다른 메모성 항목들과도 한 묶음으로 자연스럽게 모입니다. -->
-
-
-  <!-- 2026-08-21 재구성: 원샘플 회수·사진 단계·코디 링크를 카드 하나로 통합.
-       예전에는 세 카드로 나뉘어 있어서 시선이 위아래로 계속 오갔습니다. -->
-  <div class="predict-panel noprint" id="sampleCoordiPanel">
-    <div class="sec-title-np">원샘플 · 재샘플</div>
-
-    <div class="mini-sec-title" id="sampleRecoverySection">원샘플 회수</div>
-    <div class="sample-recovery-row" id="sampleRecoveryRow">
-      <div class="seg sample-recovery-seg" id="sampleRecoverySeg">
-        <!-- 2026-08-21 추가: 원샘플이 아예 필요 없는 경우(기존 원단 컬러 추가, 검증된 패턴 재사용 등)를 위한
-             네 번째 버튼. 맨 앞에 둬서 "필요한지부터" 판단하는 순서에 맞췄습니다. -->
-        <button type="button" data-value="notneeded">불필요</button>
-        <button type="button" data-value="">요청</button>
-        <!-- 2026-08-13 수정: "미발송"은 할 일이 안 보여서 "요청"으로 이름을 바꿨습니다.
-             원샘플을 아직 준비 안 했고 지수님이 공장에 요청하거나 준비해야 한다는 뜻입니다. -->
-        <button type="button" data-value="factory">공장</button>
-        <button type="button" data-value="returned">회수</button>
+      <div id="sampleCoordiPanel">
+        <div id="sampleRecoveryRow"><div class="sample-recovery-dates" id="sampleRecoveryDates" role="status"></div></div>
+        <input id="sampleNoteTitle" type="hidden">
+        <div id="photoStageRow" hidden><div id="photoStageSeg"></div><span id="photoStageHint"></span></div>
+        <details class="sample-log-toggle" id="meetingHistoryToggle">
+          <summary>회의 수정사항</summary>
+          <div class="sample-log-entry">
+            <input id="meetingDate" type="date" aria-label="회의 날짜">
+            <input id="meetingChanges" type="text" aria-label="회의 수정 내용" placeholder="수정사항">
+            <button type="button" id="meetingAddBtn" class="small-btn" aria-label="회의 수정사항 추가">추가</button>
+          </div>
+          <button type="button" class="sample-diff-btn" data-change-draft="meetingChanges">변경 내용 가져오기</button>
+          <textarea id="meetingNotes" hidden></textarea>
+          <div id="meetingHistoryList" class="sample-log-list"></div>
+        </details>
+        <details class="sample-log-toggle" id="resampleHistoryToggle">
+          <summary>재샘플 이력</summary>
+          <div id="resamplePanel" class="sample-log-entry">
+            <input id="resampleDate" type="date" aria-label="재샘플 날짜">
+            <input id="resampleChanges" type="text" aria-label="재샘플 수정 내용" placeholder="수정사항">
+            <button type="button" id="resampleAddBtn" class="small-btn" aria-label="재샘플 이력 추가">추가</button>
+          </div>
+          <button type="button" class="sample-diff-btn" data-change-draft="resampleChanges">변경 내용 가져오기</button>
+          <div id="resampleHistoryList" class="sample-log-list"></div>
+        </details>
       </div>
-      <div class="sample-recovery-dates" id="sampleRecoveryDates"></div>
-    </div>
-    <!-- 2026-08-21 재수정: 내용 칸은 제목 하나로 충분하다고 판단해 없앴습니다. 제목 칸에
-         비슷한 원샘플이 무엇인지 간단히 적으시면 됩니다.
-         2026-08-21 재수정: 다른 한 줄짜리 칸들(기획 한 줄 등)은 입력창이 오른쪽 끝까지 넓게
-         펼쳐지는데, 이 칸만 실수로 좁은 방식(predict-row)을 써서 입력창이 중간에서 멈춰
-         있었습니다. single 방식으로 맞춰서 다른 칸들과 똑같이 넓게 폅니다. -->
-    <div class="predict-row single" style="margin-top:8px;">
-      <label>원샘플 메모</label>
-      <input id="sampleNoteTitle" type="text" placeholder="예: 아일 루즈 가디건과 소매 패턴 동일, 그 작지 원샘플로 검토 요청함">
-    </div>
-
-    <!-- 2026-09-15 추가: 디자인회의 컨펌 때 나온 수정 지시(핀턱 빼기·기장 늘리기 등)를
-         적을 칸이 없어서 회의 메모를 옮겨 적을 곳이 없었습니다. 인쇄 영역이 아닌 여기(noprint)에
-         자유 텍스트로 둡니다. 저장·불러오기는 TXT_IDS 에 넣어 다른 칸들과 같은 방식으로 자동 처리됩니다. -->
-    <div class="mini-sec-title">회의 수정사항</div>
-    <div class="predict-row single">
-      <textarea id="meetingNotes" rows="4" style="width:100%;resize:vertical;" placeholder="예: 옆지퍼로 변경 (큐씨 보기) · 시야게에 핀턱 레직기 잡기"></textarea>
-    </div>
-
-    <div class="mini-sec-title">재샘플 이력</div>
-    <div id="resamplePanel" style="border:1px solid #d9e2ec;border-radius:10px;padding:12px;background:#f8fafc;">
-      <div class="resample-heading-fields">
-        <div><label for="resampleDate">날짜</label><input id="resampleDate" type="date"></div>
-        <div><label for="resampleRound">차수</label><input id="resampleRound" type="number" min="1" step="1" placeholder="1"></div>
-      </div>
-      <div class="predict-row single" style="margin-top:8px;">
-        <label>수정 내용</label>
-        <textarea id="resampleChanges" rows="3" style="width:100%;resize:vertical;" placeholder="예: 앞목 1½″ 올리기 · 소매 통으로 변경 · 블랙에서 크림으로 변경"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;">
-        <input id="resamplePhotoInput" type="file" accept="image/*" style="display:none;">
-        <button type="button" id="resamplePhotoBtn" class="small-btn">📷 사진 선택</button>
-        <span id="resamplePhotoName" style="font-size:12px;color:#64748b;">사진 없음</span>
-        <img id="resamplePhotoPreview" alt="" style="display:none;width:56px;height:70px;object-fit:cover;border:1px solid #cbd5e1;border-radius:6px;">
-        <button type="button" id="resampleAddBtn" class="small-btn" style="margin-left:auto;background:#223754;color:white;">+ 이력 추가</button>
-      </div>
-    </div>
-    <div id="resampleHistoryList" style="display:grid;gap:8px;margin-top:8px;"></div>
-
-    <!-- 2026-08-13 추가: 레퍼런스·샘플 토글. 기본값은 레퍼런스입니다.
-         레퍼런스 사진은 참고용이라 형태만 정확하고 촉감·핏은 샘플이 나와야 정확합니다.
-         샘플로 바꾸면 사진을 다시 읽어 촉감·핏까지 확정으로 반영합니다. -->
-    <div class="mini-sec-title">사진 단계</div>
-    <div class="photo-stage-row" id="photoStageRow">
-      <div class="seg photo-stage-seg" id="photoStageSeg">
-        <button type="button" data-value="reference">레퍼런스</button>
-        <button type="button" data-value="sample">샘플</button>
-      </div>
-      <span class="photo-stage-hint" id="photoStageHint"></span>
-    </div>
-
-    <!-- 2026-08-21 추가: 코디 링크. 한 줄 안에 링크 칸과 메모 칸을 나란히 둡니다.
-         레퍼런스 링크(주소만 있는 형태)와 달리 코디는 무엇을 코디할지 짧은 메모가 항상 같이 필요해서
-         줄을 나누지 않고 한 줄에 배분했습니다. -->
-    </div>
-
     </div>
   </div>
 
-  <!-- 레퍼런스 링크는 자주 여는 화면 도구라 접힌 메타 정보 밖, 인쇄 영역 바로 위에 둡니다. -->
   <div class="predict-panel noprint" id="refPanel">
     <div class="ref-panel-heading"><div class="sec-title-np">레퍼런스</div><button type="button" id="refAddBtn" class="ref-icon-btn" title="링크 추가" aria-label="레퍼런스 링크 추가">+</button></div>
     <div id="refLinksList">
@@ -2958,8 +3041,9 @@
   </div>
 
 <section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
-<h2>컬러</h2>
+<div class="color-heading"><h2>컬러</h2>
 <div class="copygen-selected-colors" id="selectedColors"></div>
+<button type="button" id="colorPickerToggle" aria-controls="colorPicker" aria-expanded="false">▸ 선택</button></div>
 <details id="colorPicker"><summary>+ 컬러 선택</summary>
 <div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
 <div class="copygen-swatch-grid" id="colorSwatches"></div>
@@ -3802,15 +3886,34 @@
   let shareBackfillRunning_ = false;
   let shareBackfillLastRun_ = 0;
   const SHARE_BACKFILL_MIN_GAP_MS = 5000;
-  async function backfillShare_(){
+  // v88: drain older share maintenance before deleting or restoring a workorder.
+  var shareBackfillHold_ = 0;
+  var shareBackfillPromise_ = null;
+  function backfillShare_(){
+    if(shareBackfillHold_ > 0) return Promise.resolve();
+    if(shareBackfillPromise_) return shareBackfillPromise_;
+    const pending = runShareBackfill_();
+    shareBackfillPromise_ = pending;
+    pending.finally(()=>{if(shareBackfillPromise_ === pending) shareBackfillPromise_ = null;});
+    return pending;
+  }
+  async function pauseShareBackfillForTrash_(){
+    shareBackfillHold_ += 1;
+    if(shareBackfillPromise_) await shareBackfillPromise_;
+  }
+  function resumeShareBackfillAfterTrash_(){
+    shareBackfillHold_ = Math.max(0, shareBackfillHold_ - 1);
+    if(!shareBackfillHold_){shareBackfillLastRun_ = 0;backfillShare_();}
+  }
+  async function runShareBackfill_(){
     if(shareBackfillRunning_) return;
     if(Date.now() - shareBackfillLastRun_ < SHARE_BACKFILL_MIN_GAP_MS) return;
     shareBackfillRunning_ = true;
     shareBackfillLastRun_ = Date.now();
     try{
-      const snap = await woShareRoot.once("value");
+      const [snap, indexSnap] = await Promise.all([woShareRoot.once("value"), woIndexRoot.once("value")]);
       const have = snap.val() || {};
-      const mine = allWorkOrders || {};
+      const mine = indexSnap.val() || {};
       const updates = {};
       Object.keys(have).forEach(code=>{
         // 이미 올려둔 사진은 다시 올리지 않도록 기억해 둡니다
@@ -3880,7 +3983,7 @@
     if(shareThumbSigCache_[code] === sig) return;   // 사진이 그대로면 다시 안 올립니다
     if(!srcDataUrl){
       shareThumbSigCache_[code] = sig;
-      woShareRoot.child(code).update({ thumbUrl:"", thumbSig:"", thumb:null }).catch(()=>{});
+      woShareRoot.child(code).transaction(value=>value?{...value,thumbUrl:"",thumbSig:"",thumb:null}:undefined,undefined,false).catch(()=>{});
       return;
     }
     shareThumbSigCache_[code] = sig;   // 같은 사진을 두 번 올리지 않게 먼저 표시합니다
@@ -3897,7 +4000,7 @@
         }).then(()=> fileRef.getDownloadURL());
       }).then(url=>{
         // 주소가 확실히 생긴 뒤에야 글자로 박혀 있던 사진을 지웁니다 (중간에 사진이 사라지지 않게)
-        woShareRoot.child(code).update({ thumbUrl:url, thumbSig:sig, thumb:null }).catch(()=>{});
+        woShareRoot.child(code).transaction(value=>value&&shareThumbSigCache_[code]===sig?{...value,thumbUrl:url,thumbSig:sig,thumb:null}:undefined,undefined,false).catch(()=>{});
       }).catch(err=>{
         delete shareThumbSigCache_[code];   // 실패했으면 다음에 다시 시도합니다
         console.warn("공유 사진 올리기 실패:", code, err);
@@ -5232,68 +5335,79 @@
   let movingCodeNow_ = false;  // 2026-09-20 추가: 품번 옮기기 중에는 옛 품번의 null 스냅샷을 "삭제됨"으로 안 봅니다
   let pendingRemoteState = null; // 입력 중이라 잠깐 미뤄둔 다른 기기의 최신 내용
 
-  // ---------- 재샘플 이력 ----------
+  // v88: 기록은 사용자가 추가할 때만 저장합니다. 숨긴 구형 필드는 보존합니다.
   let resampleHistory_ = [];
-  let resampleDraftPhoto_ = "";
+  let sampleChangeBaseline_ = null;
+  let sampleChangeBaselineCode_ = null;
   function resampleToday_(){ return new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10); }
   function resetResampleDraft_(){
-    const date=$("#resampleDate"), round=$("#resampleRound"), changes=$("#resampleChanges"), preview=$("#resamplePhotoPreview"), name=$("#resamplePhotoName");
-    if(date) date.value=resampleToday_();
-    if(round) round.value=String(resampleHistory_.length+1);
-    if(changes) changes.value="";
-    resampleDraftPhoto_="";
-    if(preview){ preview.removeAttribute("src"); preview.style.display="none"; }
-    if(name) name.textContent="사진 없음";
-    const file=$("#resamplePhotoInput"); if(file) file.value="";
+    $("#resampleDate").value=resampleToday_(); $("#resampleChanges").value="";
+    $("#meetingDate").value=resampleToday_(); $("#meetingChanges").value="";
   }
+  function sampleChangeState_(st){
+    const get=id=>st ? String(st[id]||"") : String($("#"+id)?.value||"");
+    const state={};
+    [["품명","pumMyeong"],["디자이너","designer"],["공장","factory"],["원단처","fabricSupplierField"],
+      ["원단명","fabricNameField"],["혼용률","blend"],["봉제·재단 주의사항","materials"],["공임","gongim"],["시야게","siyage"]]
+      .forEach(([label,id])=>state[label]=get(id).trim());
+    const lines=st ? (st.lines||[]) : [...linesWrap.querySelectorAll(".line")].map(r=>({nm:r.querySelector(".nm").value,unit:r.querySelector(".unit").value,qty:r.querySelector(".qty").value}));
+    state["원가 항목"]=lines.filter(r=>r.nm||r.unit||r.qty).map(r=>(r.nm||"항목")+" "+(r.unit||"미입력")+" × "+(r.qty||"1")).join(" / ");
+    const cols=st ? (st.sizeSpecCols||[]) : [...sizeSpecHead.querySelectorAll(".ss-colname")].map(e=>e.value);
+    const rows=st ? (st.sizeSpec||[]) : [...sizeSpecRows.querySelectorAll("tr")].map(r=>({part:r.querySelector(".ss-part").value,values:[...r.querySelectorAll(".ss-val")].map(e=>e.value)}));
+    state["사이즈"]=rows.map(r=>(r.part||"")+": "+(r.values||[]).map((v,i)=>(cols[i]||i+1)+" "+(v||"미입력")).join(", ")).join(" / ");
+    return state;
+  }
+  function refreshSampleBaseline_(){ sampleChangeBaseline_=sampleChangeState_(); sampleChangeBaselineCode_=currentCode; }
+  function fillSampleChangeDraft_(target){
+    const before=sampleChangeBaseline_, after=sampleChangeState_();
+    if(!before){ alert("작지를 연 뒤 변경된 내용이 없습니다."); return; }
+    const pair=(oldValue,newValue)=>{
+      const oldText=String(oldValue||"미입력").replace(/\s+/g," "),newText=String(newValue||"미입력").replace(/\s+/g," ");
+      let first=0;while(first<Math.min(oldText.length,newText.length)&&oldText[first]===newText[first])first++;
+      const start=Math.max(0,first-24);
+      const excerpt=text=>text.length<=100?text:(start?"…":"")+text.slice(start,start+100)+(text.length>start+100?"…":"");
+      return excerpt(oldText)+" → "+excerpt(newText);
+    };
+    const changes=Object.keys(after).filter(k=>after[k]!==before[k]).map(k=>k+": "+pair(before[k],after[k]));
+    if(!changes.length){alert("작지를 연 뒤 변경된 내용이 없습니다.");return;}
+    const input=$("#"+target);
+    if(input.value.trim()&&!confirm("작성 중인 수정사항을 변경 내용으로 바꿀까요?"))return;
+    input.value=changes.join(" · "); input.focus();
+  }
+  document.querySelectorAll("[data-change-draft]").forEach(btn=>btn.addEventListener("click",()=>fillSampleChangeDraft_(btn.dataset.changeDraft)));
+  function renderMeetingHistory_(){
+    const wrap=$("#meetingHistoryList");wrap.textContent="";
+    const value=$("#meetingNotes").value.trim();
+    if(!value)return;
+    const record=document.createElement("div");record.className="sample-meeting-record";record.textContent=value;wrap.appendChild(record);
+  }
+  $("#meetingAddBtn").addEventListener("click",()=>{
+    const date=$("#meetingDate").value,changes=$("#meetingChanges").value.trim();
+    if(!date||!changes){alert("날짜와 회의 수정사항을 입력해주세요.");return;}
+    const notes=$("#meetingNotes"),entry="["+date+"] "+changes;
+    notes.value=notes.value.trim()?notes.value.trim()+"\n"+entry:entry;
+    renderMeetingHistory_();$("#meetingChanges").value="";refreshSampleBaseline_();save();
+  });
   function renderResampleHistory_(){
-    const wrap=$("#resampleHistoryList"); if(!wrap) return;
-    wrap.innerHTML="";
+    const wrap=$("#resampleHistoryList");if(!wrap)return;wrap.textContent="";
     resampleHistory_.slice().reverse().forEach((item,revIndex)=>{
       const originalIndex=resampleHistory_.length-1-revIndex;
-      const card=document.createElement("div");
-      card.style.cssText="display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:start;padding:10px;border:1px solid #d9e2ec;border-radius:9px;background:white;";
-      if(item.photo){
-        const img=document.createElement("img"); img.src=item.photo; img.alt="재샘플 "+(item.round||"")+"차";
-        img.style.cssText="width:60px;height:76px;object-fit:cover;border-radius:6px;border:1px solid #d9e2ec;"; card.appendChild(img);
-      }else{
-        const empty=document.createElement("div"); empty.textContent="사진 없음"; empty.style.cssText="width:60px;height:76px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;color:#94a3b8;background:#f1f5f9;border-radius:6px;"; card.appendChild(empty);
-      }
-      const mid=document.createElement("div");
-      const title=document.createElement("div"); title.style.cssText="font-weight:800;color:#223754;margin-bottom:5px;"; title.textContent=(item.round||"?")+"차 재샘플 · "+(item.date||"날짜 미입력");
-      const body=document.createElement("div"); body.style.cssText="white-space:pre-wrap;font-size:13px;line-height:1.5;color:#334155;"; body.textContent=item.changes||"수정 내용 없음";
-      mid.appendChild(title); mid.appendChild(body); card.appendChild(mid);
-      const del=document.createElement("button"); del.type="button"; del.className="small-btn"; del.textContent="삭제"; del.title="잘못 추가한 재샘플 이력 삭제";
-      del.addEventListener("click",()=>{ if(!confirm((item.round||"?")+"차 재샘플 이력을 삭제할까요?")) return; resampleHistory_.splice(originalIndex,1); renderResampleHistory_(); resetResampleDraft_(); save(); });
-      card.appendChild(del); wrap.appendChild(card);
+      const card=document.createElement("div");card.className="sample-history-record";
+      const date=document.createElement("time");date.dateTime=item.date||"";date.textContent=item.date||"날짜 미입력";
+      const body=document.createElement("div");body.className="sample-history-content";body.textContent=item.changes||"수정 내용 없음";
+      card.append(date,body);
+      if(item.photo){const img=document.createElement("img");img.src=item.photo;img.alt="기존 재샘플 사진";img.loading="lazy";body.appendChild(img);}
+      const del=document.createElement("button");del.type="button";del.className="sample-history-delete";del.textContent="×";del.setAttribute("aria-label","재샘플 이력 삭제");
+      del.addEventListener("click",()=>{if(!confirm((item.date||"선택한")+" 재샘플 이력을 삭제할까요?"))return;resampleHistory_.splice(originalIndex,1);renderResampleHistory_();save();});
+      card.appendChild(del);wrap.appendChild(card);
     });
   }
-  function resamplePhotoToThumb_(file){
-    if(!file || !(file.type||"").startsWith("image/")){ alert("사진 파일을 선택해주세요."); return; }
-    const reader=new FileReader();
-    reader.onload=()=>{
-      const img=new Image();
-      img.onload=()=>{
-        const scale=Math.min(1,240/img.width),canvas=document.createElement("canvas");
-        canvas.width=Math.max(1,Math.round(img.width*scale)); canvas.height=Math.max(1,Math.round(img.height*scale));
-        canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
-        resampleDraftPhoto_=canvas.toDataURL("image/jpeg",0.65);
-        $("#resamplePhotoPreview").src=resampleDraftPhoto_; $("#resamplePhotoPreview").style.display="block";
-        $("#resamplePhotoName").textContent=file.name||"사진 선택됨";
-      };
-      img.src=reader.result;
-    };
-    reader.readAsDataURL(file);
-  }
   function addResampleHistory_(){
-    const date=$("#resampleDate").value,round=Math.max(1,parseInt($("#resampleRound").value||"1",10)),changes=$("#resampleChanges").value.trim();
-    if(!date){ alert("재샘플 날짜를 선택해주세요."); return; }
-    if(!changes){ alert("재샘플 수정 내용을 적어주세요."); return; }
-    resampleHistory_.push({id:Date.now(),date,round,changes,photo:resampleDraftPhoto_||""});
-    renderResampleHistory_(); resetResampleDraft_(); save();
+    const date=$("#resampleDate").value,changes=$("#resampleChanges").value.trim();
+    if(!date||!changes){alert("날짜와 재샘플 수정사항을 입력해주세요.");return;}
+    resampleHistory_.push({id:Date.now(),date,changes});
+    renderResampleHistory_();$("#resampleChanges").value="";refreshSampleBaseline_();save();
   }
-  $("#resamplePhotoBtn").addEventListener("click",()=>$("#resamplePhotoInput").click());
-  $("#resamplePhotoInput").addEventListener("change",()=>resamplePhotoToThumb_($("#resamplePhotoInput").files[0]));
   $("#resampleAddBtn").addEventListener("click",addResampleHistory_);
   resetResampleDraft_();
 
@@ -5408,44 +5522,200 @@
     });
   });
 
-  // 메모의 원단 구역만 읽습니다. 부자재/사이즈/요척은 원단으로 추측하지 않습니다.
-  function parseFabricMemo_(text){
-    const candidates=[];
-    let inFabric=false, role="", supplier="";
-    const clean=v=>v.replace(/^[\s■▪●•*※\-]+/,"").trim();
-    for(const raw of String(text||"").split(/\r?\n/)){
-      const line=clean(raw);
-      const section=line.match(/^[\[【](.*?)[\]】]/);
-      if(section){
-        inFabric=/원단|겉감|안감/.test(section[1])&&!/부자재/.test(section[1]);
-        role=/겉감/.test(section[1])?"겉감":/안감/.test(section[1])?"안감":"";
-        supplier=""; continue;
-      }
-      if(!inFabric||!line)continue;
-      if(/^(?:부자재|봉제|사이즈|요척)\s*[:：]/.test(line)){if(/^부자재/.test(line))inFabric=false;continue;}
-      const explicitSupplier=line.match(/^(?:원단처|거래처|업체)\s*[:：]\s*(.+)/);
-      if(explicitSupplier){supplier=explicitSupplier[1].split(/\s*\/\s*/)[0].trim();continue;}
-      if(/^[■▪●•]/.test(raw.trim()) && !/^(?:컬러|색상|혼용률|폭|단가|겉감\s*[:：]|안감\s*[:：])/.test(line)){
-        const parts=line.split(/\s*\/\s*/);
-        if(parts.length>1||/tex|텍스|텍스타일|원단/i.test(parts[0])){supplier=parts[0].trim();continue;}
-      }
-      const roleMatch=line.match(/^(겉감|안감)\s*[:：]\s*/);
-      const item=line.replace(/^(?:원단명|품명|겉감|안감)\s*[:：]\s*/,"");
-      const match=item.match(/^(.+?)\s*[:：]\s*(?:\d|폭|@)/);
-      const explicitName=/^(?:원단명|품명)\s*[:：]/.test(line);
-      const name=match?match[1].trim():explicitName?item.trim():"";
-      if(supplier&&name&&!/^(?:혼용률|컬러|색상|단가|폭|요척|사이즈|전화)/.test(name)){
-        const candidate={supplier,name,role:roleMatch?roleMatch[1]:role};
-        if(!candidates.some(c=>c.supplier===supplier&&c.name===name))candidates.push(candidate);
-      }
+  // v88: 원단·부자재 메모를 읽되 직접 편집한 값과 모호한 단위를 보존합니다.
+  function memoMaterialKind_(name){
+    const value=String(name||"").replace(/\s/g,"");
+    if(/단추고리/.test(value))return "단추고리";
+    if(/단추|버튼/.test(value))return "단추";
+    if(/밴드|고무줄|고무밴딩/.test(value))return "밴드";
+    if(/지퍼/.test(value))return "지퍼";
+    if(/안감|우라/.test(value))return "안감";
+    if(/심지/.test(value))return "심지";
+    if(/원단|겉감/.test(value))return "원단";
+    if(/라벨|레이블/.test(value))return "라벨";
+    return "";
+  }
+  function memoUnit_(raw){
+    const value=String(raw||"").toLowerCase();
+    if(/^(y|yd|yds|yard|yards|야드)$/.test(value))return "y";
+    if(/^(m|미터)$/.test(value))return "m";
+    if(/^(cm|센티|센티미터)$/.test(value))return "cm";
+    if(/^(ea|개|개입|pcs|pc)$/.test(value))return "ea";
+    return "";
+  }
+  function memoCostKey_(parts){
+    const value=parts.map(v=>String(v).trim().replace(/\s+/g," ")).join("|");
+    let a=2166136261,b=5381;
+    for(let i=0;i<value.length;i++){a=Math.imul(a^value.charCodeAt(i),16777619);b=Math.imul(b,33)^value.charCodeAt(i);}
+    // Firebase 키에 쓸 수 없는 . # $ [ ] / 문자를 포함하지 않습니다.
+    return "m_"+(a>>>0).toString(16)+"_"+(b>>>0).toString(16);
+  }
+  function parseMemoAmount_(priceText, quantityText, kind){
+    const text=String(priceText||"");
+    const quantitySource=String(quantityText||"");
+    const quantityPattern=/(\d[\d,]*(?:\.\d+)?)\s*(yds?|yards?|야드|센티미터|미터|cm|m|y|ea|pcs?|개)(?![a-z가-힣])/ig;
+    const prices=[...text.matchAll(/(?:@|단가\s*[:：]?)\s*([\d,]+(?:\.\d+)?)(?:\s*원)?(?:\s*\/\s*(yds?|yards?|야드|미터|cm|m|y|ea|pcs?|개))?/ig)];
+    if(!prices.length)return {issue:"단가 확인 필요"};
+    let finalPrice=prices[prices.length-1];
+    if(prices.length>1 && !/(?:→|->|=>|에서|변경)/.test(text))return {issue:"여러 단가 중 적용할 값 확인 필요"};
+    let price=Number(finalPrice[1].replace(/,/g,""));
+    let priceUnit=memoUnit_(finalPrice[2]);
+    // @6,200 → 5,000 처럼 마지막 가격의 @를 생략해도 명시된 변경값만 읽습니다.
+    const tail=text.slice(finalPrice.index+finalPrice[0].length);
+    const arrow=tail.match(/\s*(?:→|->|=>)\s*@?\s*([\d,]+(?:\.\d+)?)(?:\s*원)?(?:\s*\/\s*(yds?|yards?|야드|미터|cm|m|y|ea|pcs?|개))?/i);
+    if(arrow){price=Number(arrow[1].replace(/,/g,""));if(arrow[2])priceUnit=memoUnit_(arrow[2]);}
+    if(/[\d]\s*(?:~|〜|～|–|—|-)\s*\d/.test(quantitySource))return {issue:"사용량 범위 확인 필요"};
+    if(/(?:^|[\s:：])[-−]\s*\d/.test(quantitySource))return {issue:"음수 사용량 확인 필요"};
+    if(/\d\s*(?:y|yd|야드|m|미터)\s*=/i.test(quantitySource))return {issue:"환산 수량 확인 필요"};
+    let quantityString=quantitySource;
+    // 단가의 /단위를 수량으로 오인하지 않습니다.
+    quantityString=quantityString.replace(/(?:@|단가\s*[:：]?)\s*[\d,.]+(?:\s*원)?(?:\s*\/\s*[a-z가-힣]+)?/ig,"");
+    quantityString=quantityString.replace(/(?:→|->|=>)\s*@?\s*[\d,.]+(?:\s*원)?(?:\s*\/\s*[a-z가-힣]+)?/ig,"");
+    const explicit=quantityString.match(/(?:요척|사용량|수량)\s*[:：]?\s*(.*)/i);
+    if(explicit)quantityString=explicit[1];
+    const quantities=[...quantityString.matchAll(quantityPattern)];
+    let chosen=quantities;
+    if(["단추","단추고리","지퍼","라벨"].includes(kind))chosen=quantities.filter(v=>memoUnit_(v[2])==="ea");
+    if(chosen.length!==1)return {issue:chosen.length?"여러 사용량 중 적용할 값 확인 필요":"사용량·단위 확인 필요"};
+    let quantity=Number(chosen[0][1].replace(/,/g,"")), quantityUnit=memoUnit_(chosen[0][2]);
+    if(!priceUnit){
+      if(["단추","단추고리","지퍼","라벨"].includes(kind))priceUnit="ea";
+      else if(["원단","안감","심지"].includes(kind)&&quantityUnit==="y")priceUnit="y";
+      else return {issue:"단가 기준 단위 확인 필요 (예: @500/m)"};
     }
-    const outer=candidates.filter(c=>c.role==="겉감");
-    return {candidates,selected:outer.length===1?outer[0]:candidates.length===1?candidates[0]:null};
+    if(priceUnit==="m"&&quantityUnit==="cm"){quantity/=100;quantityUnit="m";}
+    if(priceUnit!==quantityUnit)return {issue:"단가와 사용량의 단위 확인 필요"};
+    if(!Number.isFinite(price)||price<0||!Number.isFinite(quantity)||quantity<0)return {issue:"금액·사용량 확인 필요"};
+    return {price,quantity,unit:priceUnit};
+  }
+  function parseFabricMemo_(text){
+    const candidates=[], costs=[], issues=[], blocks=[];
+    const lines=String(text||"").split(/\r?\n/);
+    const clean=value=>value.replace(/^[\s■▪●•*※\-]+/,"").trim();
+    let supplier="",role="",fabricSection=false,pending=null;
+    const issue=(line,reason)=>{if(!issues.some(v=>v.line===line&&v.reason===reason))issues.push({line,reason});};
+    const flush=()=>{if(pending){blocks.push(pending);pending=null;}};
+    for(let index=0;index<lines.length;index++){
+      const raw=lines[index],line=clean(raw);
+      if(!line){flush();continue;}
+      const section=line.match(/^[\[【](.*?)[\]】]/);
+      if(section){flush();supplier="";fabricSection=/원단|겉감|안감/.test(section[1])&&!/부자재/.test(section[1]);role=/겉감/.test(section[1])?"겉감":/안감/.test(section[1])?"안감":"";continue;}
+      const supplierMatch=line.match(/^(?:원단처|거래처|업체)\s*[:：]\s*(.+)/);
+      const locationMatch=line.match(/^([^#@:：]+?)\s+[A-Z]\s*\/\s*\d[\w-]*\s*$/i);
+      if(supplierMatch||locationMatch){flush();supplier=(supplierMatch?supplierMatch[1].replace(/\s+[A-Z]\s*\/\s*\d[\w-]*\s*$/i,""):locationMatch[1]).trim();continue;}
+      if(fabricSection && /^[■▪●•]/.test(raw.trim())&&!/^(?:컬러|색상|혼용률|폭|단가|겉감\s*[:：]|안감\s*[:：])/.test(line)){
+        const parts=line.split(/\s*\/\s*/);if(parts.length>1||/tex|텍스|텍스타일|원단/i.test(parts[0])){flush();supplier=parts[0].trim();continue;}
+      }
+      const continuation=pending&&/^(?:단가\s*[:：]|@|요척|사용량|수량|불필요|미사용|사용\s*안|사용하지|제외|삭제|취소|참고|예시)/.test(line);
+      if((/(?:@|단가\s*[:：])/.test(line)||continuation)&&/불필요|미사용|사용\s*안|사용하지|제외|삭제|취소|참고|예시/.test(line)){
+        if(continuation)pending.cancelled=true;
+        flush();issue(line,"사용 여부 확인 필요");continue;
+      }
+      if(pending&&/^(?:요척|사용량|수량)\s*[:：]/.test(line)){pending.quantity=line;continue;}
+      if(pending&&/^(?:단가\s*[:：]|@)/.test(line)){pending.price=line;continue;}
+      const explicitName=line.match(/^(?:원단명|품명|겉감|안감)\s*[:：]\s*(.+)/);
+      const hashName=line.match(/^#\s*([A-Za-z][\w.-]*)\b/);
+      const classicName=fabricSection?line.match(/^(.+?)\s*[:：]\s*(?:\d|폭|@)/):null;
+      const accessoryKind=memoMaterialKind_(line.replace(/(?:@|단가).*$/,""));
+      let name=explicitName?explicitName[1].split(/\s*(?:@|단가\s*[:：]|폭\s*[:：])/)[0].trim():hashName?hashName[1]:classicName?classicName[1].trim():"";
+      if(name&&/^(?:혼용률|컬러|색상|단가|폭|요척|사이즈|전화|부자재|봉제|수량|사용량)/.test(name))name="";
+      if(name&&supplier&&!(["단추","단추고리","지퍼","라벨","밴드"].includes(accessoryKind))){
+        flush();
+        const thisRole=/^안감\s*[:：]/.test(line)?"안감":/^겉감\s*[:：]/.test(line)?"겉감":role;
+        pending={supplier,name,role:thisRole,kind:thisRole==="안감"?"안감":"원단",price:line,quantity:"",line};
+        candidates.push({supplier,name,role:thisRole});continue;
+      }
+      if(accessoryKind&&/(?:@|단가\s*[:：])/.test(line)){
+        flush();
+        const nm=line.replace(/^#\s*/,"").split(/\s*(?:@|단가\s*[:：])/)[0].replace(/\s*[:：]\s*$/,"").trim();
+        pending={supplier,name:nm,role:"",kind:accessoryKind,price:line,quantity:line,line,accessory:true};continue;
+      }
+      if(/(?:@\s*[\d,]+|단가\s*[:：])/.test(line)&&!/^예\)/.test(line))issue(line,"원단처·원단명 또는 부자재 항목명 확인 필요");
+    }
+    flush();
+    for(const block of blocks){
+      if(block.cancelled)continue;
+      if(!/(?:@|단가\s*[:：])/.test(block.price))continue;
+      const quantity=block.quantity||block.price.replace(/\b\d+(?:\s*[-~]\s*\d+)?\s*["″]/g,"");
+      const amount=parseMemoAmount_(block.price,quantity,block.kind);
+      if(amount.issue){issue(block.line,amount.issue);continue;}
+      const key=memoCostKey_([block.kind,block.supplier,block.name]);
+      const nm=block.accessory?block.name:(block.kind==="안감"?"안감":"원단")+(amount.unit==="y"?"(야드)":"(m)");
+      const entry={key,nm,kind:block.kind,supplier:block.supplier,name:block.name,price:amount.price,quantity:amount.quantity,unit:amount.unit};
+      const previous=costs.find(v=>v.key===key);
+      if(previous){
+        if(previous.price!==entry.price||previous.quantity!==entry.quantity){previous.ambiguous=true;issue(block.line,"같은 항목의 단가·사용량이 달라 확인 필요");}
+      }else costs.push(entry);
+    }
+    const validCosts=costs.filter(c=>!c.ambiguous);
+    if(validCosts.filter(c=>c.kind==="원단"||c.kind==="안감").length>1){
+      validCosts.filter(c=>c.kind==="원단"||c.kind==="안감").forEach(c=>{c.nm=c.kind+" "+c.name+(c.unit==="y"?"(야드)":"(m)");});
+    }
+    const unique=candidates.filter((c,i,all)=>all.findIndex(v=>v.supplier===c.supplier&&v.name===c.name&&v.role===c.role)===i);
+    const outer=unique.filter(c=>c.role==="겉감");
+    return {candidates:unique,selected:outer.length===1?outer[0]:unique.length===1?unique[0]:null,costs:validCosts,issues};
   }
   let fabricMemoSync_={};
-  function syncFabricFromMemo_(chosen, force=false){
+  let fabricMemoLastText_="";
+  function memoCostValue_(row){return {nm:row.querySelector(".nm").value,unit:row.querySelector(".unit").value,qty:row.querySelector(".qty").value};}
+  function memoSameCost_(a,b){return a.nm===b.nm&&a.unit===b.unit&&a.qty===b.qty;}
+  function restoreMemoCostBindings_(){
+    const records=fabricMemoSync_.costRows||{};
+    const rows=[...linesWrap.querySelectorAll(".line")];
+    rows.forEach(row=>delete row.dataset.memoKey);
+    Object.entries(records).forEach(([key,record])=>{
+      if(record.deleted)return;
+      let row=rows[record.index];
+      if(!row||row.dataset.memoKey||!memoSameCost_(memoCostValue_(row),record)){
+        const matches=rows.filter(r=>!r.dataset.memoKey&&memoSameCost_(memoCostValue_(r),record));
+        row=matches.length===1?matches[0]:null;
+      }
+      if(row){row.dataset.memoKey=key;record.index=rows.indexOf(row);}
+      else record.manual=true;
+    });
+  }
+  function collectMemoCostBindings_(){
+    [...linesWrap.querySelectorAll(".line")].forEach((row,index)=>{
+      const key=row.dataset.memoKey;if(!key)return;
+      const record=fabricMemoSync_.costRows?.[key];if(!record)return;
+      const value=memoCostValue_(row);
+      if(!memoSameCost_(value,record))record.manual=true;
+      Object.assign(record,value,{index});
+    });
+  }
+  function syncMemoCostRows_(parsed,allowAuto,approvedKey=null,approvedRow=null){
+    const actions=[];
+    let changed=false;
+    const records=fabricMemoSync_.costRows||(fabricMemoSync_.costRows={});
+    collectMemoCostBindings_();
+    for(const entry of parsed.costs){
+      const rows=[...linesWrap.querySelectorAll(".line")], record=records[entry.key];
+      const owned=rows.find(row=>row.dataset.memoKey===entry.key);
+      const matches=rows.filter(row=>!row.dataset.memoKey&&(memoCostValue_(row).nm.trim()===entry.nm||memoMaterialKind_(memoCostValue_(row).nm)===entry.kind));
+      let target=owned||matches.length===1&&matches[0]||null;
+      const approved=approvedKey===entry.key;
+      if(approved){target=approvedRow&&approvedRow.isConnected?approvedRow:null;}
+      const desired={nm:entry.nm,unit:comma(entry.price),qty:String(entry.quantity)};
+      if(owned&&memoSameCost_(memoCostValue_(owned),desired))continue;
+      const empty=target&&!target.querySelector(".unit").value.trim()&&!target.querySelector(".qty").value.trim();
+      const safe=record?!record.manual&&!record.deleted&&!!owned:empty||(!target&&!matches.length);
+      if(approved||(allowAuto&&safe)){
+        if(!target){makeLine();target=linesWrap.lastElementChild;}
+        target.querySelector(".nm").value=desired.nm;target.querySelector(".unit").value=desired.unit;target.querySelector(".qty").value=desired.qty;
+        target.dataset.memoKey=entry.key;
+        records[entry.key]={...desired,index:[...linesWrap.children].indexOf(target),manual:false,deleted:false};
+        lineAmt(target);changed=true;
+      }else if(!safe||!allowAuto){
+        actions.push({entry,targets:owned?[owned]:matches});
+      }
+    }
+    if(changed){calc();autoPrice_(false);}
+    return actions;
+  }
+  function syncFabricFromMemo_(chosen,force=false,allowCostAuto=true,approvedKey=null,approvedRow=null){
     if(loading)return;
-    const parsed=parseFabricMemo_($("#materials").value), candidate=chosen||parsed.candidates.find(c=>fabricMemoSync_.selectedKey===c.supplier+"|"+c.name)||parsed.selected;
+    const text=$("#materials").value,parsed=parseFabricMemo_(text);
+    const candidate=chosen||parsed.candidates.find(c=>fabricMemoSync_.selectedKey===c.supplier+"|"+c.name)||parsed.selected;
     const panel=$("#fabricMemoActions");
     if(chosen)fabricMemoSync_.selectedKey=chosen.supplier+"|"+chosen.name;
     let conflict=false;
@@ -5458,31 +5728,54 @@
         }else if(el.value.trim()!==value)conflict=true;
       });
     }
-    const signature=JSON.stringify({candidates:parsed.candidates,conflict});
+    const costActions=syncMemoCostRows_(parsed,allowCostAuto&&text!==fabricMemoLastText_,approvedKey,approvedRow);
+    if(allowCostAuto)fabricMemoLastText_=text;
+    const signature=JSON.stringify({candidate,candidates:parsed.candidates,conflict,actions:costActions.map(a=>({entry:a.entry,targets:a.targets.map(memoCostValue_)})),issues:parsed.issues});
     if(panel.dataset.signature===signature)return;
-    panel.dataset.signature=signature;panel.replaceChildren();
-    panel.hidden=!(conflict||(!candidate&&parsed.candidates.length>1));
+    panel.dataset.signature=signature;
+    panel.replaceChildren();
+    panel.hidden=!(conflict||(!candidate&&parsed.candidates.length>1)||costActions.length||parsed.issues.length);
     if(panel.hidden)return;
-    const label=document.createElement("span");
-    label.textContent=conflict?"직접 입력한 원단을 유지합니다. ":"헤더에 표시할 원단을 선택하세요. ";
-    panel.append(label);
-    for(const choice of candidate?[candidate]:parsed.candidates){
-      const button=document.createElement("button");button.type="button";button.className="small-btn";
-      button.textContent=`메모 값 적용: ${choice.supplier} · ${choice.name}`;
-      button.addEventListener("click",()=>{syncFabricFromMemo_(choice,true);saveSoon();});
-      panel.append(button);
+    if(conflict||(!candidate&&parsed.candidates.length>1)){
+      const label=document.createElement("div");label.textContent=conflict?"직접 입력한 원단을 유지합니다.":"상단에 표시할 원단을 선택하세요.";panel.append(label);
+      for(const choice of candidate?[candidate]:parsed.candidates){
+        const button=document.createElement("button");button.type="button";button.className="small-btn";button.textContent=`메모 값 적용: ${choice.supplier} · ${choice.name}`;
+        button.addEventListener("click",()=>{syncFabricFromMemo_(choice,true);saveSoon();});panel.append(button);
+      }
     }
+    for(const action of costActions){
+      const {entry,targets}=action,div=document.createElement("div");
+      const label=document.createElement("span");label.textContent=`${entry.nm} ${comma(entry.price)} × ${entry.quantity} — `;div.append(label);
+      const addButton=(title,row)=>{
+        const button=document.createElement("button");button.type="button";button.className="small-btn";button.textContent=title;
+        button.addEventListener("click",()=>{syncFabricFromMemo_(null,false,false,entry.key,row);saveSoon();});div.append(button);
+      };
+      if(targets.length){targets.forEach((row,index)=>{const old=memoCostValue_(row);addButton(`기존 ${old.nm}${targets.length>1?` ${index+1}`:""} (${old.unit||"빈 단가"} × ${old.qty||"1"})에 적용`,row);});}
+      else addButton("원가표에 추가",null);
+      panel.append(div);
+    }
+    for(const item of parsed.issues){const div=document.createElement("div");div.textContent=`확인 필요: ${item.line} — ${item.reason}`;panel.append(div);}
   }
   $("#materials").addEventListener("blur",()=>{syncFabricFromMemo_();saveSoon();});
   ["fabricSupplierField","fabricNameField"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{
-    fabricMemoSync_[id]={value:document.getElementById(id).value,manual:true};
-    syncFabricFromMemo_();
+    fabricMemoSync_[id]={value:document.getElementById(id).value,manual:true};syncFabricFromMemo_();
   }));
+  linesWrap.addEventListener("input",event=>{
+    const row=event.target.closest(".line"),key=row?.dataset.memoKey;
+    if(key&&fabricMemoSync_.costRows?.[key]){fabricMemoSync_.costRows[key].manual=true;collectMemoCostBindings_();}
+  });
+  // 삭제한 자동 행은 다음 자동 저장에서 다시 만들지 않습니다.
+  linesWrap.addEventListener("click",event=>{
+    const row=event.target.closest(".line"),key=row?.dataset.memoKey;
+    if(event.target.closest(".del")&&key&&fabricMemoSync_.costRows?.[key])fabricMemoSync_.costRows[key].deleted=true;
+  },true);
+
 
   function collect(){
     syncFabricFromMemo_();
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
+    collectMemoCostBindings_();
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
     // v87: 첫 두 칸은 예전 앱과 호환하고, 추가 링크는 배열로 함께 저장합니다.
@@ -5510,7 +5803,7 @@
     st.sampleRecoveryStatus = sampleRecoveryStatus;
     st.sampleFactorySentDate = sampleFactorySentDate;
     st.sampleReturnedDate = sampleReturnedDate;
-    st.resampleHistory = resampleHistory_;
+    st.resampleHistory = JSON.parse(JSON.stringify(resampleHistory_));
     st.pdpRows = window.getPdpRows_ ? window.getPdpRows_() : [];
     // 2026-08-13 추가: 핵심 키워드와 비고 칸도 작지별로 저장합니다.
     // 예전에는 이 두 칸이 저장 대상에 없어서 작지를 바꿔도 안 지워지고 화면에 계속 남았습니다.
@@ -5560,12 +5853,8 @@
       const v = newSt[k] === undefined ? null : newSt[k];
       if(!oldSt || !sameValue_(prev[k], v)) patch[k] = v;
     });
-    // 예전에 있었는데 지금은 사라진 칸은 지웁니다
-    if(oldSt){
-      Object.keys(prev).forEach(k=>{
-        if(!(k in newSt)) patch[k] = null;
-      });
-    }
+    // v88: only fields collected by this editor are owned by this save.
+    // Keep logistics, restored metadata and newer-client fields; explicit null still clears a field.
     return patch;
   }
   // 색인 쓰기. 목록에 보이는 값이 하나도 안 바뀌었으면 아예 쓰지 않습니다.
@@ -5717,6 +6006,12 @@
     }
   }
   function applyState(st){
+    const resetSampleDraft=!sampleChangeBaseline_ || sampleChangeBaselineCode_ !== currentCode;
+    if(resetSampleDraft){
+      sampleChangeBaseline_=sampleChangeState_(st); sampleChangeBaselineCode_=currentCode;
+      $("#meetingHistoryToggle").open=false; $("#resampleHistoryToggle").open=false;
+      if(typeof toggleMetaAccordion_ === "function") toggleMetaAccordion_(false);
+    }
     loading = true;
     fabricMemoSync_=JSON.parse(JSON.stringify(st.fabricMemoSync||{}));
     priceConfirmed_ = !!st.priceConfirmed;
@@ -5758,6 +6053,7 @@
     // 방금 열기만 해도 "수정됨"으로 찍히는 버그가 있었음 → 직접 함수만 호출해서 화면만 갱신하고 저장은 안 걸리게 함)
     if(window.refreshCopygenOutput_) window.refreshCopygenOutput_();
     $("#materials").value = st.materials || "";
+    fabricMemoLastText_=$("#materials").value;
     pumInput.dataset.auto = st.pumAuto || "1";
     currentStatus = st.status === "planned" ? "sampling" : (st.status || "sampling");
     updateStatusButtons();
@@ -5766,8 +6062,8 @@
     sampleRecoveryStatus = st.sampleRecoveryStatus || "";
     sampleFactorySentDate = st.sampleFactorySentDate || "";
     sampleReturnedDate = st.sampleReturnedDate || "";
-    resampleHistory_ = Array.isArray(st.resampleHistory) ? st.resampleHistory : [];
-    renderResampleHistory_(); resetResampleDraft_();
+    resampleHistory_ = Array.isArray(st.resampleHistory) ? JSON.parse(JSON.stringify(st.resampleHistory)) : [];
+    renderResampleHistory_(); if(resetSampleDraft) resetResampleDraft_(); renderMeetingHistory_();
     renderSampleRecovery_(); if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
     if(window.setPdpRows_) window.setPdpRows_(st.pdpRows || []);
     if(window.setSellingPoints_) window.setSellingPoints_(st.sellingPoints || null, st.spOrder || null, st.spManual || null);
@@ -5795,6 +6091,7 @@
         st.lines.forEach(l=> makeLine(l.nm, l.unit, l.qty));
       }
     }
+    restoreMemoCostBindings_();
     setPhoto("#ph1", st.p1, st.p1Thumb);
     // 2026-08-13 추가: 사이즈 스펙 표도 내용이 지금과 같으면 다시 만들지 않습니다.
     // 지우고 다시 만들면 표 전체가 깜빡이고, 그 안 어느 칸에 포커스가 있었다면 끊깁니다.
@@ -6235,6 +6532,7 @@
     const seg = $("#sampleRecoverySeg");
     seg.querySelectorAll("button").forEach(btn=>{
       btn.classList.toggle("active", btn.dataset.value === sampleRecoveryStatus);
+      btn.setAttribute("aria-pressed",String(btn.dataset.value===sampleRecoveryStatus));
     });
     const datesEl = $("#sampleRecoveryDates");
     const parts = [];
@@ -6254,34 +6552,19 @@
   }
 
   $("#sampleRecoverySeg").querySelectorAll("button").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const val = btn.dataset.value;
-      if(val === sampleRecoveryStatus) return; // 이미 같은 상태면 아무 일 안 함
-      if(val === "notneeded"){
-        // 2026-08-21 추가: 원샘플이 아예 필요 없는 경우(기존 원단 컬러 추가, 검증된 패턴 재사용 등).
-        // 회수 완료와 달리 "필요했는데 끝난 것"이 아니라 "처음부터 필요 없던 것"이라 별도 상태로 둡니다.
-        sampleRecoveryStatus = "notneeded"; sampleFactorySentDate = ""; sampleReturnedDate = "";
-      } else if(val === ""){
-        // 2026-08-13 재수정: "초기화"라는 말이 실수로 지우는 것처럼 들려서
-        // 다음 라운드를 준비하려고 요청으로 되돌리는 정상적인 흐름인데도 망설이게 만들었습니다.
-        // 다음 디자인회의를 위해 다시 요청하는 것이 실제로는 자주 있는 일이라 문구를 바꿨습니다.
-        if(!confirm("다음 원샘플 준비를 위해 요청 상태로 되돌릴까요?\n공장·회수 날짜 기록은 지워집니다.")) return;
-        sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
-    resampleHistory_ = []; renderResampleHistory_(); resetResampleDraft_();
-      } else if(val === "factory"){
-        if(!confirm("오늘 날짜로 원샘플을 공장에 보낸 걸로 기록할까요?")) return;
-        sampleRecoveryStatus = "factory"; sampleFactorySentDate = todayStr_();
-      } else if(val === "returned"){
-        if(!confirm("오늘 날짜로 원샘플을 회수한 걸로 기록할까요?")) return;
-        sampleRecoveryStatus = "returned"; sampleReturnedDate = todayStr_();
-        // 샘플관리 탭에 이 품번으로 등록된 항목이 있으면 샘플수거 체크도 같이 반영
-        const code = currentCode || $("#codeView").textContent.replace("품번","").trim();
-        Object.entries(allSampleMgmt || {}).forEach(([id, s])=>{
-          if(s.code === code && !s.collected) sampleMgmtRoot.child(id).update({ collected: true });
-        });
-      }
-      renderSampleRecovery_(); if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
-      saveSoon();
+    btn.addEventListener("click",event=>{
+      event.stopPropagation();
+      const val=btn.dataset.value;
+      if(!["factory","returned"].includes(val)||val===sampleRecoveryStatus)return;
+      sampleRecoveryStatus=val;
+      if(val==="factory"){sampleFactorySentDate=todayStr_();sampleReturnedDate="";}
+      else sampleReturnedDate=todayStr_();
+      const code=currentCode||$("#codeView").textContent.replace("품번","").trim();
+      Object.entries(allSampleMgmt||{}).forEach(([id,item])=>{
+        if(item.code===code && !!item.collected!==(val==="returned"))
+          sampleMgmtRoot.child(id).update({collected:val==="returned"}).catch(()=>{});
+      });
+      renderSampleRecovery_();saveSoon();
     });
   });
 
@@ -6339,6 +6622,7 @@
     priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
+    sampleChangeBaseline_=null; sampleChangeBaselineCode_=null;
     if(typeof appRoute_!=="undefined" && appRoute_.view==="editor" && !restoringRoute_){
       appRoute_={...appRoute_,code};history.replaceState({...history.state,...appRoute_},"");
     }
@@ -6493,6 +6777,7 @@
     body.style.display = metaAccordionOpen_ ? "" : "none";
     wrap.classList.toggle("open", metaAccordionOpen_);
     if(arrow) arrow.textContent = metaAccordionOpen_ ? "▼" : "▶";
+    $("#metaAccordionHead")?.setAttribute("aria-expanded",String(metaAccordionOpen_));
   }
   if($("#metaAccordionHead")) $("#metaAccordionHead").addEventListener("click", ()=> toggleMetaAccordion_());
   function refreshMetaAccordionHead_(){
@@ -8396,6 +8681,7 @@
     // dataset.auto도 "1"로 되돌려서 카테고리를 고르면 다시 자동으로 이름이 채워지게 합니다.
     $("#pumMyeong").value = ""; pumInput.dataset.auto = "1";
     $("#materials").value="";
+    fabricMemoLastText_="";
     fabricMemoSync_={};$("#fabricMemoActions").hidden=true;delete $("#fabricMemoActions").dataset.signature;
     $("#fabricExpectedArrivalDate").value=""; $("#fabricActualArrivalDate").value=""; $("#fabricDelayReason").value="";
     $("#factoryExpectedShipDate").value=""; $("#factoryActualShipDate").value=""; $("#factoryDelayReason").value="";
@@ -8412,6 +8698,9 @@
      "coordiCode1","coordiCode2","coordiCode3"
     ].forEach(id=> $("#"+id).value="");
     renderReferenceLinks_([]);
+    resampleHistory_=[];renderResampleHistory_();resetResampleDraft_();renderMeetingHistory_();
+    sampleChangeBaseline_=null;sampleChangeBaselineCode_=null;
+    $("#meetingHistoryToggle").open=false;$("#resampleHistoryToggle").open=false;toggleMetaAccordion_(false);
     updateRefLinkMode_(); if(typeof updateCoordiLinkMode_ === "function") updateCoordiLinkMode_();
     sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
     renderSampleRecovery_(); if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
@@ -8580,57 +8869,26 @@
         // 2026-08-13 추가: 품번을 품명과 날짜 사이에 표시.
         // 카페24 자체상품코드를 채울 때 목록에서 바로 보고 옮겨 적을 수 있습니다.
         // PDP·판매 상태인데 입력 완료 체크가 안 된 작지는 옆에 표시가 뜹니다.
-        const needCafe24 = (st.status === "pdp" || st.status === "sale") && !st.cafe24Done;
-
-        // 2026-08-13 재수정: 단어 개수로 판정하던 방식을 버리고, 품명이 카테고리 이름과
-        // "완전히 똑같은지"로 정확히 판정합니다. 예전에는 단어 수가 같아도 빈칸 하나 차이로
-        // 뜨고 안 뜨고가 갈리는 문제가 있었습니다 (니트탑/타이니트가 어떨 땐 뜨고 어떨 땐 안 뜸).
-        // 고유명 + 셀링포인트 + 카테고리 방식으로 지으면 카테고리 이름 그대로 남을 일이 없으므로,
-        // 카테고리 목록과 정확히 일치할 때만(=아직 이름을 안 지으셨을 때만) 표시합니다.
-        const pumTrimmed = String(st.pumMyeong || "").trim().replace(/\s+/g, " ");
-        const weakName = CATS.some(c => c.name === pumTrimmed);
-
-        // 2026-08-13 추가 (13-6): 덮어쓰기 의심 표시.
-        // 사진은 있는데 품명·원단·디자이너가 모두 비어 있으면 다른 작지를 덮어쓴 흔적일 수 있습니다.
-        const hasPhoto = !!st.hasPhoto;
-        const emptyCore = !String(st.pumMyeong || "").trim()
-          && !String(st.fabricNameField || "").trim()
-          && !String(st.designer || "").trim();
-        const suspectOverwrite = hasPhoto && emptyCore;
-
-        // 2026-08-13 추가: 목록에서 바로 빠진 것과 팔릴 근거 등급을 보여줍니다.
-        const chk = window.checkWorkOrder_ ? window.checkWorkOrder_(st) : { missing: [], grade: { grade: "", why: "" } };
-        const showGrade = ["sampling","order","pdp","sale"].includes(st.status);
-
-        // 2026-08-13 재수정: 원샘플이 있는 공장이 아니라 "어디서 만들었는지"를 보여드리는 거라
-        // 수거필요 배지 안에 붙이지 않고 완전히 독립된 표시로 만듭니다. 상태와 상관없이
-        // 작지에 공장을 넣어두셨으면 항상 뜹니다.
-        const recovery = st.sampleRecoveryStatus || "";
-        const factoryName = String(st.factory || "").trim();
-        // 2026-08-21 수정: 요청 배지가 샘플중·발주생산 상태일 때만 뜨게 되어 있어서, 예정
-        // 단계에서 미리 요청을 눌러두셔도 썸네일에 반영이 안 됐습니다. 상태와 상관없이
-        // 요청을 누르시면 항상 뜨도록 조건을 없앴습니다.
-        const sampleBadge = recovery === "factory"
-          ? `<span class="gcard-sample-pickup" title="원샘플이 공장에 있습니다. 수거해오셔야 합니다">원샘플 수거필요</span>`
-          : (recovery === ""
-              ? `<span class="gcard-sample-req" title="원샘플을 아직 준비하지 않았습니다">원샘플 요청</span>`
-              : "");
-        const factoryBadge = factoryName
-          ? `<span class="gcard-factory" title="이 작지에 적힌 제작 공장입니다">🏭 ${factoryName}</span>` : "";
-
-        // 2026-08-13 추가: 사진 단계가 샘플일 때만 표시 (레퍼런스는 기본값이라 표시하지 않음)
-        const photoStageBadge = st.photoStage === "sample"
-          ? `<span class="gcard-photostage" title="실제 샘플 사진 기준입니다">샘플</span>` : "";
-
-        card.innerHTML = `
-          <div class="gcard-thumb">${thumb ? `<img loading="lazy" src="${thumb}">` : `<span class="empty">✎</span>`}</div>
-          <div class="gcard-title">${statusInfo.emoji} ${st.pumMyeong || "(품명 미정)"}<span class="gcard-code">${code}${needCafe24 ? `<span class="gcard-warn" title="카페24 자체상품코드 입력 필요">코드 미입력</span>` : ""}${suspectOverwrite ? `<span class="gcard-warn" title="사진은 있는데 품명·원단·디자이너가 모두 비어 있습니다">내용 확인</span>` : ""}</span>${((showGrade && chk.grade.grade) || weakName) ? `<span class="gcard-row2">${(showGrade && chk.grade.grade) ? `<span class="gcard-grade g-${chk.grade.grade.toLowerCase()}" title="${chk.grade.why}">${chk.grade.grade} ${chk.grade.stars}</span>` : ""}${weakName ? `<span class="gcard-soft" title="고유명 + 셀링포인트 + 카테고리 형식에 못 미칩니다">이름 보완</span>` : ""}</span>` : ""}${(sampleBadge || photoStageBadge || factoryBadge) ? `<span class="gcard-row2">${sampleBadge}${photoStageBadge}${factoryBadge}</span>` : ""}${(showGrade && chk.missing.length) ? `<span class="gcard-miss" title="지금 상태에서 있어야 하는데 비어 있는 항목">${chk.missing.join(" · ")} 없음</span>` : ""}${(Array.isArray(st.selectedColors) && st.selectedColors.length) ? `<span class="gcard-colors">${(window.colorNames_ ? window.colorNames_(st.selectedColors) : st.selectedColors).map(c=>{
-  const info = window.colorHex_ ? window.colorHex_(c) : null;
-  return info
-    ? `<span class="gcard-color-chip" style="background:${info.hex};color:${info.text};">${c}</span>`
-    : `<span class="gcard-color-chip">${c}</span>`;
-}).join("")}</span>` : ""}<span class="code">${dateLabel}</span></div>
-        `;
+        const productName=String(st.pumMyeong||"(품명 미정)");
+        const names=window.colorNames_?window.colorNames_(st.selectedColors||[]):(Array.isArray(st.selectedColors)?st.selectedColors:[]);
+        const sampleBadge=st.sampleRecoveryStatus==="factory"?'<span class="gcard-sample-pickup" title="공장에 있어 회수가 필요한 원샘플">샘플 수거</span>':"";
+        const safeThumb=/^(data:image\/[^,]+,|https?:\/\/|blob:)/i.test(thumb)?thumb:"";
+        card.innerHTML=`<div class="gcard-thumb">${safeThumb?`<img loading="lazy" alt="${esc_(productName)}" src="${esc_(safeThumb)}">`:'<span class="empty" aria-label="사진 없음">✎</span>'}</div>
+          <div class="gcard-info">
+            <div class="gcard-name" title="${esc_(productName)}">${esc_(productName)}</div>
+            <div class="gcard-code-row"><span class="gcard-code-value" title="${esc_(code)}">${esc_(code)}</span>${sampleBadge}</div>
+            <div class="gcard-colors-row" title="${esc_(names.join(' · '))}"></div>
+            <div class="gcard-date">${esc_(dateLabel)||'—'}</div>
+          </div>`;
+        const colorRow=card.querySelector(".gcard-colors-row");
+        names.slice(0,2).forEach(name=>{
+          const chip=document.createElement("span");chip.className="gcard-color-chip";chip.textContent=name;
+          const info=window.colorHex_?window.colorHex_(name):null;
+          if(info && /^#[0-9a-f]{3,8}$/i.test(info.hex)){chip.style.backgroundColor=info.hex;if(/^#[0-9a-f]{3,8}$/i.test(info.text))chip.style.color=info.text;}
+          colorRow.appendChild(chip);
+        });
+        if(names.length>2){const more=document.createElement("span");more.className="gcard-color-more";more.textContent="+"+(names.length-2);colorRow.appendChild(more);}
+        if(!names.length)colorRow.textContent="—";
         card.addEventListener("click", ()=>{
           // 2026-08-13 수정: 기존 작지 열기는 한 경로(openWorkOrderByCode_)로 통일.
           // 새 작지 모드 표시가 확실히 꺼져야 내용이 정상적으로 불려옴.
@@ -9184,33 +9442,187 @@
     document.body.classList.remove("factory-print-mode");
   });
 
-  // ---------- 삭제처리 (기존 드롭 버튼 대체, 실제 삭제) ----------
-  $("#deleteBtn").addEventListener("click", ()=>{
-    const code = currentCode || $("#codeView").textContent.replace("품번", "").trim();
-    const itemName = pumInput.value.trim() || "(품명 미정)";
-    if(!code){ return; }
-    const ok = confirm(`"${code}" ${itemName}\n정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
-    if(!ok) return;
-    justDeletedCode_ = code; // 삭제 확정 순간부터 이 품번에 대한 자동저장은 전부 무시
-    clearTimeout(saveT); // 방금까지 입력하던 내용이 뒤늦게 자동저장되어 삭제한 항목이 되살아나는 것 방지
-    woRoot.child(code).remove().then(()=>{
-      removeIndexEntry_(code);   // 2026-08-25 추가: 목록 색인에서도 지웁니다
-      clearTimeout(saveT); // confirm창 뜨는 사이 blur로 새로 걸렸을 수 있는 자동저장 타이머도 한 번 더 취소
-      // 2026-08-13 수정: 예전에는 3초가 지나면 justDeletedCode_ 기억이 사라지는데
-      // woRef는 삭제된 품번을 계속 가리키고 있어서, 그 뒤에 입력이 한 번만 일어나도
-      // 삭제된 작지가 그대로 다시 저장되어 되살아났음.
-      // 이제 삭제 즉시 연결을 끊고 가리키는 곳을 비워서 저장 자체가 불가능하게 만듦.
-      if(woRef && woListener){ woRef.off("value", woListener); }
-      woRef = null;
-      woListener = null;
-      currentCode = null;
-      showGallery();
-      setTimeout(()=>{ if(justDeletedCode_ === code) justDeletedCode_ = null; }, 3000);
-    }).catch(err=>{
-      justDeletedCode_ = null;
-      alert("삭제 중 문제가 발생했습니다: " + err.message);
+  // v88: a verified archive is written before any original is removed.
+  // Originals use a compare-and-delete transaction; restore only creates an empty code.
+  const woTrashRoot_ = firebase.database().ref("workorderTrash");
+  const woTrashIndexRoot_ = firebase.database().ref("workorderTrashIndex");
+  let trashBusy_ = false, trashOpen_ = false, trashListening_ = false;
+  let trashEntries_ = {}, trashReadError_ = "", trashUndoId_ = null;
+  function trashClone_(v){ return v == null ? null : JSON.parse(JSON.stringify(v)); }
+  function trashFirebaseValue_(v){
+    // RTDB omits null/undefined children and empty containers. An array may return
+    // as numeric object keys (or vice versa), so compare their stored child map.
+    if(v == null) return null;
+    if(typeof v !== "object") return v;
+    const children=Object.create(null);
+    Object.keys(v).forEach(k=>{const child=trashFirebaseValue_(v[k]);if(child!==null)children[k]=child;});
+    return Object.keys(children).length ? children : null;
+  }
+  function trashCanonical_(v){
+    v=trashFirebaseValue_(v);
+    if(v === null || typeof v !== "object") return JSON.stringify(v);
+    return "{" + Object.keys(v).sort().map(k=>JSON.stringify(k)+":"+trashCanonical_(v[k])).join(",") + "}";
+  }
+  function trashSame_(a,b){ return trashCanonical_(a) === trashCanonical_(b); }
+  function trashError_(err){
+    const message = String((err && (err.code || err.message)) || err || "알 수 없는 오류");
+    return /permission|denied/i.test(message) ? "휴지통 저장 권한이 없습니다. 원본을 삭제하지 않았습니다. 관리자에게 휴지통 권한 설정을 요청해주세요." : message;
+  }
+  function trashMergeDraft_(server, baseline, draft){
+    const merged=trashClone_(server), conflicts=[];
+    if(!baseline || !draft) return {merged,conflicts};
+    Object.keys(draft).forEach(k=>{
+      if(k==="updatedAt" || trashSame_(draft[k],baseline[k])) return;
+      if(trashSame_(server[k],baseline[k]) || trashSame_(server[k],draft[k])){
+        if(draft[k] == null) delete merged[k]; else merged[k]=trashClone_(draft[k]);
+      }else conflicts.push(k);
     });
-  });
+    return {merged,conflicts};
+  }
+  function renderTrash_(){
+    const list=$("#workOrderTrashList"); if(!list) return;
+    list.replaceChildren();
+    const entries=Object.entries(trashEntries_).filter(([,v])=>v&&v.phase!=="restored").sort((a,b)=>(b[1].deletedAt||0)-(a[1].deletedAt||0));
+    $("#galleryTrashBtn").textContent=trashOpen_ ? "작지 목록" : "휴지통"+(entries.length?" ("+entries.length+")":"");
+    const status=$("#workOrderTrashStatus");
+    status.textContent=trashReadError_ || (entries.length ? "삭제한 작지는 자동으로 영구 삭제되지 않습니다." : "휴지통이 비어 있습니다.");
+    entries.forEach(([id,e])=>{
+      const row=document.createElement("div"); row.className="trash-row";
+      const text=document.createElement("div"),name=document.createElement("strong"),detail=document.createElement("small");
+      name.textContent=e.name||"품명 미정";
+      const date=new Date(e.deletedAt||0).toLocaleString("ko-KR");
+      detail.textContent=e.code+" · "+date+(e.phase!=="deleted" ? " · 백업 보관" : " · 삭제됨");
+      text.append(name,detail);
+      const restore=document.createElement("button");restore.type="button";restore.className="btn ghost";restore.textContent="복원";restore.disabled=trashBusy_;
+      restore.addEventListener("click",()=>restoreWorkOrderFromTrash_(id));row.append(text,restore);list.append(row);
+    });
+  }
+  function listenTrash_(){
+    if(trashListening_) return;
+    trashListening_=true;trashReadError_="";
+    woTrashIndexRoot_.on("value",snap=>{trashEntries_=snap.val()||{};trashReadError_="";renderTrash_();},err=>{
+      trashReadError_="휴지통을 불러오지 못했습니다. 연결 또는 휴지통 읽기 권한을 확인해주세요.";
+      trashListening_=false;renderTrash_();
+    });
+  }
+  function toggleTrash_(open){
+    trashOpen_=open;$("#workOrderTrashPanel").hidden=!open;
+    $("#galleryGrid").hidden=open;$("#gallerySearchRow").hidden=open;$("#galleryExportSheetBtn").hidden=open;
+    $("#galleryTrashBtn").setAttribute("aria-expanded",String(open));
+    if(open) listenTrash_();renderTrash_();
+  }
+  function showTrashUndo_(id){
+    trashUndoId_=id;const box=$("#trashUndoNotice");box.hidden=false;
+    $("#trashUndoText").textContent="작지를 휴지통으로 옮겼습니다.";
+  }
+  async function setTrashPhase_(id,phase,extra={}){
+    const updates={};updates["workorderTrash/"+id+"/phase"]=phase;updates["workorderTrashIndex/"+id+"/phase"]=phase;
+    Object.keys(extra).forEach(k=>{updates["workorderTrash/"+id+"/"+k]=extra[k];});
+    await firebase.database().ref().update(updates);
+  }
+  async function trashCompareRemove_(ref,expected){
+    if(expected==null) return true;
+    const result=await ref.transaction(value=>trashSame_(value,expected)?null:undefined,undefined,false);
+    return !!result.committed || result.snapshot.val()==null;
+  }
+  async function moveWorkOrderToTrash_(){
+    if(trashBusy_) return;
+    const code=currentCode;
+    if(!code || loading || codeConflictNow_()) return;
+    const name=pumInput.value.trim()||"품명 미정";
+    if(!confirm('"'+code+'" '+name+"\n휴지통으로 옮길까요? 삭제 후 되돌리거나 휴지통에서 복원할 수 있습니다.")) return;
+    trashBusy_=true;justDeletedCode_=code;clearTimeout(saveT);
+    const editor=$("#editorView");editor.inert=true;
+    const baseline=trashClone_(lastSavedState_);
+    let draft=null,id=null,removed=false;
+    try{
+      await pauseShareBackfillForTrash_();
+      draft=trashClone_(collect());
+      await Promise.allSettled(Array.from(pendingSaveWrites_));
+      const refs=[woRoot.child(code),woIndexRoot.child(code),woShareRoot.child(code),firebase.database().ref("workorderSheetRows").child(code)];
+      const snapshots=await Promise.all(refs.map(ref=>ref.once("value")));
+      const [server,index,share,sheetRow]=snapshots.map(s=>trashClone_(s.val()));
+      if(!server) throw new Error("원본이 이미 없거나 다른 기기에서 이동했습니다. 목록에서 다시 확인해주세요.");
+      const {merged,conflicts}=trashMergeDraft_(server,baseline,draft);
+      const entryRef=woTrashRoot_.push();id=entryRef.key;const deletedAt=Date.now();
+      const archive={version:1,code,name,deletedAt,phase:"prepared",original:server,workorder:merged,index,share,sheetRow,localDraft:draft,localConflicts:conflicts};
+      const meta={code,name,deletedAt,phase:"prepared"};
+      const updates={};updates["workorderTrash/"+id]=archive;updates["workorderTrashIndex/"+id]=meta;
+      await firebase.database().ref().update(updates);
+      const verified=(await entryRef.once("value")).val();
+      if(!verified || !trashSame_(verified.original,server) || !trashSame_(verified.workorder,merged)) throw new Error("휴지통 백업을 확인하지 못했습니다. 원본은 삭제하지 않았습니다.");
+      const result=await woRoot.child(code).transaction(value=>trashSame_(value,server)?null:undefined,undefined,false);
+      if(!result.committed) throw new Error("다른 기기에서 작지가 변경되어 삭제를 중단했습니다. 최신 내용을 확인한 뒤 다시 시도해주세요. 백업은 휴지통에 보관됩니다.");
+      removed=true;
+      // Wait for all cleanup before exposing Undo. A fast restore can never race our cleanup.
+      const cleaned=await Promise.allSettled(refs.slice(1).map((ref,i)=>trashCompareRemove_(ref,[index,share,sheetRow][i])));
+      const incomplete=cleaned.some(r=>r.status!=="fulfilled"||!r.value);
+      try{await setTrashPhase_(id,"deleted",{cleanupPending:incomplete});}catch(err){console.warn("Trash archive retained; phase update deferred",err);}
+      delete lastIndexSig_[code];delete shareThumbSigCache_[code];
+      detachWoRefNow_("trash");showGallery();toggleTrash_(false);showTrashUndo_(id);
+      if(incomplete) $("#trashUndoText").textContent="휴지통에 보관했습니다. 목록 정리가 지연되고 있습니다.";
+      if(conflicts.length) alert("다른 기기와 동시에 수정한 내용은 서버의 최신 값을 보관했습니다. 이 화면의 입력 내용도 휴지통 백업에 함께 보관했습니다.");
+    }catch(err){
+      if(removed){
+        detachWoRefNow_("trash-partial");showGallery();showTrashUndo_(id);
+        alert("작지는 휴지통 백업에 보관되어 있습니다. 목록 정리 중 문제가 생겼습니다. 휴지통에서 복원할 수 있습니다.");
+      }else alert(trashError_(err));
+    }finally{
+      editor.inert=false;trashBusy_=false;
+      if(justDeletedCode_===code) justDeletedCode_=null;
+      renderTrash_();
+      resumeShareBackfillAfterTrash_();
+    }
+  }
+  async function restoreWorkOrderFromTrash_(id){
+    if(trashBusy_ || !id) return false;
+    trashBusy_=true;renderTrash_();let restored=false;
+    try{
+      await pauseShareBackfillForTrash_();
+      const archive=(await woTrashRoot_.child(id).once("value")).val();
+      if(!archive || !archive.code || !archive.workorder) throw new Error("복원할 백업을 찾지 못했습니다.");
+      const code=archive.code,ref=woRoot.child(code);
+      const record={...trashClone_(archive.workorder),_trashRestoreId:id};
+      // Warm the cache before the transaction; Firebase may otherwise first invoke it with null.
+      await ref.once("value");
+      const created=await ref.transaction(value=>value==null?record:undefined,undefined,false);
+      let live=created.snapshot.val();
+      if(!created.committed && (!live || live._trashRestoreId!==id)) throw new Error("같은 품번의 작지가 이미 있습니다. 기존 작지를 덮어쓰지 않았습니다. 백업은 휴지통에 그대로 보관됩니다.");
+      restored=true;
+      live=(await ref.once("value")).val();
+      if(!live || live._trashRestoreId!==id) throw new Error("복원 중 다른 기기에서 작지가 변경되었습니다. 원본과 백업을 보존했습니다. 목록을 확인해주세요.");
+      const index={...(archive.index||{}),...woIndexEntryFrom_(live),updatedAt:live.updatedAt||Date.now()};
+      const restoreIndex=await woIndexRoot.child(code).transaction(value=>value==null||trashSame_(value,archive.index)?index:undefined,undefined,false);
+      if(!restoreIndex.committed && !trashSame_(restoreIndex.snapshot.val(),index)) throw new Error("작지 원본은 복원했지만 목록이 변경되어 목록 복원을 보류했습니다. 백업은 유지됩니다.");
+      if(archive.share && shareKeeps_(live)){
+        const share={...archive.share,...woShareEntryFrom_(live)};
+        // Index listeners may already have recreated the share row. Preserve those newer
+        // values (including logistics arrival dates) and fill only absent archived fields.
+        await woShareRoot.child(code).transaction(value=>value==null||trashSame_(value,archive.share)?share:{...share,...value},undefined,false);
+      }
+      else if(!shareKeeps_(live)) await trashCompareRemove_(woShareRoot.child(code),archive.share);
+      // Rebuild the derived SheetRows from the restored original; the archived copy is retained.
+      if(window.AiselSheetBridge){
+        const synced=await window.AiselSheetBridge.sync(code);
+        if(synced===false) throw new Error("시트 연동 데이터 복원이 완료되지 않았습니다. 연결을 확인한 뒤 복원을 다시 눌러주세요.");
+      }
+      else if(archive.sheetRow) await firebase.database().ref("workorderSheetRows").child(code).transaction(value=>value==null?archive.sheetRow:undefined,undefined,false);
+      const done={};done["workorderTrash/"+id+"/phase"]="restored";done["workorderTrash/"+id+"/restoredAt"]=Date.now();done["workorderTrashIndex/"+id]=null;
+      await firebase.database().ref().update(done);
+      delete lastIndexSig_[code];lastGallerySig_=null;
+      if(trashUndoId_===id){trashUndoId_=null;$("#trashUndoNotice").hidden=true;}
+      delete trashEntries_[id];renderTrash_();renderGallery();
+      alert("작지를 복원했습니다. 원래 상태의 목록에서 확인할 수 있습니다.");return true;
+    }catch(err){
+      const message=restored?"작지 원본은 복원되어 있습니다. 나머지 복원이 완료되지 않아 휴지통 백업을 유지합니다. 복원을 다시 누르면 이어서 처리합니다.\n":"";
+      alert(message+String(err.message||err));return false;
+    }finally{trashBusy_=false;renderTrash_();resumeShareBackfillAfterTrash_();}
+  }
+  $("#deleteBtn").addEventListener("click",moveWorkOrderToTrash_);
+  $("#galleryTrashBtn").addEventListener("click",()=>toggleTrash_(!trashOpen_));
+  $("#trashUndoBtn").addEventListener("click",()=>restoreWorkOrderFromTrash_(trashUndoId_));
+  $("#trashUndoDismissBtn").addEventListener("click",()=>{$("#trashUndoNotice").hidden=true;});
+
 
   document.querySelectorAll(".jump-btn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -9363,29 +9775,24 @@
   document.getElementById("pumMyeong").addEventListener("input",renderMobileHeader_);
   renderMobileHeader_();
 
-  // Keep the existing buttons and their listeners while adapting their placement.
+  // v88: move existing controls so their save/print listeners remain unique.
   (function placeMobileTools_(){
-    const toggle = document.getElementById('mfoldToggle');
-    const remove = document.getElementById('deleteBtn');
-    const sequence = document.querySelector('#editorView .toolbar-sequence');
-    const header = document.querySelector('#editorView .editor-mobile-head');
-    const toggleHome = document.createComment('mobile toggle desktop position');
-    const removeHome = document.createComment('delete button desktop position');
-    toggle.before(toggleHome);
-    remove.before(removeHome);
-    const mobile = window.matchMedia('(max-width: 600px)');
+    const remove=document.getElementById('deleteBtn');
+    const factory=document.getElementById('factorySaveBtn');
+    const sequence=document.querySelector('#editorView .toolbar-sequence');
+    sequence.id='mobileSequenceTools';
+    const header=document.querySelector('#editorView .editor-mobile-head');
+    const factoryHome=document.createComment('factory action desktop position');
+    const removeHome=document.createComment('delete action desktop position');
+    factory.before(factoryHome); remove.before(removeHome);
+    document.getElementById('mfoldToggle').setAttribute('aria-controls','mobileSequenceTools seasonField categoryField statusBar moveCodeBtn');
+    const mobile=window.matchMedia('(max-width: 600px)');
     function place(){
-      if(mobile.matches){
-        sequence.appendChild(toggle);
-        header.appendChild(remove);
-      }else{
-        toggleHome.after(toggle);
-        removeHome.after(remove);
-      }
+      if(mobile.matches){sequence.appendChild(factory);header.appendChild(remove);}
+      else{factoryHome.after(factory);removeHome.after(remove);}
     }
     place();
-    if(mobile.addEventListener) mobile.addEventListener('change', place);
-    else mobile.addListener(place);
+    if(mobile.addEventListener)mobile.addEventListener('change',place);else mobile.addListener(place);
   })();
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
@@ -10519,7 +10926,6 @@ const BASE_COLORS = [
   { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
   { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
   { key:"베이지", hex:"#d9c6a8", text:"#4a3c26" },
-  { key:"그린", hex:"#7c8b6f", text:"#ffffff" },
 ];
 // 2026-08-13 재수정: 기본색 자체를 맨 앞에 추가합니다.
 // 예전에는 차콜 쉐도우·스모크 차콜 같은 파생색만 있고 순수한 차콜을 고를 자리가 없었습니다.
@@ -10673,6 +11079,13 @@ const COLOR_VARIANTS = {
 
 let selectedColors = [];
 let openBase = null;
+
+const colorPickerToggle=$("colorPickerToggle"), colorPicker=$("colorPicker");
+colorPickerToggle.addEventListener("click",()=>{colorPicker.open=!colorPicker.open;});
+colorPicker.addEventListener("toggle",()=>{
+  colorPickerToggle.setAttribute("aria-expanded",String(colorPicker.open));
+  colorPickerToggle.textContent=colorPicker.open?"▾ 접기":"▸ 선택";
+});
 
 function renderSwatches(){
   const grid = $("colorSwatches");
@@ -11712,8 +12125,15 @@ async function thumbnail(code,v){
   const ref=firebase.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
   await ref.put(blob,{contentType:blob.type||"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
   const url=await ref.getDownloadURL();
-  await db.ref("workorders").child(code).child("sheetThumb").set({url,signature:sig});
-  return url;
+  // An upload may finish after the work order was deleted or its photo changed.
+  // Update only the existing matching original; never recreate a deleted record.
+  const original=db.ref("workorders").child(code);
+  await original.once("value");
+  const result=await original.transaction(current=>{
+    if(!current || signature(current.p1Thumb||current.p1||"")!==sig)return;
+    return {...current,sheetThumb:{url,signature:sig}};
+  },undefined,false);
+  return result.committed?url:"";
  }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return /^https:\/\//.test(v.p1||"")?v.p1:"";}
 }
 async function perform(code){
@@ -11729,11 +12149,12 @@ async function perform(code){
  await rows.child(code).set(build(code,latest,photo));
  await meta.update({version:1,updatedAt:firebase.database.ServerValue.TIMESTAMP});
  document.getElementById("sheetBridgeStatus")?.remove();
+ return true;
 }
 function sync(code){
  if(!code)return Promise.resolve();
  const prev=running.get(code)||Promise.resolve();
- const next=prev.catch(()=>{}).then(()=>perform(code)).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);}).finally(()=>{if(running.get(code)===next)running.delete(code);});
+ const next=prev.catch(()=>{}).then(()=>perform(code)).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);return false;}).finally(()=>{if(running.get(code)===next)running.delete(code);});
  running.set(code,next);return next;
 }
 api.sync=sync;
