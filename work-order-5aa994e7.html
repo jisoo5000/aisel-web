@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v80 (2026-10-02)
+<!-- AISEL 작업지시서 v81 (2026-10-02)
+     [v81] 화면 사이즈 표 전체 표시·모바일 한 열 배치·이동 버튼 겹침 제거·블러시 핑크 입력칸.
      [v80] 버튼 규격·네이비 테마·간격·모바일 날짜 및 인쇄 기본정보 정렬 통일. 긴 인쇄 내용 보존.
      [v79] 모바일 정렬·아이콘·발주 필터·브랜드 색상 및 인쇄 연락처·구분선 개선.
      [v78] 원가 화면 높이 고정, 판매가 바로가기 제거, 레퍼런스 아래 원형 컬러칩.
@@ -2074,13 +2075,82 @@
 }
 
 </style>
+<style id="aisel-v81-screen">
+/* v81: complete on-screen size tables; printed A4 layout keeps its own rules. */
+@media screen {
+  #sheet > .detail2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #sheet > .detail2 > .cell.mat,
+  #sheet > .detail2 > .sizespec {
+    height: auto; min-height: 548px; min-width: 0; overflow: visible;
+  }
+  #sheet .sizespec .ss-table-wrap {
+    flex: 0 0 auto; min-width: 0; max-width: 100%;
+    overflow-x: auto; overflow-y: visible; -webkit-overflow-scrolling: touch;
+  }
+  #sheet .sizespec table { width: 100%; table-layout: auto; }
+  #sheet .sizespec th.part-h,
+  #sheet .sizespec td.part-cell { width: 96px; min-width: 96px; }
+  #sheet .sizespec th.colhead,
+  #sheet .sizespec td:not(.part-cell):not(.noprint) { min-width: 70px; }
+  #sheet .sizespec th.noprint,
+  #sheet .sizespec td.noprint { width: 30px; min-width: 30px; }
+  #sheet .sizespec input { min-width: 0; }
+  #sheet .sizespec .unit-note { flex: 0 0 auto; }
+
+  #sheet > .meta .designer > input { background: #F5EAEE; }
+  #sheet > .meta .designer > input.field-missing {
+    background: #F0DEE6 !important; border-color: #CBB5C1 !important;
+  }
+
+  /* On narrow displays navigation occupies its own row after the document. */
+  #scrollFabWrap {
+    position: static; left: auto; right: auto; bottom: auto; z-index: auto;
+    flex-direction: row; justify-content: flex-end; gap: 8px;
+    max-width: 820px; margin: 12px auto 24px; padding: 0 12px;
+  }
+  #scrollFabWrap .scroll-fab {
+    width: auto; min-width: 40px; height: 40px; padding: 6px 12px;
+    border-radius: 4px; opacity: 1; box-shadow: none; line-height: 1.25;
+  }
+  #scrollFabWrap .scroll-fab:disabled { opacity: .35; }
+  #scrollFabWrap .scroll-label { margin-left: 4px; }
+}
+
+@media screen and (max-width: 600px) {
+  #sheet > .detail2 { grid-template-columns: minmax(0, 1fr); }
+  #sheet > .detail2 > .cell.mat,
+  #sheet > .detail2 > .sizespec { min-height: 0; padding: 12px; }
+  #sheet > .detail2 > .cell.mat {
+    border-right: 0; border-bottom: 1.5px solid var(--line);
+  }
+  #sheet > .detail2 > .cell.mat textarea {
+    flex: 0 0 auto; height: 240px; min-height: 200px; resize: vertical;
+  }
+  #sheet .sizespec .ss-addrow {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+  }
+  #sheet .sizespec .ss-addrow .add {
+    min-width: 0; min-height: 36px; padding: 6px 2px;
+    font-size: 11.5px; justify-content: center; white-space: nowrap;
+  }
+}
+
+/* Only wide viewports have a gutter large enough for floating navigation. */
+@media screen and (min-width: 1040px) {
+  #scrollFabWrap {
+    position: fixed; left: calc(50% + 460px); right: auto; bottom: 22px;
+    flex-direction: column; margin: 0; padding: 0; z-index: 500;
+  }
+  #scrollFabWrap .scroll-fab { width: 40px; padding: 6px; }
+  #scrollFabWrap .scroll-label { display: none; }
+}
+
+</style>
 
 
 
-<div class="scroll-fab-wrap noprint" id="scrollFabWrap">
-  <button type="button" class="scroll-fab" id="scrollTopBtn" title="맨 위로">▲</button>
-  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="맨 아래로">▼</button>
-</div>
+
+
 
 <div class="mainbar noprint" id="mainBar">
   <button type="button" class="maintab active" data-main="sales">판매</button>
@@ -3112,6 +3182,11 @@
     </div>
   </div>
 
+
+<div class="scroll-fab-wrap noprint" id="scrollFabWrap">
+  <button type="button" class="scroll-fab" id="scrollTopBtn" title="맨 위로">▲<span class="scroll-label">맨 위로</span></button>
+  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="맨 아래로">▼<span class="scroll-label">맨 아래로</span></button>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
