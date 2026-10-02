@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v88 (2026-10-02)
+<!-- AISEL 작업지시서 v89 (2026-10-03)
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -2694,10 +2694,63 @@
 #trashUndoNotice>span{min-width:0}#trashUndoNotice button{flex-shrink:0;background:transparent;border:0;color:white;padding:8px 2px;font:inherit;font-weight:700;cursor:pointer}#trashUndoBtn{text-decoration:underline}#trashUndoDismissBtn{font-size:20px!important}
 @media print{#workOrderTrashPanel,#trashUndoNotice,#galleryTrashBtn{display:none!important}}
 </style>
+<style id="aisel-v89-screen">
+@media screen {
+  #mainBar { display:flex; }
+  #mainBar > .maintab { flex:1 1 0; min-width:0; }
+  #mainBar > .mainbar-order-col { display:none !important; }
+  #galleryView > .gallery-head { gap:8px; align-items:center; }
+  #galleryTrashBtn { flex:0 0 auto; margin-left:auto; height:36px; min-height:36px; padding:5px 8px; font-size:11px; line-height:1.25; border-radius:4px; }
+  #galleryMoreMenu { position:relative; margin-left:auto; flex:0 0 auto; }
+  #galleryMoreMenu > summary { cursor:pointer; color:#637089; font-size:11px; padding:6px 0; white-space:nowrap; }
+  #galleryMoreMenu > .gallery-more-actions { position:absolute; right:0; top:100%; z-index:20; padding:6px; border:1px solid #CBD3DF; border-radius:4px; background:white; box-shadow:0 3px 10px #2F3B5215; }
+  #galleryMoreMenu #galleryExportSheetBtn { white-space:nowrap; font-size:12px; height:36px; margin:0; }
+  #editorView #metaAccordionHead,
+  #editorView #refPanel .sec-title-np,
+  #editorView #productColors h2 { font-size:13px; }
+  #editorView #productColors .color-heading { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px; min-height:32px; }
+  #editorView #productColors h2 { margin:0; }
+  #editorView #productColors #selectedColors { display:flex; flex-wrap:nowrap; gap:5px; min-width:0; margin:0; overflow-x:auto; scrollbar-width:thin; align-items:center; }
+  #editorView #productColors #selectedColors .copygen-color-chip { flex:0 0 auto; width:auto; min-height:24px; max-width:none; padding:2px 5px 2px 7px; gap:3px; border:0; border-radius:3px; font-size:11px; line-height:18px; white-space:nowrap; overflow-wrap:normal; }
+  #editorView #productColors #selectedColors .copygen-color-chip button { color:inherit; opacity:.8; min-width:24px; min-height:24px; padding:0 3px; font-size:13px; }
+  #editorView #productColors #colorPickerToggle { display:inline-flex; align-items:center; min-height:32px; padding:4px 0 4px 4px; border:0; background:transparent; color:#2F3B52; font-size:11px; cursor:pointer; }
+  #editorView #productColors #colorPicker > summary { display:none; }
+}
+@media screen and (max-width:600px) {
+  #galleryView > .gallery-head h2 { font-size:18px; }
+  #galleryView .gallery-toolbar { gap:2px 8px; margin-bottom:10px; }
+  #sheet > .title-row .date-row,
+  #sheet > .title-row .title-spacer .date-row { font-size:14px; }
+  #sheet > .title-row .date-row input { font-size:14px; width:20px; }
+  #sheet > .title-row .date-row input.y { width:39px; }
+  #sheet > .title-row .date-box::before,
+  #sheet > .title-row .mod-label { font-size:11px; width:23px; flex-basis:23px; margin-right:2px; }
+}
+
+</style>
+<style id="aisel-v89-references">
+@media screen {
+  #editorView #refPanel { display:grid; grid-template-columns:auto minmax(0,1fr) 36px; gap:6px; padding:8px 10px; align-items:start; }
+  #editorView #refPanel .ref-panel-heading { display:contents; }
+  #editorView #refPanel .ref-panel-heading .sec-title-np { grid-column:1; grid-row:1; display:flex; align-items:center; height:36px; margin:0; white-space:nowrap; font-size:13px; }
+  #editorView #refPanel #refAddBtn { grid-column:3; grid-row:1; width:36px; min-width:36px; height:36px; min-height:36px; padding:0; border:0; background:transparent; box-shadow:none; color:#2F3B52; }
+  #editorView #refPanel #refLinksList { grid-column:2; grid-row:1; min-width:0; }
+  #editorView #refPanel .ref-link-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px; margin:0 0 6px; min-width:0; }
+  #editorView #refPanel .ref-link-row:last-child { margin-bottom:0; }
+  #editorView #refPanel .ref-link-row > label { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  #editorView #refPanel .ref-short-link { grid-column:1; grid-row:1; display:flex; align-items:center; width:max-content; max-width:100%; min-width:0; min-height:36px; padding:0; font-size:12px; font-weight:600; color:#2F3B52; white-space:nowrap; text-decoration:underline; cursor:pointer; }
+  #editorView #refPanel .ref-link-row > .ref-actions { grid-column:2; grid-row:1; display:flex; gap:4px; }
+  #editorView #refPanel .ref-actions .ref-icon-btn { width:36px; min-width:36px; height:36px; min-height:36px; flex:0 0 36px; padding:4px; }
+  #editorView #refPanel .ref-action-icon { width:18px; height:18px; flex:0 0 18px; }
+  #editorView #refPanel .ref-link-row > input { display:none; grid-column:1 / -1; grid-row:2; width:100%; min-width:0; height:36px; min-height:36px; margin:0; padding:6px 8px; }
+  #editorView #refPanel .ref-link-row.is-editing > input { display:block; }
+}
+
+</style>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
-  <button type="button" class="maintab active" data-main="sales">판매</button>
+  <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
-  <div class="mainbar-order-col">
+  <div class="mainbar-order-col" hidden>
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">발주</button>
   </div>
 </div>
@@ -2734,7 +2787,7 @@
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no">
   <div class="gallery-head">
-    <h2>📈 판매</h2>
+    <h2>📈 판매성과</h2>
   </div>
   <div class="gallery-tabs" id="salesTabs">
     <button type="button" class="gtab active" data-sort="recent">최신순</button>
@@ -2753,6 +2806,7 @@
 <div class="gallery notranslate" id="galleryView" style="display:none" lang="ko" translate="no">
   <div class="gallery-head">
     <h2>📋 작업지시서</h2>
+    <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제한 작지 복원</button>
   </div>
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
@@ -2765,8 +2819,7 @@
     </div>
     <div class="gallery-toolbar">
       <div id="galleryCounts" class="gallery-counts" role="status" aria-live="polite" aria-label="상태별 작업지시서 개수"></div>
-      <button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button>
-      <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">휴지통</button>
+      <details id="galleryMoreMenu"><summary>목록 더보기</summary><div class="gallery-more-actions"><button type="button" class="btn ghost nav-btn" id="galleryExportSheetBtn">📤 구글시트로 내보내기</button></div></details>
     </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
@@ -2777,7 +2830,7 @@
     <input type="text" id="gallerySearchInput" placeholder="검색어 입력">
   </div>
   <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
-    <h3>휴지통</h3>
+    <h3>삭제한 작지 복원</h3>
     <p id="workOrderTrashStatus" role="status">불러오는 중…</p>
     <div id="workOrderTrashList"></div>
   </section>
@@ -6160,6 +6213,16 @@
     const input = row.querySelector("input"), label = row.querySelector("label");
     const edit = row.querySelector(".ref-icon-btn:not(.danger)"), del = row.querySelector(".ref-icon-btn.danger");
     row.dataset.refIndex = String(index);
+    row.classList.remove("is-editing");
+    let shortLink = row.querySelector(".ref-short-link");
+    if(!shortLink){ shortLink = document.createElement("a"); shortLink.className = "ref-short-link"; row.insertBefore(shortLink, input); }
+    shortLink.target = "_blank"; shortLink.rel = "noopener noreferrer";
+    shortLink.addEventListener("click", e=>{
+      if(!(input.value || "").trim()){ e.preventDefault(); openReferenceEditor_(input); }
+    });
+    shortLink.addEventListener("keydown", e=>{
+      if(!(input.value || "").trim() && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openReferenceEditor_(input); }
+    });
     input.id = "refLink" + suffix;
     label.textContent = index === 0 ? "링크" : "링크 " + (index + 1);
     label.htmlFor = input.id;
@@ -6189,14 +6252,33 @@
       const input = row.querySelector("input");
       input.value = links[index] || "";
       input.readOnly = false; input.classList.remove("as-link");
+      row.classList.remove("is-editing");
     });
     updateRefLinkMode_();
+  }
+  function openReferenceEditor_(input){
+    const row = input.closest("#refLinksList .ref-link-row");
+    if(row) row.classList.add("is-editing");
+    input.readOnly = false; input.classList.remove("as-link");
+    input.focus();
   }
   // 2026-08-13 추가: 링크 두 개에 같은 방식을 쓰기 위해 공용 함수로 뺐습니다.
   function updateOneRefLinkMode_(sel){
     const input = $(sel);
     if(!input) return;
     const val = (input.value || "").trim();
+    const refRow = input.closest("#refLinksList .ref-link-row");
+    if(refRow){
+      const shortLink = refRow.querySelector(".ref-short-link");
+      const index = Number(refRow.dataset.refIndex || 0);
+      if(shortLink){
+        shortLink.textContent = val ? (index ? "링크 " + (index + 1) + " ↗" : "링크 ↗") : "링크 입력";
+        shortLink.title = val || "레퍼런스 링크 입력";
+        if(val){ shortLink.href = /^https?:\/\//i.test(val) ? val : "https://" + val; shortLink.removeAttribute("role"); shortLink.removeAttribute("tabindex"); }
+        else { shortLink.removeAttribute("href"); shortLink.setAttribute("role", "button"); shortLink.tabIndex = 0; }
+      }
+      refRow.classList.toggle("is-editing", document.activeElement === input);
+    }
     if(val && document.activeElement !== input){
       input.readOnly = true;
       input.classList.add("as-link");
@@ -6223,9 +6305,7 @@
     });
     const editBtn = $(editBtnSel);
     if(editBtn) editBtn.addEventListener("click", ()=>{
-      input.readOnly = false;
-      input.classList.remove("as-link");
-      input.focus();
+      openReferenceEditor_(input);
     });
     const delBtn = $(delBtnSel);
     if(delBtn) delBtn.addEventListener("click", ()=>{
@@ -6241,7 +6321,7 @@
     const links = collectReferenceLinks_(true); links.push("");
     renderReferenceLinks_(links);
     const inputs = $("#refLinksList").querySelectorAll(".ref-link-row:not([hidden]) input");
-    inputs[inputs.length - 1].focus();
+    openReferenceEditor_(inputs[inputs.length - 1]);
   });
   // 2026-08-21 추가: 코디 링크 3개도 레퍼런스 링크와 완전히 같은 함수로 동작시킵니다
   function updateCoordiLinkMode_(){
@@ -9483,7 +9563,7 @@
     const list=$("#workOrderTrashList"); if(!list) return;
     list.replaceChildren();
     const entries=Object.entries(trashEntries_).filter(([,v])=>v&&v.phase!=="restored").sort((a,b)=>(b[1].deletedAt||0)-(a[1].deletedAt||0));
-    $("#galleryTrashBtn").textContent=trashOpen_ ? "작지 목록" : "휴지통"+(entries.length?" ("+entries.length+")":"");
+    $("#galleryTrashBtn").textContent=trashOpen_ ? "작지 목록" : "삭제한 작지 복원"+(entries.length?" ("+entries.length+")":"");
     const status=$("#workOrderTrashStatus");
     status.textContent=trashReadError_ || (entries.length ? "삭제한 작지는 자동으로 영구 삭제되지 않습니다." : "휴지통이 비어 있습니다.");
     entries.forEach(([id,e])=>{
@@ -11181,11 +11261,10 @@ function renderSelectedColors(){
   selectedColors.forEach(v => {
     const chip = document.createElement("span");
     chip.className = "copygen-color-chip";
-    const dot = document.createElement("span");
-    dot.className = "color-dot";
-    dot.style.background = (window.colorHex_(v) || {}).hex || "#ffffff";
-    dot.setAttribute("aria-hidden", "true");
-    chip.append(dot, document.createTextNode(v));
+    const swatch = window.colorHex_(v) || {hex:"#F3F6FA",text:"#2F3B52"};
+    chip.style.background = swatch.hex;
+    chip.style.color = swatch.text;
+    chip.appendChild(document.createTextNode(v));
     const rm = document.createElement("button");
     rm.textContent = "×";
     rm.setAttribute("aria-label", v + " 삭제");
