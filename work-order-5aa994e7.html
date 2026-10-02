@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v79 (2026-10-02)
+<!-- AISEL 작업지시서 v80 (2026-10-02)
+     [v80] 버튼 규격·네이비 테마·간격·모바일 날짜 및 인쇄 기본정보 정렬 통일. 긴 인쇄 내용 보존.
      [v79] 모바일 정렬·아이콘·발주 필터·브랜드 색상 및 인쇄 연락처·구분선 개선.
      [v78] 원가 화면 높이 고정, 판매가 바로가기 제거, 레퍼런스 아래 원형 컬러칩.
      [v76] 작지 화면 간소화 · 컬러 독립 · 모바일 헤더와 더보기 정리.
@@ -1777,6 +1778,303 @@
 
 
 </style>
+<style id="aisel-v80-layout">
+/* v80: one screen control size, AISEL selection colors, and compact tools. */
+@media screen {
+  #editorView .toolbar-sequence {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    align-items: end;
+  }
+  #editorView .toolbar-sequence > *,
+  #editorView .toolbar-sequence .tf { min-width: 0; }
+  #editorView .toolbar-sequence #seq,
+  #editorView .toolbar-sequence #genBtn,
+  #editorView .toolbar-sequence .jump-btn,
+  #editorView .tb-row > .btn {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    border-radius: 4px;
+    padding: 4px 6px;
+    line-height: 1.25;
+    letter-spacing: 0;
+    text-align: center;
+  }
+  #editorView .toolbar-sequence #genBtn,
+  #editorView .toolbar-sequence .jump-btn,
+  #editorView .tb-row > .btn {
+    align-items: center;
+    justify-content: center;
+  }
+  #editorView .toolbar-sequence #genBtn {
+    border: 1px solid #2F3B52;
+  }
+  #editorView .tb-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-auto-rows: 40px;
+    align-items: stretch;
+    gap: 8px;
+  }
+  #editorView .tb-row > .btn {
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+  #editorView .tb-row #printBtn {
+    border-width: 1px !important;
+    font-weight: 700;
+  }
+  #editorView .toolbar .btn,
+  #editorView .toolbar input,
+  #editorView .toolbar select,
+  .mainbar .maintab,
+  :is(#galleryTabs, #qoStatusFilter) .gtab,
+  #editorView #statusBar .status-btn,
+  #editorView .meta-accordion-head {
+    border-radius: 4px;
+    border-width: 1px;
+    font-family: var(--kfont);
+  }
+  #editorView #statusBar {
+    margin-bottom: 8px;
+  }
+  #editorView #statusBar .status-btn {
+    min-height: 40px;
+    background: #fff;
+    border-color: #BAC2CF;
+    color: #2F3B52;
+  }
+  #editorView #statusBar .status-btn.active {
+    background: #2F3B52;
+    border-color: #2F3B52;
+    color: #fff;
+  }
+
+  #sampleRecoverySeg,
+  #sampleRecoveryRow.overdue #sampleRecoverySeg {
+    display: inline-flex;
+    border: 1px solid #BAC2CF;
+    border-radius: 4px;
+  }
+  #sampleRecoverySeg button {
+    min-height: 36px;
+    background: #fff;
+    color: #2F3B52;
+    border-radius: 0;
+    font-family: var(--kfont);
+  }
+  #sampleRecoverySeg button.active[data-value],
+  #sampleRecoveryRow.overdue #sampleRecoverySeg button.active[data-value] {
+    background: #2F3B52;
+    color: #fff;
+  }
+  /* The existing overdue date message remains visible in its warning color. */
+  #photoStageSeg { display: inline-flex; }
+  #photoStageSeg button {
+    border-width: 1px;
+    background: #fff;
+    color: #2F3B52;
+    font-family: var(--kfont);
+  }
+  #photoStageSeg button:first-child { border-radius: 4px 0 0 4px; }
+  #photoStageSeg button:last-child { border-radius: 0 4px 4px 0; }
+  #photoStageSeg button.active[data-value] {
+    background: #2F3B52;
+    border-color: #2F3B52;
+    color: #fff;
+  }
+
+  #editorView #metaAccordion { margin: 8px auto; }
+  #editorView #refPanel {
+    margin: 8px auto;
+    padding: 12px;
+  }
+  #editorView #refPanel .sec-title-np { margin-bottom: 8px; }
+  #editorView #refPanel .ref-link-row { margin-bottom: 8px; }
+  #editorView #refPanel .ref-link-row:last-child { margin-bottom: 0; }
+  #editorView #productColors {
+    margin: 8px auto;
+    padding: 0;
+    height: auto;
+    min-height: 0;
+  }
+  #editorView #productColors > .copygen-card {
+    margin: 0;
+    padding: 12px;
+    height: auto;
+    min-height: 0;
+  }
+  #editorView #productColors h2 {
+    margin: 0 0 8px;
+    color: #2F3B52;
+  }
+  #editorView #productColors #selectedColors { margin: 0; }
+  #editorView #productColors #selectedColors:empty { display: none; }
+  #editorView #productColors summary {
+    padding: 6px 0 0;
+    line-height: 1.5;
+    color: #2F3B52;
+  }
+  #editorView #productColors #colorPicker[open] summary { padding-bottom: 8px; }
+  #editorView #productColors .copygen-color-chip { border-radius: 4px; }
+}
+
+@media screen and (max-width: 600px) {
+  #editorView .toolbar-sequence { gap: 6px; }
+  #editorView .toolbar-sequence #genBtn,
+  #editorView .toolbar-sequence .jump-btn {
+    font-size: 12px;
+    padding-inline: 2px;
+  }
+  #editorView .tb-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: 40px;
+    gap: 6px;
+  }
+  #editorView .tb-row > .btn {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    padding: 3px 2px;
+    font-size: 11.5px;
+    line-height: 1.25;
+  }
+  #editorView #refPanel .ref-link-row { gap: 5px 6px; }
+  #editorView #refPanel .ref-link-row > label { line-height: 1.25; }
+  #editorView #refPanel .ref-link-row > input[type="text"] { min-height: 40px; }
+  #editorView #productColors { padding: 0; }
+}
+
+/* v80: common metadata row tracks, AISEL field palette and complete print text. */
+.print-field-value, .print-materials-value, .print-table-value { display: none; }
+
+@media screen {
+  #sheet > .meta { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  #sheet > .meta > .cell { min-width: 0; padding: 10px 8px; gap: 8px; }
+  #sheet > .meta .designer {
+    display: grid; grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center; gap: 4px; min-height: 34px; margin: 0;
+  }
+  #sheet > .meta > .cell:first-child .designer {
+    grid-template-columns: 48px minmax(0, 1fr) 118px;
+  }
+  #sheet > .meta > .cell:last-child .designer:first-child {
+    grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr);
+  }
+  #sheet > .meta .designer > .k { font-size: 12px; color: #2F3B52; }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code {
+    box-sizing: border-box; width: 100% !important; min-width: 0; max-width: 100%;
+    height: 34px; min-height: 34px; padding: 6px;
+    font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0;
+    color: #2F3B52 !important; background: #FFF2EC;
+    border: 1px solid #A8ADB7 !important; border-radius: 4px;
+  }
+  #sheet > .meta .designer > .code { display: flex; align-items: center; background: #F1F3F7; }
+  #sheet > .meta .designer > input.field-missing { background: #FCE9DF !important; border-color: #C9A493 !important; }
+  #sheet > .meta .designer > input::placeholder { color: #777D88; opacity: 1; }
+  #sheet #phone, #sheet #factoryPhone { font-variant-numeric: tabular-nums; }
+}
+
+@media screen and (max-width: 900px) {
+  #sheet > .meta { grid-template-columns: minmax(0, 1fr); }
+  #sheet > .meta > .cell { padding: 10px 12px; border-right: 0; }
+  #sheet > .meta .designer,
+  #sheet > .meta > .cell:first-child .designer,
+  #sheet > .meta > .cell:last-child .designer:first-child {
+    grid-template-columns: 56px minmax(0, 1fr); gap: 6px 8px; margin: 0;
+  }
+  #sheet > .meta .designer > .k { grid-column: 1; grid-row: 1; }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code { grid-column: 2; }
+}
+
+@media screen and (max-width: 600px) {
+  #sheet > .title-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px; padding: 8px 12px; }
+  #sheet > .title-row h1 { grid-column: 1 / -1; grid-row: 1; margin-bottom: 2px; }
+  #sheet > .title-row .date-box { grid-column: 1; grid-row: 2; min-width: 0; justify-self: start; }
+  #sheet > .title-row .title-spacer { grid-column: 2; grid-row: 2; min-width: 0; justify-self: end; }
+  #sheet > .title-row .date-row,
+  #sheet > .title-row .title-spacer .date-row { gap: 0; font-size: 12px; letter-spacing: 0; white-space: nowrap; }
+  #sheet > .title-row .date-row input { width: 18px; min-width: 0; min-height: 28px; height: 28px; padding: 0; font-size: 12px; }
+  #sheet > .title-row .date-row input.y { width: 34px; }
+  #sheet > .title-row .date-box::before,
+  #sheet > .title-row .mod-label { width: 22px; flex: 0 0 22px; margin-right: 2px; font-size: 10px; }
+}
+
+@media print {
+  #sheet > .meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(24px, auto)); align-items: stretch; row-gap: 6px;
+  }
+  #sheet > .meta > .cell {
+    display: grid; grid-row: 1 / span 2; grid-template-rows: subgrid;
+    min-width: 0; padding: 6px 8px !important; row-gap: 6px;
+  }
+  #sheet > .meta .designer {
+    display: grid; grid-template-columns: 48px minmax(0, 1fr);
+    align-items: stretch; gap: 4px; margin: 0 !important; min-height: 24px;
+  }
+  #sheet > .meta > .cell:first-child .designer { grid-template-columns: 48px minmax(0, 1fr) 92px; }
+  #sheet > .meta > .cell:last-child .designer:first-child { grid-template-columns: 48px minmax(0, 1fr) minmax(0, 1fr); }
+  #sheet > .meta .designer > .k,
+  #sheet > .meta > .cell:first-child .designer > .k { align-self: center; font-size: 10px; color: #000; }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code,
+  #sheet > .meta .designer > .print-field-value {
+    box-sizing: border-box; width: 100% !important; min-width: 0; max-width: 100%;
+    height: auto; min-height: 24px; margin: 0; padding: 4px;
+    font-size: 11px !important; font-weight: 600; line-height: 1.25; letter-spacing: 0;
+    border: 1px solid #000 !important; border-radius: 4px;
+    color: #000 !important; -webkit-text-fill-color: #000 !important; background: #fff !important;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+  }
+  #sheet #phone, #sheet #factoryPhone,
+  #sheet .print-field-value[data-print-for="phone"],
+  #sheet .print-field-value[data-print-for="factoryPhone"] { font-variant-numeric: tabular-nums; }
+  body.aisel-print-ready #sheet > .meta .designer > input { display: none !important; }
+  body.aisel-print-ready #sheet > .meta .designer > .print-field-value { display: block; }
+  body.aisel-print-ready #sheet .cost-table input,
+  body.aisel-print-ready #sheet .sizespec table input { display: none !important; }
+  body.aisel-print-ready #sheet .print-table-value {
+    display: block; box-sizing: border-box; width: 100%; min-width: 0;
+    white-space: pre-wrap; overflow-wrap: anywhere; color: #000;
+  }
+  body.aisel-print-size-wide #sheet .sizespec table { table-layout: fixed; width: 100% !important; }
+  body.aisel-print-size-wide #sheet .sizespec th.colhead { width: auto !important; }
+  body.aisel-print-size-wide #sheet .sizespec th.part-h { width: 24% !important; }
+  body.aisel-print-ready #sheet #materials { display: none !important; }
+  body.aisel-print-ready #sheet .print-materials-value {
+    display: block; flex: 1 1 auto; min-height: 0; padding: 9px 10px;
+    font-size: 12px; line-height: 1.35; white-space: pre-wrap; overflow-wrap: anywhere;
+    color: #000; background: #fff; overflow: hidden;
+  }
+  body.aisel-print-cost-expanded #sheet > .photos { align-items: stretch; }
+  body.aisel-print-cost-expanded #sheet .photo { height: auto !important; min-height: 90mm !important; }
+  body.aisel-print-cost-expanded #sheet .photo img { max-height: 90mm; }
+  body.aisel-print-cost-expanded #sheet .photos-right,
+  body.aisel-print-cost-expanded #sheet .photos-right .cell.cost {
+    height: auto !important; min-height: 90mm; overflow: visible !important;
+    break-inside: auto; page-break-inside: auto;
+  }
+  body.aisel-print-cost-expanded #sheet .cost .lines-scroll { flex: 0 0 auto; overflow: visible !important; }
+  body.aisel-print-detail-expanded #sheet > .detail2 { align-items: stretch; }
+  body.aisel-print-detail-expanded #sheet > .detail2 > .cell.mat,
+  body.aisel-print-detail-expanded #sheet > .detail2 > .sizespec {
+    height: auto !important; min-height: 145mm; overflow: visible !important;
+    break-inside: auto; page-break-inside: auto;
+  }
+  body.aisel-print-detail-expanded #sheet .print-materials-value { flex: 0 0 auto; overflow: visible; }
+  body.aisel-print-detail-expanded #sheet .ss-table-wrap { overflow: visible !important; }
+  body.aisel-print-detail-expanded #sheet .sizespec table { break-inside: auto; page-break-inside: auto; }
+}
+
+</style>
+
 
 
 <div class="scroll-fab-wrap noprint" id="scrollFabWrap">
@@ -1785,10 +2083,10 @@
 </div>
 
 <div class="mainbar noprint" id="mainBar">
-  <button type="button" class="maintab active" data-main="sales"><span class="tabicon">📈</span>판매</button>
-  <button type="button" class="maintab" data-main="orders"><span class="tabicon">📋</span>작업지시서</button>
+  <button type="button" class="maintab active" data-main="sales">판매</button>
+  <button type="button" class="maintab" data-main="orders">작업지시서</button>
   <div class="mainbar-order-col">
-    <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder"><span class="tabicon">🧾</span>발주</button>
+    <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">발주</button>
   </div>
 </div>
 
@@ -1846,11 +2144,11 @@
   </div>
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
-      <button type="button" class="gtab active" data-status="sampling"><span class="tab-icon">🧵 </span>샘플중</button>
-      <button type="button" class="gtab" data-status="order"><span class="tab-icon">🏭 </span>발주생산</button>
-      <button type="button" class="gtab" data-status="pdp"><span class="tab-icon">🖼️ </span>PDP</button>
-      <button type="button" class="gtab" data-status="sale"><span class="tab-icon">🛍️ </span>판매</button>
-      <button type="button" class="gtab" data-status="drop"><span class="tab-icon">⏸️ </span>드롭</button>
+      <button type="button" class="gtab active" data-status="sampling">샘플중</button>
+      <button type="button" class="gtab" data-status="order">발주생산</button>
+      <button type="button" class="gtab" data-status="pdp">PDP</button>
+      <button type="button" class="gtab" data-status="sale">판매</button>
+      <button type="button" class="gtab" data-status="drop">드롭</button>
       <button type="button" class="gtab" data-status="all">전체</button>
     </div>
     <div class="gallery-toolbar">
@@ -2023,7 +2321,7 @@
         <input id="seq" type="text" inputmode="numeric" placeholder="001" />
       </div>
       <button class="btn" id="genBtn">다음 번호 ▷</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sampleRecoverySection">🧺 원샘플</button>
+      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sampleRecoverySection">원샘플</button>
     </div>
     <!-- 2026-08-13 추가: 저장된 작지에서 카테고리를 바꿨을 때만 나타납니다 -->
     <button class="btn" id="moveCodeBtn" style="display:none;background:#8A5A18;border-color:#8A5A18;color:#fff;">품번 옮기기</button>
@@ -2031,12 +2329,12 @@
 
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn">+ 새 작지</button>
-      <button class="btn ghost drop-btn mfold" id="deleteBtn">⛔ 삭제</button>
-      <button class="btn ghost nav-btn" id="saveBtn">💾 저장됨 ✓</button>
-      <button class="btn ghost nav-btn mfold" id="factorySaveBtn">🏭 공장 저장/인쇄</button>
+      <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
+      <button class="btn ghost nav-btn" id="saveBtn">저장됨 ✓</button>
+      <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
-      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:3px;font-weight:800;"><span class="desktop-print-label">🖨 PDF로 저장 / 인쇄</span><span class="mobile-print-label">인쇄</span></button>
+      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장/인쇄</span><span class="mobile-print-label">인쇄</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
       <button type="button" class="btn ghost nav-btn mfold-toggle" id="mfoldToggle">⋯ 더보기</button>
@@ -2044,12 +2342,12 @@
   </div>
 
   <div class="statusbar noprint" id="statusBar">
-    <button type="button" class="status-btn" data-status="sampling">🧵 샘플중</button>
-    <button type="button" class="status-btn" data-status="samplemgmt">🗂️ 샘플관리</button>
-    <button type="button" class="status-btn" data-status="order">🏭 발주생산</button>
-    <button type="button" class="status-btn" data-status="pdp">🖼️ PDP</button>
-    <button type="button" class="status-btn" data-status="sale">🛍️ 판매</button>
-    <button type="button" class="status-btn" data-status="drop">⏸️ 드롭</button>
+    <button type="button" class="status-btn" data-status="sampling">샘플중</button>
+    <button type="button" class="status-btn" data-status="samplemgmt">샘플관리</button>
+    <button type="button" class="status-btn" data-status="order">발주생산</button>
+    <button type="button" class="status-btn" data-status="pdp">PDP</button>
+    <button type="button" class="status-btn" data-status="sale">판매</button>
+    <button type="button" class="status-btn" data-status="drop">드롭</button>
   </div>
 
   <input type="checkbox" id="cafe24Done" hidden aria-hidden="true" tabindex="-1">
@@ -3427,7 +3725,7 @@
     } else {
       warnEl.style.display = "none";
       if(seqEl){ seqEl.style.borderColor = ""; seqEl.style.background = ""; }
-      if(saveEl && saveEl.textContent === "⚠ 품번 중복"){ saveEl.disabled = false; saveEl.textContent = "💾 저장됨 ✓"; }
+      if(saveEl && saveEl.textContent === "⚠ 품번 중복"){ saveEl.disabled = false; saveEl.textContent = "저장됨 ✓"; }
     }
   }
 
@@ -4335,6 +4633,7 @@
   // ---------- 인쇄 시 SIZE 표 삭제버튼 칸 완전 제거 (display:none만으로 안 없어지는 브라우저 대응) ----------
   let _removedSizeSpecCells = [];
   window.addEventListener("beforeprint", ()=>{
+    if(_removedSizeSpecCells.length) return;
     _removedSizeSpecCells = [];
     document.querySelectorAll("#sizeSpecHead th.noprint, #sizeSpecRows td.noprint").forEach(cell=>{
       _removedSizeSpecCells.push({ cell, next: cell.nextSibling, parent: cell.parentNode });
@@ -4826,7 +5125,7 @@
       // (그래야 다른 기기에서 수정한 내용이 실시간으로 반영됨)
       newOrderMode_ = false;
       autoCreatedCode_ = null;   // 정식 작지가 되었으므로 더 이상 정리 대상이 아닙니다
-      s.textContent="💾 저장됨 ✓"; s.style.opacity="1";
+      s.textContent="저장됨 ✓"; s.style.opacity="1";
       clearTimeout(save._t); save._t=setTimeout(()=> s.style.opacity=".7", 900);
       return true;
     }).catch(()=>{
@@ -4871,7 +5170,7 @@
       s.textContent = "⚠ 시트 저장 실패";
       alert("개인 작업 내용은 저장됐지만 구글시트 저장에 문제가 있었습니다: " + result.message);
     }
-    setTimeout(()=> s.textContent="💾 저장됨 ✓", 1500);
+    setTimeout(()=> s.textContent="저장됨 ✓", 1500);
   });
   function setPhoto(boxSel, src, thumb){
     const box = document.querySelector(boxSel);
@@ -5476,7 +5775,7 @@
       if(isFirst){
         clearTimeout(openWatchdog_);
         const sBtn = $("#saveBtn");
-        if(sBtn && sBtn.textContent.indexOf("불러오는 중") !== -1) sBtn.textContent = "💾 저장됨 ✓";
+        if(sBtn && sBtn.textContent.indexOf("불러오는 중") !== -1) sBtn.textContent = "저장됨 ✓";
       }
       if(!st){
         if(isFirst){ loading = false; return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
@@ -10832,3 +11131,58 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 
 </script>
 
+
+<script id="aisel-v80-print">
+/* Printing uses text mirrors so browser form controls cannot crop saved values. */
+(() => {
+  const body = document.body;
+  const sheet = document.getElementById('sheet');
+  if (!sheet) return;
+  const classes = ['aisel-print-ready', 'aisel-print-cost-expanded', 'aisel-print-detail-expanded', 'aisel-print-size-wide'];
+  const cleanup = () => {
+    body.classList.remove(...classes);
+    sheet.querySelectorAll('.print-field-value, .print-materials-value, .print-table-value').forEach(node => node.remove());
+  };
+  const overflows = element => element && (element.scrollHeight > element.clientHeight + 1);
+  window.addEventListener('beforeprint', () => {
+    cleanup();
+    if (body.classList.contains('meeting-print-mode')) return;
+    sheet.querySelectorAll('.meta .designer > input').forEach(input => {
+      const value = document.createElement('span');
+      value.className = 'print-field-value';
+      value.dataset.printFor = input.id;
+      value.textContent = input.value || '\u00a0';
+      input.after(value);
+    });
+    sheet.querySelectorAll('.cost-table input, .sizespec table input').forEach((input, index) => {
+      const value = document.createElement('span');
+      value.className = 'print-table-value';
+      value.dataset.printTableIndex = String(index);
+      value.textContent = input.value || '\u00a0';
+      const style = getComputedStyle(input);
+      ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'padding'].forEach(property => {
+        value.style[property] = style[property];
+      });
+      input.after(value);
+    });
+    const materials = sheet.querySelector('#materials');
+    const materialText = document.createElement('div');
+    materialText.className = 'print-materials-value';
+    materialText.textContent = materials ? materials.value : '';
+    if (materials) materials.after(materialText);
+    body.classList.add('aisel-print-ready');
+    // Print CSS is active during beforeprint; layout reads include the text mirrors.
+    const sizeWrap = sheet.querySelector('.ss-table-wrap');
+    if (sizeWrap && sizeWrap.scrollWidth > sizeWrap.clientWidth + 1) body.classList.add('aisel-print-size-wide');
+    if (!body.classList.contains('factory-print-mode') && overflows(sheet.querySelector('.cost .lines-scroll'))) {
+      body.classList.add('aisel-print-cost-expanded');
+    }
+    if (overflows(materialText) || overflows(sizeWrap) ||
+        overflows(sheet.querySelector('.detail2 .sizespec'))) {
+      body.classList.add('aisel-print-detail-expanded');
+    }
+  });
+  window.addEventListener('afterprint', cleanup);
+})();
+
+</script>
