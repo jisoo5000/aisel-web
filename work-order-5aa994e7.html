@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v82 (2026-10-02)
+<!-- AISEL 작업지시서 v83 (2026-10-02)
+     [v83] 데스크톱 A4 배치·인쇄 마지막 행 보존·모바일 이동 버튼·목록 카드 및 내보내기 통일.
      [v82] 화면 도식화·원가계산서·주의사항·사이즈표 세로 배치. PDF/인쇄 A4 배치 유지.
      [v81] 화면 사이즈 표 전체 표시·모바일 한 열 배치·이동 버튼 겹침 제거·블러시 핑크 입력칸.
      [v80] 버튼 규격·네이비 테마·간격·모바일 날짜 및 인쇄 기본정보 정렬 통일. 긴 인쇄 내용 보존.
@@ -733,7 +734,7 @@
     background: var(--sheet); border: 1.4px solid var(--hair); border-radius: 10px; overflow: hidden;
     cursor: pointer; display: flex; flex-direction: column;
   }
-  .gcard:hover, .gcard.has-photo { border-color: var(--btn-dark); }
+  .gcard:hover { border-color: var(--btn-dark); }
   /* 2026-08-27 수정: 정사각 칸에 잘라 채우던 것을 3:4 칸에 전체 보이기로 바꿨습니다.
      도식화는 대부분 3:4 근처(0.70~0.91)인데 정사각 칸에 맞추느라 위아래가 잘렸고,
      가로로 넓은 것은 좌우가 잘렸습니다 — AS-26F-KT-022(피노 하이넥 셔츠)는
@@ -862,25 +863,6 @@
   /* 2026-08-13 추가: 썸네일에 컬러 표시. 빠진 항목과 날짜 사이에 옵니다 */
   .gcard-colors { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
   .gcard-color-chip { border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 600; background: #EFEFEF; color: #666; }
-  /* 2026-08-25 추가: 목록 카드에 붙는 코디 세트 단추 */
-  .gcard-coordi {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
-    margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--hair);
-  }
-  .gcard-coordi-label { font-size: 10px; font-weight: 700; color: #7A7364; margin-right: 2px; }
-  .gcard-coordi-btn {
-    display: inline-flex; align-items: center; gap: 4px; max-width: 100%;
-    padding: 2px 7px 2px 2px; border-radius: 999px;
-    border: 1px solid var(--hair); background: #fff; cursor: pointer;
-    font-size: 10.5px; color: var(--ink); line-height: 1.5;
-  }
-  .gcard-coordi-btn:hover { border-color: var(--accent); background: #F3F7FE; }
-  .gcard-coordi-btn img { width: 18px; height: 18px; border-radius: 999px; object-fit: cover; flex: 0 0 auto; }
-  .gcard-coordi-btn .ph {
-    width: 18px; height: 18px; border-radius: 999px; background: #F2F4F8;
-    display: inline-flex; align-items: center; justify-content: center; font-size: 9px; color: #B9BFCB; flex: 0 0 auto;
-  }
-  .gcard-coordi-btn .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 96px; }
   /* 2026-08-13 추가: 어느 공장에서 만드는지 표시. 원샘플 상태와 무관하게 항상 뜹니다 */
   .gcard-factory { background: #EEF1F5; color: #445; border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700; }
   /* 2026-08-13 추가: 등급/이름보완 줄과 원샘플/샘플 줄을 서로 겹치지 않게 분리 */
@@ -2211,6 +2193,171 @@
 
 
 
+<style id="aisel-v83-screen">
+/* v83: the desktop sheet follows the A4 arrangement; mobile keeps its reading order. */
+@media screen {
+  #galleryExportSheetBtn {
+    display: inline-flex; align-items: center; justify-content: center;
+    flex: 0 0 auto; box-sizing: border-box;
+    height: 40px; min-height: 40px; max-height: 40px;
+    padding: 6px 12px; border: 1px solid #2F3B52; border-radius: 4px;
+    background: #fff; color: #2F3B52; font-family: var(--kfont);
+    font-size: 12px; font-weight: 700; line-height: 1.25; white-space: nowrap;
+  }
+  #scrollFabWrap {
+    position: fixed; left: auto; right: max(8px, env(safe-area-inset-right, 0px));
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    z-index: 500; flex-direction: column; gap: 8px;
+    width: 40px; margin: 0; padding: 0;
+  }
+  #scrollFabWrap .scroll-fab {
+    box-sizing: border-box; width: 40px; min-width: 40px;
+    height: 40px; padding: 6px; border-radius: 4px;
+    font-size: 18px; line-height: 1; opacity: 1;
+  }
+  #scrollFabWrap .scroll-fab:disabled { opacity: .35; }
+  #scrollFabWrap .scroll-label { display: none; }
+}
+
+/* A dedicated rail keeps floating controls beside, rather than over, the document. */
+@media screen and (max-width: 1039px) {
+  body { padding-right: calc(52px + env(safe-area-inset-right, 0px)); }
+  .gallery, #editorView { padding-left: 8px; padding-right: 8px; }
+  .mainbar { margin-left: 8px; margin-right: 8px; }
+}
+@media screen and (min-width: 1040px) {
+  #scrollFabWrap { left: calc(50% + 430px); right: auto; }
+}
+
+@media screen and (min-width: 901px) {
+  #sheet > .photos,
+  #sheet > .detail2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #sheet > .photos > .photo {
+    height: auto; min-height: 380px;
+    border-right: 1.5px solid var(--line); border-bottom: 0;
+  }
+  #sheet > .photos > .photo > img { max-height: 380px; }
+  #sheet > .photos #costCell { min-height: 380px; }
+  #sheet > .detail2 > .cell.mat,
+  #sheet > .detail2 > .sizespec { min-height: 548px; }
+  #sheet > .detail2 > .cell.mat {
+    border-right: 1.5px solid var(--line); border-bottom: 0;
+  }
+  #sheet > .detail2 > .cell.mat textarea { flex: 1 1 auto; height: auto; }
+  #sheet > .meta {
+    grid-template-rows: repeat(2, minmax(26px, auto)); row-gap: 6px;
+  }
+  #sheet > .meta > .cell {
+    display: grid; grid-row: 1 / span 2; grid-template-rows: subgrid;
+    padding: 6px; row-gap: 6px;
+  }
+  #sheet > .meta .designer {
+    grid-template-columns: 44px minmax(0, 1fr); min-height: 26px; align-items: stretch;
+  }
+  #sheet > .meta > .cell:first-child .designer {
+    grid-template-columns: 44px minmax(0, 1fr) 96px;
+  }
+  #sheet > .meta > .cell:last-child .designer:first-child {
+    grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr);
+  }
+  #sheet > .meta .designer > .k { align-self: center; font-size: 10px; }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code {
+    height: 26px; min-height: 26px; padding: 4px;
+    font-size: 11px; line-height: 1.25;
+  }
+}
+
+</style>
+<style id="aisel-v83-print-layout">
+/* v83: deterministic A4 typography and complete content in either print event order. */
+@media print {
+  body.aisel-print-ready #sheet .print-table-value {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    font-family: var(--kfont);
+    letter-spacing: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    color: #000;
+  }
+  body.aisel-print-ready #sheet .sizespec .print-table-value {
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.15;
+    text-align: center;
+    padding: 3px 4px;
+  }
+  body.aisel-print-ready #sheet .sizespec td.part-cell .print-table-value {
+    font-weight: 700;
+    text-align: left;
+  }
+  body.aisel-print-ready #sheet .sizespec th .print-table-value {
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 0;
+  }
+  body.aisel-print-ready #sheet .cost-table .print-table-value {
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    padding: 3px;
+  }
+  body.aisel-print-ready #sheet .sizespec table,
+  body.aisel-print-ready #sheet .cost-table {
+    width: 100% !important;
+    table-layout: fixed;
+  }
+  body.aisel-print-ready #sheet .cost-table th,
+  body.aisel-print-ready #sheet .cost-table td { width: auto; }
+  body.aisel-print-ready #sheet .cost-table td .amt { overflow-wrap: anywhere; }
+
+  body.aisel-print-ready #sheet > .detail2 > .cell.mat,
+  body.aisel-print-ready #sheet > .detail2 > .sizespec {
+    height: auto !important;
+    min-height: 145mm;
+    overflow: visible !important;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  body.aisel-print-ready #sheet .print-materials-value {
+    flex: 0 0 auto;
+    height: auto;
+    overflow: visible;
+  }
+  body.aisel-print-ready #sheet .ss-table-wrap {
+    flex: 0 0 auto;
+    overflow: visible !important;
+  }
+  body.aisel-print-ready #sheet .sizespec table {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  body.aisel-print-ready #sheet .photo {
+    height: 90mm !important;
+    min-height: 90mm !important;
+    max-height: 90mm !important;
+  }
+  body.aisel-print-ready:not(.factory-print-mode) #sheet .photos-right,
+  body.aisel-print-ready:not(.factory-print-mode) #sheet #costCell {
+    height: auto !important;
+    min-height: 90mm;
+    overflow: visible !important;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+  body.aisel-print-ready:not(.factory-print-mode) #sheet #costCell .lines-scroll {
+    flex: 0 0 auto;
+    overflow: visible !important;
+  }
+}
+
+</style>
+
 <div class="mainbar noprint" id="mainBar">
   <button type="button" class="maintab active" data-main="sales">판매</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -2678,7 +2825,7 @@
       </div>
     </div>
 
-    <!-- 사진 + 원가계산서: 화면은 세로, 인쇄는 나란히 -->
+    <!-- 사진 + 원가계산서: 모바일은 세로, 데스크톱과 인쇄는 나란히 -->
 
 <div class="photos">
       <div class="photo" id="ph1">
@@ -8088,68 +8235,6 @@
     return st.updatedAt || 0;
   }
 
-  /* 2026-08-25 추가: 목록 카드에 코디 세트를 같이 보여주기 위한 짝 표.
-     A 작지가 B를 코디로 걸었으면 B 카드에서도 A가 보여야 촬영할 때 안 놓칩니다.
-     그래서 양쪽 방향을 다 넣습니다. 카드마다 전체를 훑으면 느려지므로 한 번만 만듭니다. */
-  function buildCoordiPairs_(){
-    const pairs = {};
-    const add = (a, b)=>{
-      if(!a || !b || a === b) return;
-      (pairs[a] = pairs[a] || []);
-      if(!pairs[a].includes(b)) pairs[a].push(b);
-    };
-    Object.entries(allWorkOrders || {}).forEach(([code, st])=>{
-      [1,2,3].forEach(k=>{
-        const other = String((st || {})["coordiCode" + k] || "").trim();
-        if(!other) return;
-        add(code, other);
-        add(other, code);
-      });
-    });
-    return pairs;
-  }
-  function coordiSetRow_(code, pairs){
-    const mates = pairs[code] || [];
-    if(!mates.length) return null;
-    const row = document.createElement("div");
-    row.className = "gcard-coordi";
-    // 2026-08-25 수정: 카드에 '👗 코디' 글자는 빼고 제품 단추만 둡니다.
-    // 카드가 좁아서 글자가 자리만 차지했습니다.
-    mates.slice(0, 3).forEach(mc=>{
-      const e = (allWorkOrders || {})[mc] || {};
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "gcard-coordi-btn";
-      b.title = (e.pumMyeong || "(품명 미정)") + " · " + mc + " — 눌러서 열기";
-      if(e.thumb){
-        const im = document.createElement("img");
-        im.loading = "lazy"; im.src = e.thumb;
-        b.appendChild(im);
-      }else{
-        const ph = document.createElement("span");
-        ph.className = "ph"; ph.textContent = "✎";
-        b.appendChild(ph);
-      }
-      const nm = document.createElement("span");
-      nm.className = "nm";
-      nm.textContent = e.pumMyeong || mc;
-      b.appendChild(nm);
-      // 카드 자체도 눌리는 자리라, 단추를 누르면 카드가 아니라 이 제품이 열리게 막아줍니다
-      b.addEventListener("click", ev=>{
-        ev.stopPropagation();
-        openWorkOrderByCode_(mc);
-      });
-      row.appendChild(b);
-    });
-    if(mates.length > 3){
-      const more = document.createElement("span");
-      more.className = "gcard-coordi-label";
-      more.textContent = "+" + (mates.length - 3);
-      row.appendChild(more);
-    }
-    return row;
-  }
-
   function renderGallery(){
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const type = $("#gallerySearchType").value;
@@ -8159,7 +8244,6 @@
     });
     if(sig === lastGallerySig_) return; // 실제로 바뀐 게 없으면 다시 그리지 않음 (썸네일 깜빡임 방지)
     lastGallerySig_ = sig;
-    const coordiPairs_ = buildCoordiPairs_();   // 2026-08-25: 카드마다 훑지 않게 한 번만
     renderGalleryCounts_();
     const grid = $("#galleryGrid");
     grid.innerHTML = "";
@@ -8248,9 +8332,6 @@
     : `<span class="gcard-color-chip">${c}</span>`;
 }).join("")}</span>` : ""}<span class="code">${dateLabel}</span></div>
         `;
-        // 2026-08-25 추가: 코디로 묶인 제품을 카드 안에 단추로 같이 보여줍니다
-        const coordiRow = coordiSetRow_(code, coordiPairs_);
-        if(coordiRow) card.appendChild(coordiRow);
         card.addEventListener("click", ()=>{
           // 2026-08-13 수정: 기존 작지 열기는 한 경로(openWorkOrderByCode_)로 통일.
           // 새 작지 모드 표시가 확실히 꺼져야 내용이 정상적으로 불려옴.
@@ -11266,8 +11347,8 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 </script>
 
 
-<script id="aisel-v80-print">
-/* Printing uses text mirrors so browser form controls cannot crop saved values. */
+<script id="aisel-v83-print">
+/* Prepare complete print text without depending on when print media activates. */
 (() => {
   const body = document.body;
   const sheet = document.getElementById('sheet');
@@ -11277,7 +11358,6 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
     body.classList.remove(...classes);
     sheet.querySelectorAll('.print-field-value, .print-materials-value, .print-table-value').forEach(node => node.remove());
   };
-  const overflows = element => element && (element.scrollHeight > element.clientHeight + 1);
   window.addEventListener('beforeprint', () => {
     cleanup();
     if (body.classList.contains('meeting-print-mode')) return;
@@ -11293,28 +11373,21 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
       value.className = 'print-table-value';
       value.dataset.printTableIndex = String(index);
       value.textContent = input.value || '\u00a0';
-      const style = getComputedStyle(input);
-      ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textAlign', 'padding'].forEach(property => {
-        value.style[property] = style[property];
-      });
+      // Typography and spacing belong to print CSS. Computed screen styles would
+      // otherwise persist as inline styles after the browser changes its media.
       input.after(value);
     });
     const materials = sheet.querySelector('#materials');
-    const materialText = document.createElement('div');
-    materialText.className = 'print-materials-value';
-    materialText.textContent = materials ? materials.value : '';
-    if (materials) materials.after(materialText);
-    body.classList.add('aisel-print-ready');
-    // Print CSS is active during beforeprint; layout reads include the text mirrors.
-    const sizeWrap = sheet.querySelector('.ss-table-wrap');
-    if (sizeWrap && sizeWrap.scrollWidth > sizeWrap.clientWidth + 1) body.classList.add('aisel-print-size-wide');
-    if (!body.classList.contains('factory-print-mode') && overflows(sheet.querySelector('.cost .lines-scroll'))) {
-      body.classList.add('aisel-print-cost-expanded');
+    if (materials) {
+      const value = document.createElement('div');
+      value.className = 'print-materials-value';
+      value.textContent = materials.value;
+      materials.after(value);
     }
-    if (overflows(materialText) || overflows(sizeWrap) ||
-        overflows(sheet.querySelector('.detail2 .sizespec'))) {
-      body.classList.add('aisel-print-detail-expanded');
-    }
+    // Every print uses content-sized sections with the normal A4 minimum sizes.
+    // No measurement here: beforeprint can run before the print CSS takes effect.
+    body.classList.add('aisel-print-ready', 'aisel-print-detail-expanded', 'aisel-print-size-wide');
+    if (!body.classList.contains('factory-print-mode')) body.classList.add('aisel-print-cost-expanded');
   });
   window.addEventListener('afterprint', cleanup);
 })();
