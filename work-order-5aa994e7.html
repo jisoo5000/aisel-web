@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v84 (2026-10-02)
+<!-- AISEL 작업지시서 v85 (2026-10-02)
+     [v85] 모바일 오른쪽 여백 제거. 연락처 이름/전화 폭 2:3, 원단처/원단명 동등 폭. 그레이 컬러 표기/색상 정리. 상태와 무관한 전체 품명/품번 검색.
      [v84] 화면·인쇄 기본정보 칸과 글자 비율 통일, 사진 아래 인쇄 구분선 복원.
      [v83] 데스크톱 A4 배치·인쇄 마지막 행 보존·모바일 이동 버튼·목록 카드 및 내보내기 통일.
      [v82] 화면 도식화·원가계산서·주의사항·사이즈표 세로 배치. PDF/인쇄 A4 배치 유지.
@@ -2220,9 +2221,8 @@
   #scrollFabWrap .scroll-label { display: none; }
 }
 
-/* A dedicated rail keeps floating controls beside, rather than over, the document. */
+/* Floating controls stay outside document flow; mobile content keeps its full width. */
 @media screen and (max-width: 1039px) {
-  body { padding-right: calc(52px + env(safe-area-inset-right, 0px)); }
   .gallery, #editorView { padding-left: 8px; padding-right: 8px; }
   .mainbar { margin-left: 8px; margin-right: 8px; }
 }
@@ -2379,7 +2379,7 @@
     margin: 0 !important; min-height: calc(26 * var(--meta-unit));
   }
   #sheet > .meta > .cell:first-child .designer {
-    grid-template-columns: calc(44 * var(--meta-unit)) minmax(0, 1fr) calc(96 * var(--meta-unit));
+    grid-template-columns: calc(44 * var(--meta-unit)) minmax(0, 2fr) minmax(0, 3fr);
     gap: calc(4 * var(--meta-unit));
   }
   #sheet > .meta > .cell:last-child .designer:first-child {
@@ -3580,12 +3580,29 @@
      공유 화면에 색표를 복사해두면 지수님이 새 색을 만들 때 두 곳이 어긋나므로,
      색 이름 옆에 색값을 같이 실어 보냅니다. 색 하나에 20글자 정도라 부담이 없습니다. */
   function shareColorsOf_(s){
-    const list = Array.isArray(s && s.selectedColors) ? s.selectedColors : [];
+    const raw = Array.isArray(s && s.selectedColors) ? s.selectedColors : [];
+    const list = window.colorNames_ ? window.colorNames_(raw) : raw;
     if(!list.length) return null;
     return list.map(name=>{
       const info = (window.colorHex_ ? window.colorHex_(name) : null) || null;
       return info ? { n:name, h:info.hex, t:info.text } : { n:name };
     });
+  }
+  function shareColorsComparable_(list){
+    if(!Array.isArray(list)) return list || null;
+    const seen = new Set();
+    const result = [];
+    list.forEach(color=>{
+      const name = window.colorName_ && color ? window.colorName_(color.n) : (color && color.n);
+      if(name !== "멜란지 그레이" && name !== "라이트 그레이"){
+        result.push(color); return;
+      }
+      if(seen.has(name)) return;
+      seen.add(name);
+      const info = window.colorHex_ ? window.colorHex_(name) : null;
+      result.push(info ? {n:name, h:info.hex, t:info.text} : {...color, n:name});
+    });
+    return result.length ? result : null;
   }
   /* 2026-08-27 추가: 공유 칸에 둘 것인가 — 보관 규칙.
      여기는 보관소가 아니라 「지금 볼 것」만 두는 자리입니다. 작지 원본은 그대로 남습니다.
@@ -3670,7 +3687,8 @@
           if(String(have[code].blend || "") !== String(nextShare.blend || "")){
             updates[code + "/blend"] = nextShare.blend || null;
           }
-          if(JSON.stringify(have[code].colors || null) !== JSON.stringify(nextShare.colors || null)){
+          if(typeof window.colorHex_ === "function" && typeof window.colorName_ === "function" &&
+             JSON.stringify(shareColorsComparable_(have[code].colors)) !== JSON.stringify(shareColorsComparable_(nextShare.colors))){
             updates[code + "/colors"] = nextShare.colors || null;
           }
         }
@@ -5736,7 +5754,7 @@
   function coordiColorChips_(colors){
     const wrap = document.createElement("span");
     wrap.style.cssText = "display:inline-flex;gap:4px;flex-wrap:wrap;margin-top:3px;";
-    (Array.isArray(colors) ? colors : []).slice(0,4).forEach(c=>{
+    (window.colorNames_ ? window.colorNames_(colors) : (Array.isArray(colors) ? colors : [])).slice(0,4).forEach(c=>{
       const info = window.colorHex_ ? window.colorHex_(c) : null;
       const chip = document.createElement("span");
       chip.className = "gcard-color-chip";
@@ -8262,7 +8280,7 @@
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const type = $("#gallerySearchType").value;
     const list = Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
+      .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>{
         if(!q) return true;
         const target = type === "code" ? code : (st.pumMyeong || "");
@@ -8321,7 +8339,7 @@
     grid.appendChild(newCard);
 
     Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
+      .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>{
         if(!q) return true;
         const target = type === "code" ? code : (st.pumMyeong || "");
@@ -8389,7 +8407,7 @@
 
         card.innerHTML = `
           <div class="gcard-thumb">${thumb ? `<img loading="lazy" src="${thumb}">` : `<span class="empty">✎</span>`}</div>
-          <div class="gcard-title">${statusInfo.emoji} ${st.pumMyeong || "(품명 미정)"}<span class="gcard-code">${code}${needCafe24 ? `<span class="gcard-warn" title="카페24 자체상품코드 입력 필요">코드 미입력</span>` : ""}${suspectOverwrite ? `<span class="gcard-warn" title="사진은 있는데 품명·원단·디자이너가 모두 비어 있습니다">내용 확인</span>` : ""}</span>${((showGrade && chk.grade.grade) || weakName) ? `<span class="gcard-row2">${(showGrade && chk.grade.grade) ? `<span class="gcard-grade g-${chk.grade.grade.toLowerCase()}" title="${chk.grade.why}">${chk.grade.grade} ${chk.grade.stars}</span>` : ""}${weakName ? `<span class="gcard-soft" title="고유명 + 셀링포인트 + 카테고리 형식에 못 미칩니다">이름 보완</span>` : ""}</span>` : ""}${(sampleBadge || photoStageBadge || factoryBadge) ? `<span class="gcard-row2">${sampleBadge}${photoStageBadge}${factoryBadge}</span>` : ""}${(showGrade && chk.missing.length) ? `<span class="gcard-miss" title="지금 상태에서 있어야 하는데 비어 있는 항목">${chk.missing.join(" · ")} 없음</span>` : ""}${(Array.isArray(st.selectedColors) && st.selectedColors.length) ? `<span class="gcard-colors">${st.selectedColors.map(c=>{
+          <div class="gcard-title">${statusInfo.emoji} ${st.pumMyeong || "(품명 미정)"}<span class="gcard-code">${code}${needCafe24 ? `<span class="gcard-warn" title="카페24 자체상품코드 입력 필요">코드 미입력</span>` : ""}${suspectOverwrite ? `<span class="gcard-warn" title="사진은 있는데 품명·원단·디자이너가 모두 비어 있습니다">내용 확인</span>` : ""}</span>${((showGrade && chk.grade.grade) || weakName) ? `<span class="gcard-row2">${(showGrade && chk.grade.grade) ? `<span class="gcard-grade g-${chk.grade.grade.toLowerCase()}" title="${chk.grade.why}">${chk.grade.grade} ${chk.grade.stars}</span>` : ""}${weakName ? `<span class="gcard-soft" title="고유명 + 셀링포인트 + 카테고리 형식에 못 미칩니다">이름 보완</span>` : ""}</span>` : ""}${(sampleBadge || photoStageBadge || factoryBadge) ? `<span class="gcard-row2">${sampleBadge}${photoStageBadge}${factoryBadge}</span>` : ""}${(showGrade && chk.missing.length) ? `<span class="gcard-miss" title="지금 상태에서 있어야 하는데 비어 있는 항목">${chk.missing.join(" · ")} 없음</span>` : ""}${(Array.isArray(st.selectedColors) && st.selectedColors.length) ? `<span class="gcard-colors">${(window.colorNames_ ? window.colorNames_(st.selectedColors) : st.selectedColors).map(c=>{
   const info = window.colorHex_ ? window.colorHex_(c) : null;
   return info
     ? `<span class="gcard-color-chip" style="background:${info.hex};color:${info.text};">${c}</span>`
@@ -8665,7 +8683,7 @@
     renderStatusCounts_($("#qoCounts"), qoStatusFilterVal);
     if(!q && qoStatusFilterVal === "all"){ box.style.display = "none"; box.innerHTML = ""; return; }
     const matches = Object.entries(allWorkOrders || {})
-      .filter(([code, st])=> qoStatusFilterVal === "all" || galleryStatus_(st) === qoStatusFilterVal)
+      .filter(([code, st])=> q !== "" || qoStatusFilterVal === "all" || galleryStatus_(st) === qoStatusFilterVal)
       .filter(([code, st])=> !q || code.toLowerCase().includes(q) || (st.pumMyeong || "").toLowerCase().includes(q))
       .sort((a,b)=> (b[1].updatedAt||0) - (a[1].updatedAt||0))
       .slice(0, 8);
@@ -10255,7 +10273,8 @@ const BASE_COLORS = [
   { key:"차콜", hex:"#3a3d40", text:"#ffffff" },
   { key:"딥네이비", hex:"#22314f", text:"#ffffff" },
   { key:"회소라", hex:"#a9b7c2", text:"#1a2530" },
-  { key:"라이트그레이", hex:"#cfcecb", text:"#33322f" },
+  { key:"라이트 그레이", hex:"#cfcecb", text:"#33322f" },
+  { key:"멜란지 그레이", hex:"#9CA3A8", text:"#25303A" },
   { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
   { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
   { key:"베이지", hex:"#d9c6a8", text:"#4a3c26" },
@@ -10291,8 +10310,8 @@ const COLOR_VARIANT_HEX = {
   "더스티 소라": { hex: "#c0c5c9", text: "#3a352c" },
   "미스티 블루": { hex: "#d4d9de", text: "#3a352c" },
   "소라 블루": { hex: "#a6b1c5", text: "#3a352c" },
-  "라이트그레이": { hex: "#cfcecb", text: "#3a352c" },
-  "라이트 그레이": { hex: "#d1cfc9", text: "#3a352c" },
+  "라이트 그레이": { hex: "#cfcecb", text: "#3a352c" },
+  "멜란지 그레이": { hex: "#9CA3A8", text: "#25303A" },
   "페일 그레이": { hex: "#ecebe9", text: "#3a352c" },
   "애쉬 그레이": { hex: "#d6d4cf", text: "#3a352c" },
   "미스트 그레이": { hex: "#ecebe9", text: "#3a352c" },
@@ -10322,14 +10341,33 @@ const COLOR_VARIANT_HEX = {
   "카키 그린": { hex: "#707c6a", text: "#ffffff" },
   "포레스트 그린": { hex: "#667552", text: "#ffffff" },
 };
-window.colorHex_ = (name) => COLOR_VARIANT_HEX[name] || null;   // 2026-08-13 추가: 목록 카드 등 다른 화면에서 색을 조회할 때 씁니다
+// v85: normalize product-color aliases in memory; loading does not save records.
+const COLOR_NAME_ALIASES = Object.freeze({
+  "멜란지그레이": "멜란지 그레이",
+  "라이트그레이": "라이트 그레이",
+});
+function normalizeColorName_(name){
+  if(typeof name !== "string") return "";
+  const value = name.trim().replace(/\s+/g, " ");
+  return COLOR_NAME_ALIASES[value.replace(/\s+/g, "")] || value;
+}
+function normalizeColorList_(list){
+  return [...new Set((Array.isArray(list) ? list : []).map(normalizeColorName_).filter(Boolean))];
+}
+function normalizeColorText_(text){
+  return normalizeColorList_(String(text || "").split(/\s*[,/]\s*/)).join(", ");
+}
+window.colorName_ = normalizeColorName_;
+window.colorNames_ = normalizeColorList_;
+window.colorHex_ = (name) => COLOR_VARIANT_HEX[normalizeColorName_(name)] || null;
 
 const COLOR_VARIANTS = {
   "블랙": ["블랙","딥 블랙","소프트 블랙","스모키 블랙","미드나잇 블랙","펄 블랙"],
   "차콜": ["차콜","차콜 쉐도우","스모크 차콜","딥 차콜","애쉬 차콜","소프트 차콜"],
   "딥네이비": ["딥네이비","미드나잇 네이비","인디고 네이비","다크 네이비","네이비 블루","스틸 네이비"],
   "회소라": ["회소라","소라 그레이","페일 소라","더스티 소라","미스티 블루","소라 블루"],
-  "라이트그레이": ["라이트그레이","라이트 그레이","페일 그레이","애쉬 그레이","미스트 그레이","실버 그레이"],
+  "라이트 그레이": ["라이트 그레이","페일 그레이","애쉬 그레이","미스트 그레이","실버 그레이"],
+  "멜란지 그레이": ["멜란지 그레이"],
   "블러쉬": ["블러쉬","블러쉬 핑크","더스티 핑크","로즈 블러쉬","페일 블러쉬","소프트 핑크"],
   "크림": ["크림","크림 베이지","웜 크림","펄리 크림","바닐라 크림","아이보리 크림"],
   "베이지": ["베이지","로즈 베이지","샌드 베이지","웜 베이지","토프 베이지","스톤 베이지"],
@@ -10385,7 +10423,7 @@ function renderVariantPanel(){
     chip.className = "copygen-chip copygen-color-chip" + (isSel ? " copygen-selected" : "");
     // 2026-08-13 추가: 버튼 자체를 실제 컬러로 칠합니다. 선택된 상태면 테두리로만 표시해서
     // 색이 가려지지 않게 합니다 (배경을 파란색으로 덮으면 무슨 색인지 안 보이기 때문).
-    const c = COLOR_VARIANT_HEX[v];
+    const c = window.colorHex_(v);
     if(c){
       chip.style.background = c.hex;
       chip.style.color = c.text;
@@ -10401,14 +10439,17 @@ function renderVariantPanel(){
 }
 
 function addColor(v){
-  if(!selectedColors.includes(v)) selectedColors.push(v);
+  v = normalizeColorName_(v);
+  if(!v) return;
+  selectedColors = normalizeColorList_([...selectedColors, v]);
   renderSelectedColors();
   renderVariantPanel();
   if(window.onCopygenMaterialChanged_) window.onCopygenMaterialChanged_();
   persistRows_();   // 2026-08-13 추가: 컬러도 셀링포인트·pdpRows처럼 작지에 함께 저장
 }
 function removeColor(v){
-  selectedColors = selectedColors.filter(c => c !== v);
+  v = normalizeColorName_(v);
+  selectedColors = selectedColors.filter(c => normalizeColorName_(c) !== v);
   renderSelectedColors();
   renderVariantPanel();
   if(window.onCopygenMaterialChanged_) window.onCopygenMaterialChanged_();
@@ -10418,9 +10459,9 @@ function removeColor(v){
 // 예전에는 이 값이 화면 전체에서 공유되는 변수 하나에만 있어서, 작지를 바꿔도
 // 안 비워지고 다음 작지를 저장할 때 그 값이 그대로 얹혀 저장됐습니다.
 // (A에서 고른 컬러가 B로, B에서 고른 컬러가 C로 밀리던 버그의 원인이었습니다)
-window.getSelectedColors_ = () => selectedColors;
+window.getSelectedColors_ = () => selectedColors.slice();
 window.setSelectedColors_ = (list) => {
-  selectedColors = Array.isArray(list) ? list.slice() : [];
+  selectedColors = normalizeColorList_(list);
   renderSelectedColors();
   renderVariantPanel();
 };
@@ -10432,7 +10473,7 @@ function renderSelectedColors(){
     chip.className = "copygen-color-chip";
     const dot = document.createElement("span");
     dot.className = "color-dot";
-    dot.style.background = (COLOR_VARIANT_HEX[v] || BASE_COLORS.find(c => c.key === v) || {}).hex || "#ffffff";
+    dot.style.background = (window.colorHex_(v) || {}).hex || "#ffffff";
     dot.setAttribute("aria-hidden", "true");
     chip.append(dot, document.createTextNode(v));
     const rm = document.createElement("button");
@@ -10476,7 +10517,7 @@ function renderTable(){
   rows.forEach((r, i) => {
     html += `<tr>
       <td>${escapeHtml(r.name)}</td>
-      <td>${escapeHtml(r.colors)}</td>
+      <td>${escapeHtml(normalizeColorText_(r.colors))}</td>
       <td>${escapeHtml(r.keywords)}</td>
       <td class="copygen-desc">${escapeHtml(r.desc)}</td>
       <td>${escapeHtml(r.note || "")}</td>
@@ -10967,7 +11008,7 @@ $("exportBtn").addEventListener("click", () => {
   const headers = ["품명","컬러명","핵심키워드","완성설명","비고"];
   const csvRows = [headers.join(",")];
   rows.forEach(r => {
-    const line = [r.name, r.colors, r.keywords, r.desc, r.note || ""]
+    const line = [r.name, normalizeColorText_(r.colors), r.keywords, r.desc, r.note || ""]
       .map(v => '"' + String(v).replace(/"/g, '""').replace(/\n/g, " ") + '"')
       .join(",");
     csvRows.push(line);
@@ -11310,6 +11351,13 @@ const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
 function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
 function signature(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
+function colorNames(list){
+ if(typeof root.colorNames_==="function")return root.colorNames_(list);
+ const aliases={"멜란지그레이":"멜란지 그레이","라이트그레이":"라이트 그레이"};
+ return [...new Set((Array.isArray(list)?list:[]).filter(v=>typeof v==="string").map(v=>{
+  const name=v.trim().replace(/\s+/g," ");return aliases[name.replace(/\s+/g,"")]||name;
+ }).filter(Boolean))];
+}
 function safe(v){
  if(v===undefined||v===null||v==="")return "∅";
  return String(v).replace(/¦/g,"｜").replace(/,/g,"，").replace(/"/g,"″").replace(/\\/g,"＼").replace(/[\r\n]+/g," ↵ ").slice(0,18000);
@@ -11331,7 +11379,7 @@ function build(code,v,photo){
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
  const status={sampling:"샘플중",planned:"예정",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
- const fields=[p,code,v.pumMyeong,status,v.factory,(v.selectedColors||[]).join(" / "),
+ const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
  filled(main.unit)?fc:"",lines.length?other:"",filled(v.gongim)?number(v.gongim):"",filled(v.siyage)?number(v.siyage):"",
