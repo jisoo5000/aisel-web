@@ -78,7 +78,7 @@ async function perform(code){
   signature(src)===signature(v.p1Thumb||v.p1||"")?image:"";
  await rows.child(code).set(build(code,latest,photo));
  await meta.update({version:1,updatedAt:firebase.database.ServerValue.TIMESTAMP});
- show("공용 시트용 데이터 저장됨 · 시트가 열려 있는 동안 약 1시간 주기로 갱신");
+ document.getElementById("sheetBridgeStatus")?.remove();
 }
 function sync(code){
  if(!code)return Promise.resolve();
@@ -103,3 +103,4 @@ firebase.auth().onAuthStateChanged(user=>{
 db.ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
 db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 })(typeof globalThis!=="undefined"?globalThis:this);
+
