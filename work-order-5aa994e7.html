@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<!-- AISEL 작업지시서 v81 (2026-10-02)
+<!-- AISEL 작업지시서 v82 (2026-10-02)
+     [v82] 화면 도식화·원가계산서·주의사항·사이즈표 세로 배치. PDF/인쇄 A4 배치 유지.
      [v81] 화면 사이즈 표 전체 표시·모바일 한 열 배치·이동 버튼 겹침 제거·블러시 핑크 입력칸.
      [v80] 버튼 규격·네이비 테마·간격·모바일 날짜 및 인쇄 기본정보 정렬 통일. 긴 인쇄 내용 보존.
      [v79] 모바일 정렬·아이콘·발주 필터·브랜드 색상 및 인쇄 연락처·구분선 개선.
@@ -2146,6 +2147,64 @@
 }
 
 </style>
+<style id="aisel-v82-screen">
+/* v82: screen editing flows vertically; print retains the existing A4 grid. */
+@media screen {
+  #sheet > .photos,
+  #sheet > .detail2 { grid-template-columns: minmax(0, 1fr); }
+
+  #sheet > .photos > .photo {
+    height: clamp(340px, 85vw, 560px);
+    min-width: 0;
+    padding: 40px 12px 48px;
+    border-right: 0;
+    border-bottom: 1.5px solid var(--line);
+  }
+  #sheet > .photos > .photo:not(.filled) > img { display: none; }
+  #sheet > .photos > .photo > img { object-fit: contain; }
+  #sheet > .photos > .photos-right,
+  #sheet > .photos #costCell {
+    height: auto;
+    min-height: 0;
+    min-width: 0;
+    overflow: visible;
+  }
+  #sheet > .photos #costCell { padding: 12px; }
+  #sheet #costCell .lines-scroll {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+  #sheet #costCell .cost-table { width: 100%; min-width: 320px; table-layout: fixed; }
+  #sheet #costCell .cost-table th,
+  #sheet #costCell .cost-table td { width: auto; }
+  #sheet #costCell .cost-table th.noprint,
+  #sheet #costCell .cost-table td.noprint { width: 28px !important; }
+  #sheet #costCell .cost-table input { min-width: 0; }
+  #sheet #costCell .cost-table .amt { overflow-wrap: anywhere; }
+  #sheet #costCell .fixed-row {
+    grid-template-columns: minmax(0, 1fr) minmax(92px, 35%);
+  }
+  #sheet #costCell .fixed-row input { width: 100%; min-width: 0; }
+
+  #sheet > .detail2 > .cell.mat,
+  #sheet > .detail2 > .sizespec { min-height: 0; padding: 12px; }
+  #sheet > .detail2 > .cell.mat {
+    border-right: 0;
+    border-bottom: 1.5px solid var(--line);
+  }
+  #sheet > .detail2 > .cell.mat textarea {
+    flex: 0 0 auto;
+    height: 240px;
+    min-height: 200px;
+    resize: vertical;
+  }
+}
+
+</style>
+
 
 
 
@@ -2619,7 +2678,7 @@
       </div>
     </div>
 
-    <!-- 사진 + 원가계산서 (나란히) -->
+    <!-- 사진 + 원가계산서: 화면은 세로, 인쇄는 나란히 -->
 
 <div class="photos">
       <div class="photo" id="ph1">
@@ -2668,7 +2727,7 @@
       </div>
     </div>
 
-    <!-- 봉제/재단시 주의사항 및 원부자재 | SIZE (나란히, 각 9cm) -->
+    <!-- 주의사항 + SIZE: 화면은 세로, 인쇄는 나란히 -->
     <div class="detail2">
       <div class="cell mat">
         <div class="sec-title">&lt; 봉제/재단시 주의사항, 원부자재 swatch, 라벨 &gt;</div>
