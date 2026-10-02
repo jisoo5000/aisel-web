@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v86 (2026-10-02)
+<!-- AISEL 작업지시서 v87 (2026-10-02)
+     [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
      [v85] 모바일 오른쪽 여백 제거. 연락처 이름/전화 폭 2:3, 원단처/원단명 동등 폭. 그레이 컬러 표기/색상 정리. 상태와 무관한 전체 품명/품번 검색.
      [v84] 화면·인쇄 기본정보 칸과 글자 비율 통일, 사진 아래 인쇄 구분선 복원.
@@ -2488,7 +2489,86 @@
 
 </style>
 
-<div class="mainbar noprint" id="mainBar">
+<style id="aisel-v87-references">
+@media screen {
+  #editorView #refPanel .ref-panel-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; }
+  #editorView #refPanel .ref-panel-heading .sec-title-np { margin:0; }
+  #editorView #refPanel #refAddBtn { width:32px; height:32px; min-height:32px; flex:0 0 32px; font-size:22px; line-height:1; padding:0; color:#2F3B52; }
+  #editorView #refPanel #refLinksList > .ref-link-row[hidden] { display:none !important; }
+}
+
+</style>
+
+<style id="aisel-v87-layout">
+/* v87: compact contact rows, quiet input colors and shared document headings. */
+#sheet .sheet-section-title {
+  font-family: var(--kfont); font-size: 14px !important; font-weight: 700;
+  line-height: 1.4; letter-spacing: 0; text-align: left; text-transform: none;
+  color: #2F3B52; margin: 0 0 8px !important; white-space: normal;
+  flex: 0 0 auto;
+}
+#sheet #ph1 > .sheet-section-title {
+  left: 12px; top: 12px; padding: 0; border: 0; border-radius: 0;
+  background: transparent;
+}
+@media screen {
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > input.field-missing,
+  #sheet > .meta .designer > .code {
+    background: #F3F6FA !important; border-color: #CBD3DF !important;
+    color: #2F3B52 !important; -webkit-text-fill-color: #2F3B52 !important;
+  }
+  #sheet > .meta .designer > input::placeholder {
+    color: #6B778B; -webkit-text-fill-color: #6B778B; opacity: 1;
+  }
+  #sheet > .meta .designer > input:focus {
+    border-color: #2F3B52 !important; outline: 2px solid #CCD8E9;
+    outline-offset: 1px;
+  }
+  #sheet > .meta .designer > .k { color: #2F3B52; }
+}
+@media screen and (max-width: 600px) {
+  #editorView .editor-mobile-head > #deleteBtn { height: 36px; min-height: 36px; }
+}
+@media screen and (max-width: 900px) {
+  #sheet > .meta .designer {
+    display: grid; grid-template-columns: 56px minmax(0, 1fr);
+    align-items: center; gap: 6px; min-width: 0;
+  }
+  #sheet > .meta > .cell:first-child .designer {
+    grid-template-columns: 56px minmax(0, 2fr) minmax(0, 3fr);
+  }
+  #sheet > .meta > .cell:last-child .designer:first-child {
+    grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr);
+  }
+  #sheet > .meta .designer > .k { grid-column: 1; grid-row: 1; }
+  #sheet > .meta .designer > input,
+  #sheet > .meta .designer > .code {
+    grid-column: 2; grid-row: 1; width: 100% !important; min-width: 0;
+    box-sizing: border-box; min-height: 36px; padding: 6px 4px;
+    font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0;
+  }
+  #sheet > .meta > .cell:first-child .designer > input:last-child,
+  #sheet > .meta > .cell:last-child .designer:first-child > input:last-child {
+    grid-column: 3; grid-row: 1;
+  }
+  #sheet #phone, #sheet #factoryPhone { font-variant-numeric: tabular-nums; }
+}
+@media print {
+  /* Reserve a title strip without enlarging the existing A4 photo cell. */
+  body.aisel-print-ready #sheet #ph1 {
+    box-sizing: border-box; padding: 34px 8px 8px !important;
+  }
+  body.aisel-print-ready #sheet #ph1 > img {
+    width: 100%; height: 100%; max-height: 100%; object-fit: contain;
+  }
+  #sheet .sheet-section-title { color: #000; }
+  #sheet #ph1 > .sheet-section-title { top: 6px; }
+}
+
+</style>
+
+<div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
   <div class="mainbar-order-col">
@@ -2526,7 +2606,7 @@
   </div>
 </div>
 
-<div class="gallery" id="salesView">
+<div class="gallery notranslate" id="salesView" lang="ko" translate="no">
   <div class="gallery-head">
     <h2>📈 판매</h2>
   </div>
@@ -2544,7 +2624,7 @@
   </div>
 </div>
 
-<div class="gallery" id="galleryView" style="display:none">
+<div class="gallery notranslate" id="galleryView" style="display:none" lang="ko" translate="no">
   <div class="gallery-head">
     <h2>📋 작업지시서</h2>
   </div>
@@ -2692,7 +2772,7 @@
   </div>
 </div>
 
-<div class="page" id="editorView" style="display:none">
+<div class="page notranslate" id="editorView" style="display:none" lang="ko" translate="no">
   <!-- 2026-08-13 수정: 품번 안내를 카테고리 옆이 아니라 툴바 위 독립 줄로 옮김.
        카테고리 칸 안에 있으면 줄 높이가 달라져 입력줄이 삐뚤어 보였습니다. -->
   <!-- 2026-08-21 수정: "사진을 넣거나 카테고리를 고르면 품번이 매겨집니다"라는 안내 문구를
@@ -2856,22 +2936,24 @@
 
   <!-- 레퍼런스 링크는 자주 여는 화면 도구라 접힌 메타 정보 밖, 인쇄 영역 바로 위에 둡니다. -->
   <div class="predict-panel noprint" id="refPanel">
-    <div class="sec-title-np">레퍼런스</div>
-    <div class="predict-row single ref-link-row ref-actions-row">
-      <label>링크</label>
+    <div class="ref-panel-heading"><div class="sec-title-np">레퍼런스</div><button type="button" id="refAddBtn" class="ref-icon-btn" title="링크 추가" aria-label="레퍼런스 링크 추가">+</button></div>
+    <div id="refLinksList">
+    <div class="predict-row single ref-link-row ref-actions-row" data-ref-index="0">
+      <label for="refLink">링크</label>
       <input id="refLink" type="text" placeholder="https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)">
       <div class="ref-actions">
         <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정" aria-label="링크 수정"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button>
         <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제" aria-label="링크 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
       </div>
     </div>
-    <div class="predict-row single ref-link-row ref-actions-row">
-      <label>링크 2</label>
-      <input id="refLink2" type="text" placeholder="https://... (두 번째 레퍼런스, 선택)">
+    <div class="predict-row single ref-link-row ref-actions-row" data-ref-index="1" hidden>
+      <label for="refLink2">링크 2</label>
+      <input id="refLink2" type="text" placeholder="https://... (레퍼런스 링크)">
       <div class="ref-actions">
         <button type="button" id="refEditBtn2" class="ref-icon-btn" title="수정" aria-label="링크 2 수정"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button>
         <button type="button" id="refLinkDelBtn2" class="ref-icon-btn danger" title="삭제" aria-label="링크 2 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
       </div>
+    </div>
     </div>
   </div>
 
@@ -2892,7 +2974,7 @@
 </div></section>
 
   <!-- SHEET -->
-  <div class="sheet" id="sheet">
+  <div class="sheet notranslate" id="sheet" lang="ko" translate="no">
     <div class="title-row">
       <div class="date-box">
         <div class="date-row">
@@ -2959,7 +3041,7 @@
 
 <div class="photos">
       <div class="photo" id="ph1">
-        <span class="tag noprint">도식화</span>
+        <span class="tag sheet-section-title">도식화</span>
         <button class="clr" type="button">✕ 삭제</button>
         <div class="ph"><div class="big">✎</div>도식화 (플랫)<br /><b>클릭</b>해서 파일 선택<br /><span style="font-size:11px">드래그 · Ctrl+V 붙여넣기</span><br /><span style="font-size:11px">레퍼런스 넣어놨다가 나중에 클릭 → 도식화로 변경</span></div>
         <img alt="" />
@@ -2975,7 +3057,7 @@
       <div class="photos-right">
         <!-- 원가계산서 -->
         <div class="cell cost" id="costCell">
-          <div class="sec-title">&lt; 원 가 계 산 서 &gt;</div>
+          <div class="sec-title sheet-section-title">원가계산서</div>
           <div class="lines-scroll">
             <table class="cost-table">
               <thead>
@@ -3007,8 +3089,8 @@
     <!-- 주의사항 + SIZE: 화면은 세로, 인쇄는 나란히 -->
     <div class="detail2">
       <div class="cell mat">
-        <div class="sec-title">&lt; 봉제/재단시 주의사항, 원부자재 swatch, 라벨 &gt;</div>
-        <textarea id="materials" placeholder="예)
+        <div class="sec-title sheet-section-title">봉제·재단 주의사항</div>
+        <textarea id="materials" aria-label="봉제·재단 주의사항, 원부자재 견본, 라벨" placeholder="예)
 셀프 C/3270
 #A73 58-60&quot; @6,200 → @5,000
 요척 : 1y
@@ -3022,7 +3104,7 @@
       </div>
 
       <div class="sizespec">
-        <div class="sec-title" style="display:none"></div>
+        <div class="sec-title sheet-section-title">사이즈</div>
         <div class="ss-addrow noprint">
           <button type="button" class="add" id="addSizeSpecRow">+ 부위 추가</button>
           <button type="button" class="add" id="addSizeSpecCol">+ 사이즈 추가</button>
@@ -5403,6 +5485,10 @@
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
+    // v87: 첫 두 칸은 예전 앱과 호환하고, 추가 링크는 배열로 함께 저장합니다.
+    st.refLinks = collectReferenceLinks_();
+    st.refLink = st.refLinks[0] || "";
+    st.refLink2 = st.refLinks[1] || "";
     const priceNum = num(st.targetThreshold), costNum = num($("#totalView").textContent);
     st.priceConfirmed = !!priceConfirmed_ && ["manual", "auto"].includes(priceSource_)
       && priceAllowed_(priceNum, costNum);
@@ -5665,6 +5751,7 @@
       if(document.activeElement === el) return;
       if(el.value !== v) el.value = v;
     });
+    renderReferenceLinks_(referenceLinksFromState_(st), true);
     refreshAllDelays_();
     // 카피생성기 쪽 "생성 결과" 칸도 이 작지의 저장된 상세설명으로 복원됐으니
     // 그 안의 내부 상태(lastGenerated, 빈칸 표시 등)를 같이 갱신함 (합성 input 이벤트로 하면 전역 자동저장까지 오작동으로 같이 걸려서
@@ -5752,8 +5839,61 @@
     showPriceReview_(num($("#totalView").textContent));
   }
   function updateRefLinkMode_(){
-    updateOneRefLinkMode_("#refLink");
-    updateOneRefLinkMode_("#refLink2");
+    document.querySelectorAll("#refLinksList .ref-link-row:not([hidden]) input").forEach(input=>updateOneRefLinkMode_("#" + input.id));
+  }
+  function referenceLinksFromState_(st){
+    const links = Array.isArray(st.refLinks) ? st.refLinks.map(v=>typeof v === "string" ? v : "") : [];
+    // 구버전에서 수정하거나 비운 첫 두 링크가 배열의 오래된 값보다 우선합니다.
+    ["refLink", "refLink2"].forEach((key,index)=>{
+      if(Object.prototype.hasOwnProperty.call(st,key)) links[index] = typeof st[key] === "string" ? st[key] : "";
+    });
+    return trimReferenceLinks_(links);
+  }
+  function trimReferenceLinks_(values){
+    const links = Array.from(values, value=>typeof value === "string" ? value : "");
+    while(links.length && !links[links.length - 1].trim()) links.pop();
+    return links;
+  }
+  function collectReferenceLinks_(keepBlankRows=false){
+    const values = [...document.querySelectorAll("#refLinksList .ref-link-row:not([hidden]) input")].map(input=>input.value);
+    return keepBlankRows ? values : trimReferenceLinks_(values);
+  }
+  function setupReferenceRow_(row,index){
+    const suffix = index === 0 ? "" : String(index + 1);
+    const input = row.querySelector("input"), label = row.querySelector("label");
+    const edit = row.querySelector(".ref-icon-btn:not(.danger)"), del = row.querySelector(".ref-icon-btn.danger");
+    row.dataset.refIndex = String(index);
+    input.id = "refLink" + suffix;
+    label.textContent = index === 0 ? "링크" : "링크 " + (index + 1);
+    label.htmlFor = input.id;
+    edit.id = "refEditBtn" + suffix; del.id = "refLinkDelBtn" + suffix;
+    edit.setAttribute("aria-label", label.textContent + " 수정");
+    del.setAttribute("aria-label", label.textContent + " 삭제");
+    setupRefLink_("#" + input.id, "#" + edit.id, "#" + del.id, ()=>{
+      const links = collectReferenceLinks_(true);
+      links.splice(index,1);
+      renderReferenceLinks_(links);
+      saveSoon();
+    });
+  }
+  function renderReferenceLinks_(values, preserveFocused=false){
+    const links = values.length ? Array.from(values) : [""];
+    const list = $("#refLinksList");
+    if(preserveFocused && list.contains(document.activeElement)) return;
+    // 고정 ID 두 개는 레거시 불러오기와 무드보드 인수인계에서 계속 사용합니다.
+    [...list.querySelectorAll(".ref-link-row")].forEach((row,index)=>{if(index >= 2) row.remove();});
+    while(list.children.length < links.length){
+      const row = list.firstElementChild.cloneNode(true);
+      list.appendChild(row);
+      setupReferenceRow_(row,list.children.length - 1);
+    }
+    [...list.children].forEach((row,index)=>{
+      row.hidden = index >= links.length;
+      const input = row.querySelector("input");
+      input.value = links[index] || "";
+      input.readOnly = false; input.classList.remove("as-link");
+    });
+    updateRefLinkMode_();
   }
   // 2026-08-13 추가: 링크 두 개에 같은 방식을 쓰기 위해 공용 함수로 뺐습니다.
   function updateOneRefLinkMode_(sel){
@@ -5768,7 +5908,7 @@
       input.classList.remove("as-link");
     }
   }
-  function setupRefLink_(inputSel, editBtnSel, delBtnSel){
+  function setupRefLink_(inputSel, editBtnSel, delBtnSel, onDelete){
     const input = $(inputSel);
     if(!input) return;
     // 2026-08-21 수정: 레퍼런스와 코디 링크가 함수를 같이 쓰므로, blur 시 자기 자신만 갱신합니다
@@ -5792,14 +5932,20 @@
     });
     const delBtn = $(delBtnSel);
     if(delBtn) delBtn.addEventListener("click", ()=>{
+      if(onDelete){ onDelete(); return; }
       input.value = "";
       input.readOnly = false;
       input.classList.remove("as-link");
       saveSoon();
     });
   }
-  setupRefLink_("#refLink", "#refEditBtn", "#refLinkDelBtn");
-  setupRefLink_("#refLink2", "#refEditBtn2", "#refLinkDelBtn2");
+  [...$("#refLinksList").children].forEach(setupReferenceRow_);
+  $("#refAddBtn").addEventListener("click", ()=>{
+    const links = collectReferenceLinks_(true); links.push("");
+    renderReferenceLinks_(links);
+    const inputs = $("#refLinksList").querySelectorAll(".ref-link-row:not([hidden]) input");
+    inputs[inputs.length - 1].focus();
+  });
   // 2026-08-21 추가: 코디 링크 3개도 레퍼런스 링크와 완전히 같은 함수로 동작시킵니다
   function updateCoordiLinkMode_(){
     updateOneRefLinkMode_("#coordiLink1");
@@ -8265,6 +8411,7 @@
      // 안 비우면 새 작지에 직전 작지의 코디가 그대로 딸려옵니다
      "coordiCode1","coordiCode2","coordiCode3"
     ].forEach(id=> $("#"+id).value="");
+    renderReferenceLinks_([]);
     updateRefLinkMode_(); if(typeof updateCoordiLinkMode_ === "function") updateCoordiLinkMode_();
     sampleRecoveryStatus = ""; sampleFactorySentDate = ""; sampleReturnedDate = "";
     renderSampleRecovery_(); if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
