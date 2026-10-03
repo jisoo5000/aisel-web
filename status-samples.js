@@ -17,6 +17,17 @@
   function node(tag,className,value){var result = document.createElement(tag);if(className) result.className = className;if(value !== undefined) result.textContent = value;return result;}
   function valueNode(tag,className,value){return node(tag,className + (missing(value) ? " sample-missing" : ""),display(value));}
   function cell(label,value,className){var result = node("span","sample-cell " + (className || ""));result.appendChild(node("span","sample-mobile-label",label));result.appendChild(valueNode("span","",value));return result;}
+  function responsiveValue(value,compact){
+    var result = node("span","sample-responsive-value");result.title = display(value);
+    result.appendChild(valueNode("span","sample-full-value",value));
+    var shortValue = node("span","sample-compact-value",compact);shortValue.setAttribute("aria-hidden","true");result.appendChild(shortValue);return result;
+  }
+  function shortDate(value){
+    var normalizedDate = provider && typeof provider.normalizeDate === "function" ? provider.normalizeDate(value) : "";
+    var currentYear = new Intl.DateTimeFormat("en",{timeZone:"Asia/Seoul",year:"numeric"}).format(new Date());
+    return normalizedDate ? (normalizedDate.slice(0,4) === currentYear ? normalizedDate.slice(5) : normalizedDate).replace(/-/g,"/") : missing(value) ? "—" : text(value);
+  }
+  function dateCell(label,value,className){var result = node("span","sample-cell " + className);result.appendChild(node("span","sample-mobile-label",label));result.appendChild(responsiveValue(value,shortDate(value)));return result;}
   function canEdit(row){return !!(state.connected && state.canEdit && row.canEdit !== false && row.id && !row.invalidId && row.version !== undefined && row.version !== null);}
   function findRow(id){return records.filter(function(row){return row.id === id && !row.invalidId;})[0] || null;}
   function currentRows(){var needle = normalized(sampleFilters.query);return records.filter(function(row){return !needle || normalized(row[sampleFilters.field]).indexOf(needle) !== -1;});}
@@ -90,6 +101,9 @@
   }
   function locationCell(row,change,statusId){
     var result = node("span","sample-cell sample-location-cell");result.appendChild(node("span","sample-mobile-label","샘플 위치"));
+    if(!canEdit(row)){
+      var readOnly = valueNode("span","sample-location-text",row.location);readOnly.title = state.connected ? row.editReason || "샘플 위치 · 읽기 전용" : "샘플 위치 · 수정하려면 Google 로그인";result.appendChild(readOnly);return result;
+    }
     var select = node("select","sample-location-input");select.setAttribute("aria-label",row.name + " " + display(row.color) + " 샘플 위치");
     if(change && (change.saving || change.saved || change.error)) select.setAttribute("aria-describedby",statusId);
     var current = change && change.saving ? change.location : row.location;
@@ -105,12 +119,13 @@
     if(!info.isOutgoing && !info.completed && !info.dueDate){result.appendChild(node("span","sample-mobile-label","반납 예정일"));result.appendChild(node("span","sample-missing","—"));return {cell:result,form:null};}
     if(info.isOutgoing || info.dueDate){
       var due = node("span","sample-return-date");due.appendChild(node("span","sample-mobile-label","반납 예정일"));
-      due.appendChild(node("span","",info.dueDate || "확인 필요"));summary.appendChild(due);
+      var dueLabel = node("span","sample-compact-value sample-due-label","반납 ");dueLabel.setAttribute("aria-hidden","true");due.appendChild(dueLabel);
+      due.appendChild(responsiveValue(info.dueDate || "확인 필요",info.dueDate ? shortDate(info.dueDate) : "확인 필요"));summary.appendChild(due);
     }
     if(info.completed){
       if(state.connected){
         var actual = node("span","sample-return-actual");actual.appendChild(node("span","sample-return-label","실제 반납일"));
-        actual.appendChild(node("span","",missing(row.returnedDate) ? "입력 필요" : provider.normalizeDate(row.returnedDate) || row.returnedDate));summary.appendChild(actual);
+        actual.appendChild(responsiveValue(missing(row.returnedDate) ? "입력 필요" : provider.normalizeDate(row.returnedDate) || row.returnedDate,missing(row.returnedDate) ? "입력 필요" : shortDate(row.returnedDate)));summary.appendChild(actual);
       }else summary.appendChild(node("span","sample-return-completed","반납 완료"));
     }
     var allowed = canEdit(row) && info.canExtend;
@@ -149,17 +164,21 @@
     var extension = row.invalidId ? null : extensions[row.id], busy = !!(change && change.saving || extension && extension.saving);
     var record = node("article","sample-record" + (busy ? " saving" : ""));record.dataset.recordId = row.id;record.dataset.displayId = row.displayId;
     record.setAttribute("aria-busy",String(busy));
-    var line = node("div","sample-row"), product = node("span","sample-product");product.appendChild(node("span","sample-product-name",row.name));
+    var line = node("div","sample-row"), primary = node("div","sample-primary-line"), secondary = node("div","sample-secondary-line"), product = node("span","sample-product");product.appendChild(node("span","sample-product-name",row.name));
     var statusId = "sample-location-status-" + encodeURIComponent(row.displayId).replace(/%/g,"_");
     if(change && (change.saving || change.saved || change.error)){
       var status = node("span",change.error ? "sample-row-error" : change.saving ? "sample-saving" : "sample-saved",change.error || (change.saving ? "저장 중…" : "저장됨"));
       status.id = statusId;status.setAttribute("role",change.error ? "alert" : "status");product.appendChild(status);
     }
-    line.appendChild(product);
-    var options = node("span","sample-options");options.appendChild(node("span","sample-option-main",display(row.color)));options.appendChild(node("span","sample-option-sub","사이즈 " + display(row.size) + " · 수량 " + display(row.quantity)));line.appendChild(options);
-    line.appendChild(cell("작업구분",row.operation));line.appendChild(locationCell(row,change,statusId));
-    line.appendChild(cell("담당자",change && change.saving ? change.sourceOwner : row.owner,"sample-owner"));line.appendChild(cell("입출고일자",row.receivedDate,"sample-date"));
-    var returnRow = returnElement(row);line.appendChild(returnRow.cell);record.appendChild(line);if(returnRow.form) record.appendChild(returnRow.form);return record;
+    primary.appendChild(product);
+    var options = node("span","sample-options");options.appendChild(node("span","sample-option-main",display(row.color)));
+    var optionSub = node("span","sample-option-sub"), fullOptions = "사이즈 " + display(row.size) + " · 수량 " + display(row.quantity);
+    var compactQuantity = missing(row.quantity) ? "수량 —" : text(row.quantity) + (/^\d+(?:\.\d+)?$/.test(text(row.quantity)) ? "개" : "");
+    optionSub.appendChild(responsiveValue(fullOptions,"사이즈 " + (missing(row.size) ? "—" : text(row.size)) + " · " + compactQuantity));options.appendChild(optionSub);primary.appendChild(options);line.appendChild(primary);
+    var operation = node("span","sample-cell sample-operation");operation.appendChild(node("span","sample-mobile-label","작업구분"));
+    operation.appendChild(responsiveValue(row.operation,text(row.operation).replace(/^샘플(?=출고|반납|입고)/,"") || "미입력"));secondary.appendChild(operation);secondary.appendChild(locationCell(row,change,statusId));
+    secondary.appendChild(cell("담당자",change && change.saving ? change.sourceOwner : row.owner,"sample-owner"));secondary.appendChild(dateCell("입출고일자",row.receivedDate,"sample-date"));
+    var returnRow = returnElement(row);secondary.appendChild(returnRow.cell);line.appendChild(secondary);record.appendChild(line);if(returnRow.form) record.appendChild(returnRow.form);return record;
   }
   function render(){
     if(document.activeElement !== el.sampleSearch) el.sampleSearch.value = sampleFilters.query;
@@ -225,5 +244,3 @@
   window.AiselSamples = {render:render,onShow:start,isReady:function(){return settled;}};
   render();restoreView_(window.history.state);
 })();
-
-
