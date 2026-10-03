@@ -51,4 +51,4 @@
 
 요청된 전달 구성은 이 기획 MD, 비밀값 없는 JSON, 재사용 스킬 폴더와 승인된 코드다. 승인된 저장소는 [jisoo5000/aisel-web](https://github.com/jisoo5000/aisel-web)이다. GitHub 커밋 및 버전 ZIP·Drive 업로드는 게시 담당자가 수행하고 실제 커밋·전달 결과를 기록한다.
 
-사용자가 선택하고 확인한 백업 위치는 기존 Google Drive의 [AISEL → 스킬](https://drive.google.com/drive/folders/16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H)이다. GitHub 커밋 후 `aisel-sales-performance_2026-10-03_v1.zip`을 만들어 이 폴더에 올린다. 현재 업로드 상태는 대기다.
+사용자가 선택하고 확인한 백업 위치는 기존 Google Drive의 [AISEL → 스킬](https://drive.google.com/drive/folders/16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H)이다. GitHub 커밋 `ffc10c9cefa0f47687149bd7e8a3630e8af9f728`으로 원본을 보관했고, `aisel-sales-performance_2026-10-03_v1.zip`을 이 폴더에 업로드했다. Drive 파일 ID는 `1MIHBkh-jocxSepwvTT3WYgP5A4EKxztq`이며 이름·크기 4,365바이트·부모 폴더를 재조회해 확인했다. 이 백업 완료는 실제 매출 집계·자동 갱신의 완료를 의미하지 않는다.

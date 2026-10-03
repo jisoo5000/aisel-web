@@ -5,9 +5,26 @@
   "asOfDate": "2026-10-03",
   "timeZone": "Asia/Seoul",
   "purpose": "카페24 실제 판매를 바탕으로 제품 개발에 참고할 판매순위와 성과 게이지 제공",
-  "sources": {"sales": "cafe24", "metaAdsIncludedInRanking": false},
-  "period": {"days": 14, "end": "previous_day_in_Asia_Seoul", "freezeRunDateAtStart": true},
-  "schedule": {"frequency": "daily", "localTime": "06:00", "timeZone": "Asia/Seoul", "status": "not_deployed", "aiCallsPerRun": 0, "overallTimeoutMinutes": 25, "maximumPolls": 300, "workflowTimeoutMinutes": 30, "maximumRetryAfterSeconds": 300},
+  "sources": {
+    "sales": "cafe24",
+    "metaAdsIncludedInRanking": false
+  },
+  "period": {
+    "days": 14,
+    "end": "previous_day_in_Asia_Seoul",
+    "freezeRunDateAtStart": true
+  },
+  "schedule": {
+    "frequency": "daily",
+    "localTime": "06:00",
+    "timeZone": "Asia/Seoul",
+    "status": "not_deployed",
+    "aiCallsPerRun": 0,
+    "overallTimeoutMinutes": 25,
+    "maximumPolls": 300,
+    "workflowTimeoutMinutes": 30,
+    "maximumRetryAfterSeconds": 300
+  },
   "ranking": {
     "primary": "netQty_descending",
     "secondary": "netRevenue_descending_when_proven",
@@ -18,19 +35,62 @@
     "gauge": "server_supplied_0_to_100_relative_sales_level"
   },
   "ui": {
-    "layout": ["rank", "existing_small_thumbnail", "product_name_and_code", "gauge_and_Korean_status"],
-    "thumbnailPixels": {"width": 40, "height": 52},
-    "colors": {"good": "#303B52", "normal": "#7D899B", "poor": "#A3264C", "pending": "gray"},
-    "filters": ["sale", "prep", "all"],
-    "details": ["netQty", "netRevenue_when_proven", "canceledQty", "returnedQty", "Korean_reason", "existing_improvement_note"],
+    "layout": [
+      "rank",
+      "existing_small_thumbnail",
+      "product_name_and_code",
+      "gauge_and_Korean_status"
+    ],
+    "thumbnailPixels": {
+      "width": 40,
+      "height": 52
+    },
+    "colors": {
+      "good": "#303B52",
+      "normal": "#7D899B",
+      "poor": "#A3264C",
+      "pending": "gray"
+    },
+    "filters": [
+      "sale",
+      "prep",
+      "all"
+    ],
+    "details": [
+      "netQty",
+      "netRevenue_when_proven",
+      "canceledQty",
+      "returnedQty",
+      "Korean_reason",
+      "existing_improvement_note"
+    ],
     "manualTargetFieldsOnList": false,
     "reasonCodesShownRaw": false
   },
   "snapshot": {
     "path": "salesPerformance/current",
     "schemaVersion": 1,
-    "rootFields": ["schemaVersion", "source", "status", "generatedAt", "period", "coverage", "items"],
-    "itemFields": ["productNos", "netQty", "netRevenue", "canceledQty", "returnedQty", "rank", "gauge", "status", "reason", "revenueReason"],
+    "rootFields": [
+      "schemaVersion",
+      "source",
+      "status",
+      "generatedAt",
+      "period",
+      "coverage",
+      "items"
+    ],
+    "itemFields": [
+      "productNos",
+      "netQty",
+      "netRevenue",
+      "canceledQty",
+      "returnedQty",
+      "rank",
+      "gauge",
+      "status",
+      "reason",
+      "revenueReason"
+    ],
     "itemKey": "workorder_code",
     "completeCoverageRequiredToPublish": true,
     "emptyItemsOmission": "normalize_only_valid_ready_complete_snapshot",
@@ -49,8 +109,17 @@
     "temporaryAnonymousProviderStatus": "disabled_after_machine_creation",
     "secretsIncludedInPackage": false
   },
-  "hosting": {"frontend": "existing_GitHub_Pages", "backend": "existing_site_with_protected_sales_api", "siteHostingVisibility": "public_unchanged_by_user_approval", "protectedApiRequired": true},
-  "repository": {"url": "https://github.com/jisoo5000/aisel-web", "userApproved": true, "packageCommitStatus": "pending"},
+  "hosting": {
+    "frontend": "existing_GitHub_Pages",
+    "backend": "existing_site_with_protected_sales_api",
+    "siteHostingVisibility": "public_unchanged_by_user_approval",
+    "protectedApiRequired": true
+  },
+  "repository": {
+    "url": "https://github.com/jisoo5000/aisel-web",
+    "userApproved": true,
+    "packageCommitStatus": "pending"
+  },
   "status": {
     "frontend": "deployed",
     "frontendDeploymentCommitPrefix": "d3ad2",
@@ -61,9 +130,9 @@
     "privateBackend": "not_ready",
     "firstLiveSummaryPublish": "pending",
     "dailyAutomaticRefresh": "not_active",
-    "packageGitHubCommit": "pending",
-    "versionZip": "pending",
-    "driveDelivery": "pending"
+    "packageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
+    "versionZip": "created_verified",
+    "driveDelivery": "uploaded_verified"
   },
   "backup": {
     "destinationLabel": "AISEL/스킬",
@@ -73,9 +142,30 @@
     "userApproved": true,
     "zipFilename": "aisel-sales-performance_2026-10-03_v1.zip",
     "uploadStatus": "pending",
-    "createZipAfterGitHubCommit": true
+    "createZipAfterGitHubCommit": true,
+    "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+    "folderUrl": "https://drive.google.com/drive/folders/16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+    "fileName": "aisel-sales-performance_2026-10-03_v1.zip",
+    "fileId": "1MIHBkh-jocxSepwvTT3WYgP5A4EKxztq",
+    "url": "https://drive.google.com/file/d/1MIHBkh-jocxSepwvTT3WYgP5A4EKxztq/view?usp=drivesdk",
+    "sizeBytes": 4365,
+    "sha256": "61395C222F2E011337B15F1E0AEE2165107673F859C3BD82757A89F855DEED01",
+    "verified": true
   },
-  "validation": {"frontendFixtureChecksPassed": 55, "runnerChecksPassed": 135, "liveRecurringRunVerified": false},
-  "pending": ["private_site_collector_and_service_auth", "runner_secret_binding_and_deployment", "first_real_summary_publish_and_readback", "owner_screen_verification", "final_status_update_and_package_delivery"],
-  "skill": {"name": "aisel-sales-performance", "path": "skills/aisel-sales-performance/SKILL.md"}
+  "validation": {
+    "frontendFixtureChecksPassed": 55,
+    "runnerChecksPassed": 135,
+    "liveRecurringRunVerified": false
+  },
+  "pending": [
+    "private_site_collector_and_service_auth",
+    "runner_secret_binding_and_deployment",
+    "first_real_summary_publish_and_readback",
+    "owner_screen_verification",
+    "final_status_update_and_package_delivery"
+  ],
+  "skill": {
+    "name": "aisel-sales-performance",
+    "path": "skills/aisel-sales-performance/SKILL.md"
+  }
 }
