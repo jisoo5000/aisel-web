@@ -93,46 +93,66 @@ function build(code,v,photo){
 const api={build,signature,lineAmount,previewSignature,cachedPreview,previewBlob};root.AiselSheetBridge=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 if(typeof window==="undefined"||!root.firebase)return;
-const db=firebase.database(),rows=db.ref("workorderSheetRows"),meta=db.ref("workorderSheetMeta");
+// Named apps keep separate Auth sessions. Reuse an existing signed-in app for
+// this same project/database; each operation keeps that app's DB and Storage.
+const defaultApp=typeof firebase.app==="function"?firebase.app():{
+ name:"[DEFAULT]",options:{},auth:()=>firebase.auth(),database:()=>firebase.database(),storage:()=>firebase.storage()
+};
+const sameProjectApps=[defaultApp,...(firebase.apps||[]).filter(app=>app!==defaultApp&&
+ defaultApp.options.projectId&&app.options.projectId===defaultApp.options.projectId&&
+ app.options.databaseURL===defaultApp.options.databaseURL)];
+function authenticatedApp(){return sameProjectApps.find(app=>app.auth().currentUser)||null;}
+function connection(){
+ const app=authenticatedApp();if(!app)return null;
+ const db=app.database();return {app,db,uid:app.auth().currentUser.uid,rows:db.ref("workorderSheetRows"),meta:db.ref("workorderSheetMeta")};
+}
+function signedIn(ctx){return ctx.app.auth().currentUser?.uid===ctx.uid;}
 const running=new Map();
 function show(text){
  let el=document.getElementById("sheetBridgeStatus");
  if(!el){el=document.createElement("div");el.id="sheetBridgeStatus";el.className="noprint";el.style.cssText="padding:6px 12px;font-size:12px;color:#465469;background:#f0f5fa";document.body.appendChild(el);}
  el.textContent=text;
 }
-async function thumbnail(code,v){
+async function thumbnail(code,v,ctx){
  const src=v.p1Thumb||v.p1||"";
  if(!src)return "";
  const sig=previewSignature(src),cached=cachedPreview(v,src);
  if(cached)return cached;
- if(!firebase.auth().currentUser)return "";
+ if(!signedIn(ctx))return "";
  try{
   const preview=await previewBlob(src),blob=preview.blob;
-  const ref=firebase.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
+  if(!signedIn(ctx))return "";
+  const ref=ctx.app.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
   await ref.put(blob,{contentType:"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
   const url=await ref.getDownloadURL();
   // An upload may finish after the work order was deleted or its photo changed.
   // Update only the existing matching original; never recreate a deleted record.
-  const original=db.ref("workorders").child(code);
+  if(!signedIn(ctx))return "";
+  const original=ctx.db.ref("workorders").child(code);
   await original.once("value");
   const result=await original.transaction(current=>{
-    if(!current || previewSignature(current.p1Thumb||current.p1||"")!==sig)return;
+    if(!signedIn(ctx)||!current || previewSignature(current.p1Thumb||current.p1||"")!==sig)return;
     return {...current,sheetThumb:{url,signature:sig,version:PREVIEW_VERSION,width:preview.width,height:preview.height,bytes:blob.size}};
   },undefined,false);
   return result.committed?url:"";
  }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return "";}
 }
 async function perform(code){
+ const ctx=connection();if(!ctx)return false;
+ const {db,rows,meta}=ctx;
  const snap=await db.ref("workorders").child(code).once("value"),v=snap.val();
+ if(!signedIn(ctx))return false;
  if(!v){await rows.child(code).remove();return;}
- const image=await thumbnail(code,v);
+ const image=await thumbnail(code,v,ctx);
  // Re-read after asynchronous photo upload so a newer save is never replaced with the older snapshot.
  const latest=(await db.ref("workorders").child(code).once("value")).val();
+ if(!signedIn(ctx))return false;
  if(!latest){await rows.child(code).remove();return;}
  const src=latest.p1Thumb||latest.p1||"";
  const photo=cachedPreview(latest,src)||
   (src===(v.p1Thumb||v.p1||"")?image:"");
  const row=build(code,latest,photo),existing=(await rows.child(code).once("value")).val();
+ if(!signedIn(ctx))return false;
  if(existing!==row){
   await rows.child(code).set(row);
   await meta.update({version:2,fields:36,updatedAt:firebase.database.ServerValue.TIMESTAMP});
@@ -148,19 +168,28 @@ function sync(code){
 }
 api.sync=sync;
 async function reconcile(){
+ const ctx=connection();if(!ctx)return;
+ const {db,rows}=ctx;
  const all=(await db.ref("workorderIndex").once("value")).val()||{};
  const existing=(await rows.once("value")).val()||{};
  const codes=Object.keys(all);
  for(let i=0;i<codes.length;i+=3)await Promise.all(codes.slice(i,i+3).map(sync));
  const cleanup={};Object.keys(existing).filter(k=>!all[k]).forEach(k=>cleanup[k]=null);
- if(Object.keys(cleanup).length)await rows.update(cleanup);
+ if(signedIn(ctx)&&Object.keys(cleanup).length)await rows.update(cleanup);
 }
-let reconciled=false;
-firebase.auth().onAuthStateChanged(user=>{
- if(user&&!reconciled){reconciled=true;reconcile().catch(err=>{reconciled=false;show("시트 초기 연동 실패 · 작지를 다시 열면 재시도합니다.");console.error(err);});}
- if(!user)reconciled=false;
-});
-db.ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
-db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
+let reconciledApp=null;
+function onAuthChange(){
+ const app=authenticatedApp();
+ if(!app){reconciledApp=null;return;}
+ if(reconciledApp===app)return;
+ reconciledApp=app;
+ return reconcile().catch(err=>{
+  if(reconciledApp===app)reconciledApp=null;
+  show("시트 초기 연동 실패 · 작지를 다시 열면 재시도합니다.");console.error(err);
+ });
+}
+sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
+defaultApp.database().ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
+defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 })(typeof globalThis!=="undefined"?globalThis:this);
 
