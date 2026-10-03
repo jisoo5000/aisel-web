@@ -372,7 +372,7 @@ test('stops after 300 polls without starting another job', async () => {
   assert.equal(requests.filter(({ url }) => url.endsWith('/advance')).length, 300);
 });
 
-test('enforces twenty-five-minute deadline even if a late response claims ready', async () => {
+test('enforces thirty-five-minute deadline even if a late response claims ready', async () => {
   let milliseconds = 0;
   let calls = 0;
   const result = await run(async () => {

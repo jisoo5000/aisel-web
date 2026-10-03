@@ -1,0 +1,42 @@
+name: AISEL daily sales sync
+
+on:
+  schedule:
+    # GitHub uses UTC. 21:00 UTC is 06:00 Asia/Seoul the next day.
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aisel-sales-daily
+  cancel-in-progress: false
+
+jobs:
+  synchronize-sales:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Check out runner
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify runner without network access
+        run: node --test tests/sync-sales.test.mjs tests/publish-sales.test.mjs
+
+      - name: Aggregate and save sales
+        env:
+          AISEL_SALES_SYNC_URL: ${{ secrets.AISEL_SALES_SYNC_URL }}
+          AISEL_SITES_BYPASS_TOKEN: ${{ secrets.AISEL_SITES_BYPASS_TOKEN }}
+          AISEL_SALES_SYNC_SECRET: ${{ secrets.AISEL_SALES_SYNC_SECRET }}
+          AISEL_FIREBASE_API_KEY: ${{ secrets.AISEL_FIREBASE_API_KEY }}
+          AISEL_FIREBASE_REFRESH_TOKEN: ${{ secrets.AISEL_FIREBASE_REFRESH_TOKEN }}
+          AISEL_FIREBASE_MACHINE_UID: ${{ secrets.AISEL_FIREBASE_MACHINE_UID }}
+        run: node scripts/sync-sales.mjs

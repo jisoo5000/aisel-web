@@ -7,7 +7,7 @@ export const CONTRACT = Object.freeze({
   allowedOrigin: 'https://cafe24-weekly-insights.spaceit-aisel.chatgpt.site',
   jobsPath: '/api/workorder-sales/jobs',
   secretHeader: 'Authorization',
-  overallTimeoutMs: 25 * 60 * 1_000,
+  overallTimeoutMs: 35 * 60 * 1_000,
   requestTimeoutMs: 30_000,
   pollIntervalMs: 5_000,
   maximumPolls: 300,
