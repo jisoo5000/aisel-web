@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v11 (2026-10-03): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
+<!-- AISEL 제품 진행 현황 v12 (2026-10-04): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -80,7 +80,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:680px){.wrap{padding:22px 16px 48px}.page-header{padding-bottom:18px;margin-bottom:14px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:11.5px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{display:block;margin-bottom:16px}.search-wrap{margin-top:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
 @media(max-width:400px){.wrap{padding:20px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:11px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=11" />
+<link rel="stylesheet" href="status-samples.css?v=12" />
 </head>
 <body>
 
@@ -114,44 +114,26 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   <div class="empty" id="empty" role="status">제품 정보를 불러오고 있습니다.</div>
   </section>
   <section id="samplesPanel" class="samples-panel" aria-labelledby="samplesTitle" hidden>
-    <div class="samples-heading">
-      <div>
-        <p class="samples-eyebrow">AISEL · SAMPLE MANAGEMENT</p>
-        <h2 id="samplesTitle">촬영 샘플 관리</h2>
-        <p class="samples-intro">샘플의 위치와 입출고 기록을 한곳에서 확인하세요.</p>
-      </div>
-      <div class="sample-actions">
-        <a class="sample-action" href="https://docs.google.com/spreadsheets/d/16sQmAVKB07qrhOgzacozifIATmeqalhqGQViCgY_Pug/edit?gid=1840754350#gid=1840754350" target="_blank" rel="noopener noreferrer">원본 시트 열기 ↗</a>
-        <button class="sample-action primary" type="button" id="sampleReload">목록 다시 불러오기</button>
-      </div>
-    </div>
-    <dl class="sample-overview" aria-label="전체 샘플 기록 요약">
-      <div class="sample-stat"><dt>전체 기록</dt><dd><span id="sampleTotal">–</span><small>건</small></dd></div>
-      <div class="sample-stat"><dt>사무실 기록</dt><dd><span id="sampleOffice">–</span><small>건</small></dd></div>
-      <div class="sample-stat"><dt>물류 기록</dt><dd><span id="sampleLogistics">–</span><small>건</small></dd></div>
-      <div class="sample-stat"><dt>수량 미입력</dt><dd><span id="sampleMissingQuantity">–</span><small>건</small></dd></div>
-    </dl>
-    <div class="sample-sync-line">
-      <p id="sampleSync" class="sample-sync">시트 반영: 확인 중 · 수동 반영</p>
-      <span id="sampleConnection" class="sample-connection" role="status">목록 불러오는 중</span>
-    </div>
-    <p class="sample-sync-help">원본 시트에서 수정한 내용은 다시 반영한 뒤 표시됩니다. ‘목록 다시 불러오기’는 마지막 반영본을 다시 불러옵니다.</p>
-    <div class="sample-filters" role="search" aria-label="촬영 샘플 검색과 필터">
-      <label class="sample-filter search-filter">상품 검색<input id="sampleSearch" type="search" placeholder="상품명 · 관리번호 · 컬러" autocomplete="off" /></label>
-      <label class="sample-filter">기록 위치<select id="sampleLocation"><option value="all">위치 전체</option><option value="사무실">사무실</option><option value="물류">물류</option><option value="missing">미입력</option></select></label>
-      <label class="sample-filter">작업구분<select id="sampleOperation"><option value="all">작업구분 전체</option></select></label>
-      <label class="sample-filter">담당자<select id="sampleOwner"><option value="all">담당자 전체</option></select></label>
+    <h2 id="samplesTitle" class="sample-visually-hidden">샘플 관리</h2>
+    <div class="sample-search-row" role="search" aria-label="샘플 검색">
+      <label class="sample-visually-hidden" for="sampleField">검색 항목</label>
+      <select id="sampleField" class="sample-search-field"><option value="name">품명</option><option value="managementNumber">관리번호</option><option value="color">컬러</option></select>
+      <label class="sample-visually-hidden" for="sampleSearch">검색어</label>
+      <input id="sampleSearch" class="sample-search-input" type="search" placeholder="품명으로 검색" autocomplete="off" />
     </div>
     <p id="sampleError" class="sample-error" role="alert" hidden></p>
     <div class="sample-list-heading">
-      <h3>샘플 기록<span id="sampleResultCount" class="sample-result-count" aria-live="polite"></span></h3>
-      <button type="button" id="sampleReset" class="sample-reset" hidden>검색 · 필터 초기화</button>
+      <h3>샘플 기록<span id="sampleResultCount" class="sample-result-count" aria-live="polite"></span><span id="sampleReadOnly" class="sample-read-only" hidden>읽기 전용</span></h3>
+      <div class="sample-heading-actions">
+        <button type="button" id="sampleReset" class="sample-reset" hidden>검색 초기화</button>
+        <span id="sampleAccount" class="sample-account" hidden></span>
+        <button type="button" id="sampleDisconnect" class="sample-disconnect" hidden>연결 해제</button>
+      </div>
     </div>
-    <p class="sample-list-note">입출고 기록 수를 표시합니다. 현재 재고 수량이 아니며, 행을 누르면 원본의 모든 항목을 볼 수 있습니다.</p>
-    <div id="sampleColumns" class="sample-columns" aria-hidden="true" hidden><span>상품명 / 관리번호</span><span>컬러 / 사이즈 · 수량</span><span>작업구분</span><span>기록 위치</span><span>담당자</span><span>입출고일자</span><span></span></div>
+    <div id="sampleColumns" class="sample-columns" aria-hidden="true" hidden><span>품명 / 관리번호</span><span>컬러 / 사이즈 · 수량</span><span>작업구분</span><span>샘플 위치</span><span>담당자</span><span>입출고일자</span><span></span></div>
     <div id="sampleList" class="sample-list" aria-busy="true"></div>
-    <div id="sampleEmpty" class="sample-empty" role="status">촬영 샘플 기록을 불러오고 있습니다.</div>
-    <p class="sample-footer">원본: 촬영샘플관리 · 같은 상품도 원본의 각 행을 별도 기록으로 표시합니다.</p>
+    <div id="sampleEmpty" class="sample-empty" role="status">팀원 계정으로 연결하면 샘플 기록을 확인할 수 있습니다.</div>
+    <div class="sample-auth-actions"><button type="button" id="sampleConnect" class="sample-connect" hidden>Google 계정으로 연결</button></div>
   </section>
 </main>
 
@@ -163,6 +145,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 /* 공유 가능한 짧은 제품 정보만 받습니다. 사진은 화면 가까이 온 카드부터 받습니다. */
 firebase.initializeApp({
@@ -188,7 +171,7 @@ function validFilter(key){return ["order","pdp","all"].indexOf(key) !== -1 ? key
 function normalizeSearch(value){return String(value || "").toLowerCase().replace(/\s+/g, "");}
 
 var workflowView = "products";
-var sampleFilters = {query:"",location:"all",operation:"all",owner:"all"};
+var sampleFilters = {query:"",field:"name"};
 var all = {};
 var dataReady = false;
 var loadFailed = false;
@@ -472,17 +455,16 @@ var restoringScroll = false;
 var scrollFrame = null;
 function validSampleFilters_(value){
   value = value || {};
-  return {query:String(value.query || "").trim(),location:["all","사무실","물류","missing"].indexOf(value.location) !== -1 ? value.location : "all",operation:String(value.operation || "all"),owner:String(value.owner || "all")};
+  return {query:String(value.query || "").trim(),field:["name","managementNumber","color"].indexOf(value.field) !== -1 ? value.field : "name"};
 }
 function viewState_(scroll){return {aiselStatus:true,filter:filter,query:query,view:workflowView,sampleFilters:Object.assign({},sampleFilters),scrollY:Math.max(0,Number(scroll) || 0)};}
 function viewUrl_(){
   var url = new URL(window.location.href);url.searchParams.set("tab",filter);
   if(query) url.searchParams.set("q",query);else url.searchParams.delete("q");
   if(workflowView === "samples") url.searchParams.set("view","samples");else url.searchParams.delete("view");
-  [["query","sq"],["location","sloc"],["operation","sop"],["owner","sowner"]].forEach(function(pair){
-    var value = sampleFilters[pair[0]];
-    if(value && value !== "all") url.searchParams.set(pair[1],value);else url.searchParams.delete(pair[1]);
-  });
+  if(sampleFilters.query) url.searchParams.set("sq",sampleFilters.query);else url.searchParams.delete("sq");
+  if(sampleFilters.field !== "name") url.searchParams.set("sfield",sampleFilters.field);else url.searchParams.delete("sfield");
+  ["sloc","sop","sowner"].forEach(function(key){url.searchParams.delete(key);});
   return url.pathname + url.search + url.hash;
 }
 function saveCurrentView_(){window.history.replaceState(viewState_(window.scrollY),"",viewUrl_());}
@@ -500,7 +482,7 @@ function updateWorkflow_(){
   document.getElementById("productsPanel").hidden = isSamples;
   document.getElementById("samplesPanel").hidden = !isSamples;
   document.getElementById("connection").hidden = isSamples;
-  document.getElementById("pageSubtitle").textContent = isSamples ? "촬영 준비에 필요한 샘플 기록을 확인하세요." : "발주생산부터 상세페이지 등록까지, 한눈에 확인하세요.";
+  document.getElementById("pageSubtitle").hidden = isSamples;
   [["workflowProducts",!isSamples],["workflowSamples",isSamples]].forEach(function(pair){
     var button = document.getElementById(pair[0]);button.classList.toggle("on",pair[1]);button.setAttribute("aria-pressed",String(pair[1]));
   });
@@ -534,7 +516,7 @@ function restoreView_(state){
   filter = validFilter(saved ? state.filter : url.searchParams.get("tab"));
   query = String(saved ? state.query || "" : url.searchParams.get("q") || "").trim();
   workflowView = (saved ? state.view : url.searchParams.get("view")) === "samples" ? "samples" : "products";
-  sampleFilters = validSampleFilters_(saved && state.sampleFilters ? state.sampleFilters : {query:url.searchParams.get("sq"),location:url.searchParams.get("sloc"),operation:url.searchParams.get("sop"),owner:url.searchParams.get("sowner")});
+  sampleFilters = validSampleFilters_(saved && state.sampleFilters ? state.sampleFilters : {query:url.searchParams.get("sq"),field:url.searchParams.get("sfield")});
   document.getElementById("sampleSearch").value = sampleFilters.query;
   searchEl.value = query;pendingScroll = saved ? Math.max(0,Number(state.scrollY) || 0) : 0;
   closeViewer();updateWorkflow_();renderTabs();render();
@@ -580,10 +562,12 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   emptyEl.setAttribute("role","alert");renderTabs();render();console.error(err);
 });
 </script>
-<script src="status-samples.js?v=11"></script>
+<script src="status-samples-data.js?v=12"></script>
+<script src="status-samples.js?v=12"></script>
 
 </body>
 </html>
+
 
 
 
