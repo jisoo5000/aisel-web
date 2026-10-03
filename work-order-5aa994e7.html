@@ -12748,12 +12748,18 @@ async function thumbnail(code,v,ctx){
   // Update only the existing matching original; never recreate a deleted record.
   if(!signedIn(ctx))return "";
   const original=ctx.db.ref("workorders").child(code);
-  await original.once("value");
-  const result=await original.transaction(current=>{
-    if(!signedIn(ctx)||!current || previewSourceKey(current)!==sig)return;
-    return {...current,sheetThumb:{url,signature:sig,version:PREVIEW_VERSION,width:preview.width,height:preview.height,bytes:blob.size}};
-  },undefined,false);
-  return result.committed?url:"";
+  // Keep the server snapshot subscribed until the transaction finishes. A lone
+  // once() listener detaches before the transaction, allowing a cold null cache.
+  const keepSnapshot=()=>{};
+  original.on("value",keepSnapshot);
+  try{
+   await original.once("value");
+   const result=await original.transaction(current=>{
+     if(!signedIn(ctx)||!current || previewSourceKey(current)!==sig)return;
+     return {...current,sheetThumb:{url,signature:sig,version:PREVIEW_VERSION,width:preview.width,height:preview.height,bytes:blob.size}};
+   },undefined,false);
+   return result.committed?url:"";
+  }finally{original.off("value",keepSnapshot);}
  }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return "";}
 }
 async function perform(code){
