@@ -1,7 +1,7 @@
 /* Anonymous display catalog + private Google Sheets editing. Credentials stay in memory. */
 (function(root, factory){
   if(typeof module === "object" && module.exports) module.exports = factory;
-  else root.AiselSampleData = factory({firebase:root.firebase,fetch:root.fetch.bind(root),document:root.document,window:root});
+  else root.AiselSampleData = factory({firebase:root.firebase,fetch:root.fetch.bind(root),document:root.document,window:root,flow:root.AiselSampleFlow});
 })(typeof window === "undefined" ? this : window, function(deps){
   "use strict";
   var SHEET_ID = 1840754350;
@@ -9,6 +9,11 @@
   var API = "https://sheets.googleapis.com/v4/spreadsheets/" + FILE_ID;
   var HEADERS = ["입출고일자","관리번호","공급처명","상품명","컬러","사이즈","수량","작업구분","샘플위치","반납일자","담당자","반납예정일","연장사유"];
   var FIELDS = ["receivedDate","managementNumber","supplier","name","color","size","quantity","operation","location","returnedDate","owner","returnDueDate","extensionReason"];
+  var FLOW_HEADERS = ["진행상태","관리수량","사무실발송수량","사무실수령수량","반납발송수량","물류수령수량","카페24반영수량","셀메이트반영수량","진행확인시각","진행확인계정"];
+  var FLOW_FIELDS = ["flowState","flowTotal","officeSent","officeReceived","returnSent","warehouseReceived","cafe24Reflected","sellmateReflected","flowUpdatedAt","flowUpdatedBy"];
+  var FLOW_PUBLIC_FIELDS = FLOW_FIELDS.slice(0,8), ALL_HEADERS = HEADERS.concat(FLOW_HEADERS), ALL_FIELDS = FIELDS.concat(FLOW_FIELDS);
+  var flow = deps.flow || null;
+  if(!flow && typeof require === "function") try{flow = require("./status-samples-flow.js");}catch(ignore){}
   var AUDIT_TITLE = "샘플변경이력";
   var AUDIT_HEADERS = ["변경시각","수정계정","관리번호","변경항목","이전값","변경값","상품명","기록키","원본탭ID"];
   var LOCATION_OWNERS = {"물류":"이주용","사무실":"최연경"};
@@ -26,13 +31,21 @@
   function filled(value){return !!text(value) && !/^[—–-]+$/.test(text(value));}
   function validStamp(value){return typeof value === "string" && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;}
   function exactKeys(value,keys){return value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === keys.length && Object.keys(value).every(function(key){return keys.indexOf(key) >= 0;});}
+  function hasFlow(record){return FLOW_FIELDS.some(function(key){return text(record[key]) !== "";});}
+  function requireFlow(){if(!flow || typeof flow.inspect !== "function" || typeof flow.apply !== "function") throw error("FLOW_SETUP","샘플 진행 기능을 불러오지 못했습니다. 페이지를 새로 열어 주세요.");return flow;}
+  function safeFlowValue(key,value){
+    value = text(value);
+    if(key === "flowState") return ["","입고대기","진행중","완료"].indexOf(value) >= 0;
+    return value === "" || /^(0|[1-9]\d*)$/.test(value) && Number.isSafeInteger(Number(value));
+  }
   // This allowlist is the complete publication boundary. Never spread source
   // records: their version contains every private cell, including extension text.
   function makePublicCatalog(result){
     if(!result || !Array.isArray(result.records) || result.records.length > 20000 || !result.source || !validStamp(result.source.syncedAt)) throw error("PUBLIC_SOURCE_INVALID","공개 목록의 조회 기준을 확인해 주세요.");
-    return {schemaVersion:2,source:{syncedAt:result.source.syncedAt},records:result.records.filter(function(row){return row && filled(row.name);}).map(function(row,index){
+    return {schemaVersion:3,source:{syncedAt:result.source.syncedAt},records:result.records.filter(function(row){return row && filled(row.name);}).map(function(row,index){
       var record = {id:"public-" + (index + 1),order:index};
       PUBLIC_FIELDS.forEach(function(key){var value = text(row[key]);if(value.length > 2000) throw error("PUBLIC_SOURCE_INVALID","공개 목록의 표시 항목을 확인해 주세요.");record[key] = value;});
+      FLOW_PUBLIC_FIELDS.forEach(function(key){if(!safeFlowValue(key,row[key])) throw error("PUBLIC_SOURCE_INVALID","진행 단계와 수량을 확인해 주세요. 공개 목록을 갱신하지 않았습니다.");record[key] = text(row[key]);});
       record.returnCompleted = getReturnInfo(row).completed;
       return record;
     })};
@@ -40,13 +53,14 @@
   function parsePublicCatalog(value){
     if(value === null) return {records:[],owners:[],source:null};
     // Realtime Database drops empty arrays; only normalize this known case.
-    if(value && value.schemaVersion === 2 && !Object.prototype.hasOwnProperty.call(value,"records")) value = Object.assign({},value,{records:[]});
-    if(!exactKeys(value,["schemaVersion","source","records"]) || value.schemaVersion !== 2 || !exactKeys(value.source,["syncedAt"]) || !validStamp(value.source.syncedAt) || !Array.isArray(value.records) || value.records.length > 20000) throw error("PUBLIC_DATA_INVALID","샘플 목록 형식을 확인해야 합니다. 관리자에게 문의해 주세요.");
-    var keys = ["id","order","returnCompleted"].concat(PUBLIC_FIELDS);
+    if(value && [2,3].indexOf(value.schemaVersion) >= 0 && !Object.prototype.hasOwnProperty.call(value,"records")) value = Object.assign({},value,{records:[]});
+    if(!exactKeys(value,["schemaVersion","source","records"]) || [2,3].indexOf(value.schemaVersion) < 0 || !exactKeys(value.source,["syncedAt"]) || !validStamp(value.source.syncedAt) || !Array.isArray(value.records) || value.records.length > 20000) throw error("PUBLIC_DATA_INVALID","샘플 목록 형식을 확인해야 합니다. 관리자에게 문의해 주세요.");
+    var keys = ["id","order","returnCompleted"].concat(PUBLIC_FIELDS,value.schemaVersion === 3 ? FLOW_PUBLIC_FIELDS : []);
     var rows = value.records.map(function(row,index){
       if(!exactKeys(row,keys) || row.id !== "public-" + (index + 1) || row.order !== index || typeof row.returnCompleted !== "boolean" || PUBLIC_FIELDS.some(function(key){return typeof row[key] !== "string" || row[key].length > 2000;}) || !filled(row.name)) throw error("PUBLIC_DATA_INVALID","샘플 목록 형식을 확인해야 합니다. 관리자에게 문의해 주세요.");
+      if(value.schemaVersion === 3 && FLOW_PUBLIC_FIELDS.some(function(key){return typeof row[key] !== "string" || !safeFlowValue(key,row[key]);})) throw error("PUBLIC_DATA_INVALID","샘플 진행 수량을 확인해야 합니다. 관리자에게 문의해 주세요.");
       var record = {id:row.id,order:row.order,returnCompleted:row.returnCompleted,canEdit:false,editReason:"Google 계정을 연결하면 변경할 수 있습니다."};
-      PUBLIC_FIELDS.forEach(function(key){record[key] = row[key];});return record;
+      PUBLIC_FIELDS.forEach(function(key){record[key] = row[key];});FLOW_PUBLIC_FIELDS.forEach(function(key){record[key] = value.schemaVersion === 3 ? row[key] : "";});return record;
     });
     return {records:rows,owners:[],source:{syncedAt:value.source.syncedAt}};
   }
@@ -83,6 +97,13 @@
     record = record || {};
     var operation = text(record.operation).replace(/\s+/g,""), isOutgoing = operation === "샘플출고";
     var completed = record.returnCompleted === true || filled(record.returnedDate) || ["샘플반납","반납","반납완료"].indexOf(operation) >= 0;
+    var flowInfo = null;
+    if(hasFlow(record)){
+      try{flowInfo = requireFlow().inspect(record);}catch(ignore){return {dueDate:"",canExtend:false,suggestedDate:"",reason:"샘플 진행 정보를 확인해 주세요.",completed:false,isOutgoing:false};}
+      completed = flowInfo.valid && flowInfo.returnComplete === true;
+      isOutgoing = flowInfo.valid && flowInfo.counts && flowInfo.counts.officeReceived > 0;
+      if(!flowInfo.valid) return {dueDate:"",canExtend:false,suggestedDate:"",reason:flowInfo.error || "샘플 진행 수량을 확인해 주세요.",completed:false,isOutgoing:false};
+    }
     var info = {dueDate:"",canExtend:false,suggestedDate:"",reason:"",completed:completed,isOutgoing:isOutgoing};
     if(!isOutgoing){info.reason = completed ? "반납 완료" : "샘플 출고 기록만 연장할 수 있습니다.";return info;}
     // Do not hide invalid edited deadlines by falling back to a calculated one.
@@ -217,20 +238,22 @@
   function rangeName(title){return "'" + title.replace(/'/g,"''") + "'";}
   function parseRows(values, meta, target){
     if(!Array.isArray(values) || !values.length || HEADERS.some(function(h,i){return text(values[0][i]) !== h;})) throw error("HEADER_CHANGED","원본 시트의 항목이 변경되었습니다. 항목 구성을 확인해 주세요.");
+    var flowConfigured = FLOW_HEADERS.every(function(h,i){return text(values[0][13 + i]) === h;});
+    if(!flowConfigured && (FLOW_HEADERS.some(function(_,i){return text(values[0][13 + i]) !== "";}) || values.slice(1).some(function(row){return FLOW_FIELDS.some(function(_,i){return text(row[13 + i]) !== "";});}))) throw error("FLOW_HEADER_CHANGED","샘플 진행 항목의 구성을 확인해 주세요. 기존 자료를 덮어쓰지 않았습니다.");
     var counts = Object.create(null), records = [], owners = [];
     values.slice(1).forEach(function(row){var id = text(row[1]);if(id) counts[id] = (counts[id] || 0) + 1;});
     values.slice(1).forEach(function(raw,index){
-      var row = FIELDS.map(function(_,i){return text(raw[i]);});
+      var row = ALL_FIELDS.map(function(_,i){return i >= 13 && !flowConfigured ? "" : text(raw[i]);});
       if(!row[3]) return;
       var number = row[1], unique = !!number && counts[number] === 1;
-      var record = {id:unique ? "sample:" + encodeURIComponent(number) : "uneditable:" + (index + 2),sourceRow:index + 2,version:JSON.stringify(row),canEdit:unique,editReason:unique ? "" : "관리번호가 비어 있거나 중복되어 원본 확인이 필요합니다."};
-      FIELDS.forEach(function(key,i){record[key] = row[i];});
+      var record = {id:unique ? "sample:" + encodeURIComponent(number) : "uneditable:" + (index + 2),sourceRow:index + 2,version:JSON.stringify(row),canEdit:unique,flowConfigured:flowConfigured,editReason:unique ? "" : "관리번호가 비어 있거나 중복되어 원본 확인이 필요합니다."};
+      ALL_FIELDS.forEach(function(key,i){record[key] = row[i];});
       records.push(record);
       if(row[10] && owners.indexOf(row[10]) < 0) owners.push(row[10]);
     });
     owners.sort(function(a,b){return a.localeCompare(b,"ko");});
     records.sort(function(a,b){return b.sourceRow - a.sourceRow;});
-    return {records:records,owners:owners,source:{spreadsheetId:FILE_ID,sheetId:SHEET_ID,sheetName:target.title,syncedAt:now().toISOString()},metadata:meta};
+    return {records:records,owners:owners,source:{spreadsheetId:FILE_ID,sheetId:SHEET_ID,sheetName:target.title,syncedAt:now().toISOString(),flowConfigured:flowConfigured},metadata:meta};
   }
   async function readSheet(){
     // Capture the start, not completion, so a slow older read cannot win over a
@@ -242,7 +265,7 @@
     if(!sheet) throw error("TAB_NOT_FOUND","촬영 샘플 탭을 찾을 수 없습니다. 원본 시트를 확인해 주세요.");
     var rows = Number(sheet.properties.gridProperties && sheet.properties.gridProperties.rowCount);
     if(!Number.isInteger(rows) || rows < 2 || rows > 20000) throw error("SHEET_SIZE","원본 시트의 행 범위를 확인해야 합니다. 관리자에게 문의해 주세요.");
-    var range = rangeName(sheet.properties.title) + "!A1:M" + rows;
+    var range = rangeName(sheet.properties.title) + "!A1:W" + rows;
     var result = await request("/values/" + encodeURIComponent(range) + "?valueRenderOption=FORMATTED_VALUE");
     var parsed = parseRows(result.values,meta,sheet.properties);parsed.source.syncedAt = sourceReadAt;return parsed;
   }
@@ -302,10 +325,11 @@
     var value = await request("/values/" + encodeURIComponent(rangeName(AUDIT_TITLE) + "!A1:I1") + "?valueRenderOption=FORMATTED_VALUE");
     if(!value.values || !value.values[0] || AUDIT_HEADERS.some(function(h,i){return text(value.values[0][i]) !== h;})) throw error("AUDIT_HEADER_CHANGED","변경 이력 탭의 항목 구성을 확인해야 합니다. 기록을 덮어쓰지 않았습니다.");
   }
-  function makeWriteRequests(result,row,changes){
+  function makeWriteRequests(result,row,changes,action){
     var requests = [];
     changes.forEach(function(change){
-      var col = FIELDS.indexOf(change.key);
+      var col = ALL_FIELDS.indexOf(change.key);
+      if(col < 0) throw error("INVALID_EDIT","변경 항목을 확인해 주세요.");
       requests.push({updateCells:{range:{sheetId:SHEET_ID,startRowIndex:row.sourceRow - 1,endRowIndex:row.sourceRow,startColumnIndex:col,endColumnIndex:col + 1},rows:[{values:[cell(change.value)]}],fields:"userEnteredValue"}});
     });
     var sheets = result.metadata.sheets || [];
@@ -318,20 +342,39 @@
       requests.push({updateCells:{start:{sheetId:auditId,rowIndex:0,columnIndex:0},rows:[{values:AUDIT_HEADERS.map(cell)}],fields:"userEnteredValue"}});
     }
     var stamp = now().toISOString();
-    requests.push({appendCells:{sheetId:auditId,rows:changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,HEADERS[FIELDS.indexOf(change.key)],change.previousValue === undefined ? row[change.key] : change.previousValue,change.value,row.name,row.id,String(SHEET_ID)].map(cell)};}),fields:"userEnteredValue"}});
+    var auditRows = changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,ALL_HEADERS[ALL_FIELDS.indexOf(change.key)],change.previousValue === undefined ? row[change.key] : change.previousValue,change.value,row.name,row.id,String(SHEET_ID)].map(cell)};});
+    if(action){
+      var actionLabels = {initialize:"현황 확인",arrive:"물류 실물 입고 확인",sendOffice:"사무실 발송",receiveOffice:"사무실 수령 확인",sendReturn:"반납 발송",receiveWarehouse:"물류 반납 수령 확인",reflectCafe24:"카페24 재고 반영 확인",reflectSellmate:"셀메이트 재고 반영 확인"};
+      var startLabels = {arrival:"입고 대기 기준",warehouse:"물류 실물 기준",office:"사무실 실물 기준",returned:"물류 반납 실물 기준"};
+      var actionLabel = actionLabels[action.type] + (action.type === "initialize" ? " · " + startLabels[action.start] : "") + " · " + action.quantity + "장";
+      auditRows.push({values:[stamp,userEmail,row.managementNumber,"진행 동작","",actionLabel,row.name,row.id,String(SHEET_ID)].map(cell)});
+    }
+    requests.push({appendCells:{sheetId:auditId,rows:auditRows,fields:"userEnteredValue"}});
     return requests;
+  }
+  function applyAction(row,action){
+    if(!row.flowConfigured) throw error("FLOW_HEADERS_REQUIRED","샘플 진행 항목 설정을 확인해 주세요. 원본 자료를 변경하지 않았습니다.");
+    var patch = requireFlow().apply(row,action);
+    if(!patch || typeof patch !== "object" || Array.isArray(patch) || Object.keys(patch).some(function(key){return FLOW_PUBLIC_FIELDS.concat(["location","owner"]).indexOf(key) < 0 || typeof patch[key] !== "string";})) throw error("FLOW_PATCH_INVALID","샘플 진행 변경 항목을 확인해 주세요.");
+    return Object.assign({},patch);
   }
   async function save(input){
     if(!accessToken || !state.connected) throw error("AUTH_REQUIRED","Google 계정으로 연결해 주세요.");
     if(saving) throw error("SAVE_BUSY","다른 기록을 저장하고 있습니다. 잠시 기다려 주세요.");
-    if(!input || typeof input.id !== "string" || typeof input.expectedVersion !== "string" || !input.patch || typeof input.patch !== "object" || Array.isArray(input.patch)) throw error("INVALID_EDIT","수정할 기록을 다시 선택해 주세요.");
+    if(!input || typeof input.id !== "string" || typeof input.expectedVersion !== "string") throw error("INVALID_EDIT","수정할 기록을 다시 선택해 주세요.");
+    var workflowAction = Object.prototype.hasOwnProperty.call(input,"action");
+    if(workflowAction ? Object.prototype.hasOwnProperty.call(input,"patch") || !input.action || typeof input.action !== "object" || Array.isArray(input.action) : !input.patch || typeof input.patch !== "object" || Array.isArray(input.patch)) throw error("INVALID_EDIT","진행 동작과 일반 수정을 한 번에 저장할 수 없습니다.");
     var recordId = input.id, expectedVersion = input.expectedVersion;
     var loadedRecord = state.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
     if(!state.canEdit || !loadedRecord) throw error("INVALID_EDIT","목록에서 수정할 기록을 다시 선택해 주세요.");
     if(loadedRecord.version !== expectedVersion) throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 최신 기록을 확인한 뒤 다시 수정해 주세요.");
-    var inputKeys = Object.keys(input.patch), patch, keys;
-    var extending = inputKeys.length === 2 && inputKeys.indexOf("returnDueDate") >= 0 && inputKeys.indexOf("extensionReason") >= 0;
-    if(extending){
+    var inputKeys = workflowAction ? [] : Object.keys(input.patch), patch, keys, action = null;
+    var extending = !workflowAction && inputKeys.length === 2 && inputKeys.indexOf("returnDueDate") >= 0 && inputKeys.indexOf("extensionReason") >= 0;
+    if(workflowAction){
+      if(Object.keys(input.action).some(function(key){return ["type","start","quantity"].indexOf(key) < 0;}) || typeof input.action.type !== "string" || typeof input.action.quantity !== "number" || Object.prototype.hasOwnProperty.call(input.action,"start") && typeof input.action.start !== "string") throw error("FLOW_ACTION_INVALID","진행 동작과 수량을 확인해 주세요.");
+      action = {type:input.action.type,quantity:input.action.quantity};if(Object.prototype.hasOwnProperty.call(input.action,"start")) action.start = input.action.start;
+      patch = applyAction(loadedRecord,action);keys = Object.keys(patch);
+    }else if(extending){
       if(typeof input.patch.returnDueDate !== "string" || typeof input.patch.extensionReason !== "string") throw error("INVALID_EXTENSION","연장 날짜와 사유를 입력해 주세요.");
       var dueDate = normalizeDate(input.patch.returnDueDate), reason = text(input.patch.extensionReason), info = getReturnInfo(loadedRecord);
       if(!info.canExtend) throw error("RETURN_NOT_EXTENDABLE",info.reason || "이 기록은 반납예정일을 연장할 수 없습니다.");
@@ -339,6 +382,7 @@
       if(!reason || reason.length > 100 || /[\r\n\u2028\u2029]/.test(input.patch.extensionReason)) throw error("INVALID_EXTENSION_REASON","연장 사유를 한 줄로 100자 이내 입력해 주세요.");
       patch = {returnDueDate:dueDate,extensionReason:reason};keys = ["returnDueDate","extensionReason"];
     }else{
+      if(hasFlow(loadedRecord)) throw error("FLOW_ACTION_REQUIRED","진행 중인 샘플은 수령·반납 확인으로 위치를 변경해 주세요.");
       if(inputKeys.length !== 1 || inputKeys[0] !== "location") throw error("INVALID_EDIT","샘플 위치 또는 반납 연장만 변경할 수 있습니다. 담당자는 위치에 따라 자동으로 정해집니다.");
       if(typeof input.patch.location !== "string" || input.patch.location.length > 100) throw error("INVALID_EDIT","입력한 값을 확인해 주세요.");
       var location = text(input.patch.location);
@@ -353,23 +397,35 @@
       var row = result.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
       if(!row || row.version !== expectedVersion){accept(result);throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 입력을 확인한 뒤 취소하고 최신 기록에서 다시 수정해 주세요.");}
       var changes;
-      if(extending){
+      var verificationKeys = keys, expectedAfter;
+      if(workflowAction){
+        patch = applyAction(row,action);
+        patch.flowUpdatedAt = now().toISOString();patch.flowUpdatedBy = userEmail;
+        var projected = Object.assign({},row,patch);
+        if(action.type === "receiveWarehouse" && requireFlow().inspect(projected).returnComplete) patch.returnedDate = new Date(now().getTime() + 9 * 60 * 60 * 1000).toISOString().slice(0,10);
+        keys = Object.keys(patch);expectedAfter = Object.assign({},row,patch);
+        verificationKeys = FLOW_FIELDS.concat(["location","owner","returnedDate"]);
+        changes = keys.filter(function(k){return row[k] !== patch[k];}).map(function(k){return {key:k,value:patch[k]};});
+      }else if(extending){
         var currentInfo = getReturnInfo(row);
         if(!currentInfo.canExtend || patch.returnDueDate <= currentInfo.dueDate) throw error("RETURN_NOT_EXTENDABLE",currentInfo.reason || "반납예정일을 다시 확인해 주세요.");
         // Always retain the reason for this extension, even if it repeats the
         // previous reason. Effective previous due date is captured on first use.
         changes = [{key:"returnDueDate",value:patch.returnDueDate,previousValue:currentInfo.dueDate},{key:"extensionReason",value:patch.extensionReason}];
-      }else changes = keys.filter(function(k){return row[k] !== patch[k];}).map(function(k){return {key:k,value:patch[k]};});
+      }else{
+        if(hasFlow(row)) throw error("FLOW_ACTION_REQUIRED","진행 중인 샘플은 수령·반납 확인으로 위치를 변경해 주세요.");
+        changes = keys.filter(function(k){return row[k] !== patch[k];}).map(function(k){return {key:k,value:patch[k]};});
+      }
       if(!changes.length) return accept(result);
       await verifyAuditHeader(result);
-      var requests = makeWriteRequests(result,row,changes);
+      var requests = makeWriteRequests(result,row,changes,action);
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
       sent = true;
       await request(":batchUpdate",{method:"POST",body:JSON.stringify({requests:requests,includeSpreadsheetInResponse:false})});
       var verified = await readSheet();
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
       var after = verified.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
-      if(!after || keys.some(function(key){return after[key] !== patch[key];})) throw error("SAVE_UNCONFIRMED","저장 후 값이 다시 변경되었거나 확인되지 않았습니다. 실제 반영됐을 수 있으니 최신 기록을 확인해 주세요.");
+      if(!after || verificationKeys.some(function(key){return after[key] !== (workflowAction ? expectedAfter[key] : patch[key]);}) || workflowAction && !requireFlow().inspect(after).valid) throw error("SAVE_UNCONFIRMED","저장 후 값이 다시 변경되었거나 확인되지 않았습니다. 실제 반영됐을 수 있으니 최신 기록을 확인해 주세요.");
       return accept(verified);
     }catch(e){
       var issue = friendly(e);
@@ -392,5 +448,6 @@
     dispose:function(){disposed = true;publicSnapshot = null;wipe("");if(timer && deps.window && deps.window.clearInterval) deps.window.clearInterval(timer);if(deps.document && deps.document.removeEventListener) deps.document.removeEventListener("visibilitychange",refreshVisible);if(deps.window && deps.window.removeEventListener) deps.window.removeEventListener("focus",refreshVisible);listeners = [];}
   };
 });
+
 
 
