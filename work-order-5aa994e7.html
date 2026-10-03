@@ -9277,7 +9277,12 @@
       stock_constrained_observation_window:"집계 기간에 품절·재고 부족이 있어 성과 판단을 보류합니다.",
       exact_custom_product_code_not_found:"작지 품번과 일치하는 카페24 상품을 찾지 못했습니다.",
       custom_product_code_not_unique:"같은 품번의 카페24 상품이 여러 개여서 연결 확인이 필요합니다.",
+      exact_product_name_not_unique:"같은 이름의 카페24 상품이 여러 개여서 연결 확인이 필요합니다.",
       conflicting_product_context:"상품 연결 정보가 서로 달라 연결 확인이 필요합니다.",
+      claim_quantity_unproven:"취소·반품 수량이 확인되지 않아 순판매 집계를 보류합니다.",
+      exchange_lineage_unproven:"교환 전후 상품 연결이 확인되지 않아 순판매 집계를 보류합니다.",
+      item_evidence_unproven:"주문 상품 정보가 충분히 확인되지 않아 판매 집계를 보류합니다.",
+      ranking_withheld_unresolved_product:"일부 상품의 집계가 확인되지 않아 전체 순위와 성과 비교를 보류합니다.",
       net_revenue_unproven:"상품별 할인·환불 배분이 확인되지 않아 순매출 표시를 보류합니다.",
       revenue_tiebreak_unavailable_shared_quantity_rank:"순매출을 비교할 수 없어 판매수량이 같은 제품은 공동 순위로 표시합니다.",
       coverage_incomplete_metrics_withheld:"일부 판매 자료가 누락되어 집계 수치와 순위를 보류합니다."
@@ -12842,6 +12847,3 @@ db.ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
   #galleryView #galleryCounts .active { color:#2F3B52; }
 }
 </style>
-
-<script src="status-pricing-rules.js?v=20261003-v10"></script>
-<script src="status-catalog-bridge.js?v=20261003-v10"></script>
