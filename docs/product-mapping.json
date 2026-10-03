@@ -1,0 +1,106 @@
+{
+  "asOf": "2026-10-03",
+  "source": "Cafe24 read-only complete catalog and workorder identity list",
+  "catalogCount": 725,
+  "catalogComplete": true,
+  "normalization": "whitespace only; exact full name; unique catalog result",
+  "confirmedCount": 10,
+  "exactUniqueCount": 9,
+  "userConfirmedAliasCount": 1,
+  "mappings": [
+    {
+      "code": "AS-26F-BL-001",
+      "workorderName": "제나 러플 블라우스",
+      "catalogName": "제나 러플 블라우스",
+      "productNo": 1171,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-017",
+      "workorderName": "세실 보트넥 탑",
+      "catalogName": "세실 보트넥 탑",
+      "productNo": 1169,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-016",
+      "workorderName": "모노 타이 드레이프 니트 탑",
+      "catalogName": "모노 타이 드레이프 니트 탑",
+      "productNo": 1168,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-WSK-001",
+      "workorderName": "아이리스 플라워 스커트",
+      "catalogName": "아이리스 플라워 스커트",
+      "productNo": 1160,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KN-003",
+      "workorderName": "모엘 트위스트 니트",
+      "catalogName": "모엘 트위스트 니트",
+      "productNo": 1140,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-002",
+      "workorderName": "포지 페플럼 텍스쳐드 블라우스",
+      "catalogName": "포지 페플럼 텍스쳐드 블라우스",
+      "productNo": 1138,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-015",
+      "workorderName": "렌 텍스쳐드 스커트",
+      "catalogName": "렌 텍스쳐드 스커트",
+      "productNo": 1136,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-018",
+      "workorderName": "렌 보트넥 드레이프 블라우스",
+      "catalogName": "렌 보트넥 드레이프 블라우스",
+      "productNo": 1135,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-022",
+      "workorderName": "피노 하이넥 셔츠",
+      "catalogName": "피노 하이넥 셔츠",
+      "productNo": 1121,
+      "evidence": "exact_unique_full_name_after_whitespace_normalization"
+    },
+    {
+      "code": "AS-26F-KT-021",
+      "workorderName": "밀로 라인 랩 니트",
+      "catalogName": "밀로 라인 랩 니트 탑",
+      "productNo": 1170,
+      "userConfirmation": "confirmed",
+      "confirmationDate": "2026-10-03",
+      "evidence": "explicit_user_confirmation_in_current_conversation"
+    }
+  ],
+  "rejected": [
+    {
+      "workorderName": "코듀로이 컴포트팬츠 스트레이트",
+      "catalogName": "플로 코듀로이 컴포트팬츠 부츠컷",
+      "code": "AS-26F-CP-002",
+      "productNo": 951,
+      "reason": "참고 링크의 부츠컷 제품으로 작지의 스트레이트 핏과 달라 연결 제외"
+    }
+  ],
+  "allowFuzzyMatching": false,
+  "applyAliasGlobally": false,
+  "collectorIntegrationStatus": "deployed_v17_live_snapshot_verified_ranking_pending",
+  "liveSnapshotPresent": true,
+  "backendMappingCounts": {
+    "workorders": 52,
+    "catalogProducts": 725,
+    "mapped": 14,
+    "conflicts": 2,
+    "unmatched": 36,
+    "confirmedSellingProductsIncluded": 10
+  },
+  "rankingUsable": false
+}

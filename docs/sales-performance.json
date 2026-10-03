@@ -104,7 +104,12 @@
     "emptyItemsOmission": "normalize_only_valid_ready_complete_snapshot",
     "originalPhotosStored": false,
     "rawOrdersStoredInSnapshot": false,
-    "customerDataStoredInSnapshot": false
+    "customerDataStoredInSnapshot": false,
+    "coverageCompleteMeans": "all_required_source_pages_enumerated",
+    "unresolvedItemMetrics": "netQty_rank_gauge_null_with_pending_status_allowed",
+    "knownQuantitiesPreserved": true,
+    "rankAndGaugeMayBeWithheldForAllItems": true,
+    "frontendRankOrGaugeReinference": false
   },
   "access": {
     "salesFirebaseAppName": "aiselSalesReadOnly",
@@ -128,31 +133,43 @@
     "userApproved": true,
     "packageCommitStatus": "committed_pushed_verified",
     "packageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
-    "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37"
+    "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37",
+    "latestRunnerCommitSha": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2"
   },
   "status": {
     "frontend": "deployed",
-    "frontendDeploymentCommitPrefix": "d3ad2",
+    "frontendDeploymentCommitPrefix": "3060cbe",
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
-    "dailyRunner": "deployed_start_request_contract_fixed",
+    "dailyRunner": "deployed_first_live_publish_verified",
     "privateBackend": "deployed_dedicated_grant_registered",
-    "backendDeploymentVersion": "v15",
-    "backendDeploymentCommitPrefix": "e6c43e",
+    "backendDeploymentVersion": "v17",
+    "backendDeploymentCommitPrefix": "ce7ab293",
     "dedicatedApiGrant": "registered",
     "dedicatedApiGrantExpiresAt": "2027-01-01T21:49:04+09:00",
     "githubSecrets": "six_installed",
     "workflowPublication": "deployed_pushed_verified",
     "runnerWorkflowDeploymentCommit": "164d0e1791d0363bb01cdc75614711b5ca406e37",
-    "firstLiveSummaryPublish": "pending",
-    "dailyAutomaticRefresh": "scheduled_not_live_verified",
+    "firstLiveSummaryPublish": "verified",
+    "dailyAutomaticRefresh": "scheduled_manual_run_verified",
     "packageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
     "versionZip": "created_verified",
     "driveDelivery": "uploaded_verified",
-    "statusDocumentRevision": "updated_locally_after_v1_backup",
-    "skillV2Delivery": "pending",
-    "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d"
+    "statusDocumentRevision": "updated_locally_after_v2_backup",
+    "skillV2Delivery": "uploaded_verified",
+    "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d",
+    "diagnosticCommit": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
+    "collectorRevision": "v17_alias_mapping_and_reconciliation_deployed",
+    "liveSnapshotPresent": true,
+    "frontendDeploymentCommit": "3060cbe92db319b50a1f2f102f95d97ff778745d",
+    "backendDeploymentCommit": "ce7ab293a0b3ee7933cdef2f9d97b06e0b45853a",
+    "backendDeployedAt": "2026-10-03T22:47:51+09:00",
+    "ownerReadProbe": "verified",
+    "rankingUsable": false,
+    "taskComplete": false,
+    "completion": "incomplete_claim_quantity_proof_required",
+    "collectorFollowup": "additional_claim_quantity_proof_requested_not_yet_deployed"
   },
   "firstWorkflowAttempt": {
     "runId": "37124128166",
@@ -161,7 +178,8 @@
     "failureStage": "start_job",
     "cause": "unsupported_runDate_in_start_request",
     "summaryPublished": false,
-    "fixStatus": "in_progress"
+    "fixStatus": "fixed_and_deployed",
+    "fixCommit": "816615e2df26ac98b8430ca580c90168bfec709d"
   },
   "backup": {
     "destinationLabel": "AISEL/스킬",
@@ -185,26 +203,129 @@
     "version": "v2",
     "zipFilename": "aisel-sales-performance_2026-10-03_v2.zip",
     "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-    "status": "pending"
+    "status": "uploaded_verified",
+    "fileId": "18BTcSX4H8HvRa_6jmhDosPcF1RVGjm-G",
+    "url": "https://drive.google.com/file/d/18BTcSX4H8HvRa_6jmhDosPcF1RVGjm-G/view?usp=drivesdk",
+    "sizeBytes": 4708,
+    "sha256": "AF93E3C8868280C57C4ADC81457DB0431D7B45DAADE34B969C3911286A17025E",
+    "verified": true,
+    "sourceCommit": "25129f35f8a17357092ca15ae49b9a234d7b9927",
+    "coversCurrentLocalRevisions": false
   },
   "validation": {
-    "frontendFixtureChecksPassed": 55,
-    "runnerChecksPassed": 135,
-    "liveRecurringRunVerified": false
+    "frontendFixtureChecksPassed": 60,
+    "runnerChecksPassed": 150,
+    "liveRecurringRunVerified": false,
+    "printChecksPassed": 6,
+    "firstLivePublishReadbackVerified": true,
+    "ownerSalesScreenVerified": true
   },
   "pending": [
-    "first_real_summary_publish_and_readback",
-    "owner_sales_result_verification",
-    "publish_final_status_documents",
-    "skill_v2_zip_creation_and_drive_upload"
+    "strengthen_claim_quantity_proof_in_backend_collector",
+    "rerun_and_verify_quantity_evidence_and_server_ranking",
+    "verify_rank_and_gauge_usability_in_owner_screen",
+    "verify_first_scheduled_daily_execution",
+    "publish_final_status_documents_and_current_skill_backup"
   ],
   "skill": {
     "name": "aisel-sales-performance",
     "path": "skills/aisel-sales-performance/SKILL.md"
   },
   "liveVerificationRun": {
-    "id": 37124446673,
-    "status": "in_progress",
-    "startedAt": "2026-10-03T21:55:20+09:00"
+    "id": 37127521813,
+    "status": "success",
+    "phase": "published_verified",
+    "runnerChecksPassed": 150,
+    "published": true,
+    "snapshotPresent": true,
+    "startedAt": "2026-10-03T13:50:03Z",
+    "completedAt": "2026-10-03T14:14:22Z",
+    "syncStepDurationSeconds": 1454,
+    "firebaseReadback": {
+      "anonymousSalesHttpStatus": 401,
+      "machineSalesHttpStatus": 200,
+      "existingIndexMetaHttpStatus": 200,
+      "snapshotPresent": true
+    },
+    "ownerScreen": {
+      "verified": true,
+      "period": {
+        "start": "2026-09-19",
+        "end": "2026-10-02"
+      },
+      "displayedUpdatedTimeKst": "23:14",
+      "sellingRows": 10
+    }
+  },
+  "productMapping": {
+    "evidencePath": "docs/product-mapping.json",
+    "confirmedCount": 10,
+    "exactUniqueCount": 9,
+    "userConfirmedAliasCount": 1,
+    "alias": {
+      "code": "AS-26F-KT-021",
+      "productNo": 1170,
+      "confirmed": true
+    },
+    "excludedReference": {
+      "code": "AS-26F-CP-002",
+      "productNo": 951,
+      "reason": "different_fit_reference_only"
+    },
+    "status": "deployed_live_snapshot_verified_ranking_pending",
+    "backendMappingCounts": {
+      "workorders": 52,
+      "catalogProducts": 725,
+      "mapped": 14,
+      "conflicts": 2,
+      "unmatched": 36,
+      "confirmedSellingProductsIncluded": 10
+    }
+  },
+  "backendDeploymentHistory": [
+    {
+      "version": "v16",
+      "commit": "5ea57a840d1e2f7056cd0d57527b6cffadbc79a0"
+    },
+    {
+      "version": "v17",
+      "commit": "ce7ab293a0b3ee7933cdef2f9d97b06e0b45853a",
+      "deployedAt": "2026-10-03T22:47:51+09:00"
+    }
+  ],
+  "previousLiveVerificationRuns": [
+    {
+      "id": 37124446673,
+      "status": "failed_before_publish",
+      "startedAt": "2026-10-03T21:55:20+09:00",
+      "error": "CLAIM_RECONCILIATION_REQUIRED",
+      "diagnosticRunId": 37124907641
+    }
+  ],
+  "collectorRestart": {
+    "verified": true,
+    "status": "queued",
+    "phase": "catalog",
+    "existingKeyUnchanged": true
+  },
+  "collectorResumePolicy": {
+    "onRunnerTimeout": "inspect_running_server_checkpoint",
+    "sameKstDateResumeRequest": {
+      "method": "POST",
+      "path": "/api/workorder-sales/jobs",
+      "jsonBody": {}
+    },
+    "ownerResetBeforeResume": false
+  },
+  "rankingAvailability": {
+    "usable": false,
+    "sellingProducts": 10,
+    "quantityUnprovenProducts": 6,
+    "quantityKnownProducts": 4,
+    "quantityUnprovenReason": "claim_quantity_unproven",
+    "knownQuantityEvaluation": "pending_due_to_launch_or_stock_evidence",
+    "allSellingRanksAndGaugesWithheld": true,
+    "frontendReinferenceAllowed": false,
+    "financialValuesIncludedInDocument": false
   }
 }
