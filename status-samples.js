@@ -7,7 +7,7 @@
   var state = {status:"disconnected",connected:false,canEdit:false,records:[]};
   var provider = null, started = false, settled = false, localError = "", unsubscribe = null;
   var el = {};
-  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleColumns","sampleReadOnly","sampleConnect","sampleDisconnect","sampleAccount"].forEach(function(id){el[id] = document.getElementById(id);});
+  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleUpdated","sampleColumns","sampleReadOnly","sampleConnect","sampleDisconnect","sampleAccount"].forEach(function(id){el[id] = document.getElementById(id);});
   function text(value){return value === null || value === undefined ? "" : String(value).trim();}
   function missing(value){return !text(value) || /^[—–-]+$/.test(text(value));}
   function display(value){return missing(value) ? "미입력" : text(value);}
@@ -96,7 +96,7 @@
     if(["물류","사무실"].indexOf(current) === -1){var original = node("option","",missing(current) ? "미입력" : current);original.value = current;original.disabled = true;select.appendChild(original);}
     ["물류","사무실"].forEach(function(value){var option = node("option","",value);option.value = value;select.appendChild(option);});
     select.value = current;select.disabled = !!(change && change.saving || extensions[row.id] && extensions[row.id].saving) || !canEdit(row);
-    if(!canEdit(row)) select.title = row.editReason || "읽기 전용";
+    if(!canEdit(row)) select.title = state.connected ? row.editReason || "읽기 전용" : "수정하려면 Google 로그인";
     select.addEventListener("change",function(){saveLocation(row.id,select.value,row.version);});result.appendChild(select);return result;
   }
   function returnElement(row){
@@ -108,8 +108,10 @@
       due.appendChild(node("span","",info.dueDate || "확인 필요"));summary.appendChild(due);
     }
     if(info.completed){
-      var actual = node("span","sample-return-actual");actual.appendChild(node("span","sample-return-label","실제 반납일"));
-      actual.appendChild(node("span","",missing(row.returnedDate) ? "입력 필요" : provider.normalizeDate(row.returnedDate) || row.returnedDate));summary.appendChild(actual);
+      if(state.connected){
+        var actual = node("span","sample-return-actual");actual.appendChild(node("span","sample-return-label","실제 반납일"));
+        actual.appendChild(node("span","",missing(row.returnedDate) ? "입력 필요" : provider.normalizeDate(row.returnedDate) || row.returnedDate));summary.appendChild(actual);
+      }else summary.appendChild(node("span","sample-return-completed","반납 완료"));
     }
     var allowed = canEdit(row) && info.canExtend;
     if(allowed && !(change && change.editing)){
@@ -118,7 +120,7 @@
       extend.addEventListener("click",function(){startExtension(row.id);});summary.appendChild(extend);
     }
     result.appendChild(summary);
-    if(!missing(row.extensionReason)){var reasonView = node("div","sample-return-reason","연장 사유 · " + text(row.extensionReason).replace(/\s+/g," "));reasonView.title = text(row.extensionReason);result.appendChild(reasonView);}
+    if(state.connected && !missing(row.extensionReason)){var reasonView = node("div","sample-return-reason","연장 사유 · " + text(row.extensionReason).replace(/\s+/g," "));reasonView.title = text(row.extensionReason);result.appendChild(reasonView);}
     if(change && change.editing && allowed){
       form = node("form","sample-extension-form");form.noValidate = true;
       var dateLabel = node("label","sample-extension-field");dateLabel.appendChild(node("span","sample-return-label","연장 날짜"));
@@ -165,10 +167,15 @@
     var busy = state.status === "connecting" || state.status === "loading";
     var message = localError || (state.status === "error" ? text(state.message) : "");
     el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
-    el.sampleConnect.hidden = !!state.connected || !provider || typeof provider.connect !== "function";el.sampleConnect.disabled = busy;el.sampleConnect.textContent = state.status === "connecting" ? "연결 중…" : "Google 계정으로 연결";
+    el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";
+    var syncedAt = state.source && state.source.syncedAt, syncedDate = syncedAt ? new Date(syncedAt) : null;
+    var hasSyncTime = !!(syncedDate && Number.isFinite(syncedDate.getTime()));
+    el.sampleUpdated.hidden = !hasSyncTime;el.sampleUpdated.textContent = hasSyncTime ? "최근 반영 " + new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(syncedDate) : "";
+    el.sampleUpdated.title = hasSyncTime ? syncedDate.toISOString() : "";
+    el.sampleConnect.hidden = !!state.connected || !provider || typeof provider.connect !== "function";el.sampleConnect.disabled = busy;el.sampleConnect.textContent = state.status === "connecting" ? "로그인 중…" : "수정하려면 Google 로그인";
     el.sampleDisconnect.hidden = !state.connected || !provider || typeof provider.disconnect !== "function";el.sampleDisconnect.disabled = pendingSave();
-    el.sampleAccount.hidden = !state.connected || !text(state.userLabel);el.sampleAccount.textContent = text(state.userLabel);el.sampleAccount.title = text(state.userLabel);el.sampleReadOnly.hidden = !state.connected || state.canEdit;
-    var rows = currentRows();el.sampleResultCount.textContent = state.connected ? rows.length + "건" + (sampleFilters.query ? " / 전체 " + records.length + "건" : "") : "";el.sampleReset.hidden = !sampleFilters.query && sampleFilters.field === "name";
+    el.sampleAccount.hidden = !state.connected || !text(state.userLabel);el.sampleAccount.textContent = state.connected ? text(state.userLabel) : "";el.sampleAccount.title = state.connected ? text(state.userLabel) : "";el.sampleReadOnly.hidden = !records.length || !!(state.connected && state.canEdit);
+    var rows = currentRows();el.sampleResultCount.textContent = records.length || settled ? rows.length + "건" + (sampleFilters.query ? " / 전체 " + records.length + "건" : "") : "";el.sampleReset.hidden = !sampleFilters.query && sampleFilters.field === "name";
     var active = document.activeElement, focusedId = null, focusedClass = null, selection = null;
     ["sample-location-input","sample-extension-date","sample-extension-reason"].some(function(className){
       if(!active || !active.classList || !active.classList.contains(className)) return false;
@@ -179,22 +186,21 @@
     el.sampleList.textContent = "";var fragment = document.createDocumentFragment();rows.forEach(function(row){fragment.appendChild(recordElement(row));});el.sampleList.appendChild(fragment);
     if(focusedId) Array.prototype.some.call(el.sampleList.querySelectorAll(".sample-record"),function(record){if(record.dataset.displayId !== focusedId) return false;var control = record.querySelector("." + focusedClass);if(control && !control.disabled){control.focus({preventScroll:true});if(selection && selection[0] !== null && control.setSelectionRange) control.setSelectionRange(selection[0],selection[1]);}return true;});
     el.sampleEmpty.hidden = rows.length > 0;el.sampleColumns.hidden = rows.length === 0;
-    el.sampleEmpty.textContent = !state.connected ? (state.status === "connecting" ? "계정에 연결하고 있습니다." : "팀원 계정으로 연결하면 샘플 기록을 확인할 수 있습니다.")
-      : busy && !records.length ? "샘플 기록을 불러오고 있습니다."
-      : state.status === "error" && !records.length ? "샘플 기록을 불러오지 못했습니다. 위 안내를 확인해 주세요."
+    el.sampleEmpty.textContent = (busy || !settled) && !records.length ? "샘플 기록을 불러오고 있습니다."
+      : (state.status === "error" || localError) && !records.length ? "샘플 기록을 불러오지 못했습니다. 위 안내를 확인해 주세요."
       : !records.length ? "등록된 샘플 기록이 없습니다." : "검색 결과가 없습니다. 검색 항목이나 검색어를 확인해 주세요.";
     if(typeof applyPendingScroll_ === "function") applyPendingScroll_();
   }
   function receive(next){
     if(!next || typeof next !== "object") {localError = "샘플 기록을 확인하지 못했습니다. 잠시 후 다시 연결해 주세요.";settled = true;render();return;}
-    if(!next.connected && next.status !== "connecting"){changes = Object.create(null);extensions = Object.create(null);}
+    if(!next.connected){changes = Object.create(null);extensions = Object.create(null);}
     var nextRows = [], ids = Object.create(null);
-    if(next.connected && Array.isArray(next.records)) next.records.forEach(function(value,index){
+    if(Array.isArray(next.records)) next.records.forEach(function(value,index){
       if(!value || typeof value !== "object" || missing(value.name)) return;
-      var row = {};fields.forEach(function(field){row[field] = text(value[field]);});row.id = text(value.id);row.version = value.version;row.canEdit = value.canEdit;row.editReason = text(value.editReason);row.sourceRow = Number(value.sourceRow) || 0;row.displayId = row.id || "unavailable-" + index;row.invalidId = !row.id;if(row.id) ids[row.id] = (ids[row.id] || 0) + 1;nextRows.push(row);
+      var row = {};fields.forEach(function(field){row[field] = !next.connected && ["extensionReason","returnedDate"].indexOf(field) !== -1 ? "" : text(value[field]);});row.id = text(value.id);row.version = next.connected ? value.version : undefined;row.canEdit = next.connected ? value.canEdit : false;row.editReason = next.connected ? text(value.editReason) : "";row.returnCompleted = value.returnCompleted === true;row.sourceRow = next.connected ? Number(value.sourceRow) || 0 : 0;row.displayId = row.id || "unavailable-" + index;row.invalidId = !row.id;if(row.id) ids[row.id] = (ids[row.id] || 0) + 1;nextRows.push(row);
     });
     nextRows.forEach(function(row,index){if(ids[row.id] > 1){row.invalidId = true;row.displayId += "-duplicate-" + index;}if(row.invalidId){row.canEdit = false;row.editReason = row.editReason || "기록 확인 필요";}});
-    records = nextRows.sort(function(a,b){return b.sourceRow - a.sourceRow;});state = next;settled = next.status !== "loading" && next.status !== "connecting";localError = "";render();
+    records = nextRows.sort(function(a,b){return b.sourceRow - a.sourceRow;});state = next;settled = nextRows.length > 0 || next.status !== "loading" && next.status !== "connecting";localError = "";render();
   }
   function start(){
     if(started){render();return;}
@@ -219,4 +225,5 @@
   window.AiselSamples = {render:render,onShow:start,isReady:function(){return settled;}};
   render();restoreView_(window.history.state);
 })();
+
 
