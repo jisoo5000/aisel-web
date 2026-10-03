@@ -256,6 +256,38 @@ for (const status of ['blocked', 'failed', 'completed', 'succeeded', 'unknown', 
   });
 }
 
+for (const errorCode of [
+  'RATE_LIMITED', 'UPSTREAM_TEMPORARY', 'MAX_ATTEMPTS_REACHED', 'INCOMPLETE_COLLECTION',
+  'COLLECTION_UNVERIFIED', 'CATALOG_LIMIT_REACHED', 'ORDER_LIMIT_REACHED', 'CLAIM_RECONCILIATION_REQUIRED',
+  'EXCHANGE_LINEAGE_UNPROVEN', 'MAPPING_UNVERIFIED', 'INVALID_STEP_OUTCOME', 'JOB_EXPIRED',
+  'GRANT_REVOKED', 'GRANT_ROTATED',
+]) {
+  test(`reports only the reviewed backend enum ${errorCode} for a blocked job`, async () => {
+    let calls = 0;
+    const result = await run(async () => {
+      calls++;
+      return json(job('blocked', { errorCode, errorText: 'private diagnostic', customer: 'private-order-data' }));
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.code, 1);
+    assert.equal(result.output, `Sales sync failed: BACKEND_REPORTED_FAILURE [backend: ${errorCode}]`);
+  });
+}
+
+test('unrecognized backend error codes and free-form diagnostic fields remain hidden', async () => {
+  for (const errorCode of ['unknown-private-code', 'RATE_LIMITED: token=test-secret', 'TOKEN=test-secret\n::warning::private',
+    { message: 'private-order-data' }, null]) {
+    let calls = 0;
+    const result = await run(async () => {
+      calls++;
+      return json(job('blocked', { errorCode, errorText: 'private detail', error: 'token and order data' }));
+    });
+    assert.equal(calls, 1);
+    assert.equal(result.code, 1);
+    assert.equal(result.output, 'Sales sync failed: BACKEND_REPORTED_FAILURE');
+  }
+});
+
 for (const incomplete of [{ coverage: { complete: false } }, { coverage: {} }, { resultAvailable: false },
   { resultAvailable: 'true' }]) {
   test(`ready requires complete coverage and available result: ${JSON.stringify(incomplete)}`, async () => {

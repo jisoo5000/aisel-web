@@ -20,6 +20,23 @@ export const CONTRACT = Object.freeze({
   completedStates: Object.freeze(['ready']),
   failedStates: Object.freeze(['blocked']),
   successFlagFields: Object.freeze(['success', 'ok']),
+  // Add only exact, reviewed server enum values; never infer codes from a response.
+  backendErrorCodes: Object.freeze([
+    'RATE_LIMITED',
+    'UPSTREAM_TEMPORARY',
+    'MAX_ATTEMPTS_REACHED',
+    'INCOMPLETE_COLLECTION',
+    'COLLECTION_UNVERIFIED',
+    'CATALOG_LIMIT_REACHED',
+    'ORDER_LIMIT_REACHED',
+    'CLAIM_RECONCILIATION_REQUIRED',
+    'EXCHANGE_LINEAGE_UNPROVEN',
+    'MAPPING_UNVERIFIED',
+    'INVALID_STEP_OUTCOME',
+    'JOB_EXPIRED',
+    'GRANT_REVOKED',
+    'GRANT_ROTATED',
+  ]),
 });
 
 const ENV_FIELDS = Object.freeze([
@@ -33,12 +50,13 @@ const ENV_FIELDS = Object.freeze([
 const REQUEST_STAGES = Object.freeze(['start', 'status', 'advance', 'result']);
 
 class SyncError extends Error {
-  constructor(code, status, stage) {
+  constructor(code, status, stage, backendErrorCode) {
     super(code);
     this.name = 'SyncError';
     this.code = code;
     this.status = status;
     this.stage = REQUEST_STAGES.includes(stage) ? stage : undefined;
+    this.backendErrorCode = CONTRACT.backendErrorCodes.includes(backendErrorCode) ? backendErrorCode : undefined;
   }
 }
 
@@ -132,7 +150,9 @@ function readJob(payload, expectedJobId, minimumRevision = 0) {
     pollDelayMs = Math.max(pollDelayMs, Math.ceil(seconds * 1_000));
   }
   const state = payload[CONTRACT.stateField];
-  if (CONTRACT.failedStates.includes(state)) throw new SyncError('BACKEND_REPORTED_FAILURE');
+  if (CONTRACT.failedStates.includes(state)) {
+    throw new SyncError('BACKEND_REPORTED_FAILURE', undefined, undefined, payload.errorCode);
+  }
   if (!CONTRACT.pendingStates.includes(state) && !CONTRACT.completedStates.includes(state)) {
     throw new SyncError('UNKNOWN_JOB_STATE');
   }
@@ -263,7 +283,10 @@ export async function main({ env = process.env, log = console.log, ...runtime } 
     const stage = error instanceof SyncError && REQUEST_STAGES.includes(error.stage)
       ? ` [stage: ${error.stage}]`
       : '';
-    log(`Sales sync failed: ${code}${stage}${status}`);
+    const backend = error instanceof SyncError && CONTRACT.backendErrorCodes.includes(error.backendErrorCode)
+      ? ` [backend: ${error.backendErrorCode}]`
+      : '';
+    log(`Sales sync failed: ${code}${stage}${status}${backend}`);
     return 1;
   }
 }
