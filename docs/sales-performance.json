@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
   "release": "v95",
-  "asOfDate": "2026-10-03",
+  "asOfDate": "2026-10-04",
   "timeZone": "Asia/Seoul",
   "purpose": "카페24 실제 판매를 바탕으로 제품 개발에 참고할 판매순위와 성과 게이지 제공",
   "sources": {
@@ -28,9 +28,9 @@
     "timeZone": "Asia/Seoul",
     "status": "deployed",
     "aiCallsPerRun": 0,
-    "overallTimeoutMinutes": 35,
+    "overallTimeoutMinutes": 60,
     "maximumPolls": 300,
-    "workflowTimeoutMinutes": 40,
+    "workflowTimeoutMinutes": 65,
     "maximumRetryAfterSeconds": 300
   },
   "ranking": {
@@ -139,9 +139,9 @@
     "url": "https://github.com/jisoo5000/aisel-web",
     "userApproved": true,
     "packageCommitStatus": "committed_pushed_verified",
-    "packageCommitSha": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
+    "packageCommitSha": "1ac565ba89f58354e8df54248f34791cc39bd73a",
     "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37",
-    "latestRunnerCommitSha": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
+    "latestRunnerCommitSha": "ad6154d6faad1ea4cc166a48852954c4c18cd102",
     "originalPackageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728"
   },
   "status": {
@@ -150,7 +150,7 @@
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
-    "dailyRunner": "deployed_first_live_publish_verified",
+    "dailyRunner": "deployed_v18_publish_and_scoped_rank_verified",
     "privateBackend": "deployed_dedicated_grant_registered",
     "backendDeploymentVersion": "v18",
     "backendDeploymentCommitPrefix": "33569be5",
@@ -161,10 +161,10 @@
     "runnerWorkflowDeploymentCommit": "164d0e1791d0363bb01cdc75614711b5ca406e37",
     "firstLiveSummaryPublish": "verified",
     "dailyAutomaticRefresh": "scheduled_manual_run_verified",
-    "packageGitHubCommit": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
+    "packageGitHubCommit": "1ac565ba89f58354e8df54248f34791cc39bd73a",
     "versionZip": "created_verified",
     "driveDelivery": "uploaded_verified",
-    "statusDocumentRevision": "updated_locally_after_v3_backup",
+    "statusDocumentRevision": "updated_locally_after_v4_backup",
     "skillV2Delivery": "uploaded_verified",
     "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d",
     "diagnosticCommit": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
@@ -174,13 +174,16 @@
     "backendDeploymentCommit": "33569be5ec294c0c433d80f7adbf71169b4c2e5b",
     "backendDeployedAt": "2026-10-03T23:38:29+09:00",
     "ownerReadProbe": "verified",
-    "rankingUsable": false,
+    "rankingUsable": true,
     "taskComplete": false,
-    "completion": "incomplete_v18_reaggregation_and_scoped_ranking_verification_required",
-    "collectorFollowup": "v18_reaggregation_in_progress",
+    "completion": "incomplete_six_product_claim_quantity_proof_and_first_scheduled_run_pending",
+    "collectorFollowup": "targeted_claim_quantity_diagnosis_in_progress",
     "originalPackageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
     "skillV3Delivery": "uploaded_verified",
-    "backendDeploymentMetadata": "verified"
+    "backendDeploymentMetadata": "verified",
+    "skillV4Delivery": "uploaded_verified",
+    "rankingScope": "verified_products_only",
+    "allSellingProductsRanked": false
   },
   "firstWorkflowAttempt": {
     "runId": "37124128166",
@@ -211,33 +214,36 @@
     "verified": true
   },
   "nextBackup": {
-    "version": "v3",
-    "zipFilename": "aisel-sales-performance_2026-10-03_v3.zip",
+    "version": "v4",
+    "zipFilename": "aisel-sales-performance_2026-10-03_v4.zip",
     "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
     "status": "uploaded_verified",
-    "fileId": "1PdBL4-6FlYJeDb508U0YTRVkd5duuXm4",
-    "url": "https://drive.google.com/file/d/1PdBL4-6FlYJeDb508U0YTRVkd5duuXm4/view?usp=drivesdk",
-    "sizeBytes": 5885,
-    "sha256": "AADCA3103C484B38BE3486B53D7D3EAE9D6A12925ACA67D7EE68425DA72B64EF",
+    "fileId": "1GThblLrPNJA3ySq_WhAIRVT7aLSskPXu",
+    "url": "https://drive.google.com/file/d/1GThblLrPNJA3ySq_WhAIRVT7aLSskPXu/view?usp=drivesdk",
+    "sizeBytes": 6223,
+    "sha256": "B615DC3C00DE8D59732C42112C41C06931DC0C423D956EEDC74AAB94E8522F71",
     "verified": true,
-    "sourceCommit": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
+    "uploaded": true,
+    "sourceCommit": "1ac565ba89f58354e8df54248f34791cc39bd73a",
     "coversCurrentLocalRevisions": false,
     "coverageExcludes": "backup_receipt_itself"
   },
   "validation": {
     "frontendFixtureChecksPassed": 67,
-    "runnerChecksPassed": 150,
+    "runnerChecksPassed": 151,
     "liveRecurringRunVerified": false,
     "printChecksPassed": 6,
     "firstLivePublishReadbackVerified": true,
-    "ownerSalesScreenVerified": true
+    "ownerSalesScreenVerified": true,
+    "latestLivePublishReadbackVerified": true,
+    "verifiedSubsetRankAndGaugeVerified": true,
+    "rankScopeNoticeVerified": true
   },
   "pending": [
-    "verify_v18_reaggregation_run_37130605741",
-    "verify_completed_claim_quantity_evidence_and_verified_subset_rank_scope",
-    "verify_rank_scope_notice_and_server_gauge_in_owner_screen",
+    "diagnose_six_products_with_claim_quantity_unproven",
+    "verify_remaining_claim_quantity_evidence_without_assumed_zero",
     "verify_first_scheduled_daily_execution",
-    "publish_final_status_and_v4_skill_backup"
+    "publish_latest_status_and_v5_skill_backup"
   ],
   "skill": {
     "name": "aisel-sales-performance",
@@ -245,13 +251,35 @@
   },
   "liveVerificationRun": {
     "id": 37130605741,
-    "status": "in_progress",
-    "phase": "running",
-    "published": false,
-    "previousSnapshotPreserved": true,
-    "runnerChecksPassed": 150,
+    "status": "success",
+    "phase": "published_verified",
+    "published": true,
+    "runnerChecksPassed": 151,
     "startedAt": "2026-10-03T14:43:07Z",
-    "syncStepStartedAt": "2026-10-03T14:43:13Z"
+    "syncStepStartedAt": "2026-10-03T14:43:13Z",
+    "snapshotPresent": true,
+    "syncStepCompletedAt": "2026-10-03T15:17:35Z",
+    "completedAt": "2026-10-03T15:17:37Z",
+    "syncStepDurationSeconds": 2062,
+    "completedAtKst": "2026-10-04T00:17:37+09:00",
+    "firebaseReadback": {
+      "anonymousSalesHttpStatus": 401,
+      "machineSalesHttpStatus": 200,
+      "existingIndexMetaHttpStatus": 200,
+      "snapshotPresent": true
+    },
+    "ownerScreen": {
+      "verified": true,
+      "period": {
+        "start": "2026-09-19",
+        "end": "2026-10-02"
+      },
+      "sellingRows": 10,
+      "rankedRows": 4,
+      "unprovenQuantityRows": 6,
+      "rankScopeNotice": "수량이 확인된 상품 기준 순위"
+    },
+    "previousSnapshotPreservedUntilPublication": true
   },
   "productMapping": {
     "evidencePath": "docs/product-mapping.json",
@@ -268,7 +296,7 @@
       "productNo": 951,
       "reason": "different_fit_reference_only"
     },
-    "status": "deployed_live_snapshot_verified_ranking_pending",
+    "status": "deployed_live_snapshot_and_verified_subset_ranking_verified",
     "backendMappingCounts": {
       "workorders": 52,
       "catalogProducts": 725,
@@ -347,19 +375,23 @@
     "ownerResetBeforeResume": false
   },
   "rankingAvailability": {
-    "usable": false,
+    "usable": true,
+    "scope": "verified_products_only",
+    "allSellingProductsRanked": false,
     "sellingProducts": 10,
     "quantityUnprovenProducts": 6,
     "quantityKnownProducts": 4,
+    "rankAndGaugeVisibleProducts": 4,
     "quantityUnprovenReason": "claim_quantity_unproven",
-    "knownQuantityEvaluation": "pending_due_to_launch_or_stock_evidence",
-    "allSellingRanksAndGaugesWithheld": true,
+    "knownQuantityEvaluation": "pending_when_launch_or_stock_evidence_insufficient",
+    "allSellingRanksAndGaugesWithheld": false,
+    "scopeNotice": "수량이 확인된 상품 기준 순위",
+    "scopeNoticeVerified": true,
     "frontendReinferenceAllowed": false,
     "financialValuesIncludedInDocument": false,
-    "evidenceRunId": 37127521813,
-    "describes": "last_published_v17_snapshot",
-    "replacementRunId": 37130605741,
-    "replacementStatus": "in_progress"
+    "evidenceRunId": 37130605741,
+    "describes": "current_published_v18_snapshot",
+    "remainingIssue": "targeted_diagnosis_for_six_unproven_claim_quantities"
   },
   "backupHistory": [
     {
@@ -374,6 +406,20 @@
       "verified": true,
       "sourceCommit": "25129f35f8a17357092ca15ae49b9a234d7b9927",
       "coversCurrentLocalRevisions": false
+    },
+    {
+      "version": "v3",
+      "zipFilename": "aisel-sales-performance_2026-10-03_v3.zip",
+      "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "uploaded_verified",
+      "fileId": "1PdBL4-6FlYJeDb508U0YTRVkd5duuXm4",
+      "url": "https://drive.google.com/file/d/1PdBL4-6FlYJeDb508U0YTRVkd5duuXm4/view?usp=drivesdk",
+      "sizeBytes": 5885,
+      "sha256": "AADCA3103C484B38BE3486B53D7D3EAE9D6A12925ACA67D7EE68425DA72B64EF",
+      "verified": true,
+      "sourceCommit": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
+      "coversCurrentLocalRevisions": false,
+      "coverageExcludes": "backup_receipt_itself"
     }
   ],
   "claimTreatment": {
@@ -383,6 +429,52 @@
     "unprovenQuantity": "pending_not_zero"
   },
   "lastSuccessfulSummaryRun": {
+    "id": 37130605741,
+    "status": "success",
+    "phase": "published_verified",
+    "published": true,
+    "runnerChecksPassed": 151,
+    "startedAt": "2026-10-03T14:43:07Z",
+    "syncStepStartedAt": "2026-10-03T14:43:13Z",
+    "snapshotPresent": true,
+    "syncStepCompletedAt": "2026-10-03T15:17:35Z",
+    "completedAt": "2026-10-03T15:17:37Z",
+    "syncStepDurationSeconds": 2062,
+    "completedAtKst": "2026-10-04T00:17:37+09:00",
+    "firebaseReadback": {
+      "anonymousSalesHttpStatus": 401,
+      "machineSalesHttpStatus": 200,
+      "existingIndexMetaHttpStatus": 200,
+      "snapshotPresent": true
+    },
+    "ownerScreen": {
+      "verified": true,
+      "period": {
+        "start": "2026-09-19",
+        "end": "2026-10-02"
+      },
+      "sellingRows": 10,
+      "rankedRows": 4,
+      "unprovenQuantityRows": 6,
+      "rankScopeNotice": "수량이 확인된 상품 기준 순위"
+    },
+    "previousSnapshotPreservedUntilPublication": true
+  },
+  "ownerReadyRevalidation": {
+    "approved": true,
+    "sameJobReused": true,
+    "queuedRevision": 90,
+    "subsequentStatus": "published_verified",
+    "previousFirebaseSummaryPreservedUntilPublication": true
+  },
+  "plannedBackup": {
+    "version": "v5",
+    "zipFilename": "aisel-sales-performance_2026-10-04_v5.zip",
+    "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+    "status": "pending_final_verification_and_publication",
+    "uploaded": false
+  },
+  "firstSuccessfulSummaryRun": {
     "id": 37127521813,
     "status": "success",
     "phase": "published_verified",
@@ -407,19 +499,5 @@
       "displayedUpdatedTimeKst": "23:14",
       "sellingRows": 10
     }
-  },
-  "ownerReadyRevalidation": {
-    "approved": true,
-    "sameJobReused": true,
-    "queuedRevision": 90,
-    "subsequentStatus": "running",
-    "previousFirebaseSummaryPreserved": true
-  },
-  "plannedBackup": {
-    "version": "v4",
-    "zipFilename": "aisel-sales-performance_2026-10-03_v4.zip",
-    "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-    "status": "pending_final_verification_and_publication",
-    "uploaded": false
   }
 }

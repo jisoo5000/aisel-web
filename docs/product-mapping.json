@@ -92,7 +92,7 @@
   ],
   "allowFuzzyMatching": false,
   "applyAliasGlobally": false,
-  "collectorIntegrationStatus": "deployed_v17_live_snapshot_verified_ranking_pending",
+  "collectorIntegrationStatus": "deployed_v18_live_snapshot_and_verified_subset_ranking_verified",
   "liveSnapshotPresent": true,
   "backendMappingCounts": {
     "workorders": 52,
@@ -102,5 +102,8 @@
     "unmatched": 36,
     "confirmedSellingProductsIncluded": 10
   },
-  "rankingUsable": false
+  "rankingUsable": true,
+  "rankingScope": "verified_products_only",
+  "allSellingProductsRanked": false,
+  "liveVerificationRunId": 37130605741
 }

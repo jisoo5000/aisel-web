@@ -5,7 +5,7 @@ description: 에이슬 작업지시서의 카페24 판매성과 집계·순위 �
 
 # 에이슬 판매성과
 
-기준 저장소는 [jisoo5000/aisel-web](https://github.com/jisoo5000/aisel-web)이다. 해당 체크아웃의 `docs/sales-performance.json`에서 구현·배포·첫 실제 집계 상태를 각각 확인한다. 스킬 ZIP만 별도 위치에 설치했다면 현재 작업 폴더에 문서가 있다고 가정하지 말고 기준 저장소에서 `docs/sales-performance.json`과 `docs/sales-performance.md`를 읽는다. 파일이 존재하거나 테스트를 통과했다는 이유만으로 운영 중이라고 판단하지 않는다.
+기준 저장소는 [jisoo5000/aisel-web](https://github.com/jisoo5000/aisel-web)이다. 해당 체크아웃의 `docs/sales-performance.json`에서 구현·배포·첫 실제 집계 상태를 각각 확인한다. 스킬 ZIP만 별도 위치에 설치했다면 현재 작업 폴더에 문서가 있다고 가정하지 말고 기준 저장소에서 `docs/sales-performance.json`과 `docs/sales-performance.md`를 읽는다. 파일이 존재하거나 테스트를 통과했다는 이유만으로 운영 중이라고 판단하지 않는다. 실제 게시 성공, 확인 상품 범위의 순위 표시, 미확정 상품 해소와 첫 예약 실행 확인은 서로 구분해 기록한다.
 
 사용자가 바꾸지 않은 제품 기준을 유지한다.
 
