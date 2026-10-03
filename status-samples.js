@@ -7,7 +7,7 @@
   var state = {status:"disconnected",connected:false,canEdit:false,records:[]};
   var provider = null, started = false, settled = false, localError = "", unsubscribe = null;
   var el = {};
-  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleUpdated","sampleColumns","sampleReadOnly","sampleConnect","sampleDisconnect","sampleAccount"].forEach(function(id){el[id] = document.getElementById(id);});
+  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleUpdated","sampleColumns","sampleEditTools","sampleConnect","sampleDisconnect","sampleAccount"].forEach(function(id){el[id] = document.getElementById(id);});
   function text(value){return value === null || value === undefined ? "" : String(value).trim();}
   function missing(value){return !text(value) || /^[—–-]+$/.test(text(value));}
   function display(value){return missing(value) ? "미입력" : text(value);}
@@ -191,9 +191,9 @@
     var hasSyncTime = !!(syncedDate && Number.isFinite(syncedDate.getTime()));
     el.sampleUpdated.hidden = !hasSyncTime;el.sampleUpdated.textContent = hasSyncTime ? "최근 반영 " + new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(syncedDate) : "";
     el.sampleUpdated.title = hasSyncTime ? syncedDate.toISOString() : "";
-    el.sampleConnect.hidden = !!state.connected || !provider || typeof provider.connect !== "function";el.sampleConnect.disabled = busy;el.sampleConnect.textContent = state.status === "connecting" ? "로그인 중…" : "수정하려면 Google 로그인";
+    el.sampleConnect.hidden = !!state.connected || !provider || typeof provider.connect !== "function";el.sampleConnect.disabled = busy;el.sampleConnect.textContent = state.status === "connecting" ? "로그인 중…" : "Google 연결 후 여기서 수정";
     el.sampleDisconnect.hidden = !state.connected || !provider || typeof provider.disconnect !== "function";el.sampleDisconnect.disabled = pendingSave();
-    el.sampleAccount.hidden = !state.connected || !text(state.userLabel);el.sampleAccount.textContent = state.connected ? text(state.userLabel) : "";el.sampleAccount.title = state.connected ? text(state.userLabel) : "";el.sampleReadOnly.hidden = !records.length || !!(state.connected && state.canEdit);
+    el.sampleAccount.hidden = !state.connected || !text(state.userLabel);el.sampleAccount.textContent = state.connected ? text(state.userLabel) : "";el.sampleAccount.title = state.connected ? text(state.userLabel) : "";
     var rows = currentRows();el.sampleResultCount.textContent = records.length || settled ? rows.length + "건" + (sampleFilters.query ? " / 전체 " + records.length + "건" : "") : "";el.sampleReset.hidden = !sampleFilters.query && sampleFilters.field === "name";
     var active = document.activeElement, focusedId = null, focusedClass = null, selection = null;
     ["sample-location-input","sample-extension-date","sample-extension-reason"].some(function(className){
