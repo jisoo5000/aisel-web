@@ -11,6 +11,7 @@
   var FIELDS = ["receivedDate","managementNumber","supplier","name","color","size","quantity","operation","location","returnedDate","owner"];
   var AUDIT_TITLE = "샘플변경이력";
   var AUDIT_HEADERS = ["변경시각","수정계정","관리번호","변경항목","이전값","변경값","상품명","기록키","원본탭ID"];
+  var LOCATION_OWNERS = {"물류":"이주용","사무실":"최연경"};
   var listeners = [], accessToken = null, auth = null, authReady = null, generation = 0;
   var pendingLoad = null, saving = false, timer = null;
   var now = deps.now || function(){return new Date();};
@@ -157,7 +158,7 @@
   function makeWriteRequests(result,row,changes){
     var requests = [];
     changes.forEach(function(change){
-      var col = change.key === "owner" ? 10 : 7;
+      var col = change.key === "owner" ? 10 : 8;
       requests.push({updateCells:{range:{sheetId:SHEET_ID,startRowIndex:row.sourceRow - 1,endRowIndex:row.sourceRow,startColumnIndex:col,endColumnIndex:col + 1},rows:[{values:[cell(change.value)]}],fields:"userEnteredValue"}});
     });
     var sheets = result.metadata.sheets || [];
@@ -170,7 +171,7 @@
       requests.push({updateCells:{start:{sheetId:auditId,rowIndex:0,columnIndex:0},rows:[{values:AUDIT_HEADERS.map(cell)}],fields:"userEnteredValue"}});
     }
     var stamp = now().toISOString();
-    requests.push({appendCells:{sheetId:auditId,rows:changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,change.key === "owner" ? "담당자" : "작업구분",row[change.key],change.value,row.name,row.id,String(SHEET_ID)].map(cell)};}),fields:"userEnteredValue"}});
+    requests.push({appendCells:{sheetId:auditId,rows:changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,change.key === "owner" ? "담당자" : "샘플위치",row[change.key],change.value,row.name,row.id,String(SHEET_ID)].map(cell)};}),fields:"userEnteredValue"}});
     return requests;
   }
   async function save(input){
@@ -181,14 +182,12 @@
     var loadedRecord = state.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
     if(!state.canEdit || !loadedRecord) throw error("INVALID_EDIT","목록에서 수정할 기록을 다시 선택해 주세요.");
     if(loadedRecord.version !== expectedVersion) throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 최신 기록을 확인한 뒤 다시 수정해 주세요.");
-    var keys = Object.keys(input.patch);
-    if(!keys.length || keys.some(function(k){return ["owner","operation"].indexOf(k) < 0;})) throw error("INVALID_EDIT","담당자와 작업구분만 수정할 수 있습니다.");
-    var patch = {};
-    keys.forEach(function(key){
-      if(typeof input.patch[key] !== "string" || input.patch[key].length > 100) throw error("INVALID_EDIT","입력한 값을 확인해 주세요.");
-      patch[key] = text(input.patch[key]);
-      if(key === "operation" && ["","샘플출고","샘플반납"].indexOf(patch[key]) < 0) throw error("INVALID_OPERATION","작업구분을 다시 선택해 주세요.");
-    });
+    var inputKeys = Object.keys(input.patch);
+    if(inputKeys.length !== 1 || inputKeys[0] !== "location") throw error("INVALID_EDIT","샘플 위치만 선택할 수 있습니다. 담당자는 위치에 따라 자동으로 정해집니다.");
+    if(typeof input.patch.location !== "string" || input.patch.location.length > 100) throw error("INVALID_EDIT","입력한 값을 확인해 주세요.");
+    var location = text(input.patch.location);
+    if(["물류","사무실"].indexOf(location) < 0) throw error("INVALID_LOCATION","샘플 위치를 물류 또는 사무실로 선택해 주세요.");
+    var patch = {location:location,owner:LOCATION_OWNERS[location]}, keys = ["location","owner"];
     saving = true;var epoch = generation, sent = false;
     try{
       if(pendingLoad) try{await pendingLoad;}catch(ignore){}
@@ -196,7 +195,6 @@
       var result = await readSheet();
       var row = result.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
       if(!row || row.version !== expectedVersion){accept(result);throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 입력을 확인한 뒤 취소하고 최신 기록에서 다시 수정해 주세요.");}
-      if(Object.prototype.hasOwnProperty.call(patch,"owner") && patch.owner && result.owners.indexOf(patch.owner) < 0) throw error("INVALID_OWNER","원본 시트에 등록된 담당자를 선택해 주세요.");
       var changes = keys.filter(function(k){return row[k] !== patch[k];}).map(function(k){return {key:k,value:patch[k]};});
       if(!changes.length) return accept(result);
       await verifyAuditHeader(result);
@@ -207,7 +205,7 @@
       var verified = await readSheet();
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
       var after = verified.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
-      if(!after || changes.some(function(change){return after[change.key] !== change.value;})) throw error("SAVE_UNCONFIRMED","저장 후 값이 다시 변경되었거나 확인되지 않았습니다. 입력을 유지했습니다. 최신 기록을 확인해 주세요.");
+      if(!after || keys.some(function(key){return after[key] !== patch[key];})) throw error("SAVE_UNCONFIRMED","저장 후 값이 다시 변경되었거나 확인되지 않았습니다. 입력을 유지했습니다. 최신 기록을 확인해 주세요.");
       return accept(verified);
     }catch(e){
       var issue = friendly(e);
