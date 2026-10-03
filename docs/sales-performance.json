@@ -78,7 +78,8 @@
       "existing_improvement_note"
     ],
     "manualTargetFieldsOnList": false,
-    "reasonCodesShownRaw": false
+    "reasonCodesShownRaw": false,
+    "reasonCodeMappings": 20
   },
   "snapshot": {
     "path": "salesPerformance/current",
@@ -116,7 +117,8 @@
     "frontendRankOrGaugeReinference": false,
     "verifiedSubsetRankAndGaugeAllowed": true,
     "verifiedSubsetScopeNoticeRequired": true,
-    "rankWithholdingScope": "unproven_products_or_incomplete_source_coverage"
+    "rankWithholdingScope": "unproven_products_or_incomplete_source_coverage",
+    "publishedCollectorVersion": 20
   },
   "access": {
     "salesFirebaseAppName": "aiselSalesReadOnly",
@@ -142,18 +144,19 @@
     "packageCommitSha": "732f4f960fefa7e607b1e88237868b68d9910220",
     "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37",
     "latestRunnerCommitSha": "ad6154d6faad1ea4cc166a48852954c4c18cd102",
-    "originalPackageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728"
+    "originalPackageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
+    "latestBackupReceiptCommitPrefix": "51f0d"
   },
   "status": {
     "frontend": "deployed",
-    "frontendDeploymentCommitPrefix": "ce93e0f",
+    "frontendDeploymentCommitPrefix": "b0ab23e7",
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
-    "dailyRunner": "deployed_v18_publish_and_scoped_rank_verified",
+    "dailyRunner": "deployed_v20_publish_and_scoped_rank_verified",
     "privateBackend": "deployed_dedicated_grant_registered",
-    "backendDeploymentVersion": "v18",
-    "backendDeploymentCommitPrefix": "33569be5",
+    "backendDeploymentVersion": "v22",
+    "backendDeploymentCommitPrefix": "905f0e9c",
     "dedicatedApiGrant": "registered",
     "dedicatedApiGrantExpiresAt": "2027-01-01T21:49:04+09:00",
     "githubSecrets": "six_installed",
@@ -164,27 +167,34 @@
     "packageGitHubCommit": "732f4f960fefa7e607b1e88237868b68d9910220",
     "versionZip": "created_verified",
     "driveDelivery": "uploaded_verified",
-    "statusDocumentRevision": "published_at_732f4f96_with_local_v5_backup_receipt_update",
+    "statusDocumentRevision": "v6_source_ready_v22_deployed_v20_snapshot_preserved",
     "skillV2Delivery": "uploaded_verified",
     "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d",
     "diagnosticCommit": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
-    "collectorRevision": "v18_completed_claim_proof_and_verified_subset_ranking_deployed",
+    "collectorRevision": "v22_nullable_requested_quantity_and_direct_claim_evidence_fix_deployed",
     "liveSnapshotPresent": true,
-    "frontendDeploymentCommit": "ce93e0fcc10fd5b1e633437f24fc3c8774585e02",
-    "backendDeploymentCommit": "33569be5ec294c0c433d80f7adbf71169b4c2e5b",
-    "backendDeployedAt": "2026-10-03T23:38:29+09:00",
+    "frontendDeploymentCommit": "b0ab23e7acb911f1cd555deffa0920a1ce659f73",
+    "backendDeploymentCommit": "905f0e9cfaad8dda0ee5c9063ba7e9b2185aad94",
+    "backendDeployedAt": "2026-10-04T02:02:28+09:00",
     "ownerReadProbe": "verified",
     "rankingUsable": true,
     "taskComplete": false,
-    "completion": "incomplete_six_product_claim_quantity_proof_and_first_scheduled_run_pending",
-    "collectorFollowup": "targeted_claim_quantity_diagnosis_in_progress",
+    "completion": "partial_implementation_deployed_scheduled_revalidation_and_unresolved_evidence_pending",
+    "collectorFollowup": "summary_preserving_revalidation_prepared_for_06_cron",
     "originalPackageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
     "skillV3Delivery": "uploaded_verified",
     "backendDeploymentMetadata": "verified",
     "skillV4Delivery": "uploaded_verified",
     "rankingScope": "verified_products_only",
     "allSellingProductsRanked": false,
-    "skillV5Delivery": "uploaded_verified"
+    "skillV5Delivery": "uploaded_verified",
+    "frontendHtmlSha256": "e00c68fecc1c6350c03b64e163da0914d5b40f8a37bcf415accf615563371c5c",
+    "backendDeploymentId": "appgdep_6ac1351b016c819190364d6d5da73508",
+    "deploymentConfigured": true,
+    "firstScheduledExecutionObserved": false,
+    "deploymentVerified": true,
+    "publishedSnapshotCollectorVersion": 20,
+    "implementationDeployed": true
   },
   "firstWorkflowAttempt": {
     "runId": "37124128166",
@@ -226,8 +236,9 @@
     "verified": true,
     "uploaded": true,
     "sourceCommit": "732f4f960fefa7e607b1e88237868b68d9910220",
-    "coversCurrentLocalRevisions": true,
-    "coverageExcludes": "backup_receipt_itself"
+    "coversCurrentLocalRevisions": false,
+    "coverageExcludes": "backup_receipt_itself",
+    "receiptCommitPrefix": "51f0d"
   },
   "validation": {
     "frontendFixtureChecksPassed": 67,
@@ -238,31 +249,60 @@
     "ownerSalesScreenVerified": true,
     "latestLivePublishReadbackVerified": true,
     "verifiedSubsetRankAndGaugeVerified": true,
-    "rankScopeNoticeVerified": true
+    "rankScopeNoticeVerified": true,
+    "backendCandidateReviewChecksPassed": 147,
+    "backendConditionalEvidenceFixturePassed": true,
+    "backendConditionalEvidenceFixtureAssumption": "sanitized_shop_no_supplied_from_known_parent_only_in_test_actual_collector_still_requests_and_validates",
+    "v20LivePublishVerified": true,
+    "backendChecksPassed": 209,
+    "backendAdapterIntegrationChecksIncluded": 5,
+    "backendAdapterPrivacyChecksPassed": 10,
+    "backendTypecheckPassed": true,
+    "backendBuildPassed": true,
+    "latestBackendGuardChecksPassed": 29,
+    "latestBackendGuardTypecheckPassed": true,
+    "latestBackendGuardBuildPassed": true,
+    "v21LiveAggregationTriggered": false,
+    "backendV20ChecksPassed": 178,
+    "latestBackendRegressionChecksPassed": 209,
+    "v22PinoDirectCancellationConditionalFixturePassed": true,
+    "v22WholeProductQuantityVerified": false,
+    "v22LiveAggregationTriggered": false
   },
   "pending": [
-    "diagnose_six_products_with_claim_quantity_unproven",
-    "verify_remaining_claim_quantity_evidence_without_assumed_zero",
-    "verify_first_scheduled_daily_execution",
-    "publish_final_status_after_remaining_diagnostics"
+    "observe_configured_06_scheduled_revalidation_without_additional_manual_run",
+    "verify_pino_v22_fix_in_full_product_snapshot",
+    "retain_mono_pending_until_independent_completion_or_refund_evidence",
+    "publish_v6_source_and_skill_backup"
   ],
   "skill": {
     "name": "aisel-sales-performance",
     "path": "skills/aisel-sales-performance/SKILL.md"
   },
   "liveVerificationRun": {
-    "id": 37130605741,
+    "id": 37135865003,
     "status": "success",
     "phase": "published_verified",
+    "startedAt": "2026-10-03T16:10:18Z",
+    "headCommit": "b0ab23e7acb911f1cd555deffa0920a1ce659f73",
+    "period": {
+      "start": "2026-09-20",
+      "end": "2026-10-03",
+      "timeZone": "Asia/Seoul"
+    },
+    "newJob": true,
+    "previousJobReset": false,
     "published": true,
-    "runnerChecksPassed": 151,
-    "startedAt": "2026-10-03T14:43:07Z",
-    "syncStepStartedAt": "2026-10-03T14:43:13Z",
     "snapshotPresent": true,
-    "syncStepCompletedAt": "2026-10-03T15:17:35Z",
-    "completedAt": "2026-10-03T15:17:37Z",
-    "syncStepDurationSeconds": 2062,
-    "completedAtKst": "2026-10-04T00:17:37+09:00",
+    "jobStartedAt": "2026-10-03T16:10:23Z",
+    "syncStepStartedAt": "2026-10-03T16:10:26Z",
+    "syncStepCompletedAt": "2026-10-03T16:45:00Z",
+    "syncStepDurationSeconds": 2074,
+    "completedAt": "2026-10-03T16:45:02Z",
+    "completedAtKst": "2026-10-04T01:45:02+09:00",
+    "serverReadyRevision": 152,
+    "countVerified": true,
+    "sourcePagesComplete": true,
     "firebaseReadback": {
       "anonymousSalesHttpStatus": 401,
       "machineSalesHttpStatus": 200,
@@ -272,15 +312,18 @@
     "ownerScreen": {
       "verified": true,
       "period": {
-        "start": "2026-09-19",
-        "end": "2026-10-02"
+        "start": "2026-09-20",
+        "end": "2026-10-03"
       },
+      "displayedUpdatedTimeKst": "2026-10-04 01:44",
       "sellingRows": 10,
-      "rankedRows": 4,
-      "unprovenQuantityRows": 6,
+      "rankedRows": 8,
+      "unprovenQuantityRows": 2,
+      "evaluationPendingKnownQuantityRows": 8,
       "rankScopeNotice": "수량이 확인된 상품 기준 순위"
     },
-    "previousSnapshotPreservedUntilPublication": true
+    "previousSnapshotPreservedUntilPublication": true,
+    "collectorVersion": 20
   },
   "productMapping": {
     "evidencePath": "docs/product-mapping.json",
@@ -297,7 +340,7 @@
       "productNo": 951,
       "reason": "different_fit_reference_only"
     },
-    "status": "deployed_live_snapshot_and_verified_subset_ranking_verified",
+    "status": "deployed_v20_snapshot_and_verified_subset_ranking_verified",
     "backendMappingCounts": {
       "workorders": 52,
       "catalogProducts": 725,
@@ -322,6 +365,30 @@
       "deploymentConfirmed": true,
       "commit": "33569be5ec294c0c433d80f7adbf71169b4c2e5b",
       "deployedAt": "2026-10-03T23:38:29+09:00",
+      "metadataStatus": "verified"
+    },
+    {
+      "version": "v20",
+      "deploymentConfirmed": true,
+      "commit": "775e85f73f1919227e03d9787b36479a8dfedf0c",
+      "deployedAt": "2026-10-04T01:09:46+09:00",
+      "deploymentId": "appgdep_6ac128c1a9a88191bd636811a5b8fecb",
+      "metadataStatus": "verified"
+    },
+    {
+      "version": "v21",
+      "deploymentConfirmed": true,
+      "commit": "1d57812cf06bfb66e7dc80a50d4144fe381946e6",
+      "deployedAt": "2026-10-04T01:52:17+09:00",
+      "deploymentId": "appgdep_6ac132b8a5988191888afa45b30e2fce",
+      "metadataStatus": "verified"
+    },
+    {
+      "version": "v22",
+      "deploymentConfirmed": true,
+      "commit": "905f0e9cfaad8dda0ee5c9063ba7e9b2185aad94",
+      "deployedAt": "2026-10-04T02:02:28+09:00",
+      "deploymentId": "appgdep_6ac1351b016c819190364d6d5da73508",
       "metadataStatus": "verified"
     }
   ],
@@ -358,6 +425,38 @@
         "displayedUpdatedTimeKst": "23:14",
         "sellingRows": 10
       }
+    },
+    {
+      "id": 37130605741,
+      "status": "success",
+      "phase": "published_verified",
+      "published": true,
+      "runnerChecksPassed": 151,
+      "startedAt": "2026-10-03T14:43:07Z",
+      "syncStepStartedAt": "2026-10-03T14:43:13Z",
+      "snapshotPresent": true,
+      "syncStepCompletedAt": "2026-10-03T15:17:35Z",
+      "completedAt": "2026-10-03T15:17:37Z",
+      "syncStepDurationSeconds": 2062,
+      "completedAtKst": "2026-10-04T00:17:37+09:00",
+      "firebaseReadback": {
+        "anonymousSalesHttpStatus": 401,
+        "machineSalesHttpStatus": 200,
+        "existingIndexMetaHttpStatus": 200,
+        "snapshotPresent": true
+      },
+      "ownerScreen": {
+        "verified": true,
+        "period": {
+          "start": "2026-09-19",
+          "end": "2026-10-02"
+        },
+        "sellingRows": 10,
+        "rankedRows": 4,
+        "unprovenQuantityRows": 6,
+        "rankScopeNotice": "수량이 확인된 상품 기준 순위"
+      },
+      "previousSnapshotPreservedUntilPublication": true
     }
   ],
   "collectorRestart": {
@@ -380,19 +479,20 @@
     "scope": "verified_products_only",
     "allSellingProductsRanked": false,
     "sellingProducts": 10,
-    "quantityUnprovenProducts": 6,
-    "quantityKnownProducts": 4,
-    "rankAndGaugeVisibleProducts": 4,
+    "quantityUnprovenProducts": 2,
+    "quantityKnownProducts": 8,
+    "rankAndGaugeVisibleProducts": 8,
     "quantityUnprovenReason": "claim_quantity_unproven",
-    "knownQuantityEvaluation": "pending_when_launch_or_stock_evidence_insufficient",
+    "knownQuantityEvaluation": "pending_due_to_missing_launch_or_stock_evidence",
+    "knownQuantityEvaluationPendingProducts": 8,
     "allSellingRanksAndGaugesWithheld": false,
     "scopeNotice": "수량이 확인된 상품 기준 순위",
     "scopeNoticeVerified": true,
     "frontendReinferenceAllowed": false,
     "financialValuesIncludedInDocument": false,
-    "evidenceRunId": 37130605741,
-    "describes": "current_published_v18_snapshot",
-    "remainingIssue": "targeted_diagnosis_for_six_unproven_claim_quantities"
+    "evidenceRunId": 37135865003,
+    "describes": "current_published_v20_snapshot",
+    "remainingIssue": "targeted_diagnosis_for_two_unproven_claim_quantities"
   },
   "backupHistory": [
     {
@@ -440,23 +540,36 @@
   ],
   "claimTreatment": {
     "pendingRequest": "included_in_paid_quantity_until_completion",
-    "completedClaimDeduction": "only_when_completed_claim_quantity_evidence_matches",
+    "completedCancellationOrReturnDeduction": "only_when_completed_cancel_or_return_quantity_evidence_matches",
+    "exchange": "reconcile_original_replacement_lineage_without_double_counting",
+    "uncertainExchangeLineage": "pending",
     "pendingClaimReason": "pending_claim_included_until_completed",
     "unprovenQuantity": "pending_not_zero"
   },
   "lastSuccessfulSummaryRun": {
-    "id": 37130605741,
+    "id": 37135865003,
     "status": "success",
     "phase": "published_verified",
+    "startedAt": "2026-10-03T16:10:18Z",
+    "headCommit": "b0ab23e7acb911f1cd555deffa0920a1ce659f73",
+    "period": {
+      "start": "2026-09-20",
+      "end": "2026-10-03",
+      "timeZone": "Asia/Seoul"
+    },
+    "newJob": true,
+    "previousJobReset": false,
     "published": true,
-    "runnerChecksPassed": 151,
-    "startedAt": "2026-10-03T14:43:07Z",
-    "syncStepStartedAt": "2026-10-03T14:43:13Z",
     "snapshotPresent": true,
-    "syncStepCompletedAt": "2026-10-03T15:17:35Z",
-    "completedAt": "2026-10-03T15:17:37Z",
-    "syncStepDurationSeconds": 2062,
-    "completedAtKst": "2026-10-04T00:17:37+09:00",
+    "jobStartedAt": "2026-10-03T16:10:23Z",
+    "syncStepStartedAt": "2026-10-03T16:10:26Z",
+    "syncStepCompletedAt": "2026-10-03T16:45:00Z",
+    "syncStepDurationSeconds": 2074,
+    "completedAt": "2026-10-03T16:45:02Z",
+    "completedAtKst": "2026-10-04T01:45:02+09:00",
+    "serverReadyRevision": 152,
+    "countVerified": true,
+    "sourcePagesComplete": true,
     "firebaseReadback": {
       "anonymousSalesHttpStatus": 401,
       "machineSalesHttpStatus": 200,
@@ -466,15 +579,18 @@
     "ownerScreen": {
       "verified": true,
       "period": {
-        "start": "2026-09-19",
-        "end": "2026-10-02"
+        "start": "2026-09-20",
+        "end": "2026-10-03"
       },
+      "displayedUpdatedTimeKst": "2026-10-04 01:44",
       "sellingRows": 10,
-      "rankedRows": 4,
-      "unprovenQuantityRows": 6,
+      "rankedRows": 8,
+      "unprovenQuantityRows": 2,
+      "evaluationPendingKnownQuantityRows": 8,
       "rankScopeNotice": "수량이 확인된 상품 기준 순위"
     },
-    "previousSnapshotPreservedUntilPublication": true
+    "previousSnapshotPreservedUntilPublication": true,
+    "collectorVersion": 20
   },
   "ownerReadyRevalidation": {
     "approved": true,
@@ -484,19 +600,11 @@
     "previousFirebaseSummaryPreservedUntilPublication": true
   },
   "plannedBackup": {
-    "version": "v5",
-    "zipFilename": "aisel-sales-performance_2026-10-04_v5.zip",
+    "version": "v6",
+    "zipFilename": "aisel-sales-performance_2026-10-04_v6.zip",
     "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-    "status": "uploaded_verified",
-    "fileId": "1HkOVOz-o-xJ4ArWWVIypUxAMkafGOBB9",
-    "url": "https://drive.google.com/file/d/1HkOVOz-o-xJ4ArWWVIypUxAMkafGOBB9/view?usp=drivesdk",
-    "sizeBytes": 6398,
-    "sha256": "490E336C8DE8FFC30C1D21F370EA4862034574BA1935C04D8B15A63E0C671A54",
-    "verified": true,
-    "uploaded": true,
-    "sourceCommit": "732f4f960fefa7e607b1e88237868b68d9910220",
-    "coversCurrentLocalRevisions": true,
-    "coverageExcludes": "backup_receipt_itself"
+    "status": "source_ready_pending_publication_and_zip_upload",
+    "uploaded": false
   },
   "firstSuccessfulSummaryRun": {
     "id": 37127521813,
@@ -523,5 +631,69 @@
       "displayedUpdatedTimeKst": "23:14",
       "sellingRows": 10
     }
+  },
+  "scheduledRunObservation": {
+    "firstScheduledTime": "2026-10-04T06:00:00+09:00",
+    "observed": false,
+    "status": "not_yet_due_at_this_verification",
+    "deploymentCompletionRequiresObservedRecurrence": false,
+    "successfulManualRunAndConfiguredScheduleSufficeForDeploymentVerification": true
+  },
+  "backendGuardRelease": {
+    "version": "v21",
+    "status": "deployed_independently_verified",
+    "deployed": true,
+    "changedAdapterFiles": 1,
+    "preservedStructuredClaimFields": 6,
+    "checksPassed": 29,
+    "typecheckPassed": true,
+    "buildPassed": true,
+    "liveCollectionTriggered": false,
+    "previousJobReset": false
+  },
+  "nullableClaimQuantityPolicy": {
+    "missingRequestedQuantity": "preserve_null_do_not_replace_with_zero_or_completed_quantity",
+    "completedCancellationOrReturn": "verify_exact_direct_detail_evidence",
+    "mixedCompletedAndRequestedStatus": "require_independent_completion_or_refund_evidence_otherwise_pending"
+  },
+  "remainingQuantityCases": [
+    {
+      "workorderCode": "AS-26F-KT-022",
+      "productName": "피노 하이넥 셔츠",
+      "directDetailConditionalFixture": "passed_v22_C40_single_item",
+      "limitation": "known_parent_shop_no_projected_into_sanitized_fixture_only",
+      "wholeProductSnapshotReaggregationVerified": false,
+      "publishedQuantityStatus": "unproven"
+    },
+    {
+      "workorderCode": "AS-26F-KT-016",
+      "productName": "모노 타이 드레이프 니트 탑",
+      "evidence": "C40_and_naverCANCEL_REQUEST_coexist_in_detail",
+      "independentCompletionOrRefundEvidence": "unverified",
+      "classification": "evidence_conflict_not_assumed_code_bug",
+      "publishedQuantityStatus": "unproven"
+    }
+  ],
+  "nextScheduledRevalidation": {
+    "scheduledAt": "2026-10-04T06:00:00+09:00",
+    "preparedAtLocalMinute": "2026-10-04 02:04",
+    "timeZone": "Asia/Seoul",
+    "preparation": "owner_existing_summary_preserving_revalidation_once",
+    "sameJobReused": true,
+    "status": "queued",
+    "phase": "catalog",
+    "revision": 153,
+    "previousPublishedSnapshotPreserved": true,
+    "collectorVersion": 22,
+    "immediateWorkflowDispatch": false,
+    "automaticAdvanceDuringPreparation": false,
+    "additionalManualFullRun": false,
+    "scheduledExecutionObserved": false
+  },
+  "completedReadyJobRevalidationPolicy": {
+    "onDeployedCollectorFix": "prepare_summary_preserving_queued_revalidation_once_when_same_day_ready_job_would_be_reused",
+    "waitForConfiguredSchedule": true,
+    "dispatchOrAdvanceDuringPreparation": false,
+    "keepCompletedRunHistory": true
   }
 }
