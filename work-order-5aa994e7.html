@@ -12610,7 +12610,7 @@ let wordsRedrawTimer_ = null;
 </script>
 
 <script>
-/* AISEL Sheets bridge v1: product snapshots, no Google credentials in the browser. */
+/* AISEL Sheets bridge v2: compact previews and append-only transport fields. */
 (function(root){
 "use strict";
 const steps=[59000,64000,69000,74000,79000,84000,89000,94000,98000];
@@ -12618,6 +12618,49 @@ const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
 function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
 function signature(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
+const PREVIEW_VERSION=2,PREVIEW_MAX=480,PREVIEW_BYTES=100*1024;
+const previewSignature=src=>"v"+PREVIEW_VERSION+"-"+signature(src);
+function cachedPreview(v,src){
+ const cache=v.sheetThumb;
+ return src&&cache&&cache.version===PREVIEW_VERSION&&cache.signature===previewSignature(src)&&
+  cache.width>0&&cache.height>0&&Math.max(cache.width,cache.height)<=PREVIEW_MAX&&
+  cache.bytes>0&&cache.bytes<=PREVIEW_BYTES&&/^https:\/\//.test(cache.url||"")?cache.url:"";
+}
+async function previewBlob(src){
+ const response=await fetch(src);
+ if(!response.ok)throw new Error("사진 읽기 실패 "+response.status);
+ const original=await response.blob();
+ let image,objectUrl;
+ try{
+  if(typeof root.createImageBitmap==="function")image=await root.createImageBitmap(original);
+  else{
+   objectUrl=URL.createObjectURL(original);
+   image=await new Promise((resolve,reject)=>{
+    const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(new Error("사진 해석 실패"));img.src=objectUrl;
+   });
+  }
+  const width=image.naturalWidth||image.width,height=image.naturalHeight||image.height;
+  if(!width||!height)throw new Error("사진 크기 확인 실패");
+  const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
+  if(!ctx)throw new Error("사진 미리보기 생성 실패");
+  let scale=Math.min(1,PREVIEW_MAX/Math.max(width,height));
+  for(let pass=0;pass<10;pass++){
+   canvas.width=Math.max(1,Math.round(width*scale));canvas.height=Math.max(1,Math.round(height*scale));
+   ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);
+   ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   for(const quality of [0.82,0.72,0.6,0.48,0.36]){
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));
+    if(!blob||blob.type!=="image/jpeg")throw new Error("JPEG 미리보기 생성 실패");
+    if(blob.size<=PREVIEW_BYTES)return {blob,width:canvas.width,height:canvas.height};
+   }
+   scale*=0.8;
+  }
+  throw new Error("사진 미리보기 용량 초과");
+ }finally{
+  if(image&&typeof image.close==="function")image.close();
+  if(objectUrl)URL.revokeObjectURL(objectUrl);
+ }
+}
 function colorNames(list){
  if(typeof root.colorNames_==="function")return root.colorNames_(list);
  const aliases={"멜란지그레이":"멜란지 그레이","라이트그레이":"라이트 그레이"};
@@ -12645,7 +12688,7 @@ function build(code,v,photo){
  let review=!cost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
  !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
- const p=photo||(/^https:\/\//.test(v.p1||"")?v.p1:"");
+ const p=photo||""; // Never send an uncompressed original as a failed-preview fallback.
  const status={sampling:"샘플중",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
@@ -12656,10 +12699,10 @@ function build(code,v,photo){
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
  lines.map(l=>(l.nm||"")+": "+(l.unit||"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
- Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||""];
+ Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||"",v.designer];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
-const api={build,signature,lineAmount};root.AiselSheetBridge=api;
+const api={build,signature,lineAmount,previewSignature,cachedPreview,previewBlob};root.AiselSheetBridge=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 if(typeof window==="undefined"||!root.firebase)return;
 const db=firebase.database(),rows=db.ref("workorderSheetRows"),meta=db.ref("workorderSheetMeta");
@@ -12672,26 +12715,24 @@ function show(text){
 async function thumbnail(code,v){
  const src=v.p1Thumb||v.p1||"";
  if(!src)return "";
- const sig=signature(src);
- if(v.sheetThumb&&v.sheetThumb.signature===sig)return v.sheetThumb.url;
- if(!firebase.auth().currentUser)return /^https:\/\//.test(v.p1||"")?v.p1:"";
+ const sig=previewSignature(src),cached=cachedPreview(v,src);
+ if(cached)return cached;
+ if(!firebase.auth().currentUser)return "";
  try{
-  const response=await fetch(src);
-  if(!response.ok)throw new Error("사진 읽기 실패 "+response.status);
-  const blob=await response.blob();
+  const preview=await previewBlob(src),blob=preview.blob;
   const ref=firebase.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
-  await ref.put(blob,{contentType:blob.type||"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
+  await ref.put(blob,{contentType:"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
   const url=await ref.getDownloadURL();
   // An upload may finish after the work order was deleted or its photo changed.
   // Update only the existing matching original; never recreate a deleted record.
   const original=db.ref("workorders").child(code);
   await original.once("value");
   const result=await original.transaction(current=>{
-    if(!current || signature(current.p1Thumb||current.p1||"")!==sig)return;
-    return {...current,sheetThumb:{url,signature:sig}};
+    if(!current || previewSignature(current.p1Thumb||current.p1||"")!==sig)return;
+    return {...current,sheetThumb:{url,signature:sig,version:PREVIEW_VERSION,width:preview.width,height:preview.height,bytes:blob.size}};
   },undefined,false);
   return result.committed?url:"";
- }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return /^https:\/\//.test(v.p1||"")?v.p1:"";}
+ }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return "";}
 }
 async function perform(code){
  const snap=await db.ref("workorders").child(code).once("value"),v=snap.val();
@@ -12701,10 +12742,13 @@ async function perform(code){
  const latest=(await db.ref("workorders").child(code).once("value")).val();
  if(!latest){await rows.child(code).remove();return;}
  const src=latest.p1Thumb||latest.p1||"";
- const photo=latest.sheetThumb&&latest.sheetThumb.signature===signature(src)?latest.sheetThumb.url:
-  signature(src)===signature(v.p1Thumb||v.p1||"")?image:"";
- await rows.child(code).set(build(code,latest,photo));
- await meta.update({version:1,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+ const photo=cachedPreview(latest,src)||
+  (src===(v.p1Thumb||v.p1||"")?image:"");
+ const row=build(code,latest,photo),existing=(await rows.child(code).once("value")).val();
+ if(existing!==row){
+  await rows.child(code).set(row);
+  await meta.update({version:2,fields:36,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+ }
  document.getElementById("sheetBridgeStatus")?.remove();
  return true;
 }
