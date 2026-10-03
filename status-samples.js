@@ -5,7 +5,7 @@
   var labels = {name:"품명",color:"컬러"};
   var records = [], state = {status:"disconnected",records:[]};
   var provider = null, started = false, settled = false, localError = "", el = {};
-  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleQuantityNotice","sampleError","sampleSyncWarning","sampleUpdated","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
+  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
   function text(value){return value == null ? "" : String(value).trim();}
   function missing(value){return !text(value) || /^[—–-]+$/.test(text(value));}
   function display(value){return missing(value) ? "미입력" : text(value);}
@@ -69,15 +69,11 @@
     var busy = state.status === "loading", message = localError || (state.status === "error" ? text(state.message) : "");
     el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
     el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";
-    var stamp = state.source && state.source.syncedAt, date = stamp ? new Date(stamp) : null, validStamp = !!(date && Number.isFinite(date.getTime()));
-    el.sampleUpdated.hidden = !validStamp;el.sampleUpdated.textContent = validStamp ? "최근 반영 " + new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(date) : "";el.sampleUpdated.title = validStamp ? date.toISOString() : "";
     var rows = currentRows(), known = 0n, unknown = 0, reviews = 0;
     rows.forEach(function(item){if(item.quantity === null) unknown++;else known += BigInt(item.quantity);if(item.review) reviews++;});
     var count = known.toLocaleString("ko-KR") + "개";
     if(unknown) count = (known > 0n ? count + " · " : "") + "수량 미확인 " + unknown + "건";
     el.sampleResultCount.textContent = !rows.length && (message || busy) ? "" : rows.length || settled ? count : "";el.sampleResultCount.title = "표시된 기록 " + rows.length + "건의 사무실 보유 수량";
-    el.sampleQuantityNotice.hidden = !unknown;
-    el.sampleQuantityNotice.textContent = unknown ? "수량 미확인 " + unknown + "건은 합계에 포함하지 않았습니다." + (reviews ? " 이 중 " + reviews + "건은 진행 기록 확인이 필요합니다." : "") : "";
     el.sampleReset.hidden = !sampleFilters.query && sampleFilters.field === "name";
     el.sampleList.textContent = "";var fragment = document.createDocumentFragment();
     rows.filter(function(item){return !item.review;}).forEach(function(item){fragment.appendChild(recordElement(item));});

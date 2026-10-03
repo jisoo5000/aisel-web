@@ -80,7 +80,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:11.5px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{display:block;margin-bottom:16px}.search-wrap{margin-top:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:11px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=samples-office-20261004-v16-1" />
+<link rel="stylesheet" href="status-samples.css?v=samples-office-20261004-v16-2" />
 </head>
 <body>
 
@@ -125,11 +125,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
     <p id="sampleSyncWarning" class="sample-sync-warning" role="status" hidden></p>
     <div class="sample-list-heading">
       <h3>사무실 보유 샘플<span id="sampleResultCount" class="sample-result-count" aria-live="polite"></span></h3>
-      <a id="sampleSheetLink" class="sample-sheet-link" href="https://docs.google.com/spreadsheets/d/16sQmAVKB07qrhOgzacozifIATmeqalhqGQViCgY_Pug/edit#gid=1840754350" title="촬영샘플관리 시트 열기">수정하려면 구글시트로</a>
     </div>
-    <p id="sampleQuantityNotice" class="sample-quantity-notice" role="status" hidden></p>
-    <p class="sample-edit-help">로그인 없이 조회할 수 있어요. 시트 수정 내용은 다음 반영 후 표시돼요.</p>
-    <p id="sampleUpdated" class="sample-updated" hidden></p>
     <button type="button" id="sampleReset" class="sample-reset" hidden>검색 초기화</button>
     <div id="sampleColumns" class="sample-columns" aria-hidden="true" hidden><span>품명</span><span>컬러 / 사이즈 · 수량</span><span>샘플 위치</span><span>담당자</span><span>출고일</span><span>반납 예정일</span></div>
     <div id="sampleList" class="sample-list" aria-busy="true"></div>
@@ -562,9 +558,9 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   emptyEl.setAttribute("role","alert");renderTabs();render();console.error(err);
 });
 </script>
-<script src="status-samples-flow.js?v=samples-office-20261004-v16-1"></script>
-<script src="status-samples-data.js?v=samples-office-20261004-v16-1"></script>
-<script src="status-samples.js?v=samples-office-20261004-v16-1"></script>
+<script src="status-samples-flow.js?v=samples-office-20261004-v16-2"></script>
+<script src="status-samples-data.js?v=samples-office-20261004-v16-2"></script>
+<script src="status-samples.js?v=samples-office-20261004-v16-2"></script>
 
 </body>
 </html>
