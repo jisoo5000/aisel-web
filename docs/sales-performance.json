@@ -12,7 +12,15 @@
   "period": {
     "days": 14,
     "end": "previous_day_in_Asia_Seoul",
-    "freezeRunDateAtStart": true
+    "freezeRunDateAtStart": true,
+    "runnerRunDatePurpose": "result_period_validation_only",
+    "serverComputesCollectionDate": true
+  },
+  "startApiContract": {
+    "method": "POST",
+    "path": "/api/workorder-sales/jobs",
+    "jsonBody": {},
+    "runDateSent": false
   },
   "schedule": {
     "frequency": "daily",
@@ -128,11 +136,12 @@
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
-    "dailyRunner": "deployed_tested_live_run_unverified",
-    "privateBackend": "deployed_dedicated_grant_pending",
-    "backendDeploymentVersion": "v14",
-    "backendDeploymentCommitPrefix": "1c410637",
-    "dedicatedApiGrant": "pending",
+    "dailyRunner": "deployed_start_request_contract_fixed",
+    "privateBackend": "deployed_dedicated_grant_registered",
+    "backendDeploymentVersion": "v15",
+    "backendDeploymentCommitPrefix": "e6c43e",
+    "dedicatedApiGrant": "registered",
+    "dedicatedApiGrantExpiresAt": "2027-01-01T21:49:04+09:00",
     "githubSecrets": "six_installed",
     "workflowPublication": "deployed_pushed_verified",
     "runnerWorkflowDeploymentCommit": "164d0e1791d0363bb01cdc75614711b5ca406e37",
@@ -141,7 +150,18 @@
     "packageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
     "versionZip": "created_verified",
     "driveDelivery": "uploaded_verified",
-    "statusDocumentRevision": "updated_locally_after_v1_backup"
+    "statusDocumentRevision": "updated_locally_after_v1_backup",
+    "skillV2Delivery": "pending",
+    "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d"
+  },
+  "firstWorkflowAttempt": {
+    "runId": "37124128166",
+    "status": "failed",
+    "httpStatus": 400,
+    "failureStage": "start_job",
+    "cause": "unsupported_runDate_in_start_request",
+    "summaryPublished": false,
+    "fixStatus": "in_progress"
   },
   "backup": {
     "destinationLabel": "AISEL/스킬",
@@ -161,20 +181,30 @@
     "sha256": "61395C222F2E011337B15F1E0AEE2165107673F859C3BD82757A89F855DEED01",
     "verified": true
   },
+  "nextBackup": {
+    "version": "v2",
+    "zipFilename": "aisel-sales-performance_2026-10-03_v2.zip",
+    "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+    "status": "pending"
+  },
   "validation": {
     "frontendFixtureChecksPassed": 55,
     "runnerChecksPassed": 135,
     "liveRecurringRunVerified": false
   },
   "pending": [
-    "dedicated_sales_api_grant_registration",
-    "first_workflow_execution_after_grant_registration",
     "first_real_summary_publish_and_readback",
     "owner_sales_result_verification",
-    "publish_updated_status_documents"
+    "publish_final_status_documents",
+    "skill_v2_zip_creation_and_drive_upload"
   ],
   "skill": {
     "name": "aisel-sales-performance",
     "path": "skills/aisel-sales-performance/SKILL.md"
+  },
+  "liveVerificationRun": {
+    "id": 37124446673,
+    "status": "in_progress",
+    "startedAt": "2026-10-03T21:55:20+09:00"
   }
 }
