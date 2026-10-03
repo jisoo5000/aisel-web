@@ -61,7 +61,7 @@ function integrationServer({ startReady = false, override } = {}) {
     if (endpoint.origin === CONTRACT.allowedOrigin) {
       if (endpoint.pathname === CONTRACT.jobsPath) {
         assert.equal(options.method, 'POST');
-        assert.deepEqual(JSON.parse(options.body), { runDate: '2026-10-03' });
+        assert.deepEqual(JSON.parse(options.body), {});
         return json(job(startReady ? 'ready' : 'queued'), 202);
       }
       if (endpoint.pathname.endsWith('/advance')) {
@@ -119,15 +119,15 @@ test('idempotent start already ready fetches and publishes without advancing or 
   assert.ok(!server.requests.some(({ url }) => url.endsWith('/advance')));
 });
 
-test('KST runDate is deterministic across reruns on the same Korean calendar day', async () => {
-  const dates = [];
+test('start leaves the period server-controlled by sending an empty body at either end of the Korean day', async () => {
+  const bodies = [];
   for (const timestamp of ['2026-10-02T15:00:00Z', '2026-10-03T14:59:59Z']) {
     await run(async (_url, options) => {
-      dates.push(JSON.parse(options.body).runDate);
+      bodies.push(JSON.parse(options.body));
       return json(job('blocked'));
     }, { wallNow: () => Date.parse(timestamp) });
   }
-  assert.deepEqual(dates, ['2026-10-03', '2026-10-03']);
+  assert.deepEqual(bodies, [{}, {}]);
 });
 
 test('rejects stale incoming period even if it is a complete fourteen-day private result', async () => {
@@ -146,7 +146,7 @@ test('a run crossing Korean midnight preserves its initial requested period end'
     wallNow: () => Date.parse(server.requests.length === 0 ? '2026-10-03T14:59:59Z' : '2026-10-03T15:00:01Z'),
   });
   assert.equal(result.code, 0);
-  assert.deepEqual(JSON.parse(server.requests[0].options.body), { runDate: '2026-10-03' });
+  assert.deepEqual(JSON.parse(server.requests[0].options.body), {});
   assert.equal(server.saved().period.end, '2026-10-02');
 });
 
@@ -191,13 +191,13 @@ for (const stage of [1, 2, 3, 4]) {
     assert.equal(server.requests.length, stage);
     assert.equal(result.output, 'Sales sync failed: NETWORK_OR_TIMEOUT_FAILURE');
   });
-  test(`HTTP failure on Site request ${stage} stops without retry`, async () => {
+  test(`HTTP 400 on Site request ${stage} reports only its safe stage and stops without retry`, async () => {
     const server = integrationServer({ override: ({ requests }) => requests.length === stage
-      ? json({ error: 'private-body' }, 503) : undefined });
+      ? json({ error: 'private-body' }, 400) : undefined });
     const result = await run(server.fetchImpl);
     assert.equal(result.code, 1);
     assert.equal(server.requests.length, stage);
-    assert.equal(result.output, 'Sales sync failed: HTTP_FAILURE (HTTP 503)');
+    assert.equal(result.output, `Sales sync failed: HTTP_FAILURE [stage: ${['start', 'status', 'advance', 'result'][stage - 1]}] (HTTP 400)`);
   });
 }
 

@@ -30,13 +30,15 @@ const ENV_FIELDS = Object.freeze([
   'AISEL_FIREBASE_REFRESH_TOKEN',
   'AISEL_FIREBASE_MACHINE_UID',
 ]);
+const REQUEST_STAGES = Object.freeze(['start', 'status', 'advance', 'result']);
 
 class SyncError extends Error {
-  constructor(code, status) {
+  constructor(code, status, stage) {
     super(code);
     this.name = 'SyncError';
     this.code = code;
     this.status = status;
+    this.stage = REQUEST_STAGES.includes(stage) ? stage : undefined;
   }
 }
 
@@ -137,7 +139,7 @@ function readJob(payload, expectedJobId, minimumRevision = 0) {
   return { jobId, state, revision: payload.revision, pollDelayMs, payload };
 }
 
-async function requestSummary(config, url, method, fetchImpl, timeoutMs, body,
+async function requestSummary(config, url, method, fetchImpl, timeoutMs, stage, body,
   maximumBytes = CONTRACT.maximumResponseBytes) {
   let response;
   try {
@@ -164,7 +166,7 @@ async function requestSummary(config, url, method, fetchImpl, timeoutMs, body,
   }
   if (!response.ok) {
     await response.body?.cancel().catch(() => {});
-    throw new SyncError('HTTP_FAILURE', response.status);
+    throw new SyncError('HTTP_FAILURE', response.status, stage);
   }
 
   try {
@@ -194,7 +196,7 @@ export async function synchronizeSales(config, {
   // Freeze the reporting date now; a run crossing Korean midnight keeps its period.
   const expectedPeriodEnd = new Date(Date.parse(`${runDate}T00:00:00.000Z`) - 86_400_000).toISOString().slice(0, 10);
   const started = readJob(await requestSummary(config, config.url, 'POST', fetchImpl,
-    Math.min(CONTRACT.requestTimeoutMs, remaining()), { runDate }));
+    Math.min(CONTRACT.requestTimeoutMs, remaining()), 'start', {}));
   remaining();
   // Never use a URL from the response. Only a validated opaque job ID enters this URL.
   const pollUrl = new URL(`${CONTRACT.jobsPath}/${encodeURIComponent(started.jobId)}`, CONTRACT.allowedOrigin).href;
@@ -205,7 +207,7 @@ export async function synchronizeSales(config, {
     // Sites published:false describes private storage; only our verified Firebase
     // write below may declare live publication. No response-supplied URL is used.
     const snapshot = await requestSummary(config, `${pollUrl}/result`, 'GET', fetchImpl,
-      Math.min(CONTRACT.requestTimeoutMs, remaining()), undefined, PUBLISH_CONTRACT.maximumBytes);
+      Math.min(CONTRACT.requestTimeoutMs, remaining()), 'result', undefined, PUBLISH_CONTRACT.maximumBytes);
     const result = await publishSalesSnapshot(snapshot, {
       env, fetchImpl, log, now, nowMs: wallNow(), budgetMs: remaining(), expectedPeriodEnd,
     });
@@ -227,13 +229,13 @@ export async function synchronizeSales(config, {
       throw new SyncError('OVERALL_TIMEOUT');
     }
     const current = readJob(await requestSummary(config, pollUrl, 'GET', fetchImpl,
-      Math.min(CONTRACT.requestTimeoutMs, remaining())), started.jobId, lastRevision);
+      Math.min(CONTRACT.requestTimeoutMs, remaining()), 'status'), started.jobId, lastRevision);
     remaining();
     if (CONTRACT.completedStates.includes(current.state)) return publishReadyJob(current);
     // A successful advance processes the next bounded page/checkpoint. This is not a
     // retry: if any advance has an unclear result, requestSummary throws and we stop.
     const advanced = readJob(await requestSummary(config, `${pollUrl}/advance`, 'POST', fetchImpl,
-      Math.min(CONTRACT.requestTimeoutMs, remaining()), { expectedRevision: current.revision }),
+      Math.min(CONTRACT.requestTimeoutMs, remaining()), 'advance', { expectedRevision: current.revision }),
     started.jobId, current.revision);
     remaining();
     if (CONTRACT.completedStates.includes(advanced.state)) return publishReadyJob(advanced);
@@ -258,7 +260,10 @@ export async function main({ env = process.env, log = console.log, ...runtime } 
     const status = Number.isInteger(httpStatus)
       ? ` (HTTP ${httpStatus})`
       : '';
-    log(`Sales sync failed: ${code}${status}`);
+    const stage = error instanceof SyncError && REQUEST_STAGES.includes(error.stage)
+      ? ` [stage: ${error.stage}]`
+      : '';
+    log(`Sales sync failed: ${code}${stage}${status}`);
     return 1;
   }
 }
