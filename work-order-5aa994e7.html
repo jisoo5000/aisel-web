@@ -2942,7 +2942,7 @@
     <input id="salesSearchInput" type="search" placeholder="품명 또는 품번 검색" aria-label="품명 또는 품번 검색" autocomplete="off">
     <select id="salesSort" aria-label="판매성과 정렬"><option value="quantity">판매순</option><option value="recent">최근 수정순</option></select>
   </div>
-  <div class="sales-meta"><span id="salesPeriod">집계 기간 확인 중</span><span id="salesUpdated"></span></div>
+  <div class="sales-meta"><span id="salesPeriod">집계 기간 확인 중</span><span id="salesUpdated"></span><span id="salesRankScope" hidden>수량이 확인된 상품 기준 순위</span></div>
   <p id="salesSyncNotice" class="sales-notice" role="status" aria-live="polite">판매 자료를 확인하고 있습니다.</p>
   <div id="salesAuth" class="sales-auth"><button type="button" id="salesLoginBtn" class="sales-login">판매성과 로그인</button></div>
   <div id="salesCounts" class="sales-counts" role="status" aria-live="polite"></div>
@@ -9280,9 +9280,11 @@
       exact_product_name_not_unique:"같은 이름의 카페24 상품이 여러 개여서 연결 확인이 필요합니다.",
       conflicting_product_context:"상품 연결 정보가 서로 달라 연결 확인이 필요합니다.",
       claim_quantity_unproven:"취소·반품 수량이 확인되지 않아 순판매 집계를 보류합니다.",
+      pending_claim_included_until_completed:"취소·반품 신청 중인 수량은 완료 전까지 판매수량에 포함합니다.",
       exchange_lineage_unproven:"교환 전후 상품 연결이 확인되지 않아 순판매 집계를 보류합니다.",
       item_evidence_unproven:"주문 상품 정보가 충분히 확인되지 않아 판매 집계를 보류합니다.",
       ranking_withheld_unresolved_product:"일부 상품의 집계가 확인되지 않아 전체 순위와 성과 비교를 보류합니다.",
+      rank_scope_verified_products_only:"수량이 확인된 상품끼리 비교한 순위입니다.",
       net_revenue_unproven:"상품별 할인·환불 배분이 확인되지 않아 순매출 표시를 보류합니다.",
       revenue_tiebreak_unavailable_shared_quantity_rank:"순매출을 비교할 수 없어 판매수량이 같은 제품은 공동 순위로 표시합니다.",
       coverage_incomplete_metrics_withheld:"일부 판매 자료가 누락되어 집계 수치와 순위를 보류합니다."
@@ -9366,11 +9368,12 @@
     return list;
   }
   function renderSalesMeta_(){
-    const snapshot = salesSnapshot_, period = $("#salesPeriod"), updated = $("#salesUpdated"), notice = $("#salesSyncNotice");
+    const snapshot = salesSnapshot_, period = $("#salesPeriod"), updated = $("#salesUpdated"), notice = $("#salesSyncNotice"), rankScope = $("#salesRankScope");
     const safeDate = value=> typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.replace(/-/g,".") : null;
     const start = snapshot && safeDate(snapshot.period && snapshot.period.start), end = snapshot && safeDate(snapshot.period && snapshot.period.end);
     period.textContent = start && end ? start+" – "+end : "집계 기간 미확인";
     updated.textContent = snapshot ? "갱신 "+new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(snapshot.generatedAt)) : "";
+    rankScope.hidden = !(salesHasLogin_() && !salesPermissionDenied_ && snapshot && Object.values(snapshot.items || {}).some(item=>item && typeof item.reason === "string" && item.reason.split(";").some(part=>part.trim() === "rank_scope_verified_products_only")));
     $("#salesAuth").hidden = salesHasLogin_() && !salesPermissionDenied_;
     $("#salesLoginBtn").disabled = salesLoginBusy_ || !salesAuthReady_;
     let message = "", warning = false;
