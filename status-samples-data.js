@@ -7,8 +7,8 @@
   var SHEET_ID = 1840754350;
   var FILE_ID = "16sQmAVKB07qrhOgzacozifIATmeqalhqGQViCgY_Pug";
   var API = "https://sheets.googleapis.com/v4/spreadsheets/" + FILE_ID;
-  var HEADERS = ["입출고일자","관리번호","공급처명","상품명","컬러","사이즈","수량","작업구분","샘플위치","반납일자","담당자"];
-  var FIELDS = ["receivedDate","managementNumber","supplier","name","color","size","quantity","operation","location","returnedDate","owner"];
+  var HEADERS = ["입출고일자","관리번호","공급처명","상품명","컬러","사이즈","수량","작업구분","샘플위치","반납일자","담당자","반납예정일","연장사유"];
+  var FIELDS = ["receivedDate","managementNumber","supplier","name","color","size","quantity","operation","location","returnedDate","owner","returnDueDate","extensionReason"];
   var AUDIT_TITLE = "샘플변경이력";
   var AUDIT_HEADERS = ["변경시각","수정계정","관리번호","변경항목","이전값","변경값","상품명","기록키","원본탭ID"];
   var LOCATION_OWNERS = {"물류":"이주용","사무실":"최연경"};
@@ -20,6 +20,48 @@
   function clone(value){return JSON.parse(JSON.stringify(value));}
   function text(value){return value == null ? "" : String(value).trim();}
   function error(code,message){var e = new Error(message);e.name = "AiselSampleError";e.code = code;return e;}
+  function filled(value){return !!text(value) && !/^[—–-]+$/.test(text(value));}
+  // Sheet dates are Seoul calendar dates, never browser-local instants. Parse
+  // explicit year/month/day, then use UTC arithmetic to avoid timezone/DST shifts.
+  function normalizeDate(value){
+    var raw = text(value).replace(/\s+/g,""), match;
+    if(!raw) return "";
+    match = raw.match(/^(\d{4})([-/.])(\d{1,2})\2(\d{1,2})(\.)?$/);
+    if(match){
+      if(match[5] && match[2] !== ".") return "";
+      match = [match[0],match[1],match[3],match[4]];
+    }else match = raw.match(/^(\d{4})년(\d{1,2})월(\d{1,2})일$/);
+    if(!match) return "";
+    var year = Number(match[1]), month = Number(match[2]), day = Number(match[3]);
+    if(year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) return "";
+    var date = new Date(Date.UTC(year,month - 1,day));
+    if(date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return "";
+    return String(year) + "-" + String(month).padStart(2,"0") + "-" + String(day).padStart(2,"0");
+  }
+  function addCalendarDays(value,days){
+    var date = normalizeDate(value);
+    if(!date || !Number.isInteger(days)) return "";
+    var parts = date.split("-").map(Number), next = new Date(Date.UTC(parts[0],parts[1] - 1,parts[2] + days));
+    if(!Number.isFinite(next.getTime()) || next.getUTCFullYear() < 1000 || next.getUTCFullYear() > 9999) return "";
+    return next.toISOString().slice(0,10);
+  }
+  function getReturnInfo(record){
+    record = record || {};
+    var operation = text(record.operation).replace(/\s+/g,""), isOutgoing = operation === "샘플출고";
+    var completed = filled(record.returnedDate) || ["샘플반납","반납","반납완료"].indexOf(operation) >= 0;
+    var info = {dueDate:"",canExtend:false,suggestedDate:"",reason:"",completed:completed,isOutgoing:isOutgoing};
+    if(!isOutgoing){info.reason = completed ? "반납 완료" : "샘플 출고 기록만 연장할 수 있습니다.";return info;}
+    // Do not hide invalid edited deadlines by falling back to a calculated one.
+    info.dueDate = filled(record.returnDueDate) ? normalizeDate(record.returnDueDate) : addCalendarDays(record.receivedDate,14);
+    if(completed){info.reason = "반납 완료";return info;}
+    if(!normalizeDate(record.receivedDate)){info.dueDate = "";info.reason = "입출고일자를 확인해 주세요.";return info;}
+    if(!info.dueDate){info.reason = "반납예정일을 확인해 주세요.";return info;}
+    if(record.canEdit === false){info.reason = record.editReason || "관리번호를 확인해 주세요.";return info;}
+    info.suggestedDate = addCalendarDays(info.dueDate,14);
+    info.canExtend = !!info.suggestedDate;
+    if(!info.canExtend) info.reason = "반납예정일을 확인해 주세요.";
+    return info;
+  }
   function emit(patch){
     Object.keys(patch || {}).forEach(function(key){state[key] = patch[key];});
     listeners.slice().forEach(function(listener){try{listener(clone(state));}catch(ignore){}});
@@ -100,7 +142,7 @@
     if(!sheet) throw error("TAB_NOT_FOUND","촬영 샘플 탭을 찾을 수 없습니다. 원본 시트를 확인해 주세요.");
     var rows = Number(sheet.properties.gridProperties && sheet.properties.gridProperties.rowCount);
     if(!Number.isInteger(rows) || rows < 2 || rows > 20000) throw error("SHEET_SIZE","원본 시트의 행 범위를 확인해야 합니다. 관리자에게 문의해 주세요.");
-    var range = rangeName(sheet.properties.title) + "!A1:K" + rows;
+    var range = rangeName(sheet.properties.title) + "!A1:M" + rows;
     var result = await request("/values/" + encodeURIComponent(range) + "?valueRenderOption=FORMATTED_VALUE");
     return parseRows(result.values,meta,sheet.properties);
   }
@@ -158,7 +200,7 @@
   function makeWriteRequests(result,row,changes){
     var requests = [];
     changes.forEach(function(change){
-      var col = change.key === "owner" ? 10 : 8;
+      var col = FIELDS.indexOf(change.key);
       requests.push({updateCells:{range:{sheetId:SHEET_ID,startRowIndex:row.sourceRow - 1,endRowIndex:row.sourceRow,startColumnIndex:col,endColumnIndex:col + 1},rows:[{values:[cell(change.value)]}],fields:"userEnteredValue"}});
     });
     var sheets = result.metadata.sheets || [];
@@ -171,7 +213,7 @@
       requests.push({updateCells:{start:{sheetId:auditId,rowIndex:0,columnIndex:0},rows:[{values:AUDIT_HEADERS.map(cell)}],fields:"userEnteredValue"}});
     }
     var stamp = now().toISOString();
-    requests.push({appendCells:{sheetId:auditId,rows:changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,change.key === "owner" ? "담당자" : "샘플위치",row[change.key],change.value,row.name,row.id,String(SHEET_ID)].map(cell)};}),fields:"userEnteredValue"}});
+    requests.push({appendCells:{sheetId:auditId,rows:changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,HEADERS[FIELDS.indexOf(change.key)],change.previousValue === undefined ? row[change.key] : change.previousValue,change.value,row.name,row.id,String(SHEET_ID)].map(cell)};}),fields:"userEnteredValue"}});
     return requests;
   }
   async function save(input){
@@ -182,12 +224,22 @@
     var loadedRecord = state.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
     if(!state.canEdit || !loadedRecord) throw error("INVALID_EDIT","목록에서 수정할 기록을 다시 선택해 주세요.");
     if(loadedRecord.version !== expectedVersion) throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 최신 기록을 확인한 뒤 다시 수정해 주세요.");
-    var inputKeys = Object.keys(input.patch);
-    if(inputKeys.length !== 1 || inputKeys[0] !== "location") throw error("INVALID_EDIT","샘플 위치만 선택할 수 있습니다. 담당자는 위치에 따라 자동으로 정해집니다.");
-    if(typeof input.patch.location !== "string" || input.patch.location.length > 100) throw error("INVALID_EDIT","입력한 값을 확인해 주세요.");
-    var location = text(input.patch.location);
-    if(["물류","사무실"].indexOf(location) < 0) throw error("INVALID_LOCATION","샘플 위치를 물류 또는 사무실로 선택해 주세요.");
-    var patch = {location:location,owner:LOCATION_OWNERS[location]}, keys = ["location","owner"];
+    var inputKeys = Object.keys(input.patch), patch, keys;
+    var extending = inputKeys.length === 2 && inputKeys.indexOf("returnDueDate") >= 0 && inputKeys.indexOf("extensionReason") >= 0;
+    if(extending){
+      if(typeof input.patch.returnDueDate !== "string" || typeof input.patch.extensionReason !== "string") throw error("INVALID_EXTENSION","연장 날짜와 사유를 입력해 주세요.");
+      var dueDate = normalizeDate(input.patch.returnDueDate), reason = text(input.patch.extensionReason), info = getReturnInfo(loadedRecord);
+      if(!info.canExtend) throw error("RETURN_NOT_EXTENDABLE",info.reason || "이 기록은 반납예정일을 연장할 수 없습니다.");
+      if(!dueDate || dueDate <= info.dueDate) throw error("INVALID_EXTENSION_DATE","현재 반납예정일보다 늦은 날짜를 선택해 주세요.");
+      if(!reason || reason.length > 100 || /[\r\n\u2028\u2029]/.test(input.patch.extensionReason)) throw error("INVALID_EXTENSION_REASON","연장 사유를 한 줄로 100자 이내 입력해 주세요.");
+      patch = {returnDueDate:dueDate,extensionReason:reason};keys = ["returnDueDate","extensionReason"];
+    }else{
+      if(inputKeys.length !== 1 || inputKeys[0] !== "location") throw error("INVALID_EDIT","샘플 위치 또는 반납 연장만 변경할 수 있습니다. 담당자는 위치에 따라 자동으로 정해집니다.");
+      if(typeof input.patch.location !== "string" || input.patch.location.length > 100) throw error("INVALID_EDIT","입력한 값을 확인해 주세요.");
+      var location = text(input.patch.location);
+      if(["물류","사무실"].indexOf(location) < 0) throw error("INVALID_LOCATION","샘플 위치를 물류 또는 사무실로 선택해 주세요.");
+      patch = {location:location,owner:LOCATION_OWNERS[location]};keys = ["location","owner"];
+    }
     saving = true;var epoch = generation, sent = false;
     try{
       if(pendingLoad) try{await pendingLoad;}catch(ignore){}
@@ -195,7 +247,14 @@
       var result = await readSheet();
       var row = result.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
       if(!row || row.version !== expectedVersion){accept(result);throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 입력을 확인한 뒤 취소하고 최신 기록에서 다시 수정해 주세요.");}
-      var changes = keys.filter(function(k){return row[k] !== patch[k];}).map(function(k){return {key:k,value:patch[k]};});
+      var changes;
+      if(extending){
+        var currentInfo = getReturnInfo(row);
+        if(!currentInfo.canExtend || patch.returnDueDate <= currentInfo.dueDate) throw error("RETURN_NOT_EXTENDABLE",currentInfo.reason || "반납예정일을 다시 확인해 주세요.");
+        // Always retain the reason for this extension, even if it repeats the
+        // previous reason. Effective previous due date is captured on first use.
+        changes = [{key:"returnDueDate",value:patch.returnDueDate,previousValue:currentInfo.dueDate},{key:"extensionReason",value:patch.extensionReason}];
+      }else changes = keys.filter(function(k){return row[k] !== patch[k];}).map(function(k){return {key:k,value:patch[k]};});
       if(!changes.length) return accept(result);
       await verifyAuditHeader(result);
       var requests = makeWriteRequests(result,row,changes);
@@ -224,6 +283,8 @@
     getState:function(){return clone(state);},
     subscribe:function(listener){listeners.push(listener);listener(clone(state));return function(){listeners = listeners.filter(function(fn){return fn !== listener;});};},
     connect:connect,disconnect:disconnect,load:load,save:save,
+    normalizeDate:normalizeDate,addCalendarDays:addCalendarDays,getReturnInfo:getReturnInfo,
     dispose:function(){wipe("");if(timer && deps.window && deps.window.clearInterval) deps.window.clearInterval(timer);if(deps.document && deps.document.removeEventListener) deps.document.removeEventListener("visibilitychange",refreshVisible);if(deps.window && deps.window.removeEventListener) deps.window.removeEventListener("focus",refreshVisible);listeners = [];}
   };
 });
+

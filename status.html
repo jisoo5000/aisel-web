@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v13 (2026-10-04): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
+<!-- AISEL 제품 진행 현황 v14 (2026-10-04): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -80,7 +80,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:11.5px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{display:block;margin-bottom:16px}.search-wrap{margin-top:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:11px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=13" />
+<link rel="stylesheet" href="status-samples.css?v=14" />
 </head>
 <body>
 
@@ -130,7 +130,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
         <button type="button" id="sampleDisconnect" class="sample-disconnect" hidden>연결 해제</button>
       </div>
     </div>
-    <div id="sampleColumns" class="sample-columns" aria-hidden="true" hidden><span>품명</span><span>컬러 / 사이즈 · 수량</span><span>작업구분</span><span>샘플 위치</span><span>담당자</span><span>입출고일자</span></div>
+    <div id="sampleColumns" class="sample-columns" aria-hidden="true" hidden><span>품명</span><span>컬러 / 사이즈 · 수량</span><span>작업구분</span><span>샘플 위치</span><span>담당자</span><span>입출고일자</span><span>반납 예정일</span></div>
     <div id="sampleList" class="sample-list" aria-busy="true"></div>
     <div id="sampleEmpty" class="sample-empty" role="status">팀원 계정으로 연결하면 샘플 기록을 확인할 수 있습니다.</div>
     <div class="sample-auth-actions"><button type="button" id="sampleConnect" class="sample-connect" hidden>Google 계정으로 연결</button></div>
@@ -562,11 +562,12 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   emptyEl.setAttribute("role","alert");renderTabs();render();console.error(err);
 });
 </script>
-<script src="status-samples-data.js?v=13"></script>
-<script src="status-samples.js?v=13"></script>
+<script src="status-samples-data.js?v=14"></script>
+<script src="status-samples.js?v=14"></script>
 
 </body>
 </html>
+
 
 
 
