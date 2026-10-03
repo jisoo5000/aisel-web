@@ -18,11 +18,11 @@
     "frequency": "daily",
     "localTime": "06:00",
     "timeZone": "Asia/Seoul",
-    "status": "not_deployed",
+    "status": "deployed",
     "aiCallsPerRun": 0,
-    "overallTimeoutMinutes": 25,
+    "overallTimeoutMinutes": 35,
     "maximumPolls": 300,
-    "workflowTimeoutMinutes": 30,
+    "workflowTimeoutMinutes": 40,
     "maximumRetryAfterSeconds": 300
   },
   "ranking": {
@@ -118,7 +118,9 @@
   "repository": {
     "url": "https://github.com/jisoo5000/aisel-web",
     "userApproved": true,
-    "packageCommitStatus": "pending"
+    "packageCommitStatus": "committed_pushed_verified",
+    "packageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
+    "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37"
   },
   "status": {
     "frontend": "deployed",
@@ -126,13 +128,20 @@
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
-    "dailyRunner": "implemented_tested_not_deployed",
-    "privateBackend": "not_ready",
+    "dailyRunner": "deployed_tested_live_run_unverified",
+    "privateBackend": "deployed_dedicated_grant_pending",
+    "backendDeploymentVersion": "v14",
+    "backendDeploymentCommitPrefix": "1c410637",
+    "dedicatedApiGrant": "pending",
+    "githubSecrets": "six_installed",
+    "workflowPublication": "deployed_pushed_verified",
+    "runnerWorkflowDeploymentCommit": "164d0e1791d0363bb01cdc75614711b5ca406e37",
     "firstLiveSummaryPublish": "pending",
-    "dailyAutomaticRefresh": "not_active",
+    "dailyAutomaticRefresh": "scheduled_not_live_verified",
     "packageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
     "versionZip": "created_verified",
-    "driveDelivery": "uploaded_verified"
+    "driveDelivery": "uploaded_verified",
+    "statusDocumentRevision": "updated_locally_after_v1_backup"
   },
   "backup": {
     "destinationLabel": "AISEL/스킬",
@@ -141,7 +150,7 @@
     "destinationVerified": true,
     "userApproved": true,
     "zipFilename": "aisel-sales-performance_2026-10-03_v1.zip",
-    "uploadStatus": "pending",
+    "uploadStatus": "uploaded_verified",
     "createZipAfterGitHubCommit": true,
     "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
     "folderUrl": "https://drive.google.com/drive/folders/16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
@@ -158,11 +167,11 @@
     "liveRecurringRunVerified": false
   },
   "pending": [
-    "private_site_collector_and_service_auth",
-    "runner_secret_binding_and_deployment",
+    "dedicated_sales_api_grant_registration",
+    "first_workflow_execution_after_grant_registration",
     "first_real_summary_publish_and_readback",
-    "owner_screen_verification",
-    "final_status_update_and_package_delivery"
+    "owner_sales_result_verification",
+    "publish_updated_status_documents"
   ],
   "skill": {
     "name": "aisel-sales-performance",
