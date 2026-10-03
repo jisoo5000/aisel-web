@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v12 (2026-10-04): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
+<!-- AISEL 제품 진행 현황 v12.1 (2026-10-04): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -17,12 +17,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard",-ap
 button,input{font:inherit}
 button{touch-action:manipulation}
 button:focus-visible,input:focus-visible,[role=button]:focus-visible{outline:2px solid var(--navy);outline-offset:3px}
-.wrap{max-width:1040px;margin:0 auto;padding:32px 24px 64px}
-.page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 0 22px;border-bottom:2px solid var(--navy);margin-bottom:18px}
+.wrap{max-width:1040px;margin:0 auto;padding:20px 24px 64px}
+.page-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 0 14px;border-bottom:2px solid var(--navy);margin-bottom:10px}
 h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--navy)}
 .brand{font-size:23px;letter-spacing:1.1px;line-height:1}
 .page-title{padding-left:16px;border-left:1px solid var(--hair);line-height:1.1}
-.page-subtitle{margin:9px 0 0;color:var(--muted);font-size:12px}
+.page-subtitle{display:none;margin:9px 0 0;color:var(--muted);font-size:12px}
 .connection{display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:11px;color:var(--muted)}
 .connection::before{content:"";width:6px;height:6px;border-radius:50%;background:#AAB4C4}
 .connection.ready::before{background:#67816F}
@@ -77,10 +77,10 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .viewer .x{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:4px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.95);color:var(--navy);font-size:19px;font-weight:700;line-height:1;cursor:pointer}
 .viewer .x:focus-visible{outline-color:#fff}
 @media(max-width:900px){.search{font-size:16px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.search-wrap{flex-basis:250px}}
-@media(max-width:680px){.wrap{padding:22px 16px 48px}.page-header{padding-bottom:18px;margin-bottom:14px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:11.5px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{display:block;margin-bottom:16px}.search-wrap{margin-top:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
-@media(max-width:400px){.wrap{padding:20px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:11px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
+@media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:11.5px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{display:block;margin-bottom:16px}.search-wrap{margin-top:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
+@media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:11px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=12" />
+<link rel="stylesheet" href="status-samples.css?v=12.1" />
 </head>
 <body>
 
@@ -88,7 +88,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   <header class="page-header">
     <div>
       <h1><span class="brand">AISEL</span><span class="page-title">제품 진행 현황</span></h1>
-      <p class="page-subtitle" id="pageSubtitle">발주생산부터 상세페이지 등록까지, 한눈에 확인하세요.</p>
+      <p class="page-subtitle" id="pageSubtitle" hidden>발주생산부터 상세페이지 등록까지, 한눈에 확인하세요.</p>
     </div>
     <span class="connection" id="connection" role="status">불러오는 중</span>
   </header>
@@ -567,7 +567,3 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
 
 </body>
 </html>
-
-
-
-
