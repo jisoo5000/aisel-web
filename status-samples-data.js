@@ -73,7 +73,7 @@
     if(/SERVICE_DISABLED|accessNotConfigured/i.test(reason)) throw error("API_DISABLED","시트 연결 설정이 필요합니다. 관리자에게 Google Sheets API 활성화를 요청해 주세요.");
     if(response.status === 403) throw error("SHEET_PERMISSION","이 Google 계정의 시트 접근·편집 권한을 확인해 주세요. 권한이 있는 팀원 계정으로 연결할 수 있습니다.");
     if(response.status === 404) throw error("SHEET_NOT_FOUND","촬영 샘플 시트를 찾을 수 없습니다. 계정과 원본 시트를 확인해 주세요.");
-    if(response.status === 429) throw error("RATE_LIMIT","요청이 잠시 몰렸습니다. 입력은 유지되니 잠시 후 다시 시도해 주세요.");
+    if(response.status === 429) throw error("RATE_LIMIT","요청이 잠시 몰렸습니다. 잠시 후 위치를 다시 선택해 주세요.");
     throw error("SHEET_ERROR","시트에서 요청을 처리하지 못했습니다. 입력을 확인한 뒤 다시 시도해 주세요.");
   }
   function rangeName(title){return "'" + title.replace(/'/g,"''") + "'";}
@@ -205,7 +205,7 @@
       var verified = await readSheet();
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
       var after = verified.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
-      if(!after || keys.some(function(key){return after[key] !== patch[key];})) throw error("SAVE_UNCONFIRMED","저장 후 값이 다시 변경되었거나 확인되지 않았습니다. 입력을 유지했습니다. 최신 기록을 확인해 주세요.");
+      if(!after || keys.some(function(key){return after[key] !== patch[key];})) throw error("SAVE_UNCONFIRMED","저장 후 값이 다시 변경되었거나 확인되지 않았습니다. 실제 반영됐을 수 있으니 최신 기록을 확인해 주세요.");
       return accept(verified);
     }catch(e){
       var issue = friendly(e);
