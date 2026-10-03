@@ -404,12 +404,35 @@ test('stops after 300 polls without starting another job', async () => {
   assert.equal(requests.filter(({ url }) => url.endsWith('/advance')).length, 300);
 });
 
-test('enforces thirty-five-minute deadline even if a late response claims ready', async () => {
+test('a realistic 146-checkpoint collection can publish beyond the old thirty-five-minute limit', async () => {
+  let checkpoints = 0;
+  let milliseconds = 0;
+  const server = integrationServer({ override: ({ endpoint, options }) => {
+    if (endpoint.origin !== CONTRACT.allowedOrigin || endpoint.pathname.endsWith('/result')) return undefined;
+    if (endpoint.pathname === CONTRACT.jobsPath) return json(job('queued'));
+    if (endpoint.pathname.endsWith('/advance')) {
+      assert.deepEqual(JSON.parse(options.body), { expectedRevision: checkpoints });
+      milliseconds += 10_000;
+      checkpoints++;
+      return json(job(checkpoints === 146 ? 'ready' : 'running', { revision: checkpoints }));
+    }
+    return json(job('running', { revision: checkpoints }));
+  } });
+  const result = await run(server.fetchImpl, {
+    now: () => milliseconds, sleep: async (ms) => { milliseconds += ms; },
+  });
+  assert.equal(checkpoints, 146);
+  assert.equal(milliseconds, 36 * 60 * 1_000 + 30_000);
+  assert.equal(result.code, 0);
+  assert.ok(server.saved());
+});
+
+test('enforces the sixty-minute deadline even if a late response claims ready', async () => {
   let milliseconds = 0;
   let calls = 0;
   const result = await run(async () => {
     if (++calls === 1) return json(job());
-    milliseconds = CONTRACT.overallTimeoutMs + 1;
+    milliseconds = 60 * 60 * 1_000 + 1;
     return json(job('ready'));
   }, { now: () => milliseconds, sleep: async (ms) => { milliseconds += ms; } });
   assert.equal(calls, 2);

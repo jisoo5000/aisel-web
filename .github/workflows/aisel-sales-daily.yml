@@ -16,7 +16,7 @@ concurrency:
 jobs:
   synchronize-sales:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 65
     steps:
       - name: Check out runner
         uses: actions/checkout@v4
