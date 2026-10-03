@@ -12620,9 +12620,10 @@ function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.
 function signature(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
 const PREVIEW_VERSION=2,PREVIEW_MAX=480,PREVIEW_BYTES=100*1024;
 const previewSignature=src=>"v"+PREVIEW_VERSION+"-"+signature(src);
+const previewSourceKey=v=>previewSignature(JSON.stringify([v.p1Thumb||"",v.p1||""]));
 function cachedPreview(v,src){
  const cache=v.sheetThumb;
- return src&&cache&&cache.version===PREVIEW_VERSION&&cache.signature===previewSignature(src)&&
+ return src&&cache&&cache.version===PREVIEW_VERSION&&cache.signature===previewSourceKey(v)&&
   cache.width>0&&cache.height>0&&Math.max(cache.width,cache.height)<=PREVIEW_MAX&&
   cache.bytes>0&&cache.bytes<=PREVIEW_BYTES&&/^https:\/\//.test(cache.url||"")?cache.url:"";
 }
@@ -12728,11 +12729,17 @@ function show(text){
 async function thumbnail(code,v,ctx){
  const src=v.p1Thumb||v.p1||"";
  if(!src)return "";
- const sig=previewSignature(src),cached=cachedPreview(v,src);
+ const sig=previewSourceKey(v),cached=cachedPreview(v,src);
  if(cached)return cached;
  if(!signedIn(ctx))return "";
  try{
-  const preview=await previewBlob(src),blob=preview.blob;
+  const sources=[...new Set([v.p1Thumb,v.p1].filter(Boolean))];
+  let preview;
+  for(let i=0;i<sources.length;i++){
+   try{preview=await previewBlob(sources[i]);break;}
+   catch(err){if(i===sources.length-1)throw err;}
+  }
+  const blob=preview.blob;
   if(!signedIn(ctx))return "";
   const ref=ctx.app.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
   await ref.put(blob,{contentType:"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
@@ -12743,7 +12750,7 @@ async function thumbnail(code,v,ctx){
   const original=ctx.db.ref("workorders").child(code);
   await original.once("value");
   const result=await original.transaction(current=>{
-    if(!signedIn(ctx)||!current || previewSignature(current.p1Thumb||current.p1||"")!==sig)return;
+    if(!signedIn(ctx)||!current || previewSourceKey(current)!==sig)return;
     return {...current,sheetThumb:{url,signature:sig,version:PREVIEW_VERSION,width:preview.width,height:preview.height,bytes:blob.size}};
   },undefined,false);
   return result.committed?url:"";
@@ -12762,7 +12769,7 @@ async function perform(code){
  if(!latest){await rows.child(code).remove();return;}
  const src=latest.p1Thumb||latest.p1||"";
  const photo=cachedPreview(latest,src)||
-  (src===(v.p1Thumb||v.p1||"")?image:"");
+  (previewSourceKey(latest)===previewSourceKey(v)?image:"");
  const row=build(code,latest,photo),existing=(await rows.child(code).once("value")).val();
  if(!signedIn(ctx))return false;
  if(existing!==row){
