@@ -139,7 +139,7 @@
     "url": "https://github.com/jisoo5000/aisel-web",
     "userApproved": true,
     "packageCommitStatus": "committed_pushed_verified",
-    "packageCommitSha": "1ac565ba89f58354e8df54248f34791cc39bd73a",
+    "packageCommitSha": "732f4f960fefa7e607b1e88237868b68d9910220",
     "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37",
     "latestRunnerCommitSha": "ad6154d6faad1ea4cc166a48852954c4c18cd102",
     "originalPackageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728"
@@ -161,10 +161,10 @@
     "runnerWorkflowDeploymentCommit": "164d0e1791d0363bb01cdc75614711b5ca406e37",
     "firstLiveSummaryPublish": "verified",
     "dailyAutomaticRefresh": "scheduled_manual_run_verified",
-    "packageGitHubCommit": "1ac565ba89f58354e8df54248f34791cc39bd73a",
+    "packageGitHubCommit": "732f4f960fefa7e607b1e88237868b68d9910220",
     "versionZip": "created_verified",
     "driveDelivery": "uploaded_verified",
-    "statusDocumentRevision": "updated_locally_after_v4_backup",
+    "statusDocumentRevision": "published_at_732f4f96_with_local_v5_backup_receipt_update",
     "skillV2Delivery": "uploaded_verified",
     "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d",
     "diagnosticCommit": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
@@ -183,7 +183,8 @@
     "backendDeploymentMetadata": "verified",
     "skillV4Delivery": "uploaded_verified",
     "rankingScope": "verified_products_only",
-    "allSellingProductsRanked": false
+    "allSellingProductsRanked": false,
+    "skillV5Delivery": "uploaded_verified"
   },
   "firstWorkflowAttempt": {
     "runId": "37124128166",
@@ -214,18 +215,18 @@
     "verified": true
   },
   "nextBackup": {
-    "version": "v4",
-    "zipFilename": "aisel-sales-performance_2026-10-03_v4.zip",
+    "version": "v5",
+    "zipFilename": "aisel-sales-performance_2026-10-04_v5.zip",
     "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
     "status": "uploaded_verified",
-    "fileId": "1GThblLrPNJA3ySq_WhAIRVT7aLSskPXu",
-    "url": "https://drive.google.com/file/d/1GThblLrPNJA3ySq_WhAIRVT7aLSskPXu/view?usp=drivesdk",
-    "sizeBytes": 6223,
-    "sha256": "B615DC3C00DE8D59732C42112C41C06931DC0C423D956EEDC74AAB94E8522F71",
+    "fileId": "1HkOVOz-o-xJ4ArWWVIypUxAMkafGOBB9",
+    "url": "https://drive.google.com/file/d/1HkOVOz-o-xJ4ArWWVIypUxAMkafGOBB9/view?usp=drivesdk",
+    "sizeBytes": 6398,
+    "sha256": "490E336C8DE8FFC30C1D21F370EA4862034574BA1935C04D8B15A63E0C671A54",
     "verified": true,
     "uploaded": true,
-    "sourceCommit": "1ac565ba89f58354e8df54248f34791cc39bd73a",
-    "coversCurrentLocalRevisions": false,
+    "sourceCommit": "732f4f960fefa7e607b1e88237868b68d9910220",
+    "coversCurrentLocalRevisions": true,
     "coverageExcludes": "backup_receipt_itself"
   },
   "validation": {
@@ -243,7 +244,7 @@
     "diagnose_six_products_with_claim_quantity_unproven",
     "verify_remaining_claim_quantity_evidence_without_assumed_zero",
     "verify_first_scheduled_daily_execution",
-    "publish_latest_status_and_v5_skill_backup"
+    "publish_final_status_after_remaining_diagnostics"
   ],
   "skill": {
     "name": "aisel-sales-performance",
@@ -420,6 +421,21 @@
       "sourceCommit": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
       "coversCurrentLocalRevisions": false,
       "coverageExcludes": "backup_receipt_itself"
+    },
+    {
+      "version": "v4",
+      "zipFilename": "aisel-sales-performance_2026-10-03_v4.zip",
+      "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "uploaded_verified",
+      "fileId": "1GThblLrPNJA3ySq_WhAIRVT7aLSskPXu",
+      "url": "https://drive.google.com/file/d/1GThblLrPNJA3ySq_WhAIRVT7aLSskPXu/view?usp=drivesdk",
+      "sizeBytes": 6223,
+      "sha256": "B615DC3C00DE8D59732C42112C41C06931DC0C423D956EEDC74AAB94E8522F71",
+      "verified": true,
+      "uploaded": true,
+      "sourceCommit": "1ac565ba89f58354e8df54248f34791cc39bd73a",
+      "coversCurrentLocalRevisions": false,
+      "coverageExcludes": "backup_receipt_itself"
     }
   ],
   "claimTreatment": {
@@ -471,8 +487,16 @@
     "version": "v5",
     "zipFilename": "aisel-sales-performance_2026-10-04_v5.zip",
     "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-    "status": "pending_final_verification_and_publication",
-    "uploaded": false
+    "status": "uploaded_verified",
+    "fileId": "1HkOVOz-o-xJ4ArWWVIypUxAMkafGOBB9",
+    "url": "https://drive.google.com/file/d/1HkOVOz-o-xJ4ArWWVIypUxAMkafGOBB9/view?usp=drivesdk",
+    "sizeBytes": 6398,
+    "sha256": "490E336C8DE8FFC30C1D21F370EA4862034574BA1935C04D8B15A63E0C671A54",
+    "verified": true,
+    "uploaded": true,
+    "sourceCommit": "732f4f960fefa7e607b1e88237868b68d9910220",
+    "coversCurrentLocalRevisions": true,
+    "coverageExcludes": "backup_receipt_itself"
   },
   "firstSuccessfulSummaryRun": {
     "id": 37127521813,
