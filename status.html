@@ -2,40 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 (공유용) v9 (2026-10-03)
-     v9: 작업지시서 v94의 네이비·화이트 UI, 반응형 카드, 단계별 개수와 검색 결과 안내.
-     ─ v7 (2026-09-28)
-     v7 에서 바뀐 것 - PDP 카드에 MD용 「상세페이지 등록 완료」 버튼을 추가했습니다.
-                     누르면 작업지시서·색인·공유 화면이 한 번에 판매 상태로 바뀌고
-                     「최근 완료」 탭에 30일 동안 남습니다. 도착 취소는 오조작 복구용으로 유지합니다.
-     ─ v6 (2026-09-23)
-     v6 에서 바뀐 것 - 작업지시서의 혼용률과 컬러를 카드에 함께 표시합니다.
-     ─ v5 (2026-09-20)
-     v5 에서 바뀐 것 - 카드에 「💵 판매가」 한 줄. 연경님(MD)이 판매가를 보러 작업지시서에 들어오지 않게 하려고
-                     작업지시서 주소를 바꾸면서 판매가를 여기로 옮겼습니다. 값은 작지의 「타겟 판매가」 칸(targetThreshold)
-                     그대로이고, 원가는 여전히 안 넘어옵니다.
-     ─ v4 (2026-09-15)
-     v4 에서 바뀐 것 - 발주생산 카드에 「🚚 도착 확인」 버튼이 생겼습니다.
-                    물류가 실제 도착을 보고 직접 눌러 PDP로 넘깁니다(오조작 대비 되돌리기 있음).
-                    2026-09-15 지수 지시 — 지금까지는 지수/디자이너가 감으로 눌렀는데,
-                    정확한 도착일을 아는 사람은 물류뿐이라 그쪽에서 직접 찍게 합니다.
-                    ★이 화면의 "편집 기능이 없습니다" 원칙 중 이 버튼 하나만 예외입니다.
-                    자세한 내용은 아래 LOGISTICS 섹션 주석 참고.
-     v3 에서 바뀐 것 - 카드에 있던 날짜(작지 생성일)를 뺐습니다.
-                    발주일·납기처럼 보여서 헷갈린다는 지적으로 제거.
-     v2 에서 바뀐 것 - 사진을 자르지 않고 전체를 보여줍니다 / 사진을 누르면 크게 뜹니다
-                    / 「🛍️ 최근 완료」 단계 추가 (판매로 넘어간 지 30일 이내)
-     물류·MD 공유 전용 화면입니다. 작업지시서(work-order.html)와는 다른 파일입니다.
-
-     ★ 이 화면은 파이어베이스의 workorderShare 칸만 읽습니다.
-       원가·공임·원단처·원단명·판매수량·디자이너·사이즈·상세설명은
-       화면에서 숨기는 게 아니라 애초에 내려오지도 않습니다.
-       넘길 값을 늘리거나 줄이려면 work-order.html 의 WO_SHARE_KEYS 를 고칩니다.
-
-     ★ 편집 기능은 상태 이동 버튼뿐입니다: 물류의 「도착 확인」과 MD의
-       「상세페이지 등록 완료」. 사진을 누르면 그 사진이 크게만 뜹니다.
-     ★ 판매현황·무드보드·발주서 화면은 이 파일에 존재하지 않습니다.
--->
+<!-- AISEL 제품 진행 현황 v10 (2026-10-03): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -60,7 +27,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .connection::before{content:"";width:6px;height:6px;border-radius:50%;background:#AAB4C4}
 .connection.ready::before{background:#67816F}
 .connection.error::before{background:#A3264C}
-.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin:0 0 18px}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0 0 18px}
 .tab{display:flex;justify-content:center;align-items:center;gap:9px;min-width:0;min-height:42px;border:1px solid var(--field-line);background:var(--sheet);color:var(--muted);border-radius:4px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 .tab:hover{border-color:var(--navy);color:var(--navy);background:var(--field)}
 .tab.on{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -95,10 +62,6 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .colors-label{font-size:11px;line-height:1.5;color:#637089;margin-right:2px}
 .chip{border-radius:3px;padding:2px 6px;font-size:10.5px;line-height:1.4;font-weight:600;background:#EFEFEF;color:#666;border:1px solid transparent;overflow-wrap:anywhere;max-width:100%}
 .chip.light{border-color:rgba(0,0,0,.14)}
-.coordi{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
-.coordi img,.coordi .ph{width:23px;height:23px;border-radius:50%;flex:0 0 auto;border:1px solid var(--hair);background:var(--field);object-fit:cover;display:block}
-.coordi .ph{display:flex;align-items:center;justify-content:center;font-size:10px;color:#B9BFCB}
-.coordi .more{font-size:11px;font-weight:700;color:var(--muted);margin-left:2px}
 .arrive-row{margin-top:auto;padding-top:8px;display:flex;flex-direction:column;gap:6px}
 .arrive-btn{width:100%;min-height:36px;border:1px solid transparent;border-radius:4px;padding:8px 4px;font-size:12px;line-height:1.4;font-weight:700;cursor:pointer}
 .arrive-btn.go,.arrive-btn.complete{background:var(--navy);color:#fff}
@@ -115,8 +78,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .viewer .x:focus-visible{outline-color:#fff}
 @media(max-width:900px){.search{font-size:16px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.search-wrap{flex-basis:250px}}
 @media(max-width:680px){.wrap{padding:22px 16px 48px}.page-header{padding-bottom:18px;margin-bottom:14px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:11.5px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{display:block;margin-bottom:16px}.search-wrap{margin-top:13px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
-@media(max-width:480px){.tab{flex-direction:column;gap:3px;min-height:58px;font-size:11px;padding:6px 2px}.tab-count{line-height:17px}}
-@media(max-width:400px){.wrap{padding:20px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{flex-direction:column;gap:3px;min-height:58px;font-size:11px;padding:6px 2px}.tab-count{line-height:17px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
+@media(max-width:400px){.wrap{padding:20px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:11px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 </head>
 <body>
@@ -125,7 +87,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   <header class="page-header">
     <div>
       <h1><span class="brand">AISEL</span><span class="page-title">제품 진행 현황</span></h1>
-      <p class="page-subtitle">예정부터 상세페이지 등록까지, 한눈에 확인하세요.</p>
+      <p class="page-subtitle">발주생산부터 상세페이지 등록까지, 한눈에 확인하세요.</p>
     </div>
     <span class="connection" id="connection" role="status">불러오는 중</span>
   </header>
@@ -155,7 +117,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
-/* 작업지시서와 같은 창고를 보되, workorderShare 칸만 읽습니다. */
+/* 공유 가능한 짧은 제품 정보만 받습니다. 사진은 화면 가까이 온 카드부터 받습니다. */
 firebase.initializeApp({
   apiKey: "AIzaSyAJLu3HAH0jxKeLX5vQwEFtkfJHu2DYgmo",
   authDomain: "aisel-workorder.firebaseapp.com",
@@ -165,473 +127,369 @@ firebase.initializeApp({
   messagingSenderId: "150328860955",
   appId: "1:150328860955:web:98086ff488035fc8be33be"
 });
-
-/* 보여줄 상태와 순서. 샘플관리는 내부 단계라 공유하지 않습니다. */
-/* 2026-08-27 수정: 예정을 다시 넣었습니다. 지금 보여주는 단계는 예정 · 발주생산 · PDP.
-   샘플중은 나와봐야 정해지는 것이라 뺐고, 판매·드롭은 이미 끝났거나 안 만드는 것이라 뺐습니다.
-   여기 없는 단계의 제품은 목록에 아예 나오지 않습니다.
-   개수가 0일 때는 "0개가 기다리고 있습니다"가 어색해서 문장을 따로 둡니다. */
 var STATES = [
-  { key:"planned",  label:"예정",    icon:"📅", bg:"#EEF1F6", fg:"#4B5566",
-    desc:  function(n){ return "만들기로 예정된 제품 " + n + "개입니다."; },
-    empty: "만들기로 정해둔 제품이 아직 없습니다." },
-  { key:"order",    label:"발주생산", icon:"🚚", bg:"#FFF6E5", fg:"#8A5A18",
-    desc:  function(n){ return "공장에 발주했습니다. 제품 " + n + "개가 나올 예정입니다."; },
-    empty: "지금 발주된 제품이 없습니다." },
-  { key:"pdp",      label:"PDP",     icon:"🖼️", bg:"#F3F1EC", fg:"#7A7364",
-    desc:  function(n){ return "생산이 완료되어 " + n + "개가 상세페이지 등록을 기다리고 있습니다."; },
-    empty: "상세페이지 등록을 기다리는 제품이 아직 없습니다." },
-  /* 2026-08-27 추가: 판매로 넘어간 제품. 입고 대조가 끝날 때까지만 남깁니다.
-     30일이 지나면 작업지시서 쪽에서 이 칸을 지우므로 여기서도 저절로 사라집니다.
-     작지 원본은 그대로 남습니다 — 여기는 보관소가 아니라 지금 볼 것만 두는 자리입니다. */
-  { key:"sale",     label:"최근 완료", icon:"🛍️", bg:"#ECF2EC", fg:"#4F6552",
-    desc:  function(n){ return "최근 30일 안에 판매로 넘어간 제품 " + n + "개입니다."; },
-    empty: "최근 30일 안에 판매로 넘어간 제품이 없습니다." }
+  {key:"order",label:"발주생산",bg:"#FFF6E5",fg:"#8A5A18",desc:function(n){return "공장에 발주한 제품 " + n + "개입니다.";},empty:"지금 발주된 제품이 없습니다."},
+  {key:"pdp",label:"PDP",bg:"#F3F1EC",fg:"#7A7364",desc:function(n){return "제품 " + n + "개가 상세페이지 등록을 기다리고 있습니다.";},empty:"상세페이지 등록을 기다리는 제품이 없습니다."},
+  {key:"planned",label:"예정",bg:"#EEF1F6",fg:"#4B5566"},
+  {key:"sale",label:"판매",bg:"#ECF2EC",fg:"#4F6552"}
 ];
-var SHOWN = STATES.map(function(s){ return s.key; });
-var stateOf = function(k){
-  for(var i=0;i<STATES.length;i++){ if(STATES[i].key === k) return STATES[i]; }
-  return null;
-};
-
-/* ---------- 상태 이동: 물류 도착 확인 + MD 상세페이지 등록 완료 ----------
-   물류는 발주생산→PDP, MD는 PDP→최근 완료(판매)를 직접 처리합니다.
-
-   work-order.html 이 저장할 때와 똑같이 workorders · workorderIndex · workorderShare
-   세 칸을 같이 고칩니다. 한 곳만 고치면 이 화면과 work-order.html 이 서로 다른 상태를
-   보여주게 됩니다 (세 칸이 왜 따로 있는지는 work-order.html:2634-2661,4200-4221 참고).
-
-   ★비밀번호는 없습니다(2026-09-15 지수 지시로 뺐습니다). 눌렀을 때 확인 팝업 한 번
-   (confirm)만 거칩니다. 이 주소를 아는 사람은 누구나 누를 수 있다는 뜻입니다 — 진짜
-   막아야 한다면 파이어베이스 콘솔에서 이 경로 쓰기 규칙을 따로 잠가야 합니다
-   (이건 이 파일만 고쳐서는 안 되는 일입니다). */
-function todayStr_(){
-  var d = new Date();
-  var p = function(n){ return n < 10 ? "0" + n : "" + n; };
-  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
-}
-function writeStatusPatch_(code, patch, btn, okText){
-  if(btn){ btn.disabled = true; btn.textContent = "처리 중..."; }
-  var paths = ["workorders", "workorderIndex", "workorderShare"];
-  var updates = {};
-  paths.forEach(function(p){
-    Object.keys(patch).forEach(function(k){ updates[p + "/" + code + "/" + k] = patch[k]; });
-  });
-  /* 세 저장소를 원자적으로 바꿉니다. 일부만 바뀌어 화면과 작지 상태가 갈리는 일을 막습니다. */
-  firebase.database().ref().update(updates).then(function(){
-    if(btn) btn.textContent = okText;
-  }).catch(function(err){
-    console.error(err);
-    if(btn){ btn.disabled = false; btn.textContent = "⚠ 실패 (다시 시도)"; }
-    alert("저장에 실패했습니다. 인터넷을 확인하고 다시 눌러주세요.");
-  });
-}
-function markArrived_(code, name, btn){
-  if(!confirm("\"" + (name || code) + "\" 오늘 도착 처리할까요?\n\n상세페이지 등록(PDP) 단계로 넘어갑니다.")) return;
-  writeStatusPatch_(code, { status:"pdp", arrivedAt: todayStr_() }, btn, "✓ 도착 처리됨");
-}
-function undoArrived_(code, name, btn){
-  if(!confirm("\"" + (name || code) + "\" 도착 처리를 취소하고 발주생산으로 되돌릴까요?")) return;
-  writeStatusPatch_(code, { status:"order", arrivedAt:null }, btn, "↩ 되돌림");
-}
-function completePdp_(code, name, btn){
-  if(!confirm("\"" + (name || code) + "\" 상세페이지 등록을 완료했나요?\n\n최근 완료로 이동합니다.")) return;
-  writeStatusPatch_(code, { status:"sale", updatedAt:Date.now() }, btn, "✓ 최근 완료로 이동됨");
-}
+var SHARED = ["planned","order","pdp","sale"];
+var ACTIVE = ["order","pdp"];
+var TABS = [STATES[0],STATES[1],{key:"all",label:"전체",desc:function(n){return "발주생산과 PDP 제품 " + n + "개입니다.";},empty:"지금 진행 중인 제품이 없습니다."}];
+function stateOf(key){return STATES.filter(function(s){return s.key === key;})[0] || null;}
+function validFilter(key){return ["order","pdp","all"].indexOf(key) !== -1 ? key : "order";}
+function normalizeSearch(value){return String(value || "").toLowerCase().replace(/\s+/g, "");}
 
 var all = {};
 var dataReady = false;
 var loadFailed = false;
-/* 2026-08-27: 화면을 열면 「발주생산」이 이미 눌려 있습니다.
-   물류가 전체를 보고 자기 일을 골라내는 수고를 없애려는 것입니다.
-   발주된 게 없으면 빈 화면이 되지만, 아래 설명 문장이 그 사실을 그대로 알려줍니다. */
+var catalogMissing = false;
 var filter = "order";
 var query = "";
-
-/* ---------- 탭 ---------- */
 var tabsEl = document.getElementById("tabs");
-/* 코디 짝 표. A 작지가 B를 걸었으면 B 카드에서도 A가 보여야 합니다.
-   그래서 적혀 있는 것(한 방향)을 양쪽으로 펴서 씁니다. */
-var pairs = {};
-function buildPairs(){
-  pairs = {};
-  var add = function(a, b){
-    if(!a || !b || a === b) return;
-    if(!pairs[a]) pairs[a] = [];
-    if(pairs[a].indexOf(b) === -1) pairs[a].push(b);
-  };
-  for(var c in all){
-    if(!Object.prototype.hasOwnProperty.call(all, c)) continue;
-    var list = (all[c] || {}).coordi;
-    if(!Array.isArray(list)) continue;
-    for(var i=0;i<list.length;i++){ add(c, list[i]); add(list[i], c); }
-  }
+var gridEl = document.getElementById("grid");
+var emptyEl = document.getElementById("empty");
+var searchEl = document.getElementById("search");
+var lastSig = null;
+
+/* 상태 이동은 기존 원본/색인/공유 자료와 경량 목록을 한 번에 바꿉니다. */
+function todayStr_(){
+  var d = new Date();
+  var p = function(n){return n < 10 ? "0" + n : "" + n;};
+  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
-function coordiRow(code){
-  var mates = (pairs[code] || []).filter(function(m){
-    var e = all[m];
-    return e && SHOWN.indexOf(e.status) !== -1;   // 공유 안 하는 단계는 빼고
+function writeStatusPatch_(code, patch, btn, okText){
+  patch = Object.assign({},patch);
+  if(!patch.updatedAt) patch.updatedAt = Date.now();
+  if(btn){btn.disabled = true;btn.textContent = "처리 중...";}
+  var updates = {};
+  ["workorders","workorderIndex","workorderShare"].forEach(function(path){
+    Object.keys(patch).forEach(function(key){updates[path + "/" + code + "/" + key] = patch[key];});
   });
-  if(!mates.length) return null;
-  var row = document.createElement("div");
-  row.className = "coordi";
-  mates.slice(0, 3).forEach(function(m){
-    var e = all[m] || {};
-    var src = e.thumb || e.thumbUrl || "";
-    var nm = (e.pumMyeong || m) + " · " + m;
-    if(src){
-      var im = document.createElement("img");
-      im.setAttribute("loading", "lazy");
-      im.setAttribute("decoding", "async");
-      im.src = src; im.alt = nm; im.title = nm;
-      row.appendChild(im);
-    }else{
-      var ph = document.createElement("span");
-      ph.className = "ph"; ph.textContent = "▧"; ph.title = nm;
-      row.appendChild(ph);
-    }
+  ["status","arrivedAt"].forEach(function(key){
+    if(Object.prototype.hasOwnProperty.call(patch,key)) updates["workorderStatusCatalog/" + code + "/" + key] = patch[key];
   });
-  if(mates.length > 3){
-    var more = document.createElement("span");
-    more.className = "more";
-    more.textContent = "+" + (mates.length - 3);
-    row.appendChild(more);
-  }
-  return row;
+  if(patch.updatedAt) updates["workorderStatusCatalog/" + code + "/sourceUpdatedAt"] = patch.updatedAt;
+  return firebase.database().ref().update(updates).then(function(){
+    if(btn) btn.textContent = okText;
+  }).catch(function(err){
+    console.error(err);
+    if(btn){btn.disabled = false;btn.textContent = "실패 · 다시 시도";}
+    alert("저장에 실패했습니다. 인터넷을 확인하고 다시 눌러주세요.");
+  });
+}
+function markArrived_(code,name,btn){
+  if(!confirm('"' + (name || code) + '" 오늘 도착 처리할까요?\n\n상세페이지 등록(PDP) 단계로 넘어갑니다.')) return;
+  return writeStatusPatch_(code,{status:"pdp",arrivedAt:todayStr_()},btn,"도착 처리됨");
+}
+function undoArrived_(code,name,btn){
+  if(!confirm('"' + (name || code) + '" 도착 처리를 취소하고 발주생산으로 되돌릴까요?')) return;
+  return writeStatusPatch_(code,{status:"order",arrivedAt:null},btn,"되돌림");
+}
+function completePdp_(code,name,btn){
+  if(!confirm('"' + (name || code) + '" 상세페이지 등록을 완료했나요?\n\n판매 상태로 이동하며 진행 목록에서는 숨겨집니다. 품명 검색으로 다시 찾을 수 있습니다.')) return;
+  return writeStatusPatch_(code,{status:"sale",updatedAt:Date.now()},btn,"등록 완료");
 }
 
+/* 탭은 발주생산/PDP만 집계하고, 검색은 모든 공유 상태에서 찾습니다. */
 function countOf(key){
-  var n = 0;
-  for(var c in all){
-    if(!Object.prototype.hasOwnProperty.call(all, c)) continue;
-    var st = (all[c] || {}).status;
-    if(SHOWN.indexOf(st) === -1) continue;
-    if(key === "all" || st === key) n++;
-  }
-  return n;
+  return Object.keys(all).filter(function(code){
+    var status = all[code].status;
+    return ACTIVE.indexOf(status) !== -1 && (key === "all" || key === status);
+  }).length;
 }
 function renderTabs(){
   tabsEl.innerHTML = "";
-  var list = [{
-    key:"all", label:"전체",
-    desc:  function(n){ return "지금 진행 중인 제품 " + n + "개입니다. 상태를 눌러 단계별로 보실 수 있습니다."; },
-    empty: "지금 진행 중인 제품이 없습니다."
-  }].concat(STATES);
-  list.forEach(function(s){
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "tab" + (filter === s.key ? " on" : "");
-    // 작업지시서와 동일한 네이비 탭. 개수는 별도 배지로 구분합니다.
-    var cnt = countOf(s.key);
-    b.setAttribute("aria-pressed", String(filter === s.key));
-    var label = document.createElement("span");
-    label.textContent = s.label;
-    var count = document.createElement("span");
-    count.className = "tab-count";
-    count.textContent = dataReady ? cnt : "–";
-    b.appendChild(label);
-    b.appendChild(count);
-    b.addEventListener("click", function(){ filter = s.key; renderTabs(); render(); });
-    tabsEl.appendChild(b);
+  TABS.forEach(function(tab){
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "tab" + (filter === tab.key ? " on" : "");
+    button.setAttribute("aria-pressed",String(filter === tab.key));
+    var label = document.createElement("span");label.textContent = tab.label;
+    var count = document.createElement("span");count.className = "tab-count";
+    count.textContent = dataReady ? countOf(tab.key) : "–";
+    button.appendChild(label);button.appendChild(count);
+    button.addEventListener("click",function(){navigate_(tab.key,"");});
+    tabsEl.appendChild(button);
   });
-  // 고른 탭의 설명. 개수는 문장 안에 들어갑니다
-  var cur = null;
-  for(var i=0;i<list.length;i++){ if(list[i].key === filter) cur = list[i]; }
-  var d = document.getElementById("desc");
-  if(cur){
-    var cnt = countOf(filter);
-    d.style.display = "block";
-    d.textContent = loadFailed ? "연결을 확인한 뒤 새로고침해 주세요."
-      : !dataReady ? "제품 정보를 불러오고 있습니다."
-      : cnt ? cur.desc(cnt) : cur.empty;
-    document.getElementById("sectionTitle").textContent = cur.label === "전체" ? "전체 제품" : cur.label;
-  }else{
-    d.style.display = "none";
-  }
+  var current = TABS.filter(function(tab){return tab.key === filter;})[0];
+  document.getElementById("sectionTitle").textContent = query ? "전체 상태 검색" : current.label;
+  document.getElementById("desc").textContent = loadFailed
+    ? (dataReady ? "연결이 끊겼습니다. 마지막으로 받은 정보를 표시합니다." : "연결을 확인한 뒤 새로고침해 주세요.")
+    : catalogMissing ? "제품 요약 정보가 아직 연결되지 않았습니다. 작업지시서 동기화를 기다리고 있습니다."
+    : !dataReady ? "제품 정보를 불러오고 있습니다."
+    : query ? "현재 탭과 관계없이 품명·품번으로 검색합니다. 예정과 판매 상태도 포함합니다."
+    : countOf(filter) ? current.desc(countOf(filter)) : current.empty;
 }
-
-/* ---------- 목록 ---------- */
-var gridEl  = document.getElementById("grid");
-var emptyEl = document.getElementById("empty");
-var lastSig = null;
-
 function rowsNow(){
-  return Object.keys(all)
-    .map(function(code){ return { code: code, e: all[code] || {} }; })
-    // 공유하지 않는 단계(샘플관리 등)는 목록에서 아예 제외합니다
-    .filter(function(x){ return SHOWN.indexOf(x.e.status) !== -1; })
-    .filter(function(x){ return filter === "all" || x.e.status === filter; })
-    .filter(function(x){
-      if(!query) return true;
-      return (x.code + " " + (x.e.pumMyeong || "")).toLowerCase().indexOf(query) !== -1;
-    })
-    .sort(function(a, b){
-      var da = String(a.e.createdAt || ""), db = String(b.e.createdAt || "");
-      if(da !== db) return db.localeCompare(da);
-      return b.code.localeCompare(a.code);
+  var needle = normalizeSearch(query);
+  return Object.keys(all).map(function(code){return {code:code,e:all[code]};})
+    .filter(function(row){
+      if(SHARED.indexOf(row.e.status) === -1) return false;
+      if(needle) return normalizeSearch(row.code).indexOf(needle) !== -1 || normalizeSearch(row.e.pumMyeong).indexOf(needle) !== -1;
+      return ACTIVE.indexOf(row.e.status) !== -1 && (filter === "all" || row.e.status === filter);
+    }).sort(function(a,b){
+      var aDate = String(a.e.createdAt || ""), bDate = String(b.e.createdAt || "");
+      return bDate.localeCompare(aDate) || b.code.localeCompare(a.code);
     });
 }
+function priceText_(entry){
+  if((entry.priceState === "ready" || entry.priceState === "frozen") && Number.isFinite(entry.salePrice) && entry.salePrice > 0){
+    return entry.salePrice.toLocaleString("ko-KR") + "원";
+  }
+  if(entry.priceState === "cost_missing") return "원가 입력 대기";
+  if(entry.priceState === "review") return "판매가 확인 필요";
+  return "입력 필요";
+}
+function appendField_(body,className,label,value){
+  var row = document.createElement("div");row.className = className;
+  var labelEl = document.createElement("span");labelEl.className = "meta-label";labelEl.textContent = label;
+  row.appendChild(labelEl);row.appendChild(document.createTextNode(String(value || "").trim() || "입력 필요"));
+  body.appendChild(row);
+}
 
+/* 사진 자체를 포함한 공유 목록 전체는 받지 않습니다. 받은 사진은 탭을 오가도 재사용합니다. */
+var photoCache = Object.create(null);
+function photoSource_(value){
+  return typeof value === "string" && (/^https:\/\//i.test(value) || /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(value)) ? value : "";
+}
+function readPhotoLeaf_(code,leaf){
+  return firebase.database().ref("workorderShare/" + code + "/" + leaf).once("value").then(function(snap){return photoSource_(snap.val());});
+}
+function photoRecord_(code,version){
+  if(photoCache[code] && photoCache[code].version === version) return photoCache[code];
+  var record = {version:version,source:null,promise:null,fallback:null,fallbackSource:null};
+  photoCache[code] = record;
+  record.promise = readPhotoLeaf_(code,"thumbUrl").then(function(src){
+    if(src) return src;
+    record.fallback = readPhotoLeaf_(code,"thumb").then(function(fallback){record.fallbackSource = fallback;return fallback;});
+    return record.fallback;
+  }).then(function(src){record.source = src;return src;}).catch(function(err){
+    if(photoCache[code] === record) delete photoCache[code];
+    throw err;
+  });
+  return record;
+}
+function showPhoto_(thumb,code,entry){
+  if(thumb._photoRequested) return;
+  thumb._photoRequested = true;
+  var record = photoRecord_(code,String(entry.sourceUpdatedAt || ""));
+  record.promise.then(function(src){
+    if(!thumb.isConnected || !src) return;
+    var image = document.createElement("img");
+    image.setAttribute("loading","lazy");image.setAttribute("decoding","async");
+    image.alt = entry.pumMyeong || code;
+    thumb.textContent = "";thumb.appendChild(image);
+    var currentSource = src;
+    var fallbackTried = src === record.fallbackSource;
+    function makeOpen_(){
+      thumb.className = "thumb can-open";
+      thumb.setAttribute("role","button");thumb.setAttribute("tabindex","0");
+      thumb.setAttribute("aria-label",(entry.pumMyeong || code) + " 사진 크게 보기");
+      thumb.title = "누르면 사진이 크게 보입니다";
+    }
+    function photoFailed_(){
+      thumb.textContent = "▧";thumb.className = "thumb";
+      thumb.removeAttribute("role");thumb.removeAttribute("tabindex");
+      thumb.removeAttribute("aria-label");thumb.title = "사진을 불러오지 못했습니다";
+      currentSource = "";
+    }
+    image.addEventListener("load",makeOpen_);
+    image.addEventListener("error",function(){
+      if(fallbackTried){photoFailed_();return;}
+      fallbackTried = true;
+      if(!record.fallback) record.fallback = readPhotoLeaf_(code,"thumb");
+      record.fallback.then(function(fallback){
+        if(!fallback || fallback === currentSource){photoFailed_();return;}
+        currentSource = fallback;record.source = fallback;record.fallbackSource = fallback;record.promise = Promise.resolve(fallback);image.src = fallback;
+      }).catch(photoFailed_);
+    });
+    thumb.addEventListener("click",function(){if(currentSource) openViewer(currentSource,image.alt);});
+    thumb.addEventListener("keydown",function(ev){
+      if(currentSource && (ev.key === "Enter" || ev.key === " ")){ev.preventDefault();openViewer(currentSource,image.alt);}
+    });
+    image.src = src;
+  }).catch(function(){thumb.title = "사진을 불러오지 못했습니다";});
+}
+var photoObserver = typeof IntersectionObserver !== "undefined" ? new IntersectionObserver(function(entries){
+  entries.forEach(function(item){
+    if(!item.isIntersecting) return;
+    photoObserver.unobserve(item.target);
+    showPhoto_(item.target,item.target._productCode,item.target._productEntry);
+  });
+},{rootMargin:"240px 0px"}) : null;
+function checkVisiblePhotos_(){
+  if(photoObserver) return;
+  Array.prototype.forEach.call(gridEl.querySelectorAll(".thumb"),function(thumb){
+    var rect = thumb.getBoundingClientRect();
+    if(rect.bottom >= -240 && rect.top <= window.innerHeight + 240) showPhoto_(thumb,thumb._productCode,thumb._productEntry);
+  });
+}
 function render(){
-  buildPairs();
   var rows = rowsNow();
-  document.getElementById("resultCount").textContent = dataReady
-    ? (query ? "검색 " + rows.length + " / " + countOf(filter) + "개" : rows.length + "개") : "";
+  document.getElementById("resultCount").textContent = dataReady ? (query ? "검색 " : "") + rows.length + "개" : "";
   if(!dataReady){
+    if(photoObserver) photoObserver.disconnect();
+    gridEl.innerHTML = "";lastSig = null;
     emptyEl.style.display = "block";
-    emptyEl.textContent = loadFailed ? "자료를 불러오지 못했습니다. 새로고침해 주세요." : "제품 정보를 불러오고 있습니다.";
+    emptyEl.textContent = loadFailed ? "자료를 불러오지 못했습니다. 새로고침해 주세요."
+      : catalogMissing ? "제품 요약 정보를 동기화하고 있습니다. 연결되면 이곳에 표시됩니다." : "제품 정보를 불러오고 있습니다.";
     return;
   }
-  /* 내용이 그대로면 다시 그리지 않습니다.
-     여러 명이 같이 볼 때 화면이 번쩍이는 것을 막는 장치입니다. */
-  var sig = JSON.stringify([filter, query, rows.map(function(x){
-    return [x.code, x.e.status, x.e.pumMyeong, x.e.factory,
-            x.e.yy, x.e.mm, x.e.dd, JSON.stringify(x.e.colors || []),
-            (pairs[x.code] || []).join(","),
-            x.e.thumbUrl || "", (x.e.thumb || "").length, x.e.arrivedAt || "",
-            x.e.targetThreshold || "", x.e.priceSource || "", x.e.blend || ""];   /* 판매가·확정 여부·혼용률이 바뀌면 다시 그립니다 */
-  })]);
-  if(sig === lastSig) return;
+  var sig = JSON.stringify([filter,query,rows]);
+  if(sig === lastSig){applyPendingScroll_();return;}
   lastSig = sig;
-
+  if(photoObserver) photoObserver.disconnect();
   gridEl.innerHTML = "";
   emptyEl.style.display = rows.length ? "none" : "block";
   emptyEl.textContent = query ? "검색 결과가 없습니다. 품명이나 품번을 다시 확인해 주세요."
-    : filter === "all" ? "지금 진행 중인 제품이 없습니다." : stateOf(filter).empty;
-
-  rows.forEach(function(x, idx){
-    var e = x.e;
-    var card = document.createElement("article");
-    card.className = "card";
-
-    var th = document.createElement("div");
-    th.className = "thumb";
-    // 공유 데이터의 압축 사진을 우선 씁니다. 별도 파일 저장소가 막혀도 사진이 보입니다.
-    var src = e.thumb || e.thumbUrl || "";
-    if(src){
-      var im = document.createElement("img");
-      /* 2026-08-27 수정: 앞의 6장은 열자마자 화면에 보이는 것이라 미루지 않고 바로 받습니다.
-         전부 "보일 때 받기"로 두면 브라우저가 한 박자 늦게 시작해서 늦게 뜨는 느낌이 납니다.
-         나머지는 스크롤할 때 받습니다. */
-      if(idx < 6){
-        im.setAttribute("fetchpriority", "high");
+    : TABS.filter(function(tab){return tab.key === filter;})[0].empty;
+  rows.forEach(function(row){
+    var entry = row.e;
+    var card = document.createElement("article");card.className = "card";
+    var thumb = document.createElement("div");thumb.className = "thumb";thumb.textContent = "▧";
+    thumb._productCode = row.code;thumb._productEntry = entry;
+    card.appendChild(thumb);
+    var body = document.createElement("div");body.className = "body";
+    var state = stateOf(entry.status);
+    var badge = document.createElement("span");badge.className = "state";
+    badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = state.label;body.appendChild(badge);
+    var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";body.appendChild(name);
+    var code = document.createElement("div");code.className = "code";code.textContent = row.code;body.appendChild(code);
+    appendField_(body,"factory","공장",entry.factory);
+    appendField_(body,"price","판매가",priceText_(entry));
+    appendField_(body,"blend","혼용률",entry.blend);
+    var colors = document.createElement("div");colors.className = "colors";
+    var colorLabel = document.createElement("span");colorLabel.className = "colors-label";colorLabel.textContent = "컬러";colors.appendChild(colorLabel);
+    var colorList = Array.isArray(entry.colors) ? entry.colors.filter(function(color){return color && String(typeof color === "object" ? color.n || "" : color).trim();}) : [];
+    if(!colorList.length){
+      var missing = document.createElement("span");missing.className = "blend";missing.textContent = "입력 필요";colors.appendChild(missing);
+    }
+    colorList.forEach(function(color){
+      var chip = document.createElement("span");chip.className = "chip";
+      var background = typeof color === "object" ? color.h : "";
+      var foreground = typeof color === "object" ? color.t : "";
+      if(background){chip.style.background = background;if(foreground) chip.style.color = foreground;if(foreground && foreground.toLowerCase() !== "#ffffff") chip.className += " light";}
+      chip.textContent = typeof color === "object" ? color.n : color;colors.appendChild(chip);
+    });
+    body.appendChild(colors);
+    if(ACTIVE.indexOf(entry.status) !== -1){
+      var actions = document.createElement("div");actions.className = "arrive-row";
+      var button = document.createElement("button");button.type = "button";
+      if(entry.status === "order"){
+        button.className = "arrive-btn go";button.textContent = "도착 확인";
+        button.addEventListener("click",function(){markArrived_(row.code,entry.pumMyeong,button);});
       }else{
-        im.setAttribute("loading", "lazy");
+        var complete = document.createElement("button");complete.type = "button";complete.className = "arrive-btn complete";complete.textContent = "상세페이지 등록 완료";
+        complete.addEventListener("click",function(){completePdp_(row.code,entry.pumMyeong,complete);});actions.appendChild(complete);
+        button.className = "arrive-btn undo";button.textContent = "도착 취소";
+        button.addEventListener("click",function(){undoArrived_(row.code,entry.pumMyeong,button);});
       }
-      im.setAttribute("decoding", "async");
-      im.src = src;
-      im.alt = e.pumMyeong || x.code;
-      th.appendChild(im);
-      /* 2026-08-27 추가: 누르면 이 사진이 크게 뜹니다.
-         새로 받는 파일이 없습니다 — 방금 받은 이 파일을 그대로 키웁니다. */
-      th.className = "thumb can-open";
-      th.setAttribute("role", "button");
-      th.setAttribute("tabindex", "0");
-      th.title = "누르면 사진이 크게 보입니다";
-      th.addEventListener("click", function(){ openViewer(src, im.alt); });
-      th.addEventListener("keydown", function(ev){
-        if(ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); openViewer(src, im.alt); }
-      });
-    }else{
-      th.textContent = "▧";
+      actions.appendChild(button);body.appendChild(actions);
+      if(entry.status === "pdp" && entry.arrivedAt){var arrived = document.createElement("div");arrived.className = "arrived-at";arrived.textContent = "도착일 " + entry.arrivedAt;body.appendChild(arrived);}
     }
-    card.appendChild(th);
-
-    var body = document.createElement("div");
-    body.className = "body";
-
-    var st = stateOf(e.status);
-    if(st){
-      var sp = document.createElement("span");
-      sp.className = "state";
-      sp.style.background = st.bg;
-      sp.style.color = st.fg;
-      sp.textContent = st.label;
-      body.appendChild(sp);
-    }
-
-    var nm = document.createElement("div");
-    nm.className = "name";
-    nm.textContent = e.pumMyeong || "(품명 미정)";
-    body.appendChild(nm);
-
-    var cd = document.createElement("div");
-    cd.className = "code";
-    cd.textContent = x.code;
-    body.appendChild(cd);
-
-    var fac = document.createElement("div");
-    fac.className = "factory";
-    var facLabel = document.createElement("span");
-    facLabel.className = "meta-label";
-    facLabel.textContent = "공장";
-    fac.appendChild(facLabel);
-    fac.appendChild(document.createTextNode(e.factory || "미정"));
-    body.appendChild(fac);
-
-    /* 2026-09-20 추가: 판매가. 작지의 타겟 판매가 칸 값 그대로입니다. 비어 있으면 「판매가 미정」 */
-    var pr = document.createElement("div");
-    pr.className = "price";
-    var pv = String(e.targetThreshold || "").replace(/[^0-9]/g, "");
-    var prLabel = document.createElement("span");
-    prLabel.className = "meta-label";
-    prLabel.textContent = "판매가";
-    pr.appendChild(prLabel);
-    pr.appendChild(document.createTextNode(!pv ? "미정"
-      : e.priceSource !== "manual" ? "재확인 필요"
-      : (Number(pv).toLocaleString("ko-KR") + "원")));
-    body.appendChild(pr);
-
-    /* 2026-09-23: 작지의 혼용률을 품번과 함께 공유합니다. 비어 있으면 줄을 만들지 않습니다. */
-    if(String(e.blend || "").trim()){
-      var bl = document.createElement("div");
-      bl.className = "blend";
-      var blLabel = document.createElement("span");
-      blLabel.className = "meta-label";
-      blLabel.textContent = "혼용률";
-      bl.appendChild(blLabel);
-      bl.appendChild(document.createTextNode(String(e.blend).trim()));
-      body.appendChild(bl);
-    }
-
-    if(Array.isArray(e.colors) && e.colors.length){
-      var cw = document.createElement("div");
-      cw.className = "colors";
-      var colorLabel = document.createElement("span");
-      colorLabel.className = "colors-label";
-      colorLabel.textContent = "🎨 컬러";
-      cw.appendChild(colorLabel);
-      e.colors.forEach(function(c){
-        // 예전 자료는 색 이름만 있고, 새 자료는 색값도 같이 옵니다. 둘 다 받습니다.
-        var name = (c && typeof c === "object") ? c.n : c;
-        var bg   = (c && typeof c === "object") ? c.h : null;
-        var fg   = (c && typeof c === "object") ? c.t : null;
-        var ch = document.createElement("span");
-        ch.className = "chip";
-        if(bg){
-          ch.style.background = bg;
-          if(fg) ch.style.color = fg;
-          // 글자색이 어두우면 바탕이 밝은 색이라는 뜻이라 테두리를 줍니다
-          if(fg && fg.toLowerCase() !== "#ffffff") ch.className += " light";
-        }
-        ch.textContent = name;
-        cw.appendChild(ch);
-      });
-      body.appendChild(cw);
-    }
-
-    var cr = coordiRow(x.code);
-    if(cr) body.appendChild(cr);
-
-    /* 발주생산은 물류가 도착 확인. PDP는 MD가 상세페이지 등록 완료 처리하며,
-       도착 취소는 오조작 복구용으로 아래에 유지합니다. */
-    if(e.status === "order" || e.status === "pdp"){
-      var arow = document.createElement("div");
-      arow.className = "arrive-row";
-      var abtn = document.createElement("button");
-      abtn.type = "button";
-      if(e.status === "order"){
-        abtn.className = "arrive-btn go";
-        abtn.textContent = "도착 확인";
-        abtn.addEventListener("click", function(){ markArrived_(x.code, e.pumMyeong, abtn); });
-      }else{
-        var doneBtn = document.createElement("button");
-        doneBtn.type = "button";
-        doneBtn.className = "arrive-btn complete";
-        doneBtn.textContent = "상세페이지 등록 완료";
-        doneBtn.addEventListener("click", function(){ completePdp_(x.code, e.pumMyeong, doneBtn); });
-        arow.appendChild(doneBtn);
-        abtn.className = "arrive-btn undo";
-        abtn.textContent = "↩ 도착 취소";
-        abtn.addEventListener("click", function(){ undoArrived_(x.code, e.pumMyeong, abtn); });
-      }
-      arow.appendChild(abtn);
-      body.appendChild(arow);
-      if(e.status === "pdp" && e.arrivedAt){
-        var at = document.createElement("div");
-        at.className = "arrived-at";
-        at.textContent = "도착일 " + e.arrivedAt;
-        body.appendChild(at);
-      }
-    }
-
-    card.appendChild(body);
-    gridEl.appendChild(card);
+    card.appendChild(body);gridEl.appendChild(card);
+    if(photoObserver) photoObserver.observe(thumb);
   });
+  applyPendingScroll_();
+  checkVisiblePhotos_();
 }
 
-/* ---------- 사진 크게 보기 ---------- */
-/* 이 화면이 하는 일은 이게 전부입니다. 고치거나 지우는 자리는 없습니다. */
-var viewerEl    = document.getElementById("viewer");
+/* 사진 확대는 이미 받은 사진을 재사용합니다. */
+var viewerEl = document.getElementById("viewer");
 var viewerImgEl = document.getElementById("viewerImg");
 var viewerCloseEl = document.getElementById("viewerClose");
 var viewerLastFocus = null;
-
-function openViewer(src, alt){
+function openViewer(src,alt){
   if(!src) return;
-  viewerLastFocus = document.activeElement;
-  viewerImgEl.src = src;
-  viewerImgEl.alt = alt || "";
-  viewerEl.classList.add("on");
-  viewerEl.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";   // 뒤 목록이 같이 밀리지 않게
-  viewerCloseEl.focus();
+  viewerLastFocus = document.activeElement;viewerImgEl.src = src;viewerImgEl.alt = alt || "";
+  viewerEl.classList.add("on");viewerEl.setAttribute("aria-hidden","false");document.body.style.overflow = "hidden";viewerCloseEl.focus();
 }
 function closeViewer(){
   if(!viewerEl.classList.contains("on")) return;
-  viewerEl.classList.remove("on");
-  viewerEl.setAttribute("aria-hidden", "true");
-  viewerImgEl.removeAttribute("src");
-  document.body.style.overflow = "";
-  if(viewerLastFocus && viewerLastFocus.focus) viewerLastFocus.focus();
-  viewerLastFocus = null;
+  viewerEl.classList.remove("on");viewerEl.setAttribute("aria-hidden","true");viewerImgEl.removeAttribute("src");document.body.style.overflow = "";
+  if(viewerLastFocus && viewerLastFocus.focus) viewerLastFocus.focus();viewerLastFocus = null;
 }
-/* 사진 자체를 누른 것은 닫기가 아닙니다. 바깥이나 ✕ 를 눌러야 닫힙니다. */
-viewerEl.addEventListener("click", function(ev){
-  if(ev.target === viewerImgEl) return;
-  closeViewer();
-});
-document.addEventListener("keydown", function(ev){
+viewerEl.addEventListener("click",function(ev){if(ev.target !== viewerImgEl) closeViewer();});
+document.addEventListener("keydown",function(ev){
   if(ev.key === "Escape") closeViewer();
-  if(ev.key === "Tab" && viewerEl.classList.contains("on")){
-    ev.preventDefault();
-    viewerCloseEl.focus();
-  }
+  if(ev.key === "Tab" && viewerEl.classList.contains("on")){ev.preventDefault();viewerCloseEl.focus();}
 });
 
-/* ---------- 검색 ---------- */
-document.getElementById("search").addEventListener("input", function(ev){
-  query = (ev.target.value || "").trim().toLowerCase();
-  render();
+/* 탭마다 이동 기록을 남기고 검색 한 번을 기록 하나로 묶습니다. */
+var pendingScroll = null;
+var restoringScroll = false;
+var scrollFrame = null;
+function viewState_(scroll){return {aiselStatus:true,filter:filter,query:query,scrollY:Math.max(0,Number(scroll) || 0)};}
+function viewUrl_(){
+  var url = new URL(window.location.href);url.searchParams.set("tab",filter);
+  if(query) url.searchParams.set("q",query);else url.searchParams.delete("q");
+  return url.pathname + url.search + url.hash;
+}
+function saveCurrentView_(){window.history.replaceState(viewState_(window.scrollY),"",viewUrl_());}
+function applyPendingScroll_(){
+  if(pendingScroll === null || !dataReady) return;
+  var target = pendingScroll;pendingScroll = null;restoringScroll = true;
+  window.requestAnimationFrame(function(){
+    window.scrollTo(0,target);checkVisiblePhotos_();
+    window.requestAnimationFrame(function(){restoringScroll = false;});
+  });
+}
+function navigate_(nextFilter,nextQuery,preserveInput){
+  nextFilter = validFilter(nextFilter);nextQuery = String(nextQuery || "").trim();
+  if(filter === nextFilter && query === nextQuery) return;
+  saveCurrentView_();filter = nextFilter;query = nextQuery;
+  if(!preserveInput) searchEl.value = query;
+  window.history.pushState(viewState_(0),"",viewUrl_());pendingScroll = 0;
+  renderTabs();render();
+}
+function restoreView_(state){
+  var url = new URL(window.location.href);
+  filter = validFilter(state && state.aiselStatus ? state.filter : url.searchParams.get("tab"));
+  query = String(state && state.aiselStatus ? state.query || "" : url.searchParams.get("q") || "").trim();
+  searchEl.value = query;pendingScroll = state && state.aiselStatus ? Math.max(0,Number(state.scrollY) || 0) : 0;
+  closeViewer();renderTabs();render();
+}
+if("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
+restoreView_(window.history.state);
+window.history.replaceState(viewState_(pendingScroll),"",viewUrl_());
+window.addEventListener("popstate",function(ev){restoreView_(ev.state);});
+window.addEventListener("scroll",function(){
+  if(scrollFrame !== null) return;
+  scrollFrame = window.requestAnimationFrame(function(){
+    scrollFrame = null;if(!restoringScroll && pendingScroll === null) saveCurrentView_();checkVisiblePhotos_();
+  });
+},{passive:true});
+window.addEventListener("resize",checkVisiblePhotos_);
+window.addEventListener("pagehide",function(){if(!restoringScroll && pendingScroll === null) saveCurrentView_();});
+searchEl.addEventListener("input",function(ev){
+  var next = String(ev.target.value || "").trim();
+  if(next === query) return;
+  // 한글 조합 중에는 입력칸 값을 다시 쓰지 않습니다.
+  if(!query || !next){navigate_(filter,next,true);return;}
+  query = next;window.history.replaceState(viewState_(0),"",viewUrl_());pendingScroll = 0;renderTabs();render();
 });
 
-/* ---------- 자료 받기 ---------- */
-firebase.database().ref("workorderShare").on("value", function(snap){
-  all = snap.val() || {};
-  dataReady = true;
-  loadFailed = false;
-  gridEl.setAttribute("aria-busy", "false");
-  emptyEl.setAttribute("role", "status");
-  var connection = document.getElementById("connection");
-  connection.className = "connection ready";
-  connection.textContent = "불러오기 완료";
-  renderTabs();
-  render();
-}, function(err){
-  loadFailed = true;
-  gridEl.setAttribute("aria-busy", "false");
-  var connection = document.getElementById("connection");
-  connection.className = "connection error";
-  connection.textContent = "연결 확인";
-  renderTabs();
-  emptyEl.setAttribute("role", "alert");
-  emptyEl.style.display = "block";
-  emptyEl.textContent = "자료를 불러오지 못했습니다. 새로고침해보시고, 계속 안 되면 담당자에게 알려주세요.";
-  console.error(err);
+/* 경량 목록 한 번의 초기 수신 이후 변경분을 계속 반영합니다. */
+firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
+  var catalog = snap.val();all = {};
+  if(catalog && typeof catalog === "object") Object.keys(catalog).forEach(function(code){
+    var entry = catalog[code];
+    if(entry && entry.schemaVersion === 1 && SHARED.indexOf(entry.status) !== -1) all[code] = entry;
+  });
+  catalogMissing = !catalog;dataReady = !catalogMissing;loadFailed = false;
+  gridEl.setAttribute("aria-busy",String(!dataReady));emptyEl.setAttribute("role","status");
+  var connection = document.getElementById("connection");connection.className = "connection" + (dataReady ? " ready" : "");
+  connection.textContent = dataReady ? "불러오기 완료" : "동기화 대기";
+  renderTabs();render();
+},function(err){
+  loadFailed = true;gridEl.setAttribute("aria-busy","false");
+  var connection = document.getElementById("connection");connection.className = "connection error";connection.textContent = "연결 확인";
+  emptyEl.setAttribute("role","alert");renderTabs();render();console.error(err);
 });
-
-renderTabs();
 </script>
 
 </body>
 </html>
+
+
