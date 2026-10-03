@@ -132,9 +132,10 @@
     "url": "https://github.com/jisoo5000/aisel-web",
     "userApproved": true,
     "packageCommitStatus": "committed_pushed_verified",
-    "packageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
+    "packageCommitSha": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
     "runnerWorkflowCommitSha": "164d0e1791d0363bb01cdc75614711b5ca406e37",
-    "latestRunnerCommitSha": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2"
+    "latestRunnerCommitSha": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
+    "originalPackageCommitSha": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728"
   },
   "status": {
     "frontend": "deployed",
@@ -153,10 +154,10 @@
     "runnerWorkflowDeploymentCommit": "164d0e1791d0363bb01cdc75614711b5ca406e37",
     "firstLiveSummaryPublish": "verified",
     "dailyAutomaticRefresh": "scheduled_manual_run_verified",
-    "packageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
+    "packageGitHubCommit": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
     "versionZip": "created_verified",
     "driveDelivery": "uploaded_verified",
-    "statusDocumentRevision": "updated_locally_after_v2_backup",
+    "statusDocumentRevision": "published_at_58f45bbf_with_local_v3_backup_receipt_update",
     "skillV2Delivery": "uploaded_verified",
     "startRequestFixCommit": "816615e2df26ac98b8430ca580c90168bfec709d",
     "diagnosticCommit": "5dd7b1686dd60b36c9792f0e70cd2ab3193fddb2",
@@ -169,7 +170,9 @@
     "rankingUsable": false,
     "taskComplete": false,
     "completion": "incomplete_claim_quantity_proof_required",
-    "collectorFollowup": "additional_claim_quantity_proof_requested_not_yet_deployed"
+    "collectorFollowup": "additional_claim_quantity_proof_requested_not_yet_deployed",
+    "originalPackageGitHubCommit": "ffc10c9cefa0f47687149bd7e8a3630e8af9f728",
+    "skillV3Delivery": "uploaded_verified"
   },
   "firstWorkflowAttempt": {
     "runId": "37124128166",
@@ -200,17 +203,18 @@
     "verified": true
   },
   "nextBackup": {
-    "version": "v2",
-    "zipFilename": "aisel-sales-performance_2026-10-03_v2.zip",
+    "version": "v3",
+    "zipFilename": "aisel-sales-performance_2026-10-03_v3.zip",
     "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
     "status": "uploaded_verified",
-    "fileId": "18BTcSX4H8HvRa_6jmhDosPcF1RVGjm-G",
-    "url": "https://drive.google.com/file/d/18BTcSX4H8HvRa_6jmhDosPcF1RVGjm-G/view?usp=drivesdk",
-    "sizeBytes": 4708,
-    "sha256": "AF93E3C8868280C57C4ADC81457DB0431D7B45DAADE34B969C3911286A17025E",
+    "fileId": "1PdBL4-6FlYJeDb508U0YTRVkd5duuXm4",
+    "url": "https://drive.google.com/file/d/1PdBL4-6FlYJeDb508U0YTRVkd5duuXm4/view?usp=drivesdk",
+    "sizeBytes": 5885,
+    "sha256": "AADCA3103C484B38BE3486B53D7D3EAE9D6A12925ACA67D7EE68425DA72B64EF",
     "verified": true,
-    "sourceCommit": "25129f35f8a17357092ca15ae49b9a234d7b9927",
-    "coversCurrentLocalRevisions": false
+    "sourceCommit": "58f45bbf4d440176a71f300fee71bf2f9b4f3d6c",
+    "coversCurrentLocalRevisions": true,
+    "coverageExcludes": "backup_receipt_itself"
   },
   "validation": {
     "frontendFixtureChecksPassed": 60,
@@ -225,7 +229,7 @@
     "rerun_and_verify_quantity_evidence_and_server_ranking",
     "verify_rank_and_gauge_usability_in_owner_screen",
     "verify_first_scheduled_daily_execution",
-    "publish_final_status_documents_and_current_skill_backup"
+    "publish_final_status_and_skill_backup_after_ranking_fix"
   ],
   "skill": {
     "name": "aisel-sales-performance",
@@ -327,5 +331,20 @@
     "allSellingRanksAndGaugesWithheld": true,
     "frontendReinferenceAllowed": false,
     "financialValuesIncludedInDocument": false
-  }
+  },
+  "backupHistory": [
+    {
+      "version": "v2",
+      "zipFilename": "aisel-sales-performance_2026-10-03_v2.zip",
+      "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "uploaded_verified",
+      "fileId": "18BTcSX4H8HvRa_6jmhDosPcF1RVGjm-G",
+      "url": "https://drive.google.com/file/d/18BTcSX4H8HvRa_6jmhDosPcF1RVGjm-G/view?usp=drivesdk",
+      "sizeBytes": 4708,
+      "sha256": "AF93E3C8868280C57C4ADC81457DB0431D7B45DAADE34B969C3911286A17025E",
+      "verified": true,
+      "sourceCommit": "25129f35f8a17357092ca15ae49b9a234d7b9927",
+      "coversCurrentLocalRevisions": false
+    }
+  ]
 }
