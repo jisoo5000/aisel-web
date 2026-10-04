@@ -237,8 +237,8 @@
     "verified": true,
     "uploaded": true,
     "sourceCommit": "554104df0aab7c2cc92b6e96e18ea05ba80f015c",
-    "coversCurrentLocalRevisions": true,
-    "coverageExcludes": "backup_receipt_itself"
+    "coversCurrentLocalRevisions": false,
+    "coverageExcludes": "backup_receipt_and_subsequent_minor_sheet_design_review_note"
   },
   "validation": {
     "frontendFixtureChecksPassed": 67,
@@ -626,8 +626,8 @@
     "verified": true,
     "uploaded": true,
     "sourceCommit": "554104df0aab7c2cc92b6e96e18ea05ba80f015c",
-    "coversCurrentLocalRevisions": true,
-    "coverageExcludes": "backup_receipt_itself"
+    "coversCurrentLocalRevisions": false,
+    "coverageExcludes": "backup_receipt_and_subsequent_minor_sheet_design_review_note"
   },
   "firstSuccessfulSummaryRun": {
     "id": 37127521813,
@@ -718,5 +718,46 @@
     "waitForConfiguredSchedule": true,
     "dispatchOrAdvanceDuringPreparation": false,
     "keepCompletedRunHistory": true
-  }
+  },
+  "designReviews": [
+    {
+      "id": "sales-operations-sheet-20261004",
+      "status": "proposed_not_approved_for_implementation",
+      "date": "2026-10-04",
+      "userProposal": "기존 구글 운영 시트에 판매성과를 두고 작업지시서 앱에는 그중 필요한 결과만 가져오는 방안 검토",
+      "userDecisionConfirmed": false,
+      "applicationOrSheetChangeAuthorized": false,
+      "assistantRecommendation": {
+        "primaryReviewSurface": "existing_operations_spreadsheet",
+        "computation": "reuse_existing_cafe24_server_summary_once",
+        "columns": [
+          "rank",
+          "existing_product_image_reference",
+          "product_name",
+          "workorder_code",
+          "net_quantity",
+          "verified_net_revenue",
+          "completed_cancel_return_quantity",
+          "comparison_period",
+          "updated_at",
+          "pending_reason",
+          "designer_reflection",
+          "next_action"
+        ],
+        "manualAndAutomatedColumns": "separate_and_protect_automated_columns",
+        "productIdentity": "stable_workorder_code_and_confirmed_cafe24_product_id_not_row_number",
+        "appIntegration": "optional_minimal_summary_from_same_validated_snapshot_via_existing_protected_path",
+        "directBrowserReadOfOperationsWorkbook": "not_recommended_due_to_workbook_access_and_layout_coupling",
+        "rollout": "review_in_operations_sheet_first_then_choose_minimum_app_fields",
+        "unresolvedMetrics": "preserve_pending_until_evidence_verified",
+        "aiCallsForScheduledDataTransfer": 0
+      },
+      "existingDeployedRouteUnchanged": true,
+      "openQuestions": [
+        "exact_existing_operations_spreadsheet_and_target_tab",
+        "minimum_app_fields_if_needed"
+      ],
+      "backupPolicy": "minor_proposal_note_only_no_new_release_zip"
+    }
+  ]
 }
