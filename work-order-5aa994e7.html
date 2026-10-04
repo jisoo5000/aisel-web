@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v94 (2026-10-03)
+<!-- AISEL 작업지시서 v95 (2026-10-04)
+     [v95] PDF 저장/인쇄 시 디자이너 로그인 없이 카페24 판매함·진열안함 등록. v94 화면·저장·한글 입력 보호 보존.
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
      [v86] 모바일 고정 도구·삭제 위치 정리, 레퍼런스 상시 표시·제목 통일, 번역 제외, 기타 컬러 자동 색상.
@@ -5464,10 +5465,40 @@
     _removedSizeSpecCells = [];
   });
 
-  $("#printBtn").addEventListener("click", async ()=>{
-    if(!await waitForEditorComposition_()){
-      alert("한글 입력을 마친 뒤 다시 인쇄해주세요."); return;
+  const CAFE24_REGISTRATION_URL = "https://cafe24-weekly-insights.spaceit-aisel.chatgpt.site/api/workorder-registration";
+  let printRegistrationBusy_ = false;
+  function registrationNotice_(message, ok){
+    let notice = document.getElementById("cafe24RegistrationNotice");
+    if(!notice){
+      notice = document.createElement("div"); notice.id = "cafe24RegistrationNotice";
+      notice.className = "noprint"; notice.setAttribute("role", "status"); notice.setAttribute("aria-live", "polite");
+      notice.style.cssText = "padding:9px 12px;font-size:13px;line-height:1.5;";
+      $("#printBtn").closest(".tb-row").insertAdjacentElement("afterend", notice);
     }
+    notice.style.color = ok ? "#1E7A46" : "#9B382A"; notice.textContent = message;
+  }
+  async function registerPrintedWorkorder_(code){
+    await firebase.database().ref("workorderRegistrationRequests/" + code).set({ requestedAt: firebase.database.ServerValue.TIMESTAMP });
+    const response = await fetch(CAFE24_REGISTRATION_URL, {
+      method:"POST", mode:"cors", credentials:"omit", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({code}), signal:AbortSignal.timeout(90000)
+    });
+    const result = await response.json();
+    if(!response.ok || result.ok !== true) throw new Error(result.message || "카페24 등록 결과를 확인하지 못했습니다.");
+    return result;
+  }
+  $("#printBtn").addEventListener("click", async ()=>{
+    if(printRegistrationBusy_) return;
+    if(loading || !woRef || !currentCode || statusChanging_ || currentCode === justDeletedCode_ || codeConflictNow_()){
+      registrationNotice_("작업지시서를 모두 불러온 뒤 다시 눌러주세요.", false); return;
+    }
+    const printCode = currentCode, printRef = woRef;
+    printRegistrationBusy_ = true; $("#printBtn").disabled = true;
+    try{
+    if(!await waitForEditorComposition_()){
+      registrationNotice_("한글 입력을 마친 뒤 다시 인쇄해주세요.", false); return;
+    }
+    if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
     setModifiedToday();
     // 2026-08-29 추가: 인쇄(=작업지시서 확정) 시점에 상태를 PDP로 자동 전환.
     // 이미 PDP·판매·드롭이면 되돌리지 않음(재인쇄 시 상태가 거꾸로 가지 않게).
@@ -5477,11 +5508,36 @@
       updateStatusButtons();
       refreshCafe24Bar_();
     }
-    if(await save() === false){
-      alert("저장하지 못해 인쇄를 멈췄습니다. 연결을 확인한 뒤 다시 눌러주세요."); return;
+    const saved = await save();
+    const pending = await Promise.all([...pendingSaveWrites_]);
+    if(saved === false || pending.includes(false)) throw new Error("작업지시서 저장에 실패했습니다. 인터넷 연결을 확인해주세요.");
+    if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
+    const eligible = currentStatus !== "drop";
+    const sheets = syncToAiselSheets_();
+    if(eligible){
+      registrationNotice_("카페24 상품 등록 중…", true);
+      // Start before opening the print dialog; cancelling print does not cancel registration.
+      try{
+        const result = await registerPrintedWorkorder_(printCode);
+        if(currentCode === printCode && woRef === printRef){
+          $("#cafe24Done").checked = true;
+          await save();
+          registrationNotice_(result.message, true);
+        }
+      }catch(err){
+        if(currentCode === printCode) registrationNotice_(err.message || "카페24 연결을 확인한 뒤 다시 눌러주세요.", false);
+      }
+      if(currentCode === printCode && woRef === printRef && !loading) window.print();
+      await sheets;
+    }else{
+      registrationNotice_("드롭한 작업지시서는 카페24에 새로 등록하지 않습니다.", true);
+      window.print(); await sheets;
     }
-    await syncToAiselSheets_(); // 디자이너 최종 확정 시점 → 같은 품번이면 시트 줄을 덮어씀
-    window.print();
+    }catch(err){
+      registrationNotice_(err.message || "저장 상태를 확인한 뒤 다시 눌러주세요.", false);
+    }finally{
+      printRegistrationBusy_ = false; $("#printBtn").disabled = false;
+    }
   });
 
   // ---------- 자동저장 (Firebase 실시간 공유 저장소) ----------
