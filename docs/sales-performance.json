@@ -1,4 +1,16 @@
 {
+  "fixedSortControlSimplificationPlan20261007": {
+    "status": "planning_only_code_prohibited",
+    "decidedOn": "2026-10-07",
+    "source": "user asks equal button dimensions and why sales-sort cannot be clicked; planning only",
+    "canonicalPath": "docs/sales-performance.md",
+    "currentFacts": {"buttonSizeBothPx": {"width": 88, "height": 40}, "fontSizeBothPx": 13, "sortOptions": ["quantity"], "sortDisabled": true, "reason": "sheet view uses fixed quantity-descending order; old select remains"},
+    "confirmed": ["planning only; no code changes"],
+    "proposed": {"removeVisibleDisabledSort": true, "refreshPlacement": "replace sort control beside search", "refreshLabel": "새로고침", "sorting": "keep quantity descending", "periodAndReadTime": "retain below search", "buttonStyle": "retain existing navy 88x40 and 13px"},
+    "preserved": ["four-column center alignment", "left-aligned product name", "sky-blue search focus", "data and calculations"],
+    "implementationChanged": false,
+    "backupPolicy": "minor planning addition; retain full v22 recovery ZIP"
+  },
   "fourColumnAndButtonTextImplementation20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
