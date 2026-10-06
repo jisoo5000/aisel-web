@@ -1293,7 +1293,7 @@
   },
   "mobileCompact20261007": {
     "version": 106,
-    "status": "implemented_pending_deployment_verification",
+    "status": "deployed_verified",
     "scroll": "natural document scrolling; visible rail and floating controls removed",
     "row": [
       "thumbnail",
@@ -1315,7 +1315,20 @@
       "horizontalOverflow": false,
       "scrollBottom": true,
       "recordDialog": true,
-      "salesScan": "passed; 7 inline scripts"
+      "salesScan": "passed; 7 inline scripts",
+      "pagesRun": 37507070105,
+      "conclusion": "success",
+      "deployedCommit": "3f031630eaae3c60e7d28c9b2c9496476a344ae0",
+      "liveMobileWidths": [
+        320,
+        390
+      ],
+      "liveScrollTop": 187,
+      "liveLastRowBottom": 580,
+      "liveRenFirst": true,
+      "visibleScrollbar": false,
+      "print": "sheet DOM unchanged",
+      "iphoneSafari": "not directly tested"
     },
     "backup": {
       "version": "v15",
