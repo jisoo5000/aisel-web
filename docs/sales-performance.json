@@ -1233,7 +1233,11 @@
       "sourceCommit": "d6b80b477afdd10581605fb08ed2d3875f41b6fe",
       "pagesRun": 37502934977,
       "conclusion": "success",
-      "pureTests": "partial sum / duplicate day / coverage guard / return unknown / script syntax passed"
+      "pureTests": "partial sum / duplicate day / coverage guard / return unknown / script syntax passed",
+      "finalPagesRun": 37503414171,
+      "finalSourceCommit": "b30c3becd2dc3d8962139d850e93f34ae63867e6",
+      "incompleteScopeComparisons": "neutral_numbers_only",
+      "print": "sheet DOM unchanged"
     },
     "remaining": "claim reconciliation still unresolved; complete net quantity and return ratio not repaired by UI",
     "previousFixSuperseded": "v102/v103 screenshots of new tabs did not establish existing-tab scrollbar restoration",
