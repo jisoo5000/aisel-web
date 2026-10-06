@@ -1146,28 +1146,42 @@
         "스테디셀러",
         "분류 확인"
       ],
-      "appChangeAuthorized": false
+      "appChangeAuthorized": false,
+      "returnWarning": {
+        "thresholdPercent": 20,
+        "operator": ">",
+        "display": "반품률 20% 초과 · 빨강 경고",
+        "exactly20": "no_above20_warning"
+      },
+      "salesShare": {
+        "label": "전체 판매 비중",
+        "formula": "same-period product net sales units / same-period total net sales units across currently selling Cafe24 products * 100",
+        "denominatorScope": "all current selling products independent of search and sort",
+        "zeroDenominator": "dash_not_zero",
+        "incompleteEvidence": "확인 중; do not claim full share"
+      },
+      "scrollbar": "right scrollbar always visible; preserve v102 fix"
     },
     "proposals": {
-      "row": "사진 · 품명/품번 | 판매량 높음 46장 | 반품률 2.0% (2/100장)",
+      "row": "사진 · 품명/품번 | 판매 46장 · 전체 판매 비중 8.2% | 반품률 23.0% · 20% 초과",
       "exampleNumbers": "illustrative_only",
       "returnDenominator": "same shipped cohort actual shipped units, excluding unshipped cancellations; completed returns in numerator",
       "metricStatus": "requires shipping evidence verification; existing paid-order ratio is not proven shipped-unit ratio",
-      "returnLabels": "numeric ratio and numerator/denominator always; high/low only with agreed comparison, sufficient sample and observation; otherwise neutral/observing",
+      "returnLabels": "User fixed warning threshold >20%; high/low peer comparison no longer proposed as primary warning.",
       "colors": "blue favorable sales; red confirmed high returns; neutral for uncertain or immature return evidence",
       "layout": "keep search and sort; default sales order; small shared period/update line"
     },
     "open": [
       "actual Cafe24 current selling/display criteria and data mapping",
       "same-cohort shipping/returns evidence",
-      "return high/low reference, sample size and maturity window"
+      "shipping cohort observation window"
     ],
     "backup": {
-      "version": "v10",
+      "version": "v11",
       "status": "uploaded_name_size_parent_verified",
-      "fileId": "1uAeqMvYq-jCF1gLMDREEYVQv0o5sy2Th",
-      "bytes": 9711,
-      "sha256": "2071bc717e664a4d8153a0cf26bdcb78985ef34c74409f3e34e5518b00acf16b",
+      "fileId": "11l9kiXI2GfjrnDzpFAhyFfUyoZQK3uT4",
+      "bytes": 9906,
+      "sha256": "d6e8e1bd919cdf8a27ae68407a38ef0ebad621baf19f26c02e4a1a068af2791b",
       "shared": false
     }
   }
