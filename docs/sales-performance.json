@@ -1,4 +1,38 @@
 {
+  "mobileToolbarSpacingPlan20261007": {
+    "topic": "sales_performance_mobile_toolbar_spacing",
+    "status": "planning_only_no_app_code_changes",
+    "decidedOn": "2026-10-07",
+    "source": "user request with annotated mobile screenshot",
+    "canonicalPath": "docs/sales-performance.md",
+    "confirmed": {
+      "spacing": "make annotated toolbar-to-table spacing consistent",
+      "refreshPlacement": "directly below sales sort",
+      "rightEdges": "sales sort and refresh share the same right edge",
+      "scope": "planning only; code prohibited"
+    },
+    "proposed": {
+      "rows": ["search + sales sort", "period/read time + refresh"],
+      "horizontalPagePaddingPx": 16,
+      "horizontalControlGapPx": 8,
+      "verticalControlRowGapPx": 8,
+      "toolbarToTableHeaderGapPx": 16,
+      "rightControlWidthPx": 88,
+      "controlHeightPx": 40,
+      "leftEdges": "search, metadata and table aligned",
+      "rightEdges": "sort, refresh and table aligned",
+      "narrowScreen": "metadata wraps inside left column; refresh remains in right column",
+      "reviewWidthsPx": [320, 390, 430]
+    },
+    "implementationChanged": false,
+    "deploymentRequested": false,
+    "backup": {
+      "version": "v19-layout-plan",
+      "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "fileName": "aisel-sales-performance_2026-10-07_v19-layout-plan.zip",
+      "status": "pending"
+    }
+  },
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
   "release": "v105",
