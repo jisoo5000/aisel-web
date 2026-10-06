@@ -5,16 +5,18 @@
 function doGet(e){
   if(!e||e.parameter.action!=='sales')return salesJson_({ok:false,error:'unsupported_request'});
   try{
-    var ss=SpreadsheetApp.openById('1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0');
-    var tab=ss.getSheets().filter(function(s){return s.getSheetId()===2026100512;})[0];
+    var id='1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0';
+    var meta=Sheets.Spreadsheets.get(id,{fields:'sheets.properties'});
+    var tab=meta.sheets.filter(function(s){return s.properties.sheetId===2026100512;})[0];
     if(!tab)throw Error('source_tab_missing');
     // Fixed tab/range: caller cannot request other sheets, cells, or write actions.
-    var values=tab.getRange(1,1,Math.min(tab.getLastRow(),160),10).getDisplayValues();
-    var result=AiselSheetSales.parse(values);
+    var range="'"+tab.properties.title.replace(/'/g,"''")+"'!A1:J160";
+    var values=Sheets.Spreadsheets.Values.get(id,range,{valueRenderOption:'FORMATTED_VALUE'}).values||[];
+    var result=globalThis.AiselSheetSales.parse(values);
     result.readAt=new Date().toISOString();
     // readAt is read time, not Cafe24 collection or source-sheet update time.
     result.ok=true;
     return salesJson_(result);
-  }catch(err){return salesJson_({ok:false,error:'source_unavailable'});}
+  }catch(err){console.error(err.message);return salesJson_({ok:false,error:'source_unavailable'});}
 }
 function salesJson_(value){return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);}

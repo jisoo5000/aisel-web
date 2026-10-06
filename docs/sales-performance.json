@@ -1292,28 +1292,94 @@
     }
   },
   "sheetSourceConnection20261007": {
-    "status": "prepared_pending_six_field_sharing_approval_and_webapp_deployment",
+    "status": "live_webapp_verified_app_deployment_pending",
     "spreadsheetId": "1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0",
     "sheetId": 2026100512,
     "sheetTitle": "🌱 신상_성과",
     "sharingObserved": "private_owner_only",
-    "mapping": {"rank": "E sales quantity sort", "name": "A", "designer": "B", "factory": "C", "share": "F whole-store share", "returns": "H as displayed"},
+    "mapping": {
+      "rank": "E sales quantity sort",
+      "name": "A",
+      "designer": "B",
+      "factory": "C",
+      "share": "F whole-store share",
+      "returns": "H as displayed"
+    },
     "boundary": "first product table only; exclude totals and designer comparisons",
-    "responseFields": ["rank", "name", "designer", "factory", "share", "returns"],
-    "safeMetadata": ["period dates", "read time"],
-    "notChanged": ["sheet values", "source permissions", "Firebase rules", "existing app HTML", "collection schedule"],
-    "returnMeasurement": "current sheet snapshot; not recalculated as mature 7-day post-receipt return applications",
+    "responseFields": [
+      "rank",
+      "name",
+      "designer",
+      "factory",
+      "share",
+      "returns"
+    ],
+    "safeMetadata": [
+      "period dates",
+      "read time"
+    ],
+    "notChanged": [
+      "sheet values",
+      "source permissions",
+      "Firebase rules",
+      "existing app HTML",
+      "collection schedule"
+    ],
+    "returnMeasurement": "as displayed in sheet; current source estimates receipt as day after shipment",
     "tests": "3 adapter tests passed",
-    "files": ["scripts/sheet-sales-adapter.js", "scripts/sheet-sales-webapp.gs", "scripts/sheet-sales-view.js", "scripts/sheet-sales-view.css"]
+    "files": [
+      "scripts/sheet-sales-adapter.js",
+      "scripts/sheet-sales-webapp.gs",
+      "scripts/sheet-sales-view.js",
+      "scripts/sheet-sales-view.css"
+    ],
+    "version": 107,
+    "sharingApproval": "2026-10-07 사용자 응 해줘",
+    "scriptId": "1TsiEagIQ_V_zcEc84n4DYPHz4HHUDYuQqajRQ8iKhIzsGX5R-l5cGAp5",
+    "endpoint": "https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf2HQNaXt9C3kLf5HzeZdgBQyDM9wUrSVw3yx4dDT9_skDG_nt8l8O_8Ww/exec",
+    "webappVersion": 5,
+    "oauthScope": "spreadsheets.readonly",
+    "readService": "Sheets advanced API v4",
+    "auth": "anonymous access to six-field endpoint; original sheet owner-only unchanged",
+    "refresh": "app open; manual refresh; return to tab after 5 minutes",
+    "rank": "quantity descending; competition ties; search keeps full-scope rank",
+    "verification": {
+      "anonymousResponse": true,
+      "productCount": 21,
+      "fieldsOnly": true,
+      "unsupportedAction": "rejected",
+      "sourcePrivate": true,
+      "print": "sheet DOM unchanged",
+      "adapterTests": "3 passed",
+      "inlineScripts": "9 compile"
+    },
+    "backup": {
+      "version": "v18",
+      "id": "1p1BRaeAANvngSFByC_wLERt8UwfkitL3",
+      "bytes": 12275,
+      "status": "name_size_parent_verified"
+    },
+    "sourceCommit": "b4d3a82"
   },
   "sixColumnPlan20261007": {
     "status": "planning_only_no_app_or_sheet_code_changes",
     "title": "판매성과",
-    "columns": ["순위", "상품명", "디자이너", "공장", "판매 비중", "반품률"],
+    "columns": [
+      "순위",
+      "상품명",
+      "디자이너",
+      "공장",
+      "판매 비중",
+      "반품률"
+    ],
     "rankFormat": "1위 / 2위",
     "sourceSequence": "Cafe24 raw evidence -> 운영시트 신상성과 validated results -> app display",
     "mobileProposal": "one row with ellipsis and short designer/factory names; omit thumbnail from six-column list and show full information on name click",
-    "unconfirmed": ["mobile short labels", "thumbnail omission", "shared ranks for ties"],
+    "unconfirmed": [
+      "mobile short labels",
+      "thumbnail omission",
+      "shared ranks for ties"
+    ],
     "tokens": "zero for routine collection/formula/display if no AI calls; development and requested AI interpretation are separate"
   },
   "mobileCompact20261007": {

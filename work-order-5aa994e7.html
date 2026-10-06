@@ -1,11 +1,12 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
+<script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v106 (2026-10-07)
+<!-- AISEL 작업지시서 v107 (2026-10-07)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
-     [v100] 상품성과 분석: 최근7일 비교, 신상7/14일·스테디28일, 상품 기준과 판단 이력.
+     [v100] 판매성과: 최근7일 비교, 신상7/14일·스테디28일, 상품 기준과 판단 이력.
      [v99] 상단 거래처 품질·협상 메뉴 제거. 최초 가격 > 네고 가격 입력과 저장된 기록 보존.
      [v98] 모든 단가·공임·시야게를 기존 한 줄의 최초 가격 > 네고 가격으로 표시. v96 도식화·원가계산서 치수 복원.
      [v97] 최초 견적·네고 입력을 자재 단가·공임 아래로 이동. 샘플 수거 태그를 컬러 태그와 동일한 크기로 정리.
@@ -2964,7 +2965,7 @@
 
 
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
-  <button type="button" class="maintab active" data-main="sales">상품성과 분석</button>
+  <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
   <div class="mainbar-order-col" hidden>
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">발주</button>
@@ -3001,7 +3002,7 @@
 </div>
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no">
-  <div class="gallery-head"><h2>상품성과 분석</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
+  <div class="gallery-head"><h2>판매성과</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
   <div class="gallery-tabs" id="salesTabs" aria-label="판매 상태">
     <button type="button" class="gtab active" data-status="sale" aria-pressed="true">판매 중</button>
     <button type="button" class="gtab" data-status="prep" aria-pressed="false">판매 준비</button>
@@ -10001,6 +10002,7 @@
     }))].join("\n");
   }
   async function loadSalesPerformance_(){
+    if(window.AiselSheetSalesMode)return;
     if(!salesHasLogin_()) return;
     if(salesLoading_ || (salesReadAt_ && Date.now()-salesReadAt_ < 60000)) return;
     const generation = salesAuthGeneration_;
@@ -10076,6 +10078,7 @@
     return list;
   }
   function renderSalesMeta_(){
+    if(window.AiselSheetSalesMode)return;
     const snapshot = salesSnapshot_, period = $("#salesPeriod"), updated = $("#salesUpdated"), notice = $("#salesSyncNotice"), rankScope = $("#salesRankScope");
     const safeDate = value=> typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.replace(/-/g,".") : null;
     const start = snapshot && safeDate(snapshot.period && snapshot.period.start), end = snapshot && safeDate(snapshot.period && snapshot.period.end);
@@ -10102,6 +10105,7 @@
   }
   function snapshotPeriodLabel_(){return salesSnapshot_ && salesSnapshot_.schemaVersion === 2 ? "최근 7일" : "집계 기간";}
   function renderSalesView(){
+    if(window.AiselSheetSalesMode){window.AiselSheetSalesSource?.render();return;}
     const body = $("#salesTableBody");
     if(!body) return;
     renderSalesMeta_();
@@ -10185,6 +10189,7 @@
   });
   // This gate prevents accidental client reads. Firebase security rules enforce who may read sales.
   salesAuth_.onAuthStateChanged(()=>{
+    if(window.AiselSheetSalesMode)return;
     salesAuthReady_=true;salesAuthGeneration_++;
     $("#salesRecordNotice").textContent="";
     $("#salesTableBody").replaceChildren(); // Clear the previous account before any focused-input render guard.
@@ -13726,3 +13731,69 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
   #salesView .sales-toolbar {grid-template-columns:minmax(0,1fr) 72px}
 }
 </style>
+
+<style id="aisel-sheet-sales-view">.sheet-sales-grid{display:grid;grid-template-columns:40px minmax(0,1fr) 90px 90px 80px 70px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid #dce2eb;color:#2f3b52;font-size:13px}
+.sheet-sales-grid span,.sheet-sales-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-sales-name{border:0;background:none;padding:8px 0;text-align:left;font:inherit;color:inherit;font-weight:700;cursor:pointer}
+.sheet-sales-dialog{max-width:calc(100vw - 48px);width:360px;border:1px solid #dce2eb;border-radius:6px;color:#2f3b52;overflow-wrap:anywhere}
+.sheet-sales-dialog h3{font-size:16px}.sheet-sales-dialog p{font-size:13px}.sheet-sales-dialog button{padding:8px 16px}
+.sheet-sales-grid span:nth-child(n+5){text-align:right}
+.sheet-sales-head{font-size:11px;color:#7b8594;min-height:30px}
+.sheet-sales-warning{color:#dc173b;font-weight:700}
+.sheet-sales-refresh{font:inherit;color:#637089;border:1px solid #dce2eb;background:white;border-radius:3px;padding:3px 6px;cursor:pointer}
+#salesView .sales-column-head,#salesView #salesAuth{display:none!important}
+@media(max-width:600px){.sheet-sales-grid{grid-template-columns:24px minmax(0,1fr) 35px 35px 46px 46px;gap:4px;font-size:11px;min-height:44px}.sheet-sales-head{font-size:9px;min-height:28px}}
+</style>
+<script id="aisel-sheet-sales-view-script">/* Prepared integration. No endpoint is enabled until access approval and live readback. */
+(function(root){
+ 'use strict';
+ function render(host,snapshot,search){
+  if(!snapshot||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');
+  host.replaceChildren();
+  const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
+  for(const label of ['순위','상품명','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;header.append(span);}host.append(header);
+  const query=String(search||'').trim().toLocaleLowerCase('ko');
+  for(const item of snapshot.items.filter(x=>x.name.toLocaleLowerCase('ko').includes(query))){
+   const row=document.createElement('div');row.className='sheet-sales-grid';
+   const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
+   values.forEach((value,i)=>{const cell=document.createElement(i===1?'button':'span');cell.textContent=value;cell.title=value;if(i===1){cell.type='button';cell.className='sheet-sales-name';cell.addEventListener('click',()=>details(values));}if(i===5){cell.title=value+' · 운영시트에 표시된 반품률';if(item.returns>20)cell.className='sheet-sales-warning';}row.append(cell);});host.append(row);
+  }
+ }
+ function details(values){
+  const dialog=document.createElement('dialog');dialog.className='sheet-sales-dialog noprint';
+  const heading=document.createElement('h3');heading.textContent=values[1];dialog.append(heading);
+  ['순위','상품명','디자이너','공장','판매 비중','반품률'].forEach((label,i)=>{const line=document.createElement('p');line.textContent=label+' · '+values[i];dialog.append(line);});
+  const close=document.createElement('button');close.type='button';close.textContent='닫기';close.addEventListener('click',()=>dialog.close());dialog.append(close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
+ }
+ async function read(endpoint){
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(endpoint))throw Error('시트 연결 주소가 설정되지 않았습니다.');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+  try{const response=await fetch(endpoint+'?action=sales',{signal:controller.signal,credentials:'omit',cache:'no-store'});if(!response.ok)throw Error('시트 연결을 확인해 주세요.');const snapshot=await response.json();if(snapshot.ok!==true||snapshot.source!=='operations-sheet')throw Error('시트 자료를 확인해 주세요.');return snapshot;}finally{clearTimeout(timer);}
+ }
+ function start(endpoint){
+  const host=document.getElementById('salesTableBody'),search=document.getElementById('salesSearchInput');
+  let snapshot=null,busy=false,lastRead=0;
+  const show=()=>{if(snapshot)render(host,snapshot,search.value);};
+  root.AiselSheetSalesSource={render:show};
+  search.placeholder='상품명 검색';search.setAttribute('aria-label','상품명 검색');
+  document.getElementById('salesAuth').hidden=true;
+  document.getElementById('salesSourceNote').textContent='운영시트 신상성과 · 반품률은 시트 기준';
+  const sort=document.getElementById('salesSort');sort.replaceChildren(new Option('판매순','quantity'));sort.disabled=true;
+  const updated=document.getElementById('salesUpdated');
+  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';updated.after(refresh);
+  search.addEventListener('input',show);
+  async function load(){
+   if(busy)return;busy=true;refresh.disabled=true;
+   if(!snapshot)host.textContent='시트 자료를 불러오는 중입니다.';
+   try{const value=await read(endpoint);snapshot=value;show();lastRead=Date.now();document.getElementById('salesPeriod').textContent=value.periodLabel||'집계 기간은 신상성과 탭 기준';updated.textContent='시트 확인 '+new Date(value.readAt).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit'});}
+   catch(error){if(!snapshot)host.textContent='시트 자료를 가져오지 못했습니다. 새로고침해 주세요.';updated.textContent=snapshot?'연결 실패 · 이전에 읽은 자료':'시트 연결 확인 필요';}
+   finally{busy=false;refresh.disabled=false;}
+  }
+  refresh.addEventListener('click',load);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastRead>300000)load();});
+  load();
+ }
+ root.AiselSheetSalesView={read,render,start};
+})(globalThis);
+
+AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf2HQNaXt9C3kLf5HzeZdgBQyDM9wUrSVw3yx4dDT9_skDG_nt8l8O_8Ww/exec");</script>
