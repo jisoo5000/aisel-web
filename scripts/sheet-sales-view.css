@@ -1,6 +1,11 @@
 .sheet-sales-grid{display:grid;grid-template-columns:40px minmax(0,1fr) repeat(4,72px);gap:8px;align-items:center;min-height:48px;border-bottom:1px solid #dce2eb;color:#2f3b52;font-size:13px}
 .sheet-sales-grid span,.sheet-sales-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sheet-sales-name{border:0;background:none;padding:8px 0;text-align:left;font:inherit;color:inherit;font-weight:700;cursor:pointer}
+.sheet-sales-name{display:flex;align-items:center;gap:6px;border:0;background:none;padding:8px 0;text-align:left;font:inherit;color:inherit;font-weight:700;cursor:pointer}
+.sheet-sales-name-label{flex:0 1 auto}
+.sheet-sales-badge{display:inline-flex;flex:0 0 40px;box-sizing:border-box;width:40px;height:20px;align-items:center;justify-content:center;border-radius:5px;font-size:11px;font-weight:500;line-height:20px}
+.sheet-sales-badge-low{background:#fce9ef;color:#985469}
+.sheet-sales-badge-normal{background:#f7f0e4;color:#8b6d45}
+.sheet-sales-badge-good{background:#eaf0f7;color:#2f3b52}
 #salesView #salesSearchInput:focus{outline:2px solid #8dc0fa;outline-offset:0}
 .sheet-sales-dialog{max-width:calc(100vw - 48px);width:360px;border:1px solid #dce2eb;border-radius:6px;color:#2f3b52;overflow-wrap:anywhere}
 .sheet-sales-dialog h3{font-size:16px}.sheet-sales-dialog p{font-size:13px}.sheet-sales-dialog button{padding:8px 16px}

@@ -1,24 +1,47 @@
 {
   "productPerformanceBadgePlan20261007": {
-    "status": "proposed_planning_only_code_prohibited",
+    "status": "browser_verified_pending_deployment",
     "decidedOn": "2026-10-07",
-    "source": "latest user rejects gray normal badge and proposes sales-share 10/20 percent with returns 20 percent thresholds",
+    "source": "latest user rejects gray normal badge and proposes sales-share 10/20 percent with returns 20 percent thresholds; latest user code approval after size question",
     "canonicalPath": "docs/sales-performance.md",
-    "confirmedScope": "planning only; do not change app or sheet",
+    "confirmedScope": "user code approval: implement planned badge; preserve other UI, source data and sorting",
     "proposed": {
       "placement": "after name inside same cell; reserve badge width; name ellipsis",
-      "shape": "small rounded rectangle", "sizePx": {"width": 40, "height": 20}, "radiusPx": 5, "gapPx": 6, "fontPx": "10-11",
-      "palette": {"low": {"label": "저조", "background": "#FCE9EF", "text": "#985469"}, "normal": {"label": "보통", "background": "#F7F0E4", "text": "#8B6D45"}, "good": {"label": "좋음", "background": "#EAF0F7", "text": "#2F3B52"}},
-      "paletteStatus": "proposed; new pink hex is not verified official brand token",
+      "shape": "small rounded rectangle",
+      "sizePx": {
+        "width": 40,
+        "height": 20
+      },
+      "radiusPx": 5,
+      "gapPx": 6,
+      "fontPx": 11,
+      "palette": {
+        "low": {
+          "label": "저조",
+          "background": "#FCE9EF",
+          "text": "#985469"
+        },
+        "normal": {
+          "label": "보통",
+          "background": "#F7F0E4",
+          "text": "#8B6D45"
+        },
+        "good": {
+          "label": "좋음",
+          "background": "#EAF0F7",
+          "text": "#2F3B52"
+        }
+      },
+      "paletteStatus": "applied after code approval; pink/beige are approved proposal colors, not independently verified official tokens",
       "meaning": "combined recent-30-day whole-store sales share and return-rate badge; user confirmed whole-store denominator",
       "bands": "user-proposed sales-share 10/20 and returns 20 thresholds",
-      "limits": "do not rate missing returns as zero/good; no actual ratings or implementation in planning turn"
+      "limits": "unknown metrics are never zero/good; known share <10 or returns >=20 independently yields low, otherwise missing metric yields no badge"
     },
-    "implementationChanged": false,
-    "productRatingsComputed": false,
+    "implementationChanged": true,
+    "productRatingsComputed": true,
     "confirmedColorPreference": "normal badge must not be gray",
     "draftRules": {
-      "status": "user thresholds normalized for review; whole-store sales denominator confirmed",
+      "status": "implemented after direct user code approval",
       "priority": "return rate first",
       "good": "sales share >=20% and return rate <20%",
       "normal": "sales share >=10% and <20%, and return rate <20%",
@@ -29,10 +52,47 @@
       "denominatorStatus": "confirmed",
       "denominatorReason": "user rejects new-product-only share because it could make a small store-wide seller appear successful",
       "existingAppShareColumn": "whole-store sales share; never silently replace it with new-product share",
-      "existingRedWarning": "currently >20%; badge draft >=20%; alignment to >=20% is a future planning proposal, no code changed"
+      "existingRedWarning": ">=20% aligned to latest badge threshold; supersedes prior >20% warning for this sheet view only"
     },
-    "pending": ["approval of completed draft and colors", "mobile name width review"],
-    "backupPolicy": "minor planning addition; retain existing v23 full recovery ZIP"
+    "pending": [
+      "deployment",
+      "full skill Drive backup"
+    ],
+    "backupPolicy": "full reusable skill folder v24-performance-badges backup after implementation",
+    "preserved": [
+      "six data columns",
+      "whole-store denominator",
+      "quantity-descending source order and ties",
+      "refresh position",
+      "full-width search",
+      "detail dialog six fields",
+      "print and unrelated HTML"
+    ],
+    "validation": {
+      "tests": "5 passed including threshold boundaries and missing values",
+      "inlineScripts": "9 compile",
+      "unrelatedHtmlAndPrintMarkup": "identical to pre-change",
+      "mobileWidthsPx": [
+        320,
+        390,
+        430
+      ],
+      "desktopWidthPx": 1280,
+      "horizontalOverflow": false,
+      "badgeSizePx": [
+        40,
+        20
+      ],
+      "fontPx": 11,
+      "detailsDialog": "same six fields; open/close verified",
+      "search": "original ranks/share preserved",
+      "currentProductCount": 21,
+      "currentRatingCounts": {
+        "low": 21,
+        "normal": 0,
+        "good": 0
+      }
+    }
   },
   "fixedSortControlSimplificationPlan20261007": {
     "status": "deployed_live_verified",

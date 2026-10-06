@@ -1,6 +1,13 @@
 /* Prepared integration. No endpoint is enabled until access approval and live readback. */
 (function(root){
  'use strict';
+ function performance(item){
+  const valid=value=>Number.isFinite(value)&&value>=0&&value<=100;
+  const shareKnown=valid(item.share),returnsKnown=valid(item.returns);
+  if((returnsKnown&&item.returns>=20)||(shareKnown&&item.share<10))return {key:'low',label:'저조'};
+  if(!shareKnown||!returnsKnown)return null;
+  return item.share>=20?{key:'good',label:'좋음'}:{key:'normal',label:'보통'};
+ }
  function render(host,snapshot,search){
   if(!snapshot||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');
   host.replaceChildren();
@@ -10,7 +17,18 @@
   for(const item of snapshot.items.filter(x=>x.name.toLocaleLowerCase('ko').includes(query))){
    const row=document.createElement('div');row.className='sheet-sales-grid';
    const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
-   values.forEach((value,i)=>{const cell=document.createElement(i===1?'button':'span');cell.textContent=value;cell.title=value;if(i===1){cell.type='button';cell.className='sheet-sales-name';cell.addEventListener('click',()=>details(values));}if(i===5){cell.title=value+' · 운영시트에 표시된 반품률';if(item.returns>20)cell.className='sheet-sales-warning';}row.append(cell);});host.append(row);
+   values.forEach((value,i)=>{
+    const cell=document.createElement(i===1?'button':'span');cell.textContent=value;cell.title=value;
+    if(i===1){
+     cell.type='button';cell.className='sheet-sales-name';cell.replaceChildren();
+     const name=document.createElement('span');name.className='sheet-sales-name-label';name.textContent=value;cell.append(name);
+     const rating=performance(item);
+     if(rating){const badge=document.createElement('span');badge.className='sheet-sales-badge sheet-sales-badge-'+rating.key;badge.textContent=rating.label;badge.title='최근 30일 매장 전체 판매비중·반품률 기준';cell.append(badge);cell.setAttribute('aria-label',value+' · 성과 '+rating.label);}
+     cell.addEventListener('click',()=>details(values));
+    }
+    if(i===5){cell.title=value+' · 운영시트에 표시된 반품률';if(item.returns>=20)cell.className='sheet-sales-warning';}
+    row.append(cell);
+   });host.append(row);
   }
  }
  function details(values){
@@ -49,5 +67,5 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastRead>300000)load();});
   load();
  }
- root.AiselSheetSalesView={read,render,start};
+ root.AiselSheetSalesView={read,render,start,performance};
 })(globalThis);
