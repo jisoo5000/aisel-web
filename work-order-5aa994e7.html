@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v99 (2026-10-06)
+<!-- AISEL 작업지시서 v100 (2026-10-07)
+     [v100] 상품성과 분석: 최근7일 비교, 신상7/14일·스테디28일, 상품 기준과 판단 이력.
      [v99] 상단 거래처 품질·협상 메뉴 제거. 최초 가격 > 네고 가격 입력과 저장된 기록 보존.
      [v98] 모든 단가·공임·시야게를 기존 한 줄의 최초 가격 > 네고 가격으로 표시. v96 도식화·원가계산서 치수 복원.
      [v97] 최초 견적·네고 입력을 자재 단가·공임 아래로 이동. 샘플 수거 태그를 컬러 태그와 동일한 크기로 정리.
@@ -2828,6 +2829,41 @@
   #editorView #saveBtn[data-save-state="sheet-error"] { color:#8D3946; }
 }
 </style>
+
+<style id="aisel-product-performance-style">
+#salesView #salesGroupTabs {margin-top:8px;gap:5px;flex-wrap:wrap}
+#salesView #salesGroupTabs .gtab {flex:1;min-width:65px}
+#salesView .pa-panel {border-top:1px solid #dce2eb;margin:14px 0;padding-top:14px;color:#303b52;font-size:13px}
+#salesView .pa-panel h3 {font-size:14px;margin:20px 0 10px}
+#salesView .pa-comparison,#salesView .pa-launch {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#salesView .pa-comparison>div,#salesView .pa-launch>div {background:#eff3f8;border-radius:5px;padding:10px;min-width:0}
+#salesView .pa-comparison span,#salesView .pa-launch span {display:block;font-size:12px;color:#647187;margin-bottom:5px}
+#salesView .pa-comparison strong {font-size:18px}
+#salesView .pa-change {font-size:13px;font-weight:600;margin:9px 0 16px}
+#salesView .pa-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#salesView .pa-fields label {display:flex;flex-direction:column;gap:5px;font-size:13px;min-width:0}
+#salesView .pa-fields input:not([type=checkbox]),#salesView .pa-fields textarea,#salesView .pa-fields select {box-sizing:border-box;width:100%;min-width:0;border:1px solid #cbd3df;border-radius:4px;background:#fff;color:#303b52;padding:8px;font:inherit;line-height:1.5}
+#salesView .pa-fields textarea {resize:vertical}
+#salesView .pa-fields .pa-check {flex-direction:row;align-items:center}
+#salesView .pa-check input {width:16px;height:16px;margin:0}
+#salesView .pa-wide {grid-column:1/-1}
+#salesView .pa-hint {font-size:12px;color:#68758a;line-height:1.6;margin:8px 0}
+#salesView .pa-panel button {font:inherit;border:1px solid #cbd3df;border-radius:4px;background:#fff;color:#303b52;padding:8px 12px;cursor:pointer;min-height:38px}
+#salesView .pa-panel button:disabled {opacity:.6;cursor:default}
+#salesView .pa-panel .pa-review-save {background:#303b52;color:white;border-color:#303b52}
+#salesView .pa-save-row {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+#salesView .pa-message {font-size:12px;line-height:1.5}
+#salesView .pa-launch {grid-template-columns:repeat(2,minmax(0,1fr));margin:14px 0}
+#salesView .pa-launch[hidden] {display:none}
+#salesView .pa-launch strong {display:block;font-size:13px;line-height:1.5;overflow-wrap:anywhere}
+#salesView .pa-launch small {display:block;font-size:11px;color:#68758a;line-height:1.5;margin-top:4px}
+#salesView .pa-history-details {margin-top:16px;border-top:1px solid #dce2eb;padding-top:12px}
+#salesView .pa-history-details>summary {cursor:pointer;font-size:13px;font-weight:600}
+#salesView .pa-history {font-size:12px;line-height:1.6;margin-top:8px}
+#salesView .pa-history-item {padding:10px 0;border-bottom:1px solid #e3e7ee;overflow-wrap:anywhere}
+#salesView .pa-history-item p {margin:4px 0;white-space:pre-wrap}
+@media(max-width:430px){#salesView .pa-fields {grid-template-columns:1fr}#salesView .pa-wide {grid-column:auto}#salesView .pa-comparison {gap:5px}#salesView .pa-comparison>div {padding:8px 6px}#salesView .pa-comparison strong {font-size:16px}#salesView .pa-launch {grid-template-columns:1fr}}
+</style>
 <style id="aisel-sales-dashboard">
 #salesView { color:#2F3B52; }
 #salesView .gallery-head { align-items:baseline; gap:5px 16px; margin-bottom:12px; }
@@ -2901,7 +2937,7 @@
 </style>
 
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
-  <button type="button" class="maintab active" data-main="sales">판매성과</button>
+  <button type="button" class="maintab active" data-main="sales">상품성과 분석</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
   <div class="mainbar-order-col" hidden>
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">발주</button>
@@ -2938,19 +2974,20 @@
 </div>
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no">
-  <div class="gallery-head"><h2>판매성과</h2><p class="sales-source-note">카페24 실판매 · 최근 14일</p></div>
+  <div class="gallery-head"><h2>상품성과 분석</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
   <div class="gallery-tabs" id="salesTabs" aria-label="판매 상태">
     <button type="button" class="gtab active" data-status="sale" aria-pressed="true">판매 중</button>
     <button type="button" class="gtab" data-status="prep" aria-pressed="false">판매 준비</button>
     <button type="button" class="gtab" data-status="all" aria-pressed="false">전체</button>
   </div>
+  <div class="gallery-tabs" id="salesGroupTabs" aria-label="분석 대상"><button type="button" class="gtab active" data-group="all" aria-pressed="true">전체</button><button type="button" class="gtab" data-group="new" aria-pressed="false">신상</button><button type="button" class="gtab" data-group="steady" aria-pressed="false">스테디셀러</button><button type="button" class="gtab" data-group="unclassified" aria-pressed="false">분류 확인</button></div>
   <div class="sales-toolbar">
     <input id="salesSearchInput" type="search" placeholder="품명 또는 품번 검색" aria-label="품명 또는 품번 검색" autocomplete="off">
-    <select id="salesSort" aria-label="판매성과 정렬"><option value="quantity">판매순</option><option value="recent">최근 수정순</option></select>
+    <select id="salesSort" aria-label="상품성과 정렬"><option value="quantity">판매순</option><option value="recent">최근 수정순</option></select>
   </div>
   <div class="sales-meta"><span id="salesPeriod">집계 기간 확인 중</span><span id="salesUpdated"></span><span id="salesRankScope" hidden>수량이 확인된 상품 기준 순위</span></div>
   <p id="salesSyncNotice" class="sales-notice" role="status" aria-live="polite">판매 자료를 확인하고 있습니다.</p>
-  <div id="salesAuth" class="sales-auth"><button type="button" id="salesLoginBtn" class="sales-login">판매성과 로그인</button></div>
+  <div id="salesAuth" class="sales-auth"><button type="button" id="salesLoginBtn" class="sales-login">상품성과 로그인</button></div>
   <div id="salesCounts" class="sales-counts" role="status" aria-live="polite"></div>
   <div id="salesTableBody" class="sales-list" aria-label="상품별 판매성과"></div>
 </div>
@@ -3928,6 +3965,136 @@
   <button type="button" class="scroll-fab" id="scrollBottomBtn" title="맨 아래로">▼<span class="scroll-label">맨 아래로</span></button>
 </div>
 
+<script id="aisel-product-performance">
+(function(root){
+  'use strict';
+  const DAY=86400000;
+  const own=(x,k)=>Object.prototype.hasOwnProperty.call(x||{},k);
+  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const number=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0?n:null;
+  const day=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&Number.isFinite(Date.parse(d+'T00:00:00Z'))&&new Date(Date.parse(d+'T00:00:00Z')).toISOString().slice(0,10)===d;
+  const shift=(d,n)=>new Date(Date.parse(d+'T00:00:00Z')+n*DAY).toISOString().slice(0,10);
+  const qty=n=>number(n)===null?'확인 필요':n.toLocaleString('ko-KR')+'장';
+  const groups={unclassified:'분류 확인',new:'신상',steady:'스테디셀러'};
+  const judgments={observe:'관찰 중',maintain:'유지',reorder_review:'리오더 검토',improve:'개선 후 재검토',stop_review:'추가생산 중단 검토'};
+  function comparison(current,previous){
+    if(number(current)===null||number(previous)===null)return '비교 자료 확인 필요';
+    const diff=current-previous;
+    if(!diff)return '직전 7일과 동일';
+    return (diff>0?'+':'')+diff.toLocaleString('ko-KR')+'장'+(previous>0?' · '+(diff>0?'+':'')+(diff/previous*100).toFixed(1)+'%':' · 직전 7일 판매 0장');
+  }
+  function launchWindow(daily,launch,days,end){
+    if(!day(launch))return {state:'missing',text:'실제 판매 시작일을 입력해 주세요.'};
+    if(!day(end))return {state:'missing',text:'집계 기준일 확인 필요'};
+    const finish=shift(launch,days-1);
+    if(end<finish)return {state:'waiting',text:days+'일 관찰 중 · '+finish+' 이후 확인',start:launch,end:finish};
+    const map=new Map((Array.isArray(daily)?daily:[]).map(row=>[row.date,row]));
+    let total=0;
+    for(let i=0;i<days;i++){const r=map.get(shift(launch,i));if(!r||number(r.netQty)===null)return {state:'missing',text:'해당 기간 자료 확인 필요',start:launch,end:finish};total+=r.netQty;}
+    return {state:'ready',text:qty(total),qty:total,start:launch,end:finish};
+  }
+  function create({db,hasAccess,generation,onChange,getSnapshot}){
+    let profiles={},version=0,loaded=false,loading=false,profileError=false;
+    const drafts=new Map(),reviews=new Map(),history=new Map(),saving=new Set(),uncertain=new Set();
+    const validCode=c=>/^AS-[A-Za-z0-9-]{1,100}$/.test(c);
+    const today=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
+    const profile=code=>own(profiles,code)?profiles[code]:{};
+    async function load(){
+      if(!hasAccess()||loaded||loading)return;
+      loading=true;const gen=generation();
+      try{const s=await db.ref('salesPerformance/products').once('value');if(gen!==generation()||!hasAccess())return;profiles=s.val()||{};profileError=false;loaded=true;version++;}
+      catch{if(gen===generation()){profileError=true;loaded=true;version++;}}
+      finally{if(gen===generation()){loading=false;onChange();}}
+    }
+    function reset(){profiles={};version++;loaded=false;loading=false;profileError=false;drafts.clear();reviews.clear();history.clear();saving.clear();uncertain.clear();}
+    function group(code){return groups[profile(code).group]?profile(code).group:'unclassified';}
+    function options(values,value){return Object.entries(values).map(([k,label])=>'<option value="'+k+'"'+(k===value?' selected':'')+'>'+label+'</option>').join('');}
+    function values(code){return {...{group:group(code),launchDate:profile(code).launchDate||'',coreSku:profile(code).coreSku===true,stockNote:'',conditionsNote:'',judgment:'observe',reason:'',nextAction:'',nextReviewDate:shift(today(),7)},...(drafts.get(code)||{})};}
+    function capture(form,code){const value={};form.querySelectorAll('[data-field]').forEach(el=>{value[el.dataset.field]=el.type==='checkbox'?el.checked:el.value;});drafts.set(code,value);return value;}
+    function criteria(form,code){const v=capture(form,code);if(!own(groups,v.group))throw Error('상품 분류를 확인해 주세요.');if(v.launchDate&&(!day(v.launchDate)||v.launchDate>today()))throw Error('실제 판매 시작일은 오늘 또는 과거 날짜로 입력해 주세요.');return v;}
+    function paintHistory(form,code){
+      const node=form.querySelector('.pa-history'),cached=reviews.get(code);if(!node)return;
+      if(!cached){node.textContent='이전 판단 기록을 불러오는 중…';return;}
+      if(cached.error){node.textContent='이전 판단 기록을 불러오지 못했습니다.';return;}
+      node.replaceChildren();const list=Object.values(cached.value||{}).sort((a,b)=>(b.reviewedAt||0)-(a.reviewedAt||0));
+      if(!list.length){node.textContent='아직 남긴 판단 기록이 없습니다.';return;}
+      list.forEach(r=>{const article=document.createElement('article');article.className='pa-history-item';
+        const at=typeof r.reviewedAt==='number'?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium'}).format(new Date(r.reviewedAt)):'날짜 확인';
+        article.innerHTML='<strong>'+esc(at+' · '+(judgments[r.judgment]||'검토 기록'))+'</strong><p>'+esc(r.periodStart+' ~ '+r.periodEnd+' · '+qty(r.netQty))+'</p><p>'+esc(r.reason||'')+'</p><p>'+esc('재고·품절: '+(r.stockNote||'미기록')+' / 노출·할인: '+(r.conditionsNote||'미기록'))+'</p><p>'+esc('다음 조치: '+(r.nextAction||'미기록'))+'</p><p>'+esc('다음 확인: '+(r.nextReviewDate||'미지정'))+'</p>';node.appendChild(article);});
+    }
+    async function loadHistory(form,code){
+      if(!hasAccess()||!validCode(code))return;const gen=generation();
+      if(reviews.has(code)){paintHistory(form,code);return;}
+      try{const s=await db.ref('salesPerformance/reviews/'+code).orderByKey().limitToLast(20).once('value');if(gen!==generation()||!hasAccess())return;reviews.set(code,{value:s.val()||{}});}
+      catch{if(gen===generation())reviews.set(code,{error:true});}
+      if(gen===generation()&&form.isConnected)paintHistory(form,code);
+    }
+    async function paintLaunch(form,code){
+      const target=form.querySelector('.pa-launch'),v=values(code),snap=getSnapshot();if(!target)return;
+      if(v.group!=='new'){target.hidden=true;return;}target.hidden=false;
+      const item=snap?.items?.[code],daily=item?.daily||[];
+      const windows=[7,14].map(n=>launchWindow(daily,v.launchDate,n,snap?.period?.end));
+      target.innerHTML=windows.map((w,i)=>'<div><span>출시 후 '+(i===0?7:14)+'일</span><strong>'+esc(w.text)+'</strong>'+(w.start?'<small>'+esc(w.start+' ~ '+w.end)+'</small>':'')+'</div>').join('');
+      if(!day(v.launchDate)||!hasAccess())return;
+      const gen=generation();
+      for(let i=0;i<windows.length;i++){
+        const w=windows[i];if(w.state!=='missing'||!w.end||w.end>(snap?.period?.end||''))continue;
+        if(!history.has(w.end)){
+          try{const s=await db.ref('salesPerformance/daily/'+w.end).once('value');if(gen!==generation()||!hasAccess())return;history.set(w.end,s.val()||null);}catch{continue;}
+        }
+        const old=history.get(w.end);if(old?.schemaVersion!==2||old?.coverage?.complete!==true)continue;
+        const win=launchWindow(old.items?.[code]?.daily,v.launchDate,i===0?7:14,old.period.end);
+        if(form.isConnected&&gen===generation()&&values(code).launchDate===v.launchDate&&win.state==='ready'){
+          const node=target.children[i];node.querySelector('strong').textContent=win.text;node.querySelector('small').textContent=win.start+' ~ '+win.end+' · 당시 집계';
+        }
+      }
+    }
+    function decorate(row,code,snapshot){
+      if(!validCode(code))return;
+      const m=snapshot?.items?.[code],v=values(code),v2=snapshot?.schemaVersion===2;
+      const form=document.createElement('section');form.className='pa-panel';
+      form.innerHTML='<div class="pa-comparison"><div><span>최근 7일</span><strong>'+qty(v2?m?.netQty:null)+'</strong></div><div><span>직전 7일</span><strong>'+qty(v2?m?.previousNetQty:null)+'</strong></div><div><span>최근 28일</span><strong>'+qty(v2?m?.recent28NetQty:null)+'</strong></div></div><p class="pa-change">'+esc(v2?comparison(m?.netQty,m?.previousNetQty):'새 기간의 집계를 기다리고 있습니다. 기존 자료의 기간은 위 집계 기준을 확인해 주세요.')+'</p><div class="pa-fields pa-profile"><label>분류<select data-field="group">'+options(groups,v.group)+'</select></label><label>실제 판매 시작일<input type="date" data-field="launchDate" value="'+esc(v.launchDate)+'" max="'+today()+'"></label><label class="pa-check"><input type="checkbox" data-field="coreSku"'+(v.coreSku?' checked':'')+'> 핵심 SKU 후보</label></div><p class="pa-hint">등록일이 아닌 고객이 실제 구매할 수 있게 된 날을 입력합니다. 핵심 SKU 후보는 별도 검토한 상품에 표시합니다.</p><button type="button" class="pa-profile-save">상품 기준 저장</button><div class="pa-launch"></div><h3>판단 기록</h3><div class="pa-fields"><label>재고·품절 상황<textarea data-field="stockNote" rows="2" maxlength="1000" placeholder="예: 블랙 M 품절, 다음 주 입고 예정">'+esc(v.stockNote)+'</textarea></label><label>노출·할인 조건<textarea data-field="conditionsNote" rows="2" maxlength="1000" placeholder="예: 광고 노출 감소, 할인 없음">'+esc(v.conditionsNote)+'</textarea></label><label>판단<select data-field="judgment">'+options(judgments,v.judgment)+'</select></label><label>다음 확인일<input type="date" data-field="nextReviewDate" value="'+esc(v.nextReviewDate)+'"></label><label class="pa-wide">판단 근거<textarea data-field="reason" rows="2" maxlength="2000" placeholder="판매 변화와 재고·노출 조건을 함께 기록">'+esc(v.reason)+'</textarea></label><label class="pa-wide">다음 조치<textarea data-field="nextAction" rows="2" maxlength="2000" placeholder="예: 재입고 후 재검토 / 가격·배송·상세페이지 확인">'+esc(v.nextAction)+'</textarea></label></div><div class="pa-save-row"><button type="button" class="pa-review-save">판단 기록 남기기</button><span class="pa-message" role="status" aria-live="polite"></span></div><details class="pa-history-details"><summary>이전 판단 기록</summary><div class="pa-history"></div></details>';
+      const footer=row.querySelector('.sales-detail-footer');footer.before(form);
+      const inputs=form.querySelectorAll('input,select,textarea,button');
+      if(!hasAccess()||profileError||!loaded){inputs.forEach(el=>el.disabled=true);form.querySelector('.pa-message').textContent=profileError?'기록 접근 권한을 확인해 주세요.':hasAccess()?'상품 기준을 불러오는 중…':'로그인 후 기록할 수 있습니다.';}
+      form.addEventListener('input',()=>capture(form,code));form.addEventListener('change',()=>{capture(form,code);paintLaunch(form,code);});
+      async function save(isReview){
+        if(!hasAccess()||profileError||saving.has(code)||uncertain.has(code))return;const message=form.querySelector('.pa-message');let data,writeKey;
+        try{
+          data=criteria(form,code);const now=Date.now(),meta={group:data.group,launchDate:data.launchDate,coreSku:data.coreSku,updatedAt:now};
+          const patch={};Object.entries(meta).forEach(([key,value])=>{patch['salesPerformance/products/'+code+'/'+key]=value;});
+          if(isReview){
+            const current=getSnapshot();if(!current||current.status!=='ready'||!day(current.period?.start)||!day(current.period?.end))throw Error('집계 자료를 확인한 뒤 판단 기록을 남겨 주세요.');
+            if(!data.reason.trim()||!data.nextAction.trim())throw Error('판단 근거와 다음 조치를 입력해 주세요.');
+            if(!day(data.nextReviewDate))throw Error('다음 확인일을 입력해 주세요.');
+            const item=current.items?.[code];writeKey=db.ref('salesPerformance/reviews/'+code).push().key;
+            patch['salesPerformance/reviews/'+code+'/'+writeKey]={reviewedAt:now,periodStart:current.period.start,periodEnd:current.period.end,asOf:current.generatedAt,group:data.group,launchDate:data.launchDate,coreSku:data.coreSku,netQty:number(item?.netQty),previousNetQty:number(item?.previousNetQty),recent28NetQty:number(item?.recent28NetQty),stockNote:data.stockNote.trim(),conditionsNote:data.conditionsNote.trim(),judgment:data.judgment,reason:data.reason.trim(),nextAction:data.nextAction.trim(),nextReviewDate:data.nextReviewDate};
+          }
+          const gen=generation();saving.add(code);inputs.forEach(el=>el.disabled=true);message.textContent='저장 중…';
+          try{await db.ref().update(patch);}catch(error){
+            if(isReview&&!/permission/i.test(String(error?.code||error?.message))){
+              let saved=null;try{saved=(await db.ref('salesPerformance/reviews/'+code+'/'+writeKey).once('value')).val();}catch{}
+              if(gen!==generation()||!hasAccess())return;
+              if(!saved||saved.reviewedAt!==now||saved.asOf!==getSnapshot()?.generatedAt){uncertain.add(code);throw Error('저장 결과 확인이 필요합니다. 중복 저장을 막았습니다. 이전 판단 기록을 확인한 뒤 화면을 다시 열어 주세요.');}
+            }else throw error;
+          }
+          if(gen!==generation()||!hasAccess())return;
+          profiles[code]=meta;version++;reviews.delete(code);
+          if(isReview){drafts.delete(code);['stockNote','conditionsNote','reason','nextAction'].forEach(field=>{form.querySelector('[data-field="'+field+'"]').value='';});capture(form,code);}
+          message.textContent=isReview?'판단 기록이 저장되었습니다.':'상품 기준이 저장되었습니다.';paintLaunch(form,code);if(form.querySelector('.pa-history-details').open)loadHistory(form,code);
+        }catch(error){if(hasAccess())message.textContent=/permission/i.test(String(error?.code||error?.message))?'저장 권한을 확인해 주세요. 입력 내용은 유지됩니다.':error?.message&&/[가-힣]/.test(error.message)?error.message:'저장 결과를 확인하지 못했습니다. 이전 기록을 확인한 뒤 다시 시도해 주세요.';}
+        finally{saving.delete(code);if(hasAccess()&&form.isConnected)inputs.forEach(el=>el.disabled=uncertain.has(code)&&el.tagName==='BUTTON');}
+      }
+      form.querySelector('.pa-profile-save').addEventListener('click',()=>save(false));form.querySelector('.pa-review-save').addEventListener('click',()=>save(true));
+      form.querySelector('.pa-history-details').addEventListener('toggle',e=>{if(e.currentTarget.open)loadHistory(form,code);});
+      row.addEventListener('toggle',()=>{if(row.open)paintLaunch(form,code);});if(row.open)paintLaunch(form,code);
+    }
+    return {load,reset,group,profile,decorate,get version(){return version;},get ready(){return loaded&&!profileError;}};
+  }
+  root.AiselProductPerformance={comparison,launchWindow,day,shift,create};
+})(typeof window!=='undefined'?window:globalThis);
+
+</script>
 <script>
 /* Supplier-quality records are additive; no network or historical writes on read. */
 (function(root){
@@ -9661,6 +9828,8 @@
   const salesFirebaseApp_ = firebase.apps.find(app=>app.name === "aiselSalesReadOnly") || firebase.initializeApp(firebase.app().options,"aiselSalesReadOnly");
   const salesAuth_ = salesFirebaseApp_.auth();
   const salesDatabase_ = salesFirebaseApp_.database();
+  let salesGroup = "all";
+  const salesAnalysis_ = AiselProductPerformance.create({db:salesDatabase_,hasAccess:()=>salesHasLogin_()&&!salesPermissionDenied_,generation:()=>salesAuthGeneration_,onChange:()=>renderSalesView(),getSnapshot:()=>salesSnapshot_});
   let salesSort = "quantity";
   let salesFilter = "sale";
   let salesSearch = "";
@@ -9753,17 +9922,18 @@
       if(generation !== salesAuthGeneration_ || !salesHasLogin_()) return;
       let value = snapshot.val();
       // Realtime Database omits an empty object. Only a valid complete summary may normalize it.
-      if(value && value.schemaVersion === 1 && value.source === "cafe24" && value.status === "ready" && value.coverage && value.coverage.complete === true && value.items == null && Number.isFinite(Date.parse(value.generatedAt))) value={...value,items:{}};
-      if(value && (value.schemaVersion !== 1 || value.source !== "cafe24" || !value.items || typeof value.items !== "object" || !Number.isFinite(Date.parse(value.generatedAt)))) throw new Error("Invalid sales summary");
+      if(value && [1,2].includes(value.schemaVersion) && value.source === "cafe24" && value.status === "ready" && value.coverage && value.coverage.complete === true && value.items == null && Number.isFinite(Date.parse(value.generatedAt))) value={...value,items:{}};
+      if(value && (![1,2].includes(value.schemaVersion) || value.source !== "cafe24" || !value.items || typeof value.items !== "object" || !Number.isFinite(Date.parse(value.generatedAt)))) throw new Error("Invalid sales summary");
       salesSnapshot_ = value || null;
       salesReadError_ = false;
       salesPermissionDenied_ = false;
+      salesAnalysis_.load();
     } catch(error) {
       if(generation !== salesAuthGeneration_ || !salesHasLogin_()) return;
       // Keep the most recent readable result when a new read fails.
       salesReadError_ = true;
       salesPermissionDenied_ = /permission[_-]denied|permission denied/i.test(String(error && (error.code || error.message) || ""));
-      if(salesPermissionDenied_){salesSnapshot_=null;salesReflectionCache_.clear();salesOpenCodes_.clear();}
+      if(salesPermissionDenied_){salesSnapshot_=null;salesReflectionCache_.clear();salesOpenCodes_.clear();salesAnalysis_.reset();}
     } finally {
       if(generation === salesAuthGeneration_){
         salesLoading_ = false;
@@ -9794,6 +9964,7 @@
     const query = salesSearch.trim().toLocaleLowerCase("ko-KR").replace(/\s+/g,"");
     const list = Object.entries(allWorkOrders || {}).filter(([code,st])=>{
       if(!st || !["sale","order","pdp"].includes(st.status)) return false;
+      if(salesGroup !== "all" && salesAnalysis_.group(code) !== salesGroup) return false;
       if(salesFilter === "sale" && st.status !== "sale") return false;
       if(salesFilter === "prep" && !["order","pdp"].includes(st.status)) return false;
       return !query || [code,st.pumMyeong].some(value=>String(value || "").toLocaleLowerCase("ko-KR").replace(/\s+/g,"").includes(query));
@@ -9816,6 +9987,7 @@
     const snapshot = salesSnapshot_, period = $("#salesPeriod"), updated = $("#salesUpdated"), notice = $("#salesSyncNotice"), rankScope = $("#salesRankScope");
     const safeDate = value=> typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value.replace(/-/g,".") : null;
     const start = snapshot && safeDate(snapshot.period && snapshot.period.start), end = snapshot && safeDate(snapshot.period && snapshot.period.end);
+    $("#salesSourceNote").textContent = snapshot && snapshot.schemaVersion === 1 ? "기존 14일 집계 · 새 기간 집계 대기" : "어제까지 최근 7일 · 직전 7일 비교";
     period.textContent = start && end ? start+" – "+end : "집계 기간 미확인";
     updated.textContent = snapshot ? "갱신 "+new Intl.DateTimeFormat("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(snapshot.generatedAt)) : "";
     rankScope.hidden = !(salesHasLogin_() && !salesPermissionDenied_ && snapshot && Object.values(snapshot.items || {}).some(item=>item && typeof item.reason === "string" && item.reason.split(";").some(part=>part.trim() === "rank_scope_verified_products_only")));
@@ -9835,13 +10007,15 @@
     notice.hidden = !message;
     notice.classList.toggle("warning",warning);
   }
+  function snapshotPeriodLabel_(){return salesSnapshot_ && salesSnapshot_.schemaVersion === 2 ? "최근 7일" : "집계 기간";}
   function renderSalesView(){
     const body = $("#salesTableBody");
     if(!body) return;
     renderSalesMeta_();
     const list = salesList_();
-    const signature = JSON.stringify({filter:salesFilter,sort:salesSort,query:salesSearch,snapshot:salesSnapshot_,error:salesReadError_,auth:salesHasLogin_(),denied:salesPermissionDenied_,items:list.map(([code,st])=>[code,st.pumMyeong,st.status,st.updatedAt,st.thumb,st.predReflection])});
+    const signature = JSON.stringify({group:salesGroup,analysisVersion:salesAnalysis_.version,filter:salesFilter,sort:salesSort,query:salesSearch,snapshot:salesSnapshot_,error:salesReadError_,auth:salesHasLogin_(),denied:salesPermissionDenied_,items:list.map(([code,st])=>[code,st.pumMyeong,st.status,st.updatedAt,st.thumb,st.predReflection])});
     if(signature !== lastSalesSig_){
+      if(salesHasLogin_() && !salesPermissionDenied_ && body.contains(document.activeElement) && document.activeElement.matches("input,textarea,select")) return;
       lastSalesSig_ = signature;
       $("#salesCounts").textContent = (salesFilter === "sale" ? "판매 중" : salesFilter === "prep" ? "판매 준비" : "전체")+" "+list.length+"개"+(salesSearch.trim() ? " · 검색 결과" : "");
       if(!list.length){
@@ -9865,7 +10039,7 @@
             <span class="sales-product"><span class="sales-name">${esc_(name)}</span><span class="sales-code">${esc_(code)}</span><span class="sales-product-state">${st.status === "sale" ? "판매 중" : st.status === "order" ? "발주생산" : "PDP"}</span></span>
             <span class="sales-performance"><span class="sales-label">${m.label}</span>${meter}<span class="sales-expand">상세 ▾</span></span>
           </summary><div class="sales-detail">
-            ${m.known ? `<dl class="sales-facts"><div><dt>순판매수량</dt><dd>${quantity(m.qty)}</dd></div><div><dt>순매출</dt><dd>${m.revenue === null ? "확인 필요" : m.revenue.toLocaleString("ko-KR")+"원"}</dd></div><div><dt>취소 수량</dt><dd>${quantity(m.canceled)}</dd></div><div><dt>반품 수량</dt><dd>${quantity(m.returned)}</dd></div></dl>` : ""}
+            ${m.known ? `<dl class="sales-facts"><div><dt>${snapshotPeriodLabel_()} 순판매수량</dt><dd>${quantity(m.qty)}</dd></div><div><dt>순매출</dt><dd>${m.revenue === null ? "확인 필요" : m.revenue.toLocaleString("ko-KR")+"원"}</dd></div><div><dt>취소 수량</dt><dd>${quantity(m.canceled)}</dd></div><div><dt>반품 수량</dt><dd>${quantity(m.returned)}</dd></div></dl>` : ""}
             <p class="sales-explanation">${esc_(m.reason)}</p>
             ${m.revenueReason ? `<p class="sales-explanation">${esc_(m.revenueReason)}</p>` : ""}
             <p class="sales-reflection" aria-live="polite">${salesHasLogin_() && !salesPermissionDenied_ && st.predReflection ? "개선 기록 · "+esc_(String(st.predReflection)) : ""}</p>
@@ -9873,6 +10047,7 @@
           </div>`;
           row.addEventListener("toggle",()=>{if(row.open){salesOpenCodes_.add(code);if(row.isConnected) loadSalesReflection_(code,st,row);}else salesOpenCodes_.delete(code);});
           row.querySelector(".sales-open-order").addEventListener("click",()=>openWorkOrderByCode_(code));
+          salesAnalysis_.decorate(row,code,salesSnapshot_);
           frag.appendChild(row);
         });
         body.replaceChildren(frag);
@@ -9880,6 +10055,7 @@
     }
     if(salesHasLogin_() && !salesReadAt_ && !salesLoading_ && isViewVisible_("salesView")) loadSalesPerformance_();
   }
+  $("#salesGroupTabs").addEventListener("click",event=>{const button=event.target.closest("[data-group]");if(!button)return;salesGroup=button.dataset.group;$("#salesGroupTabs").querySelectorAll("button").forEach(el=>{el.classList.toggle("active",el===button);el.setAttribute("aria-pressed",String(el===button));});renderSalesView();});
   $("#salesTabs").addEventListener("click",event=>{
     const button = event.target.closest(".gtab[data-status]");
     if(!button || !["sale","prep","all"].includes(button.dataset.status)) return;
@@ -9905,7 +10081,7 @@
   salesAuth_.onAuthStateChanged(()=>{
     salesAuthReady_=true;salesAuthGeneration_++;
     salesSnapshot_=null;salesLoading_=false;salesReadAt_=0;salesReadError_=false;salesPermissionDenied_=false;salesLoginMessage_="";
-    salesReflectionCache_.clear();salesOpenCodes_.clear();lastSalesSig_=null;
+    salesReflectionCache_.clear();salesOpenCodes_.clear();salesAnalysis_.reset();lastSalesSig_=null;
     renderSalesView();
   });
 

@@ -1,8 +1,8 @@
 {
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
-  "release": "v95",
-  "asOfDate": "2026-10-04",
+  "release": "v100",
+  "asOfDate": "2026-10-07",
   "timeZone": "Asia/Seoul",
   "purpose": "카페24 실제 판매를 바탕으로 제품 개발에 참고할 판매순위와 성과 게이지 제공",
   "sources": {
@@ -10,11 +10,15 @@
     "metaAdsIncludedInRanking": false
   },
   "period": {
-    "days": 14,
+    "days": 7,
     "end": "previous_day_in_Asia_Seoul",
     "freezeRunDateAtStart": true,
     "runnerRunDatePurpose": "result_period_validation_only",
-    "serverComputesCollectionDate": true
+    "serverComputesCollectionDate": true,
+    "comparisonDays": 7,
+    "trendDays": 28,
+    "currentContractStatus": "locally_implemented_live_v2_publish_pending",
+    "historicalPublishedSummaryDays": 14
   },
   "startApiContract": {
     "method": "POST",
@@ -28,9 +32,9 @@
     "timeZone": "Asia/Seoul",
     "status": "deployed",
     "aiCallsPerRun": 0,
-    "overallTimeoutMinutes": 60,
-    "maximumPolls": 300,
-    "workflowTimeoutMinutes": 65,
+    "overallTimeoutMinutes": 120,
+    "maximumPolls": 600,
+    "workflowTimeoutMinutes": 125,
     "maximumRetryAfterSeconds": 300
   },
   "ranking": {
@@ -83,7 +87,7 @@
   },
   "snapshot": {
     "path": "salesPerformance/current",
-    "schemaVersion": 1,
+    "schemaVersion": 2,
     "rootFields": [
       "schemaVersion",
       "source",
@@ -91,7 +95,9 @@
       "generatedAt",
       "period",
       "coverage",
-      "items"
+      "items",
+      "comparisonPeriod",
+      "trendPeriod"
     ],
     "itemFields": [
       "productNos",
@@ -103,7 +109,10 @@
       "gauge",
       "status",
       "reason",
-      "revenueReason"
+      "revenueReason",
+      "previousNetQty",
+      "recent28NetQty",
+      "daily"
     ],
     "itemKey": "workorder_code",
     "completeCoverageRequiredToPublish": true,
@@ -118,18 +127,28 @@
     "verifiedSubsetRankAndGaugeAllowed": true,
     "verifiedSubsetScopeNoticeRequired": true,
     "rankWithholdingScope": "unproven_products_or_incomplete_source_coverage",
-    "publishedCollectorVersion": 20
+    "publishedCollectorVersion": 20,
+    "legacyReadbackSchemaVersions": [
+      1,
+      2
+    ],
+    "newPublishSchemaVersions": [
+      2
+    ],
+    "historicalPublishedSnapshotSchemaVersion": 1,
+    "historyPath": "salesPerformance/daily/<period.end>"
   },
   "access": {
     "salesFirebaseAppName": "aiselSalesReadOnly",
     "defaultWorkorderAuthUnchanged": true,
-    "reader": "approved_owner_google_account_enforced_by_rules",
-    "writer": "dedicated_machine_identity_current_summary_only",
+    "reader": "approved_owner_google_account_enforced_by_rules_current_daily_products_reviews",
+    "writer": "machine_current_daily_only_owner_products_and_append_reviews",
     "publicSalesRead": false,
     "rootReadAllowed": false,
     "salesDeleteAllowed": false,
     "temporaryAnonymousProviderStatus": "disabled_after_machine_creation",
-    "secretsIncludedInPackage": false
+    "secretsIncludedInPackage": false,
+    "rulesV2PublishedAndReloadVerifiedOn": "2026-10-07"
   },
   "hosting": {
     "frontend": "existing_GitHub_Pages",
@@ -195,7 +214,9 @@
     "deploymentVerified": true,
     "publishedSnapshotCollectorVersion": 20,
     "implementationDeployed": true,
-    "skillV6Delivery": "uploaded_verified"
+    "skillV6Delivery": "uploaded_verified",
+    "asOfDate": "2026-10-04",
+    "scope": "historical_pre_product_performance_v2_verification"
   },
   "firstWorkflowAttempt": {
     "runId": "37124128166",
@@ -759,5 +780,180 @@
       ],
       "backupPolicy": "minor_proposal_note_only_no_new_release_zip"
     }
-  ]
+  ],
+  "productPerformanceChange20261006": {
+    "approvedOn": "2026-10-06",
+    "approvalSource": "사용자 후속: 해줘",
+    "displayName": "상품성과분석",
+    "status": "locally_implemented_rules_published_app_backend_runner_deployment_pending",
+    "schemaVersion": 2,
+    "analysisTargets": [
+      "new_product",
+      "existing_steady_seller"
+    ],
+    "newProductCohortStart": "피노 셔츠",
+    "periods": {
+      "current": "last_7_complete_days_through_yesterday",
+      "comparison": "preceding_7_complete_days",
+      "trend": "last_28_complete_days",
+      "today": "in_progress_not_in_complete_periods"
+    },
+    "review": {
+      "new": "7_and_14_days_after_actual_customer_display_and_sale_start",
+      "hiddenRegistrationIsLaunch": false,
+      "steady": "7_day_change_and_28_day_trend",
+      "rawRetention": "date_level_aggregates_without_orders_or_customer_data",
+      "weeklyHistory": "judgment_evidence_action_next_review",
+      "overlappingRollingSumsAdded": false,
+      "weeklyWeekday": null,
+      "coreSkuOrPdpCauseAutomaticWithoutEvidence": false
+    },
+    "reuseExisting06CodeSchedule": true,
+    "newAiAutomation": false,
+    "seasonal30DayContractChanged": false,
+    "verification": {
+      "localTests": "passed",
+      "deployment": "pending",
+      "liveV2Snapshot": "pending",
+      "rulesDeployment": "published_console_reload_exact_full_json_match",
+      "localBackendTests": 13,
+      "backendTypecheck": "passed",
+      "localUiTests": [
+        "dates",
+        "zero_vs_null",
+        "launch_windows",
+        "prior_zero_comparison",
+        "metadata_save",
+        "append_review",
+        "duplicate_click",
+        "logout_race"
+      ],
+      "screenGroups": 9,
+      "saveLockChecks": 9,
+      "supplierQualityDataPreservation": "passed",
+      "printSheetDom": "identical_to_v99",
+      "inlineScriptSyntaxCount": 7,
+      "preexistingWarnings": "old_printlock_hash_and_woIndexRoot_trash_flicker_warnings_preserved_no_accept",
+      "publisherSyncRulesChecks": 173,
+      "rulesUnrelatedPaths": "unchanged"
+    },
+    "backup": {
+      "version": "v7",
+      "fileName": "aisel-sales-performance_2026-10-07_v7.zip",
+      "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "pending"
+    },
+    "implementedSnapshotContract": {
+      "rootFieldsAdded": [
+        "comparisonPeriod",
+        "trendPeriod"
+      ],
+      "itemFieldsAdded": [
+        "previousNetQty",
+        "recent28NetQty",
+        "daily"
+      ],
+      "dailyFields": [
+        "date",
+        "netQty",
+        "netRevenue",
+        "canceledQty",
+        "returnedQty"
+      ],
+      "dailyRows": 28,
+      "missingEvidence": null,
+      "collection": "one_28_day_paid_order_window",
+      "legacyV1ReadCompatibility": true,
+      "unprovenDailyQuantities": "null_propagates_only_to_overlapping_periods",
+      "revenue": "sale_days_null_without_exact_discount_refund_allocation; verified_no_sale_days_zero"
+    },
+    "uiImplementation": {
+      "version": "v100",
+      "date": "2026-10-07",
+      "source": "작업지시서/work-order.html",
+      "format": "self_contained_inline",
+      "scriptId": "aisel-product-performance",
+      "styleId": "aisel-product-performance-style",
+      "extraAssetDownloads": false,
+      "automaticProductDisplayReorderOrPdpChanges": false
+    },
+    "metadataContract": {
+      "path": "salesPerformance/products/<workorder_code>",
+      "fields": [
+        "group",
+        "launchDate",
+        "coreSku",
+        "updatedAt"
+      ],
+      "groups": [
+        "new",
+        "steady",
+        "unclassified"
+      ],
+      "classification": "manual_confirmation",
+      "launchDate": "actual_customer_purchase_start_not_hidden_registration",
+      "coreSku": "manual_candidate_role_flag"
+    },
+    "reviewContract": {
+      "path": "salesPerformance/reviews/<workorder_code>/<push_id>",
+      "writeMode": "append_only",
+      "fields": [
+        "reviewedAt",
+        "periodStart",
+        "periodEnd",
+        "asOf",
+        "group",
+        "launchDate",
+        "coreSku",
+        "netQty",
+        "previousNetQty",
+        "recent28NetQty",
+        "stockNote",
+        "conditionsNote",
+        "judgment",
+        "reason",
+        "nextAction",
+        "nextReviewDate"
+      ],
+      "judgments": [
+        "observe",
+        "maintain",
+        "reorder_review",
+        "improve",
+        "stop_review"
+      ]
+    },
+    "publishingContract": {
+      "newSnapshots": "v2_only",
+      "readbackVersions": [
+        1,
+        2
+      ],
+      "sequence": [
+        "validate_complete_v2",
+        "daily_conditional_put_and_readback",
+        "current_conditional_put_and_readback"
+      ],
+      "uncertainWritesRetried": false,
+      "staleOverwriteAllowed": false,
+      "rootWrite": false,
+      "nullMetricNormalization": "firebase_omitted_nulls_restored_during_readback"
+    },
+    "firebasePaths": {
+      "current": "owner_and_machine_read_machine_write",
+      "daily/<period.end>": "owner_and_machine_read_machine_write_complete_v2_snapshot",
+      "products/<workorder_code>": "owner_read_write",
+      "reviews/<workorder_code>/<push_id>": "owner_read_append_only_no_replace_or_delete"
+    },
+    "collectionBudget": {
+      "maximumMinutes": 120,
+      "maximumPolls": 600,
+      "workflowMinutes": 125,
+      "verifiedLongRun": {
+        "checkpoints": 292,
+        "minutes": 73
+      },
+      "timeoutTest": "120_minutes"
+    }
+  }
 }
