@@ -2988,6 +2988,7 @@
   <div class="sales-meta"><span id="salesPeriod">집계 기간 확인 중</span><span id="salesUpdated"></span><span id="salesRankScope" hidden>수량이 확인된 상품 기준 순위</span></div>
   <p id="salesSyncNotice" class="sales-notice" role="status" aria-live="polite">판매 자료를 확인하고 있습니다.</p>
   <div id="salesAuth" class="sales-auth"><button type="button" id="salesLoginBtn" class="sales-login">상품성과 로그인</button></div>
+  <p id="salesRecordNotice" class="pa-hint" role="status" aria-live="polite"></p>
   <div id="salesCounts" class="sales-counts" role="status" aria-live="polite"></div>
   <div id="salesTableBody" class="sales-list" aria-label="상품별 판매성과"></div>
 </div>
@@ -4056,10 +4057,10 @@
       form.innerHTML='<div class="pa-comparison"><div><span>최근 7일</span><strong>'+qty(v2?m?.netQty:null)+'</strong></div><div><span>직전 7일</span><strong>'+qty(v2?m?.previousNetQty:null)+'</strong></div><div><span>최근 28일</span><strong>'+qty(v2?m?.recent28NetQty:null)+'</strong></div></div><p class="pa-change">'+esc(v2?comparison(m?.netQty,m?.previousNetQty):'새 기간의 집계를 기다리고 있습니다. 기존 자료의 기간은 위 집계 기준을 확인해 주세요.')+'</p><div class="pa-fields pa-profile"><label>분류<select data-field="group">'+options(groups,v.group)+'</select></label><label>실제 판매 시작일<input type="date" data-field="launchDate" value="'+esc(v.launchDate)+'" max="'+today()+'"></label><label class="pa-check"><input type="checkbox" data-field="coreSku"'+(v.coreSku?' checked':'')+'> 핵심 SKU 후보</label></div><p class="pa-hint">등록일이 아닌 고객이 실제 구매할 수 있게 된 날을 입력합니다. 핵심 SKU 후보는 별도 검토한 상품에 표시합니다.</p><button type="button" class="pa-profile-save">상품 기준 저장</button><div class="pa-launch"></div><h3>판단 기록</h3><div class="pa-fields"><label>재고·품절 상황<textarea data-field="stockNote" rows="2" maxlength="1000" placeholder="예: 블랙 M 품절, 다음 주 입고 예정">'+esc(v.stockNote)+'</textarea></label><label>노출·할인 조건<textarea data-field="conditionsNote" rows="2" maxlength="1000" placeholder="예: 광고 노출 감소, 할인 없음">'+esc(v.conditionsNote)+'</textarea></label><label>판단<select data-field="judgment">'+options(judgments,v.judgment)+'</select></label><label>다음 확인일<input type="date" data-field="nextReviewDate" value="'+esc(v.nextReviewDate)+'"></label><label class="pa-wide">판단 근거<textarea data-field="reason" rows="2" maxlength="2000" placeholder="판매 변화와 재고·노출 조건을 함께 기록">'+esc(v.reason)+'</textarea></label><label class="pa-wide">다음 조치<textarea data-field="nextAction" rows="2" maxlength="2000" placeholder="예: 재입고 후 재검토 / 가격·배송·상세페이지 확인">'+esc(v.nextAction)+'</textarea></label></div><div class="pa-save-row"><button type="button" class="pa-review-save">판단 기록 남기기</button><span class="pa-message" role="status" aria-live="polite"></span></div><details class="pa-history-details"><summary>이전 판단 기록</summary><div class="pa-history"></div></details>';
       const footer=row.querySelector('.sales-detail-footer');footer.before(form);
       const inputs=form.querySelectorAll('input,select,textarea,button');
-      if(!hasAccess()||profileError||!loaded){inputs.forEach(el=>el.disabled=true);form.querySelector('.pa-message').textContent=profileError?'기록 접근 권한을 확인해 주세요.':hasAccess()?'상품 기준을 불러오는 중…':'로그인 후 기록할 수 있습니다.';}
+      if(!hasAccess()||profileError||!loaded||saving.has(code)||uncertain.has(code)){inputs.forEach(el=>el.disabled=true);form.querySelector('.pa-message').textContent=uncertain.has(code)?'이전 저장 결과를 확인해 주세요.':saving.has(code)?'저장 중…':profileError?'기록 접근 권한을 확인해 주세요.':hasAccess()?'상품 기준을 불러오는 중…':'로그인 후 기록할 수 있습니다.';}
       form.addEventListener('input',()=>capture(form,code));form.addEventListener('change',()=>{capture(form,code);paintLaunch(form,code);});
       async function save(isReview){
-        if(!hasAccess()||profileError||saving.has(code)||uncertain.has(code))return;const message=form.querySelector('.pa-message');let data,writeKey;
+        if(!hasAccess()||profileError||saving.has(code)||uncertain.has(code))return;const message=form.querySelector('.pa-message'),gen=generation();let data,writeKey,savedSuccessfully=false;
         try{
           data=criteria(form,code);const now=Date.now(),meta={group:data.group,launchDate:data.launchDate,coreSku:data.coreSku,updatedAt:now};
           const patch={};Object.entries(meta).forEach(([key,value])=>{patch['salesPerformance/products/'+code+'/'+key]=value;});
@@ -4070,7 +4071,7 @@
             const item=current.items?.[code];writeKey=db.ref('salesPerformance/reviews/'+code).push().key;
             patch['salesPerformance/reviews/'+code+'/'+writeKey]={reviewedAt:now,periodStart:current.period.start,periodEnd:current.period.end,asOf:current.generatedAt,group:data.group,launchDate:data.launchDate,coreSku:data.coreSku,netQty:number(item?.netQty),previousNetQty:number(item?.previousNetQty),recent28NetQty:number(item?.recent28NetQty),stockNote:data.stockNote.trim(),conditionsNote:data.conditionsNote.trim(),judgment:data.judgment,reason:data.reason.trim(),nextAction:data.nextAction.trim(),nextReviewDate:data.nextReviewDate};
           }
-          const gen=generation();saving.add(code);inputs.forEach(el=>el.disabled=true);message.textContent='저장 중…';
+          saving.add(code);inputs.forEach(el=>el.disabled=true);message.textContent='저장 중…';
           try{await db.ref().update(patch);}catch(error){
             if(isReview&&!/permission/i.test(String(error?.code||error?.message))){
               let saved=null;try{saved=(await db.ref('salesPerformance/reviews/'+code+'/'+writeKey).once('value')).val();}catch{}
@@ -4081,9 +4082,9 @@
           if(gen!==generation()||!hasAccess())return;
           profiles[code]=meta;version++;reviews.delete(code);
           if(isReview){drafts.delete(code);['stockNote','conditionsNote','reason','nextAction'].forEach(field=>{form.querySelector('[data-field="'+field+'"]').value='';});capture(form,code);}
-          message.textContent=isReview?'판단 기록이 저장되었습니다.':'상품 기준이 저장되었습니다.';paintLaunch(form,code);if(form.querySelector('.pa-history-details').open)loadHistory(form,code);
+          message.textContent=isReview?'판단 기록이 저장되었습니다.':'상품 기준이 저장되었습니다.';savedSuccessfully=true;paintLaunch(form,code);if(form.querySelector('.pa-history-details').open)loadHistory(form,code);
         }catch(error){if(hasAccess())message.textContent=/permission/i.test(String(error?.code||error?.message))?'저장 권한을 확인해 주세요. 입력 내용은 유지됩니다.':error?.message&&/[가-힣]/.test(error.message)?error.message:'저장 결과를 확인하지 못했습니다. 이전 기록을 확인한 뒤 다시 시도해 주세요.';}
-        finally{saving.delete(code);if(hasAccess()&&form.isConnected)inputs.forEach(el=>el.disabled=uncertain.has(code)&&el.tagName==='BUTTON');}
+        finally{if(gen===generation()){saving.delete(code);if(hasAccess()&&form.isConnected)inputs.forEach(el=>el.disabled=uncertain.has(code)&&el.tagName==='BUTTON');if(savedSuccessfully)onChange(message.textContent);}}
       }
       form.querySelector('.pa-profile-save').addEventListener('click',()=>save(false));form.querySelector('.pa-review-save').addEventListener('click',()=>save(true));
       form.querySelector('.pa-history-details').addEventListener('toggle',e=>{if(e.currentTarget.open)loadHistory(form,code);});
@@ -9829,7 +9830,7 @@
   const salesAuth_ = salesFirebaseApp_.auth();
   const salesDatabase_ = salesFirebaseApp_.database();
   let salesGroup = "all";
-  const salesAnalysis_ = AiselProductPerformance.create({db:salesDatabase_,hasAccess:()=>salesHasLogin_()&&!salesPermissionDenied_,generation:()=>salesAuthGeneration_,onChange:()=>renderSalesView(),getSnapshot:()=>salesSnapshot_});
+  const salesAnalysis_ = AiselProductPerformance.create({db:salesDatabase_,hasAccess:()=>salesHasLogin_()&&!salesPermissionDenied_,generation:()=>salesAuthGeneration_,onChange:message=>{if(message)$("#salesRecordNotice").textContent=message;renderSalesView();},getSnapshot:()=>salesSnapshot_});
   let salesSort = "quantity";
   let salesFilter = "sale";
   let salesSearch = "";
@@ -10080,6 +10081,8 @@
   // This gate prevents accidental client reads. Firebase security rules enforce who may read sales.
   salesAuth_.onAuthStateChanged(()=>{
     salesAuthReady_=true;salesAuthGeneration_++;
+    $("#salesRecordNotice").textContent="";
+    $("#salesTableBody").replaceChildren(); // Clear the previous account before any focused-input render guard.
     salesSnapshot_=null;salesLoading_=false;salesReadAt_=0;salesReadError_=false;salesPermissionDenied_=false;salesLoginMessage_="";
     salesReflectionCache_.clear();salesOpenCodes_.clear();salesAnalysis_.reset();lastSalesSig_=null;
     renderSalesView();
