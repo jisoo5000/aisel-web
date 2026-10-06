@@ -1,4 +1,24 @@
 {
+  "productPerformanceBadgePlan20261007": {
+    "status": "proposed_planning_only_code_prohibited",
+    "decidedOn": "2026-10-07",
+    "source": "user asks rounded low/normal/good badge beside product name; AISEL pink for low; blue/green ideas",
+    "canonicalPath": "docs/sales-performance.md",
+    "confirmedScope": "planning only; do not change app or sheet",
+    "proposed": {
+      "placement": "after name inside same cell; reserve badge width; name ellipsis",
+      "shape": "small rounded rectangle", "sizePx": {"width": 40, "height": 20}, "radiusPx": 5, "gapPx": 6, "fontPx": "10-11",
+      "palette": {"low": {"label": "저조", "background": "#FCE9EF", "text": "#985469"}, "normal": {"label": "보통", "background": "#F2F4F7", "text": "#69758A"}, "good": {"label": "좋음", "background": "#EAF0F7", "text": "#2F3B52"}},
+      "paletteStatus": "proposed; new pink hex is not verified official brand token",
+      "meaning": "sales response in recent 30 days; returns remain separate existing column",
+      "bands": "upper/middle/lower relative sales groups; numerical thresholds not approved",
+      "limits": "do not automatically rate short selling period or stockout as poor; do not rate unknown returns as zero/good"
+    },
+    "implementationChanged": false,
+    "productRatingsComputed": false,
+    "pending": ["approve metric meaning and band boundaries", "same-quantity handling", "launch/stock evidence", "mobile name width review"],
+    "backupPolicy": "minor planning addition; retain existing v23 full recovery ZIP"
+  },
   "fixedSortControlSimplificationPlan20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
