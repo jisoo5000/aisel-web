@@ -7,10 +7,10 @@ export const CONTRACT = Object.freeze({
   allowedOrigin: 'https://cafe24-weekly-insights.spaceit-aisel.chatgpt.site',
   jobsPath: '/api/workorder-sales/jobs',
   secretHeader: 'Authorization',
-  overallTimeoutMs: 60 * 60 * 1_000,
+  overallTimeoutMs: 120 * 60 * 1_000,
   requestTimeoutMs: 30_000,
   pollIntervalMs: 5_000,
-  maximumPolls: 300,
+  maximumPolls: 600,
   maximumRetryAfterSeconds: 300,
   maximumResponseBytes: 32_768,
   jobIdField: 'jobId',
@@ -228,6 +228,7 @@ export async function synchronizeSales(config, {
     // write below may declare live publication. No response-supplied URL is used.
     const snapshot = await requestSummary(config, `${pollUrl}/result`, 'GET', fetchImpl,
       Math.min(CONTRACT.requestTimeoutMs, remaining()), 'result', undefined, PUBLISH_CONTRACT.maximumBytes);
+    if (snapshot?.schemaVersion !== 2) throw new SyncError('SALES_SCHEMA_UPGRADE_REQUIRED');
     const result = await publishSalesSnapshot(snapshot, {
       env, fetchImpl, log, now, nowMs: wallNow(), budgetMs: remaining(), expectedPeriodEnd,
     });

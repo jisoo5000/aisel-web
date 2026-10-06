@@ -3,12 +3,14 @@ import { createHash } from 'node:crypto';
 export const PUBLISH_CONTRACT = Object.freeze({
   databaseOrigin: 'https://aisel-workorder-default-rtdb.asia-southeast1.firebasedatabase.app',
   snapshotPath: '/salesPerformance/current.json',
+  dailyPath: '/salesPerformance/daily',
   tokenEndpoint: 'https://securetoken.googleapis.com/v1/token',
   maximumProducts: 500,
   maximumBytes: 2_000_000,
   requestTimeoutMs: 20_000,
   overallTimeoutMs: 100_000,
-  periodDays: 14,
+  periodDays: 7,
+  trendDays: 28,
 });
 
 export class PublishError extends Error {
@@ -26,6 +28,8 @@ const ITEM_FIELDS = ['productNos', 'netQty', 'netRevenue', 'canceledQty', 'retur
 const COVERAGE_FIELDS = ['complete', 'orderCount', 'itemCount', 'matchedCount', 'unmatchedCount',
   'productCount', 'skippedCount', 'errorCount', 'cancellationCount', 'returnCount'];
 const ITEM_STATES = ['good', 'normal', 'poor', 'pending', 'unmatched'];
+const V2_ROOT_FIELDS = [...ROOT_FIELDS, 'comparisonPeriod', 'trendPeriod'];
+const V2_ITEM_FIELDS = [...ITEM_FIELDS, 'recent28NetQty', 'daily'];
 const DAY_MS = 86_400_000;
 
 function object(value) {
@@ -68,8 +72,9 @@ function reason(value, optional = false) {
 // Only these aggregate fields can reach Firebase. Unknown fields are rejected,
 // including raw orders or customer records anywhere in the accepted structure.
 export function validateSalesSnapshot(value, { nowMs = Date.now(), readback = false, expectedPeriodEnd } = {}) {
-  exactFields(value, ROOT_FIELDS);
-  if (value.schemaVersion !== 1 || value.source !== 'cafe24' || value.status !== 'ready') {
+  const v2 = value?.schemaVersion === 2;
+  exactFields(value, v2 ? V2_ROOT_FIELDS : ROOT_FIELDS);
+  if (![1, 2].includes(value.schemaVersion) || value.source !== 'cafe24' || value.status !== 'ready') {
     throw new PublishError('INVALID_SALES_SCHEMA');
   }
   if (typeof value.generatedAt !== 'string'
@@ -81,13 +86,23 @@ export function validateSalesSnapshot(value, { nowMs = Date.now(), readback = fa
   const start = dateOnly(value.period.start);
   const end = dateOnly(value.period.end);
   const todayKst = dateOnly(new Date(nowMs + 9 * 60 * 60 * 1_000).toISOString().slice(0, 10));
-  if (value.period.timeZone !== 'Asia/Seoul' || end - start !== (PUBLISH_CONTRACT.periodDays - 1) * DAY_MS
+  if (value.period.timeZone !== 'Asia/Seoul' || end - start !== ((v2 ? PUBLISH_CONTRACT.periodDays : 14) - 1) * DAY_MS
     || end >= todayKst || Date.parse(value.generatedAt) < end) {
     throw new PublishError('INVALID_SALES_PERIOD');
   }
   if (expectedPeriodEnd !== undefined) {
     dateOnly(expectedPeriodEnd);
     if (value.period.end !== expectedPeriodEnd) throw new PublishError('UNEXPECTED_SALES_PERIOD');
+  }
+  if (v2) {
+    for (const [key, expectedStart, expectedEnd] of [
+      ['comparisonPeriod', start - 7 * DAY_MS, start - DAY_MS],
+      ['trendPeriod', end - 27 * DAY_MS, end],
+    ]) {
+      exactFields(value[key], ['start', 'end', 'timeZone']);
+      if (value[key].timeZone !== 'Asia/Seoul' || dateOnly(value[key].start) !== expectedStart
+        || dateOnly(value[key].end) !== expectedEnd) throw new PublishError('INVALID_SALES_PERIOD');
+    }
   }
   const sourceItems = readback && value.items === undefined ? {} : value.items;
   if (!object(sourceItems) || Object.keys(sourceItems).length > PUBLISH_CONTRACT.maximumProducts) {
@@ -96,7 +111,7 @@ export function validateSalesSnapshot(value, { nowMs = Date.now(), readback = fa
   const items = {};
   for (const [code, item] of Object.entries(sourceItems)) {
     if (!/^AS-[A-Za-z0-9-]{1,100}$/u.test(code)) throw new PublishError('INVALID_PRODUCT_CODE');
-    exactFields(item, ITEM_FIELDS);
+    exactFields(item, v2 ? V2_ITEM_FIELDS : ITEM_FIELDS);
     const productNos = readback && item.productNos === undefined ? [] : item.productNos;
     if (!Array.isArray(productNos) || productNos.length > 500
       || productNos.some((number) => !Number.isSafeInteger(number) || number <= 0)
@@ -117,6 +132,29 @@ export function validateSalesSnapshot(value, { nowMs = Date.now(), readback = fa
       revenueReason: reason(item.revenueReason, true),
       previousNetQty: nullableNumber(item.previousNetQty ?? null, { readback }),
     };
+    if (v2) {
+      if (!Array.isArray(item.daily) || item.daily.length !== 28) throw new PublishError('INVALID_DAILY_SALES');
+      items[code].recent28NetQty = nullableNumber(item.recent28NetQty, { readback });
+      items[code].daily = item.daily.map((day, index) => {
+        exactFields(day, ['date', 'netQty', 'netRevenue', 'canceledQty', 'returnedQty']);
+        if (dateOnly(day.date) !== end - (27 - index) * DAY_MS) throw new PublishError('INVALID_DAILY_SALES');
+        return { date: day.date, netQty: nullableNumber(day.netQty, { readback }),
+          netRevenue: nullableNumber(day.netRevenue, { readback }),
+          canceledQty: nullableNumber(day.canceledQty, { readback, nonnegative: true }),
+          returnedQty: nullableNumber(day.returnedQty, { readback, nonnegative: true }) };
+      });
+      for (const [field, first, last, dailyField] of [
+        ['netQty', 21, 28, 'netQty'], ['previousNetQty', 14, 21, 'netQty'],
+        ['recent28NetQty', 0, 28, 'netQty'], ['netRevenue', 21, 28, 'netRevenue'],
+        ['canceledQty', 21, 28, 'canceledQty'], ['returnedQty', 21, 28, 'returnedQty'],
+      ]) {
+        const values = items[code].daily.slice(first, last).map((day) => day[dailyField]);
+        const expected = values.some((number) => number === null) ? null : values.reduce((sum, number) => sum + number, 0);
+        const actual = items[code][field];
+        if ((expected === null) !== (actual === null)
+          || (expected !== null && Math.abs(expected - actual) > 0.000001)) throw new PublishError('SALES_TOTAL_MISMATCH');
+      }
+    }
   }
   if (!object(value.coverage) || value.coverage.complete !== true) throw new PublishError('INCOMPLETE_SALES_COVERAGE');
   if (Object.keys(value.coverage).some((key) => /^(?:rawOrders?|orders?|customers?|customer.*|buyer.*|payer.*|recipient.*|email.*|address.*|phone.*)$/iu.test(key))) {
@@ -133,8 +171,9 @@ export function validateSalesSnapshot(value, { nowMs = Date.now(), readback = fa
     }
   }
   const snapshot = {
-    schemaVersion: 1, generatedAt: value.generatedAt,
+    schemaVersion: value.schemaVersion, generatedAt: value.generatedAt,
     period: { start: value.period.start, end: value.period.end, timeZone: 'Asia/Seoul' },
+    ...(v2 ? { comparisonPeriod: { ...value.comparisonPeriod }, trendPeriod: { ...value.trendPeriod } } : {}),
     source: 'cafe24', status: 'ready', items, coverage,
   };
   if (Buffer.byteLength(JSON.stringify(snapshot)) > PUBLISH_CONTRACT.maximumBytes) {
@@ -254,16 +293,53 @@ export async function publishSalesSnapshot(input, {
     throw new PublishError('FIREBASE_ETAG_MISSING');
   }
   const expectedHash = snapshotHash(snapshot);
+  let unchanged = false;
   if (current.data !== null) {
     const previous = validateSalesSnapshot(current.data, { nowMs, readback: true });
     if (snapshotHash(previous) === expectedHash) {
-      return { published: true, verified: true, unchanged: true, credentialRotationObserved };
+      unchanged = true;
     }
-    if (snapshot.period.end < previous.period.end
-      || Date.parse(snapshot.generatedAt) <= Date.parse(previous.generatedAt)) {
+    if (!unchanged && (snapshot.period.end < previous.period.end
+      || Date.parse(snapshot.generatedAt) <= Date.parse(previous.generatedAt))) {
       throw new PublishError('STALE_SALES_SNAPSHOT');
     }
   }
+
+  // Retain each complete, validated v2 snapshot by its reporting end date before
+  // changing current. No root write, deletion, or customer/order data is needed.
+  // A later explicit run can verify/reconcile a completed history write after an
+  // uncertain response; this run never retries or rolls back any PUT.
+  if (snapshot.schemaVersion === 2) {
+    const historyUrl = new URL(`${PUBLISH_CONTRACT.dailyPath}/${snapshot.period.end}.json`, PUBLISH_CONTRACT.databaseOrigin);
+    historyUrl.searchParams.set('auth', auth.id_token);
+    const history = await request(historyUrl.href, {
+      method: 'GET', headers: { ...headers, 'X-Firebase-ETag': 'true' },
+    }, 'FIREBASE_HISTORY_READ');
+    if (typeof history.etag !== 'string' || !history.etag || history.etag.length > 512 || /[\r\n]/u.test(history.etag)) {
+      throw new PublishError('FIREBASE_ETAG_MISSING');
+    }
+    let historyMatches = false;
+    if (history.data !== null) {
+      const previousHistory = validateSalesSnapshot(history.data, { nowMs, readback: true,
+        expectedPeriodEnd: snapshot.period.end });
+      historyMatches = snapshotHash(previousHistory) === expectedHash;
+      if (!historyMatches && Date.parse(snapshot.generatedAt) <= Date.parse(previousHistory.generatedAt)) {
+        throw new PublishError('STALE_SALES_HISTORY');
+      }
+    }
+    if (!historyMatches) {
+      await request(historyUrl.href, {
+        method: 'PUT', headers: { ...headers, 'Content-Type': 'application/json', 'If-Match': history.etag },
+        body: JSON.stringify(snapshot),
+      }, 'FIREBASE_HISTORY_WRITE');
+      const savedHistory = await request(historyUrl.href, { method: 'GET', headers }, 'FIREBASE_HISTORY_VERIFY');
+      let verifiedHistory;
+      try { verifiedHistory = validateSalesSnapshot(savedHistory.data, { nowMs, readback: true }); }
+      catch { throw new PublishError('FIREBASE_HISTORY_VERIFY_MISMATCH'); }
+      if (snapshotHash(verifiedHistory) !== expectedHash) throw new PublishError('FIREBASE_HISTORY_VERIFY_MISMATCH');
+    }
+  }
+  if (unchanged) return { published: true, verified: true, unchanged: true, credentialRotationObserved };
 
   // Exact single-location conditional replacement. Never retry an uncertain PUT.
   await request(databaseUrl.href, {

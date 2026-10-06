@@ -16,7 +16,7 @@ concurrency:
 jobs:
   synchronize-sales:
     runs-on: ubuntu-latest
-    timeout-minutes: 65
+    timeout-minutes: 125
     steps:
       - name: Check out runner
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
           node-version: '22'
 
       - name: Verify runner without network access
-        run: node --test tests/sync-sales.test.mjs tests/publish-sales.test.mjs
+        run: node --test tests/sync-sales.test.mjs tests/publish-sales.test.mjs tests/publish-sales-v2.test.mjs tests/sales-rules.test.mjs
 
       - name: Aggregate and save sales
         env:

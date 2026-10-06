@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CONTRACT, main } from '../scripts/sync-sales.mjs';
 import { PUBLISH_CONTRACT } from '../scripts/publish-sales.mjs';
+import { v2Snapshot } from './sales-v2-fixture.mjs';
 
 const WALL_NOW = Date.parse('2026-10-02T21:00:00.000Z'); // October 3, 06:00 KST.
 const fakeEnv = () => ({
@@ -15,14 +16,7 @@ const job = (status = 'queued', extra = {}) => ({
   coverage: { complete: status === 'ready' }, resultAvailable: status === 'ready',
   errorCode: null, published: false, storageTarget: 'private_site', ...extra,
 });
-const snapshot = () => ({
-  schemaVersion: 1, generatedAt: '2026-10-02T20:59:30.000Z',
-  period: { start: '2026-09-19', end: '2026-10-02', timeZone: 'Asia/Seoul' },
-  source: 'cafe24', status: 'ready', items: {
-    'AS-26F-TEST': { productNos: [123], netQty: 9, netRevenue: 250_000, canceledQty: 1, returnedQty: 0,
-      rank: 1, gauge: 88, status: 'good', reason: 'aggregate fixture' },
-  }, coverage: { complete: true, orderCount: 10, runtimePages: 4 },
-});
+const snapshot = v2Snapshot;
 const json = (value, status = 200, headers = {}) => new Response(JSON.stringify(value), {
   status, headers: { 'Content-Type': 'application/json', ...headers },
 });
@@ -40,6 +34,7 @@ async function run(fetchImpl, { env = fakeEnv(), ...runtime } = {}) {
 function integrationServer({ startReady = false, override } = {}) {
   const requests = [];
   let saved = null;
+  let daily = null;
   const fetchImpl = async (url, options) => {
     requests.push({ url, options });
     assert.equal(options.redirect, 'manual');
@@ -84,16 +79,19 @@ function integrationServer({ startReady = false, override } = {}) {
         token_type: 'Bearer', user_id: fakeEnv().AISEL_FIREBASE_MACHINE_UID });
     }
     assert.equal(endpoint.origin, PUBLISH_CONTRACT.databaseOrigin);
-    assert.equal(endpoint.pathname, PUBLISH_CONTRACT.snapshotPath);
+    const isHistory = endpoint.pathname === '/salesPerformance/daily/2026-10-02.json';
+    assert.ok(isHistory || endpoint.pathname === PUBLISH_CONTRACT.snapshotPath);
     assert.equal(endpoint.searchParams.get('auth'), 'test-id-token');
     if (options.method === 'PUT') {
       assert.equal(headers.get('If-Match'), '"fixture-etag"');
-      saved = JSON.parse(options.body);
-      assert.equal(saved.coverage.runtimePages, undefined);
-      return json(saved);
+      const next = JSON.parse(options.body);
+      assert.equal(next.coverage.runtimePages, undefined);
+      if (isHistory) daily = next;
+      else saved = next;
+      return json(next);
     }
     assert.equal(options.method, 'GET');
-    return json(saved, 200, { ETag: '"fixture-etag"' });
+    return json(isHistory ? daily : saved, 200, { ETag: '"fixture-etag"' });
   };
   return { requests, fetchImpl, saved: () => saved };
 }
@@ -102,7 +100,7 @@ test('queued → running → ready → private result → conditional publish �
   const server = integrationServer();
   const result = await run(server.fetchImpl);
   assert.equal(result.code, 0);
-  assert.equal(server.requests.length, 8);
+  assert.equal(server.requests.length, 11);
   assert.deepEqual(result.logs.slice(0, 6), Object.values(fakeEnv()).map((value) => `::add-mask::${value}`));
   assert.equal(result.output, 'Sales sync: {"success":true,"published":true,"verified":true,"unchanged":false,"credentialRotationObserved":false}');
   assert.ok(!result.output.includes('250000'));
@@ -115,7 +113,7 @@ test('idempotent start already ready fetches and publishes without advancing or 
   const server = integrationServer({ startReady: true });
   const result = await run(server.fetchImpl);
   assert.equal(result.code, 0);
-  assert.equal(server.requests.length, 6);
+  assert.equal(server.requests.length, 9);
   assert.ok(!server.requests.some(({ url }) => url.endsWith('/advance')));
 });
 
@@ -130,9 +128,9 @@ test('start leaves the period server-controlled by sending an empty body at eith
   assert.deepEqual(bodies, [{}, {}]);
 });
 
-test('rejects stale incoming period even if it is a complete fourteen-day private result', async () => {
+test('rejects stale incoming period even if it is a complete seven-day private result', async () => {
   const server = integrationServer({ startReady: true, override: ({ endpoint }) => endpoint.pathname.endsWith('/result')
-    ? json({ ...snapshot(), period: { start: '2026-09-18', end: '2026-10-01', timeZone: 'Asia/Seoul' } })
+    ? json({ ...snapshot(), period: { start: '2026-09-25', end: '2026-10-01', timeZone: 'Asia/Seoul' } })
     : undefined });
   const result = await run(server.fetchImpl);
   assert.equal(result.code, 1);
@@ -309,10 +307,19 @@ test('private result validation failure never authenticates or writes to Firebas
 });
 
 test('failed authenticated readback never logs a published success', async () => {
-  const server = integrationServer({ override: ({ requests }) => requests.length === 8 ? json(null) : undefined });
+  const server = integrationServer({ override: ({ requests }) => requests.length === 11 ? json(null) : undefined });
   const result = await run(server.fetchImpl);
   assert.equal(result.code, 1);
   assert.equal(result.output, 'Sales sync failed: FIREBASE_VERIFY_MISMATCH');
+});
+
+test('a cached legacy backend result cannot silently publish a fourteen-day result after upgrade', async () => {
+  const server = integrationServer({ startReady: true, override: ({ endpoint }) => endpoint.pathname.endsWith('/result')
+    ? json({ ...snapshot(), schemaVersion: 1 }) : undefined });
+  const result = await run(server.fetchImpl);
+  assert.equal(result.code, 1);
+  assert.equal(result.output, 'Sales sync failed: SALES_SCHEMA_UPGRADE_REQUIRED');
+  assert.equal(server.requests.length, 2);
 });
 
 test('publishes successfully after more than forty bounded checkpoints', async () => {
@@ -391,7 +398,7 @@ test('stops without sleeping or polling if the requested server delay does not f
   assert.equal(result.output, 'Sales sync failed: OVERALL_TIMEOUT');
 });
 
-test('stops after 300 polls without starting another job', async () => {
+test('stops after 600 polls without starting another job', async () => {
   const requests = [];
   const result = await run(async (url, options) => {
     requests.push({ url, method: options.method });
@@ -400,11 +407,11 @@ test('stops after 300 polls without starting another job', async () => {
   assert.equal(result.code, 1);
   assert.equal(result.output, 'Sales sync failed: POLL_LIMIT_REACHED');
   assert.equal(requests.filter(({ url }) => url === fakeEnv().AISEL_SALES_SYNC_URL).length, 1);
-  assert.equal(requests.filter(({ method }) => method === 'GET').length, 300);
-  assert.equal(requests.filter(({ url }) => url.endsWith('/advance')).length, 300);
+  assert.equal(requests.filter(({ method }) => method === 'GET').length, 600);
+  assert.equal(requests.filter(({ url }) => url.endsWith('/advance')).length, 600);
 });
 
-test('a realistic 146-checkpoint collection can publish beyond the old thirty-five-minute limit', async () => {
+test('a doubled 292-checkpoint collection can publish beyond the old sixty-minute limit', async () => {
   let checkpoints = 0;
   let milliseconds = 0;
   const server = integrationServer({ override: ({ endpoint, options }) => {
@@ -414,25 +421,25 @@ test('a realistic 146-checkpoint collection can publish beyond the old thirty-fi
       assert.deepEqual(JSON.parse(options.body), { expectedRevision: checkpoints });
       milliseconds += 10_000;
       checkpoints++;
-      return json(job(checkpoints === 146 ? 'ready' : 'running', { revision: checkpoints }));
+      return json(job(checkpoints === 292 ? 'ready' : 'running', { revision: checkpoints }));
     }
     return json(job('running', { revision: checkpoints }));
   } });
   const result = await run(server.fetchImpl, {
     now: () => milliseconds, sleep: async (ms) => { milliseconds += ms; },
   });
-  assert.equal(checkpoints, 146);
-  assert.equal(milliseconds, 36 * 60 * 1_000 + 30_000);
+  assert.equal(checkpoints, 292);
+  assert.equal(milliseconds, 73 * 60 * 1_000);
   assert.equal(result.code, 0);
   assert.ok(server.saved());
 });
 
-test('enforces the sixty-minute deadline even if a late response claims ready', async () => {
+test('enforces the two-hour deadline even if a late response claims ready', async () => {
   let milliseconds = 0;
   let calls = 0;
   const result = await run(async () => {
     if (++calls === 1) return json(job());
-    milliseconds = 60 * 60 * 1_000 + 1;
+    milliseconds = 120 * 60 * 1_000 + 1;
     return json(job('ready'));
   }, { now: () => milliseconds, sleep: async (ms) => { milliseconds += ms; } });
   assert.equal(calls, 2);
