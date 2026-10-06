@@ -13766,13 +13766,13 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
 }
 </style>
 
-<style id="aisel-sheet-sales-view">.sheet-sales-grid{display:grid;grid-template-columns:40px minmax(0,1fr) 90px 90px 80px 70px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid #dce2eb;color:#2f3b52;font-size:13px}
+<style id="aisel-sheet-sales-view">.sheet-sales-grid{display:grid;grid-template-columns:40px minmax(0,1fr) repeat(4,72px);gap:8px;align-items:center;min-height:48px;border-bottom:1px solid #dce2eb;color:#2f3b52;font-size:13px}
 .sheet-sales-grid span,.sheet-sales-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sheet-sales-name{border:0;background:none;padding:8px 0;text-align:left;font:inherit;color:inherit;font-weight:700;cursor:pointer}
 #salesView #salesSearchInput:focus{outline:2px solid #8dc0fa;outline-offset:0}
 .sheet-sales-dialog{max-width:calc(100vw - 48px);width:360px;border:1px solid #dce2eb;border-radius:6px;color:#2f3b52;overflow-wrap:anywhere}
 .sheet-sales-dialog h3{font-size:16px}.sheet-sales-dialog p{font-size:13px}.sheet-sales-dialog button{padding:8px 16px}
-.sheet-sales-grid span:nth-child(n+5){text-align:right}
+.sheet-sales-grid span:nth-child(n+3){text-align:center}
 .sheet-sales-head{font-size:11px;color:#7b8594;min-height:30px}
 .sheet-sales-warning{color:#dc173b;font-weight:700}
 .sheet-sales-refresh{font:inherit;color:#637089;border:1px solid #dce2eb;background:white;border-radius:3px;padding:3px 6px;cursor:pointer}
@@ -13781,10 +13781,11 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
 #salesView .sales-toolbar{margin-bottom:8px}
 #salesView .sales-meta{margin:0 0 16px}
 #salesView .sheet-sales-meta-info{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;min-width:0;overflow-wrap:anywhere}
-#salesView .sheet-sales-refresh{box-sizing:border-box;width:88px;height:40px;padding:7px 8px;border-radius:4px;font:inherit;font-size:12px;color:#2f3b52;background:#fff;border:1px solid #cbd3df;-webkit-tap-highlight-color:rgba(47,59,82,.12)}
+#salesView #salesSort,#salesView .sheet-sales-refresh{box-sizing:border-box;width:88px;height:40px;padding:7px 8px;border-radius:4px;font:inherit;font-size:13px!important;font-weight:400;color:#2f3b52;background:#fff;border:1px solid #cbd3df;text-align:center;-webkit-tap-highlight-color:rgba(47,59,82,.12)}
+#salesView #salesSort:disabled{opacity:1;-webkit-text-fill-color:#2f3b52}
 #salesView .sheet-sales-refresh:focus-visible{outline:2px solid #2f3b52;outline-offset:2px}
 #salesView .sheet-sales-refresh:disabled{opacity:.6;cursor:wait}
-@media(max-width:600px){#salesView{padding-left:16px;padding-right:16px}.sheet-sales-grid{grid-template-columns:24px minmax(0,1fr) 35px 35px 46px 46px;gap:4px;font-size:11px;min-height:44px}.sheet-sales-head{font-size:9px;min-height:28px}}
+@media(max-width:600px){#salesView{padding-left:16px;padding-right:16px}.sheet-sales-grid{grid-template-columns:24px minmax(0,1fr) repeat(4,44px);gap:4px;font-size:11px;min-height:44px}.sheet-sales-head{font-size:9px;min-height:28px}}
 </style>
 <script id="aisel-sheet-sales-view-script">/* Prepared integration. No endpoint is enabled until access approval and live readback. */
 (function(root){

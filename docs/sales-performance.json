@@ -1,4 +1,21 @@
 {
+  "fourColumnAndButtonTextImplementation20261007": {
+    "status": "local_verified_deployment_pending",
+    "decidedOn": "2026-10-07",
+    "source": "user: just unify refresh text size/color; code; leave everything else unchanged",
+    "canonicalPath": "docs/sales-performance.md",
+    "scope": ["four equal-width center-aligned table columns", "matching sales-sort/refresh button text and appearance"],
+    "refreshLabel": "새로고침",
+    "iconProposal": "not implemented; latest direct instruction keeps refresh text",
+    "columnWidthsPx": {"desktop": 72, "mobile": 44},
+    "columnGapsPx": {"desktop": 8, "mobile": 4},
+    "headerAndBodyAlignment": "designer/factory/share/returns centered; rank/name left",
+    "buttonStyle": {"fontSizePx": 13, "fontWeight": 400, "textColor": "#2F3B52", "widthPx": 88, "heightPx": 40, "background": "#FFFFFF", "border": "#CBD3DF"},
+    "changedSource": "scripts/sheet-sales-view.css and its embedded HTML style block only",
+    "validation": {"viewportWidthsPx": [320, 390, 430, 1280], "allHeaderAndBodyColumnsCentered": true, "equalColumnWidths": true, "horizontalOverflow": false, "buttonFontBoth": "13px", "buttonColorBoth": "rgb(47, 59, 82)", "buttonDimensionsBoth": "88x40", "buttonRightEdgesEqual": true, "nameAlign": "left", "scriptsAndUnrelatedHtml": "unchanged"},
+    "preserved": ["all scripts", "sales/returns values and calculations", "workorder and print markup", "search focus color", "existing toolbar spacing", "original refresh loading state"],
+    "backup": {"version": "v22-column-buttons", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+  },
   "fourColumnAndRefreshIconPlan20261007": {
     "status": "planning_only_code_prohibited",
     "decidedOn": "2026-10-07",
