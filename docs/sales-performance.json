@@ -1186,9 +1186,9 @@
     }
   },
   "nativeScrollbarRestore20261007": {
-    "status": "implemented_verifying_live",
+    "status": "deployed_native_scrollbar_verified_new_live_tab",
     "authority": "사용자: 스크롤바 돌려줘",
-    "change": "remove custom document scrollbar styling; BODY overflow-y scroll and native scrollbar in BackCompat",
+    "change": "BODY viewport overflow scroll; 16px classic grey track to prevent overlay hiding; HTML overflow visible",
     "scope": "scrollbar_only; selling filters and metrics remain planning",
     "backup": {
       "version": "v12",
@@ -1197,6 +1197,19 @@
       "bytes": 9978,
       "sha256": "7eff9f08935b98fe947d801f43c50bfb34ad8c3f8b4ef29cbfb63f27fcd5b759",
       "shared": false
+    },
+    "verification": {
+      "pagesRun": 37501046766,
+      "conclusion": "success",
+      "live": "native scrollbar visible; new live tab supplied because original tab still suppresses scrollbar",
+      "lastProduct": "preview last row bottom 785 within viewport 855 at scroll max 316",
+      "print": "sheet DOM unchanged",
+      "salesScan": "passed"
+    },
+    "overlayFollowup": {
+      "commit": "b43ea50c3e1c7e7e14c816bd5c6d2bbfd18336b4",
+      "pagesRun": 37501330661,
+      "status": "waiting"
     }
   }
 }

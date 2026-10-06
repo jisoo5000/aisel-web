@@ -168,4 +168,4 @@ v1 백업은 당시 기록으로 유지한다. 경로·시간 제한·API 계약
 
 ## v103 · 2026-10-07 기본 스크롤바 복원
 
-사용자 “스크롤바 돌려줘”에 따라 스크롤바만 실제 수정했다. v102의 HTML overflow/gutter는 기존 열린 탭에 공간만 확보하고 스크롤바를 표시하지 못했다. BackCompat 문서의 BODY가 viewport 스크롤을 담당하므로 BODY overflow-y:scroll 및 stable gutter를 사용하고 HTML overflow는 visible로 둔다. 문서의 사용자 정의 thin/WebKit 스크롤바 스타일을 제거하고 브라우저 기본 스크롤바를 복원한다. 문서 모드와 인쇄 시트는 보존한다. 판매 중 필터 제거·20% 반품 경고·전체 판매 비중은 기존 기획 상태이며 이번 수정에 포함하지 않았다.
+사용자 “스크롤바 돌려줘”에 따라 스크롤바만 실제 수정했다. v102의 HTML overflow/gutter는 기존 열린 탭에 공간만 확보하고 스크롤바를 표시하지 못했다. BackCompat 문서의 BODY가 viewport 스크롤을 담당하므로 BODY overflow-y:scroll 및 stable gutter를 사용하고 HTML overflow는 visible로 둔다. 기존 thin 문서 스크롤바 스타일을 제거하고 BODY에 기본 회색 모양의 16px 트랙을 확보해 overlay 숨김을 방지한다. 문서 모드와 인쇄 시트는 보존한다. 판매 중 필터 제거·20% 반품 경고·전체 판매 비중은 기존 기획 상태이며 이번 수정에 포함하지 않았다.
