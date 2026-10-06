@@ -4040,10 +4040,16 @@
       const gen=generation();
       for(let i=0;i<windows.length;i++){
         const w=windows[i];if(w.state!=='missing'||!w.end||w.end>(snap?.period?.end||''))continue;
-        if(!history.has(w.end)){
-          try{const s=await db.ref('salesPerformance/daily/'+w.end).once('value');if(gen!==generation()||!hasAccess())return;history.set(w.end,s.val()||null);}catch{continue;}
+        const rangeEnd=[shift(v.launchDate,27),snap.period.end].sort()[0],historyKey=w.end+':'+rangeEnd;
+        if(!history.has(historyKey)){
+          try{
+            const s=await db.ref('salesPerformance/daily').orderByKey().startAt(w.end).endAt(rangeEnd).limitToLast(1).once('value');
+            if(gen!==generation()||!hasAccess())return;
+            const snapshots=s.val()||{},key=Object.keys(snapshots).filter(key=>day(key)&&key>=w.end&&key<=rangeEnd).sort().pop();
+            history.set(historyKey,key&&snapshots[key]?.period?.end===key?snapshots[key]:null);
+          }catch{continue;}
         }
-        const old=history.get(w.end);if(old?.schemaVersion!==2||old?.coverage?.complete!==true)continue;
+        const old=history.get(historyKey);if(old?.schemaVersion!==2||old?.coverage?.complete!==true)continue;
         const win=launchWindow(old.items?.[code]?.daily,v.launchDate,i===0?7:14,old.period.end);
         if(form.isConnected&&gen===generation()&&values(code).launchDate===v.launchDate&&win.state==='ready'){
           const node=target.children[i];node.querySelector('strong').textContent=win.text;node.querySelector('small').textContent=win.start+' ~ '+win.end+' · 당시 집계';
@@ -4052,7 +4058,10 @@
     }
     function decorate(row,code,snapshot){
       if(!validCode(code))return;
-      const m=snapshot?.items?.[code],v=values(code),v2=snapshot?.schemaVersion===2;
+      // Retain only this displayed product's snapshot; later refreshes must not
+      // attach a different reporting period or quantity to the user's judgment.
+      const displayedSnapshot=snapshot?JSON.parse(JSON.stringify({schemaVersion:snapshot.schemaVersion,status:snapshot.status,generatedAt:snapshot.generatedAt,period:snapshot.period,items:{[code]:snapshot.items?.[code]}})):null;
+      const m=displayedSnapshot?.items?.[code],v=values(code),v2=displayedSnapshot?.schemaVersion===2;
       const form=document.createElement('section');form.className='pa-panel';
       form.innerHTML='<div class="pa-comparison"><div><span>최근 7일</span><strong>'+qty(v2?m?.netQty:null)+'</strong></div><div><span>직전 7일</span><strong>'+qty(v2?m?.previousNetQty:null)+'</strong></div><div><span>최근 28일</span><strong>'+qty(v2?m?.recent28NetQty:null)+'</strong></div></div><p class="pa-change">'+esc(v2?comparison(m?.netQty,m?.previousNetQty):'새 기간의 집계를 기다리고 있습니다. 기존 자료의 기간은 위 집계 기준을 확인해 주세요.')+'</p><div class="pa-fields pa-profile"><label>분류<select data-field="group">'+options(groups,v.group)+'</select></label><label>실제 판매 시작일<input type="date" data-field="launchDate" value="'+esc(v.launchDate)+'" max="'+today()+'"></label><label class="pa-check"><input type="checkbox" data-field="coreSku"'+(v.coreSku?' checked':'')+'> 핵심 SKU 후보</label></div><p class="pa-hint">등록일이 아닌 고객이 실제 구매할 수 있게 된 날을 입력합니다. 핵심 SKU 후보는 별도 검토한 상품에 표시합니다.</p><button type="button" class="pa-profile-save">상품 기준 저장</button><div class="pa-launch"></div><h3>판단 기록</h3><div class="pa-fields"><label>재고·품절 상황<textarea data-field="stockNote" rows="2" maxlength="1000" placeholder="예: 블랙 M 품절, 다음 주 입고 예정">'+esc(v.stockNote)+'</textarea></label><label>노출·할인 조건<textarea data-field="conditionsNote" rows="2" maxlength="1000" placeholder="예: 광고 노출 감소, 할인 없음">'+esc(v.conditionsNote)+'</textarea></label><label>판단<select data-field="judgment">'+options(judgments,v.judgment)+'</select></label><label>다음 확인일<input type="date" data-field="nextReviewDate" value="'+esc(v.nextReviewDate)+'"></label><label class="pa-wide">판단 근거<textarea data-field="reason" rows="2" maxlength="2000" placeholder="판매 변화와 재고·노출 조건을 함께 기록">'+esc(v.reason)+'</textarea></label><label class="pa-wide">다음 조치<textarea data-field="nextAction" rows="2" maxlength="2000" placeholder="예: 재입고 후 재검토 / 가격·배송·상세페이지 확인">'+esc(v.nextAction)+'</textarea></label></div><div class="pa-save-row"><button type="button" class="pa-review-save">판단 기록 남기기</button><span class="pa-message" role="status" aria-live="polite"></span></div><details class="pa-history-details"><summary>이전 판단 기록</summary><div class="pa-history"></div></details>';
       const footer=row.querySelector('.sales-detail-footer');footer.before(form);
@@ -4065,7 +4074,7 @@
           data=criteria(form,code);const now=Date.now(),meta={group:data.group,launchDate:data.launchDate,coreSku:data.coreSku,updatedAt:now};
           const patch={};Object.entries(meta).forEach(([key,value])=>{patch['salesPerformance/products/'+code+'/'+key]=value;});
           if(isReview){
-            const current=getSnapshot();if(!current||current.status!=='ready'||!day(current.period?.start)||!day(current.period?.end))throw Error('집계 자료를 확인한 뒤 판단 기록을 남겨 주세요.');
+            const current=displayedSnapshot;if(!current||current.status!=='ready'||!day(current.period?.start)||!day(current.period?.end))throw Error('집계 자료를 확인한 뒤 판단 기록을 남겨 주세요.');
             if(!data.reason.trim()||!data.nextAction.trim())throw Error('판단 근거와 다음 조치를 입력해 주세요.');
             if(!day(data.nextReviewDate))throw Error('다음 확인일을 입력해 주세요.');
             const item=current.items?.[code];writeKey=db.ref('salesPerformance/reviews/'+code).push().key;
@@ -4076,7 +4085,7 @@
             if(isReview&&!/permission/i.test(String(error?.code||error?.message))){
               let saved=null;try{saved=(await db.ref('salesPerformance/reviews/'+code+'/'+writeKey).once('value')).val();}catch{}
               if(gen!==generation()||!hasAccess())return;
-              if(!saved||saved.reviewedAt!==now||saved.asOf!==getSnapshot()?.generatedAt){uncertain.add(code);throw Error('저장 결과 확인이 필요합니다. 중복 저장을 막았습니다. 이전 판단 기록을 확인한 뒤 화면을 다시 열어 주세요.');}
+              if(!saved||saved.reviewedAt!==now||saved.asOf!==displayedSnapshot?.generatedAt){uncertain.add(code);throw Error('저장 결과 확인이 필요합니다. 중복 저장을 막았습니다. 이전 판단 기록을 확인한 뒤 화면을 다시 열어 주세요.');}
             }else throw error;
           }
           if(gen!==generation()||!hasAccess())return;
