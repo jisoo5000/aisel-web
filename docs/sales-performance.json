@@ -1,4 +1,23 @@
 {
+  "metadataTableSpacingRefinementPlan20261007": {
+    "status": "planning_only_code_prohibited",
+    "decidedOn": "2026-10-07",
+    "source": "user annotated screenshot: blue area spacing and alignment looks crooked; planning only",
+    "canonicalPath": "docs/sales-performance.md",
+    "confirmed": ["refine metadata-to-table visual alignment", "do not change code"],
+    "proposed": {
+      "rightColumnPx": 88, "pagePaddingPx": 16, "controlGapPx": 8,
+      "metadataRowAndRefreshHeightPx": 32, "metadataToTableGapPx": 12,
+      "tableHeaderHeightPx": 28, "metadataFontPx": 11, "metadataLineHeightPx": 16,
+      "alignment": {"metadata": "vertically centered with refresh", "rankAndName": "left", "designerAndFactory": "center", "percentages": "right"},
+      "tableColumns": "identical boundaries for header and body",
+      "narrowScreen": "metadata wraps in left column only"
+    },
+    "preserved": ["sky-blue search focus", "sort/refresh common right edge", "sales and returns definitions"],
+    "implementationChanged": false,
+    "supersedes": "no deployed behavior superseded until implementation authorization",
+    "backupPolicy": "minor planning refinement; retain existing full v21 skill recovery ZIP without duplicate backup"
+  },
   "searchFocusSkyBlueCorrection20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
