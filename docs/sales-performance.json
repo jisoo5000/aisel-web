@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
-  "release": "v102",
+  "release": "v103",
   "asOfDate": "2026-10-07",
   "timeZone": "Asia/Seoul",
   "purpose": "디자이너가 목록에서 실제 순판매량과 기간 주문 반품률을 바로 비교",
@@ -1182,6 +1182,20 @@
       "fileId": "11l9kiXI2GfjrnDzpFAhyFfUyoZQK3uT4",
       "bytes": 9906,
       "sha256": "d6e8e1bd919cdf8a27ae68407a38ef0ebad621baf19f26c02e4a1a068af2791b",
+      "shared": false
+    }
+  },
+  "nativeScrollbarRestore20261007": {
+    "status": "implemented_verifying_live",
+    "authority": "사용자: 스크롤바 돌려줘",
+    "change": "remove custom document scrollbar styling; BODY overflow-y scroll and native scrollbar in BackCompat",
+    "scope": "scrollbar_only; selling filters and metrics remain planning",
+    "backup": {
+      "version": "v12",
+      "status": "uploaded_name_size_parent_verified",
+      "fileId": "1qJsNmS2VUZjogfRxOEC96EVqwHE_ZNvP",
+      "bytes": 9978,
+      "sha256": "7eff9f08935b98fe947d801f43c50bfb34ad8c3f8b4ef29cbfb63f27fcd5b759",
       "shared": false
     }
   }
