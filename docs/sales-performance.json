@@ -30,7 +30,12 @@
       "version": "v19-layout-plan",
       "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
       "fileName": "aisel-sales-performance_2026-10-07_v19-layout-plan.zip",
-      "status": "pending"
+      "status": "name_size_parent_verified",
+      "fileId": "1jYcnRg6GzPVY-ud5k9OEtwYB_0rkNQvp",
+      "sizeBytes": 12668,
+      "sha256": "CCB8A53C98D91A1CC231CC034C1A3071291F28A30C6151538B3DA6729945870B",
+      "sourceCommit": "f3ea710a4bb377abc2f72c63607bab92fd65f223",
+      "scope": "entire reusable skill folder; planning MD and JSON remain canonical in GitHub"
     }
   },
   "manifestVersion": 1,
