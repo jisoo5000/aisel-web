@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v98 (2026-10-06)
+<!-- AISEL 작업지시서 v99 (2026-10-06)
+     [v99] 상단 거래처 품질·협상 메뉴 제거. 최초 가격 > 네고 가격 입력과 저장된 기록 보존.
      [v98] 모든 단가·공임·시야게를 기존 한 줄의 최초 가격 > 네고 가격으로 표시. v96 도식화·원가계산서 치수 복원.
      [v97] 최초 견적·네고 입력을 자재 단가·공임 아래로 이동. 샘플 수거 태그를 컬러 태그와 동일한 크기로 정리.
      [v96] 최초 견적·네고 단가·협상자, 작지별 거래처 검수·수동 상태 메뉴, 공장 샘플 버건디 표시. 기존 저장 잠금·인쇄 영역 보존.
@@ -3125,10 +3126,6 @@
     <div class="editor-mobile-caption"><span id="mobileProductCode"></span><span id="mobileProductStatus"></span></div>
   </div>
   <input type="hidden" id="supplierQualityData" value="">
-  <div id="supplierQualityPanel" class="noprint" hidden>
-    <div id="costNegotiationMenu" aria-label="원가 협상 세부 정보"></div>
-    <div id="supplierQualityContent"></div>
-  </div>
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
     <button type="button" class="btn ghost nav-btn" id="backToListBtn">← 목록으로</button>
@@ -3161,7 +3158,6 @@
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn">+ 새 작지</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
-      <button type="button" class="btn ghost nav-btn" id="supplierQualityBtn" aria-expanded="false" aria-controls="supplierQualityPanel">거래처 품질 · 협상</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
@@ -3401,8 +3397,6 @@
       .nego-fixed .cost-pair{height:29px;padding:0}
       #sheet #costCell .nego-fixed .cost-pair input{height:29px;font-size:11px}
       #sheet #costCell .nego-fixed .cost-pair input::placeholder{font-size:10px;letter-spacing:-.4px}
-      #costNegotiationMenu{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 0;font-size:12px}
-      #costNegotiationMenu button{border:1px solid #bdc8d3;border-radius:4px;background:#f5f8fd;color:#365976;font-size:11px;padding:5px 8px;cursor:pointer}
       .nego-dialog{width:min(460px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #bdc8d3;border-radius:8px;padding:16px;color:#253447;background:white;max-height:85vh;overflow:auto}
       .nego-dialog::backdrop{background:rgba(20,30,45,.3)}
       .nego-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;font-size:13px}
@@ -5050,35 +5044,6 @@
 
   // ---------- 원가 라인 ----------
   const linesWrap = $("#costLines");
-  var supplierQualityUI_ = null;
-  function refreshSupplierQuality_(force=false){if(supplierQualityUI_)supplierQualityUI_.refresh(force);}
-  function refreshNegotiationMenu_(){
-    if($("#supplierQualityPanel").hidden)return;
-    const host=$("#costNegotiationMenu"),names=[...linesWrap.querySelectorAll(".line")].map(row=>row.querySelector(".nm").value||"자재");
-    const signature=JSON.stringify(names);if(host.dataset.signature===signature)return;
-    host.dataset.signature=signature;host.replaceChildren();
-    const title=document.createElement("strong");title.textContent="원가 세부 정보";host.append(title);
-    [...names,"공임","시야게"].forEach((name,index)=>{
-      const button=document.createElement("button");button.type="button";button.textContent=name+" 상세";
-      button.addEventListener("click",()=>{
-        const editor=index<names.length?[...linesWrap.querySelectorAll(".line")][index]?.negotiationEditor_:fixedEditors_[index-names.length];
-        editor?.openDetails();
-      });host.append(button);
-    });
-  }
-  $("#supplierQualityBtn").addEventListener("click",()=>{
-    const host=$("#supplierQualityPanel");host.hidden=!host.hidden;
-    $("#supplierQualityBtn").setAttribute("aria-expanded",String(!host.hidden));
-    if(host.hidden)return;
-    if(!supplierQualityUI_)supplierQualityUI_=window.SupplierQualityUI.attach($("#supplierQualityContent"),{
-      get:()=>$("#supplierQualityData").value,set:v=>{$("#supplierQualityData").value=v;},save:()=>save(),
-      workOrderId:()=>currentCode||"",worker:()=>$("#designer").value,
-      negotiations:()=>window.SupplierQuality.negotiationSummary([...linesWrap.querySelectorAll(".line")].map(readCostRow_),{gongim:$("#gongim").value,siyage:$("#siyage").value},fixedNegotiations_(),$("#designer").value,window.WorkOrderNegotiation)
-    });
-    refreshSupplierQuality_(true);
-    refreshNegotiationMenu_();
-  });
-  $("#designer").addEventListener("input",()=>{if(supplierQualityUI_)supplierQualityUI_.refreshNegotiations();});
   const negotiation_ = window.WorkOrderNegotiation;
   function fixedNegotiations_(){try{return JSON.parse($("#costNegotiationData").value||"{}");}catch(_){return {};}}
   function fixedCost_(id){return negotiation_.evaluate($("#"+id).value,fixedNegotiations_()[id],1,true);}
@@ -5159,8 +5124,6 @@
 
   // ---------- 계산 (제조원가 + 타겟 판매가) ----------
   function calc(){
-    if(supplierQualityUI_)supplierQualityUI_.refreshNegotiations();
-    refreshNegotiationMenu_();
     const sum=totalCost_();
     const costRows=[...linesWrap.querySelectorAll(".line")];
     const vatBases=new Set([...costRows.filter(r=>r.negotiation_?.inclusion!=="included").map(r=>r.negotiation_?.vat||""),...Object.values(fixedNegotiations_()).filter(m=>m.inclusion!=="included").map(m=>m.vat||"")]);
@@ -6856,7 +6819,6 @@
     lastSavedState_ = st;
     syncFabricFromMemo_();
     renderMobileHeader_();
-    refreshSupplierQuality_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
@@ -9426,7 +9388,7 @@
     autoCreatedCode_ = null;
     lastSavedState_ = null;   // 2026-08-25 추가: 새 작지는 비교 기준 없이 처음부터 씁니다
     showEditor();
-    linesWrap.querySelectorAll(".line").forEach(row=>row.negotiationEditor_?.remove());linesWrap.innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";$("#supplierQualityPanel").hidden=true;$("#supplierQualityBtn").setAttribute("aria-expanded","false");
+    linesWrap.querySelectorAll(".line").forEach(row=>row.negotiationEditor_?.remove());linesWrap.innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";
     [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
     $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
@@ -10693,7 +10655,7 @@
   // 검색 한 글자마다 작지가 저장되고 -> updatedAt이 바뀌고 -> 목록이 통째로 다시 그려져 깜빡였음.
   // 이제 편집화면(#editorView) 안에서 일어난 입력일 때만 자동저장이 걸림.
   function isInsideEditor_(target){
-    return !!(target && target.closest && target.closest("#editorView") && !target.closest("#supplierQualityPanel"));
+    return !!(target && target.closest && target.closest("#editorView"));
   }
   document.addEventListener("input", (e)=>{ if(isInsideEditor_(e.target)) saveSoon(); });
   document.addEventListener("input", updateSampleFieldHighlights_);
