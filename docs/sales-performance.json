@@ -1,6 +1,6 @@
 {
   "productPerformanceBadgePlan20261007": {
-    "status": "browser_verified_pending_deployment",
+    "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "latest user rejects gray normal badge and proposes sales-share 10/20 percent with returns 20 percent thresholds; latest user code approval after size question",
     "canonicalPath": "docs/sales-performance.md",
@@ -54,10 +54,7 @@
       "existingAppShareColumn": "whole-store sales share; never silently replace it with new-product share",
       "existingRedWarning": ">=20% aligned to latest badge threshold; supersedes prior >20% warning for this sheet view only"
     },
-    "pending": [
-      "deployment",
-      "full skill Drive backup"
-    ],
+    "pending": [],
     "backupPolicy": "full reusable skill folder v24-performance-badges backup after implementation",
     "preserved": [
       "six data columns",
@@ -92,6 +89,28 @@
         "normal": 0,
         "good": 0
       }
+    },
+    "deployment": {
+      "commit": "86a8e8f76eb518911197219b84d5350fbd06f015",
+      "pagesRun": 37520285892,
+      "status": "success",
+      "liveMobileWidthPx": 390,
+      "liveDesktopWidthPx": 1280,
+      "currentProductCount": 21,
+      "currentLowCount": 21,
+      "horizontalOverflow": false,
+      "proof": "sales-performance-badges.png"
+    },
+    "backup": {
+      "version": "v24-performance-badges",
+      "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "name_size_parent_verified",
+      "fileId": "1UbRs7eB7mfzATgtgoYCkXJpOFi8oYYtS",
+      "fileName": "aisel-sales-performance_2026-10-07_v24-performance-badges.zip",
+      "sizeBytes": 14334,
+      "sha256": "B75000FF2E09FB3482157E7AB83AB0584882FE4EE26BEE7491EAD5530C96B774",
+      "sourceCommit": "86a8e8f76eb518911197219b84d5350fbd06f015",
+      "scope": "entire reusable skill folder; receipt remains canonical in GitHub"
     }
   },
   "fixedSortControlSimplificationPlan20261007": {
