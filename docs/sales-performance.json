@@ -1252,7 +1252,7 @@
   },
   "blueAreaRemoval20261007": {
     "authority": "사용자: 응 일단 파란색 삭제 연두색 남기기 코드",
-    "status": "implemented_verifying",
+    "status": "deployed_verified_existing_user_tab",
     "removedFromUI": [
       "판매 상태 버튼 줄",
       "상품 분류 버튼 줄",
@@ -1278,6 +1278,17 @@
       "bytes": 10568,
       "sha256": "41bf256b56747416e2dd0ab7034700f3f8185929aef82a90e2e3f5c7ce5b4f90",
       "shared": false
+    },
+    "verification": {
+      "pagesRun": 37505142681,
+      "conclusion": "success",
+      "sourceCommit": "c56db15939e1560b9c12e871b4d282d5eeef764c",
+      "removedNodes": "display none verified",
+      "search": "40px visible",
+      "periodAndUpdated": "visible actual data",
+      "scrollbar": "16px visible",
+      "print": "sheet DOM unchanged",
+      "salesScan": "8 inline scripts passed"
     }
   }
 }
