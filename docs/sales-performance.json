@@ -1209,7 +1209,10 @@
     "overlayFollowup": {
       "commit": "b43ea50c3e1c7e7e14c816bd5c6d2bbfd18336b4",
       "pagesRun": 37501330661,
-      "status": "waiting"
+      "status": "deployed_success",
+      "verifiedPagesRun": 37501605009,
+      "verifiedSourceCommit": "21903b3c1e5f96a4cf8b7bbcca3e8fbd1640b14b",
+      "live": "16px right scrollbar visible on supplied new live tab"
     }
   }
 }
