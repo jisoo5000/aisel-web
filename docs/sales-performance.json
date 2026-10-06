@@ -1,4 +1,25 @@
 {
+  "compactCriteriaGuidePlan20261007": {
+    "status": "planning_only_code_prohibited",
+    "decidedOn": "2026-10-07",
+    "source": "user two annotated images: raise date; add rating criteria below it; remove marked title/source text; reduce gaps; preserve table position; planning only",
+    "canonicalPath": "docs/sales-performance.md",
+    "confirmed": ["raise date slightly", "show all three existing rating rules", "remove marked body title and source note", "compact spacing", "preserve rank/name header and first-row start position", "no app code changes"],
+    "removedTextPlan": ["body heading 판매성과", "운영시트 신상성과 · 반품률은 시트 기준"],
+    "topNavigation": "keep 판매성과/작업지시서 tabs",
+    "proposed": {
+      "placement": "below date in space freed by removing body heading; no table downward shift",
+      "fontPx": "11-12", "lineHeightPx": "15-16", "gapPx": 4,
+      "style": "three compact left-aligned text lines; existing badge colors for labels, navy body; no card, blue border or large padding",
+      "copy": ["좋음  판매 ≥20% · 반품 <20%", "보통  판매 10~20% 미만 · 반품 <20%", "저조  판매 <10% 또는 반품 ≥20%"],
+      "mobile": "use full table width for guide if needed; exact wrapping and table-coordinate preservation require later implementation check"
+    },
+    "metricBasis": "same recent-30-day whole-store sales share; existing sheet return-rate values; normal includes 10 and excludes 20",
+    "preserved": ["table start position", "six columns and centered four metric columns", "quantity-descending sort", "performance badges", "full-width search", "refresh below search on right, 88x40", "detail dialog", "source data and print"],
+    "implementationChanged": false,
+    "appValidation": "not performed; planning only",
+    "backupPolicy": "minor planning refinement; retain v24 full skill recovery ZIP without duplicate backup"
+  },
   "productPerformanceBadgePlan20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
