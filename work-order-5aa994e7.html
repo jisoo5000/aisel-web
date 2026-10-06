@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v100 (2026-10-07)
+<!-- AISEL 작업지시서 v101 (2026-10-07)
+     [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
      [v100] 상품성과 분석: 최근7일 비교, 신상7/14일·스테디28일, 상품 기준과 판단 이력.
      [v99] 상단 거래처 품질·협상 메뉴 제거. 최초 가격 > 네고 가격 입력과 저장된 기록 보존.
      [v98] 모든 단가·공임·시야게를 기존 한 줄의 최초 가격 > 네고 가격으로 표시. v96 도식화·원가계산서 치수 복원.
@@ -2935,6 +2936,26 @@
  #salesView .sales-facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 </style>
+<style id="aisel-sales-scan">
+#salesView {padding-bottom:70px}
+#salesView .sales-item {overflow:visible;border:0;border-bottom:1px solid #e3e7ee;border-radius:0;margin:0}
+#salesView .sales-summary {grid-template-columns:24px 40px minmax(160px,1fr) auto 44px;gap:10px;padding:10px 2px;min-height:70px;cursor:default}
+#salesView .sales-summary:hover {background:transparent}
+#salesView .sales-indicators {display:flex;align-items:center;gap:12px;white-space:nowrap;font-size:13px;font-weight:700}
+#salesView .sales-signal.positive {color:#1760B5}
+#salesView .sales-signal.negative {color:#B52B43}
+#salesView .sales-signal.neutral {color:#4B617E}
+#salesView .sales-signal.unknown {color:#7B8494;font-weight:500}
+#salesView .sales-record-btn {border:1px solid #d6dce6;border-radius:4px;padding:7px 5px;background:#fff;color:#647187;font:inherit;font-size:11px;cursor:pointer}
+#salesView .sales-record-dialog {box-sizing:border-box;width:min(720px,calc(100vw - 24px));max-height:85dvh;overflow-y:auto;border:1px solid #cbd3df;border-radius:8px;padding:0;color:#303b52;background:#fff}
+#salesView .sales-record-dialog::backdrop {background:#20273366}
+#salesView .sales-dialog-head {display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;position:sticky;top:0;background:#fff;border-bottom:1px solid #e3e7ee;z-index:1}
+#salesView .sales-record-close {padding:7px 12px;background:#fff;border:1px solid #cbd3df;border-radius:4px;font:inherit;cursor:pointer}
+#salesView .sales-scan-note {font-size:11px;color:#68758a;line-height:1.6;margin:0 0 10px}
+@media(max-width:700px){#salesView .sales-summary {grid-template-columns:22px 32px minmax(0,1fr) 38px;gap:8px}#salesView .sales-thumb {width:32px;height:42px}#salesView .sales-product {grid-column:3}#salesView .sales-indicators {grid-column:3;grid-row:2;gap:8px;font-size:11px}#salesView .sales-rank,#salesView .sales-thumb {grid-row:1/3}#salesView .sales-record-btn {grid-column:4;grid-row:1/3}#salesView .sales-name {font-size:12px}#salesView .sales-code {font-size:9px;margin-top:1px}}
+@media(max-width:360px){#salesView .sales-summary {gap:5px;grid-template-columns:16px 28px minmax(0,1fr) 32px}#salesView .sales-thumb {width:28px;height:38px}#salesView .sales-indicators {gap:6px;font-size:10px}}
+</style>
+
 
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">상품성과 분석</button>
@@ -2990,6 +3011,7 @@
   <div id="salesAuth" class="sales-auth"><button type="button" id="salesLoginBtn" class="sales-login">상품성과 로그인</button></div>
   <p id="salesRecordNotice" class="pa-hint" role="status" aria-live="polite"></p>
   <div id="salesCounts" class="sales-counts" role="status" aria-live="polite"></div>
+  <p class="sales-scan-note">동기간 확인 상품과 비교 · 판매량은 순판매수량 · 반품률은 기간 주문의 완료 반품 ÷ 취소 제외 판매수량(관찰 중)</p>
   <div id="salesTableBody" class="sales-list" aria-label="상품별 판매성과"></div>
 </div>
 
@@ -3994,6 +4016,32 @@
     for(let i=0;i<days;i++){const r=map.get(shift(launch,i));if(!r||number(r.netQty)===null)return {state:'missing',text:'해당 기간 자료 확인 필요',start:launch,end:finish};total+=r.netQty;}
     return {state:'ready',text:qty(total),qty:total,start:launch,end:finish};
   }
+  function indicators(code,snapshot,codes){
+    const integer=n=>Number.isSafeInteger(n)&&n>=0;
+    const validPeriod=p=>day(p?.start)&&day(p?.end)&&p.start<=p.end&&p.timeZone==='Asia/Seoul';
+    const ready=!!snapshot&&[1,2].includes(snapshot.schemaVersion)&&snapshot.status==='ready'&&snapshot.coverage?.complete===true&&snapshot.source==='cafe24'&&validPeriod(snapshot.period)&&Number.isFinite(Date.parse(snapshot.generatedAt));
+    const values=ready?snapshot.items||{}:{};
+    const eligible=item=>!!item&&item.status!=='unmatched'&&integer(item.netQty);
+    const observed=item=>eligible(item)&&integer(item.returnedQty)&&integer(item.canceledQty)&&Number.isSafeInteger(item.netQty+item.returnedQty)&&item.netQty+item.returnedQty>0;
+    const cohort=[...new Set(codes||[])].map(c=>values[c]).filter(eligible);
+    const quantities=cohort.map(x=>x.netQty).sort((a,b)=>a-b),mid=Math.floor(quantities.length/2);
+    const median=quantities.length?(quantities.length%2?quantities[mid]:(quantities[mid-1]+quantities[mid])/2):null;
+    const returns=cohort.filter(observed),denominator=returns.reduce((a,x)=>a+x.netQty+x.returnedQty,0),returned=returns.reduce((a,x)=>a+x.returnedQty,0);
+    const average=denominator>0?returned/denominator:null,item=values[code];
+    const fallback=item?.status==='unmatched'?'상품 연결 확인':'판매량 확인 중';
+    const result={sales:{tone:'unknown',text:fallback,basis:'확인되지 않은 수량은 0으로 표시하지 않습니다.'},returns:{tone:'unknown',text:'반품률 확인 중',basis:'완료 반품·취소·순판매수량이 같은 기간 주문군에서 확인돼야 계산합니다.'}};
+    if(eligible(item)){
+      const label=median===null||cohort.length<2?'판매량':item.netQty>median?'판매량 높음':item.netQty<median?'판매량 낮음':'판매량 보통';
+      result.sales={tone:label==='판매량 높음'?'positive':label==='판매량 낮음'?'negative':'neutral',text:label+' '+item.netQty.toLocaleString('ko-KR')+'장',basis:'동기간 수량 확인 판매중 상품 '+cohort.length+'개의 중앙값 '+(median??item.netQty).toLocaleString('ko-KR')+'장과 비교한 순판매량입니다. 품절·출시 조건을 반영한 상품 우열 판정은 아닙니다.'};
+    }
+    if(eligible(item)&&integer(item.returnedQty)&&integer(item.canceledQty)&&item.netQty+item.returnedQty===0){result.returns={tone:'unknown',text:'반품률 —',basis:'취소를 제외한 판매수량이 0장이므로 반품률을 계산하지 않습니다.'};}
+    if(observed(item)){
+      const count=item.netQty+item.returnedQty,rate=item.returnedQty/count;
+      const label=returns.length<2?'반품률':rate>average+1e-12?'반품률 높음':rate<average-1e-12?'반품률 낮음':rate===0?'반품 없음':'반품률 보통';
+      result.returns={tone:label==='반품률 높음'?'negative':label==='반품률 낮음'||label==='반품 없음'?'positive':'neutral',text:label+' '+(rate*100).toFixed(1)+'%',basis:snapshot.period.start+' ~ '+snapshot.period.end+' 결제 주문의 완료 반품 '+item.returnedQty+'장 / 취소 제외 판매 '+count+'장(순판매 '+item.netQty+' + 완료 반품 '+item.returnedQty+'). 관찰 시각 '+snapshot.generatedAt+' 기준 확정분이며 이후 반품에 따라 달라집니다. 배송 기준 전체 반품률이 아닙니다. 동기간 확인 상품 '+returns.length+'개의 합산 반품률 '+(average*100).toFixed(1)+'%와 비교합니다.'};
+    }
+    return result;
+  }
   function create({db,hasAccess,generation,onChange,getSnapshot}){
     let profiles={},version=0,loaded=false,loading=false,profileError=false;
     const drafts=new Map(),reviews=new Map(),history=new Map(),saving=new Set(),uncertain=new Set();
@@ -4099,9 +4147,9 @@
       form.querySelector('.pa-history-details').addEventListener('toggle',e=>{if(e.currentTarget.open)loadHistory(form,code);});
       row.addEventListener('toggle',()=>{if(row.open)paintLaunch(form,code);});if(row.open)paintLaunch(form,code);
     }
-    return {load,reset,group,profile,decorate,get version(){return version;},get ready(){return loaded&&!profileError;}};
+    return {load,reset,group,profile,decorate,indicators,get version(){return version;},get ready(){return loaded&&!profileError;}};
   }
-  root.AiselProductPerformance={comparison,launchWindow,day,shift,create};
+  root.AiselProductPerformance={comparison,launchWindow,day,shift,indicators,create};
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
@@ -9963,9 +10011,9 @@
     if(qty === null) return {known:false,status:"pending",label:"집계 확인 중",reason:salesReasonText_(item.reason,"완료된 판매 집계가 아직 없습니다.")};
     const complete = !!snapshot.coverage && snapshot.coverage.complete === true;
     const status = complete && ["good","normal","poor"].includes(item.status) ? item.status : "pending";
-    const label = {good:"성과 우수",normal:"보통",poor:"성과 부진",pending:"판단 대기"}[status];
+    const label = {good:"성과 우수",normal:"보통",poor:"성과 부진",pending:"판매 확인"}[status];
     const gauge = salesNumber_(item.gauge), rank = salesNumber_(item.rank);
-    return {known:true,qty,revenue,canceled:salesNumber_(item.canceledQty),returned:salesNumber_(item.returnedQty),status,label,
+    return {known:true,qty,revenue,canceled:salesNumber_(item.canceledQty),returned:salesNumber_(item.returnedQty),status,label,complete,
       gauge:complete && gauge !== null ? Math.min(100,gauge) : null,
       rank:complete && Number.isInteger(rank) && rank > 0 ? rank : null,
       reason:salesReasonText_(item.reason,status === "pending" ? "판매기간·재고 등 평가 조건을 확인한 뒤 판단합니다." : "같은 기간의 순판매수량을 기준으로 집계했습니다."),revenueReason:revenue === null ? salesReasonText_(item.revenueReason,"상품별 순매출을 확인 중입니다.") : ""};
@@ -10025,7 +10073,7 @@
     const list = salesList_();
     const signature = JSON.stringify({group:salesGroup,analysisVersion:salesAnalysis_.version,filter:salesFilter,sort:salesSort,query:salesSearch,snapshot:salesSnapshot_,error:salesReadError_,auth:salesHasLogin_(),denied:salesPermissionDenied_,items:list.map(([code,st])=>[code,st.pumMyeong,st.status,st.updatedAt,st.thumb,st.predReflection])});
     if(signature !== lastSalesSig_){
-      if(salesHasLogin_() && !salesPermissionDenied_ && body.contains(document.activeElement) && document.activeElement.matches("input,textarea,select")) return;
+      if(salesHasLogin_() && !salesPermissionDenied_ && (body.querySelector("dialog[open]") || (body.contains(document.activeElement) && document.activeElement.matches("input,textarea,select")))) return;
       lastSalesSig_ = signature;
       $("#salesCounts").textContent = (salesFilter === "sale" ? "판매 중" : salesFilter === "prep" ? "판매 준비" : "전체")+" "+list.length+"개"+(salesSearch.trim() ? " · 검색 결과" : "");
       if(!list.length){
@@ -10037,27 +10085,35 @@
         list.forEach(([code,st])=>{
           const m = salesMetrics_(code), name = String(st.pumMyeong || "(품명 미정)");
           const thumb = typeof st.thumb === "string" && /^(data:image\/[^,]+,|https?:\/\/|blob:)/i.test(st.thumb) ? st.thumb : "";
-          const row = document.createElement("details");
-          row.className = "sales-item "+m.status;
+          const row = document.createElement("article");
+          row.className = "sales-item";
           row.dataset.code = code;
-          row.open = salesOpenCodes_.has(code);
+          const indicators = salesAnalysis_.indicators(code,salesHasLogin_() && !salesPermissionDenied_ ? salesSnapshot_ : null,Object.keys(allWorkOrders).filter(key=>allWorkOrders[key]?.status === "sale"));
           const rank = m.rank ? String(m.rank) : "—";
-          const meter = m.gauge === null || m.gauge === undefined ? '<span class="sales-gauge unavailable" aria-hidden="true"></span>' : `<span class="sales-gauge" role="meter" aria-label="같은 기간 최다 판매 제품 대비 판매 수준" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${m.gauge}" aria-valuetext="${Math.round(m.gauge)}퍼센트"><span class="sales-gauge-fill" style="width:${m.gauge}%"></span></span>`;
-          row.innerHTML = `<summary class="sales-summary" aria-label="${esc_(name)} · ${m.rank ? m.rank+"위 · " : ""}${m.label} 상세 보기">
+          row.innerHTML = `<div class="sales-summary">
             <span class="sales-rank ${m.rank ? "" : "unranked"}" aria-label="${m.rank ? m.rank+"위" : "순위 미정"}">${rank}</span>
             <span class="sales-thumb">${thumb ? `<img loading="lazy" width="40" height="52" alt="${esc_(name)}" src="${esc_(thumb)}">` : '<span class="empty" aria-label="사진 없음">—</span>'}</span>
-            <span class="sales-product"><span class="sales-name">${esc_(name)}</span><span class="sales-code">${esc_(code)}</span><span class="sales-product-state">${st.status === "sale" ? "판매 중" : st.status === "order" ? "발주생산" : "PDP"}</span></span>
-            <span class="sales-performance"><span class="sales-label">${m.label}</span>${meter}<span class="sales-expand">상세 ▾</span></span>
-          </summary><div class="sales-detail">
-            ${m.known ? `<dl class="sales-facts"><div><dt>${snapshotPeriodLabel_()} 순판매수량</dt><dd>${quantity(m.qty)}</dd></div><div><dt>순매출</dt><dd>${m.revenue === null ? "확인 필요" : m.revenue.toLocaleString("ko-KR")+"원"}</dd></div><div><dt>취소 수량</dt><dd>${quantity(m.canceled)}</dd></div><div><dt>반품 수량</dt><dd>${quantity(m.returned)}</dd></div></dl>` : ""}
+            <span class="sales-product"><span class="sales-name">${esc_(name)}</span><span class="sales-code">${esc_(code)}</span></span>
+            <span class="sales-indicators"><span class="sales-signal ${indicators.sales.tone}" title="${esc_(indicators.sales.basis)}">${esc_(indicators.sales.text)}</span><span class="sales-signal ${indicators.returns.tone}" title="${esc_(indicators.returns.basis)}">${esc_(indicators.returns.text)}</span></span>
+            <button type="button" class="sales-record-btn" aria-label="${esc_(name)} 분석 기록">기록</button>
+          </div>
+          <dialog class="sales-record-dialog" aria-label="${esc_(name)} 분석 기록"><div class="sales-dialog-head"><strong>${esc_(name)}</strong><button type="button" class="sales-record-close">닫기</button></div><div class="sales-detail">
+            ${m.known ? `<dl class="sales-facts"><div><dt>${snapshotPeriodLabel_()} 순판매수량</dt><dd>${quantity(m.qty)}</dd></div><div><dt>순매출</dt><dd>${m.revenue === null ? "확인 필요" : m.revenue.toLocaleString("ko-KR")+"원"}</dd></div><div><dt>완료 취소</dt><dd>${quantity(m.canceled)}</dd></div><div><dt>완료 반품</dt><dd>${quantity(m.returned)}</dd></div></dl>` : ""}
+            <p class="sales-explanation">${esc_(indicators.returns.basis)}</p>
             <p class="sales-explanation">${esc_(m.reason)}</p>
-            ${m.revenueReason ? `<p class="sales-explanation">${esc_(m.revenueReason)}</p>` : ""}
-            <p class="sales-reflection" aria-live="polite">${salesHasLogin_() && !salesPermissionDenied_ && st.predReflection ? "개선 기록 · "+esc_(String(st.predReflection)) : ""}</p>
-            <div class="sales-detail-footer"><small>판매 근거를 확인하고 다음 제작에 반영해 주세요.</small><button type="button" class="sales-open-order">작업지시서 열기</button></div>
-          </div>`;
-          row.addEventListener("toggle",()=>{if(row.open){salesOpenCodes_.add(code);if(row.isConnected) loadSalesReflection_(code,st,row);}else salesOpenCodes_.delete(code);});
-          row.querySelector(".sales-open-order").addEventListener("click",()=>openWorkOrderByCode_(code));
-          salesAnalysis_.decorate(row,code,salesSnapshot_);
+            <p class="sales-reflection"></p>
+            <div class="sales-detail-footer"><button type="button" class="sales-open-order">작업지시서 열기</button></div>
+          </div></dialog>`;
+          const dialog=row.querySelector("dialog"),recordButton=row.querySelector(".sales-record-btn");
+          let decorated=false;
+          recordButton.addEventListener("click",()=>{
+            if(!decorated){salesAnalysis_.decorate(row,code,salesSnapshot_);decorated=true;}
+            row.open=true;dialog.showModal();row.dispatchEvent(new Event("toggle"));
+            loadSalesReflection_(code,st,row);
+          });
+          row.querySelector(".sales-record-close").addEventListener("click",()=>dialog.close());
+          dialog.addEventListener("close",()=>{row.open=false;recordButton.focus();renderSalesView();});
+          row.querySelector(".sales-open-order").addEventListener("click",()=>{dialog.close();openWorkOrderByCode_(code);});
           frag.appendChild(row);
         });
         body.replaceChildren(frag);
@@ -13116,16 +13172,17 @@ $("fabricSaveBtn").addEventListener("click", async () => {
   const topBtn = document.getElementById("scrollTopBtn");
   const bottomBtn = document.getElementById("scrollBottomBtn");
   if(!topBtn || !bottomBtn) return;
+  const scrolling=()=>document.scrollingElement || document.documentElement;
   function updateFabState(){
-    const y = window.scrollY;
-    const maxY = document.documentElement.scrollHeight - window.innerHeight;
-    topBtn.disabled = y <= 4;
-    bottomBtn.disabled = maxY - y <= 4;
+    const root=scrolling(),y=root.scrollTop,maxY=Math.max(0,root.scrollHeight-root.clientHeight);
+    topBtn.disabled=y<=4;bottomBtn.disabled=maxY-y<=4;
   }
-  topBtn.addEventListener("click", ()=> window.scrollTo({ top: 0, behavior: "smooth" }));
-  bottomBtn.addEventListener("click", ()=> window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" }));
-  window.addEventListener("scroll", updateFabState);
-  window.addEventListener("resize", updateFabState);
+  topBtn.addEventListener("click",()=>{updateFabState();window.scrollTo({top:0,behavior:"smooth"});});
+  bottomBtn.addEventListener("click",()=>{updateFabState();window.scrollTo({top:scrolling().scrollHeight,behavior:"smooth"});});
+  window.addEventListener("scroll",updateFabState,{passive:true});
+  window.addEventListener("resize",updateFabState);
+  if(typeof ResizeObserver!=="undefined")new ResizeObserver(updateFabState).observe(document.body);
+  else new MutationObserver(updateFabState).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["open","style","hidden"]});
   updateFabState();
 })();
 

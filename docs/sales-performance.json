@@ -1,10 +1,10 @@
 {
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
-  "release": "v100",
+  "release": "v101",
   "asOfDate": "2026-10-07",
   "timeZone": "Asia/Seoul",
-  "purpose": "카페24 실제 판매를 바탕으로 제품 개발에 참고할 판매순위와 성과 게이지 제공",
+  "purpose": "디자이너가 목록에서 실제 순판매량과 기간 주문 반품률을 바로 비교",
   "sources": {
     "sales": "cafe24",
     "metaAdsIncludedInRanking": false
@@ -56,17 +56,18 @@
       "rank",
       "existing_small_thumbnail",
       "product_name_and_code",
-      "gauge_and_Korean_status"
+      "inline_sales_quantity_and_observed_order_cohort_return_rate",
+      "separate_record_dialog"
     ],
     "thumbnailPixels": {
       "width": 40,
       "height": 52
     },
     "colors": {
-      "good": "#303B52",
-      "normal": "#7D899B",
-      "poor": "#A3264C",
-      "pending": "gray"
+      "positive": "#1760B5",
+      "negative": "#B52B43",
+      "neutral": "#4B617E",
+      "unverified": "#7B8494"
     },
     "filters": [
       "sale",
@@ -1017,6 +1018,60 @@
       "expected": 2956,
       "retryScheduled": false,
       "interpretation": "v30_real_order_processing_progress_not_publish_completion"
+    }
+  },
+  "designerScanChange20261007": {
+    "date": "2026-10-07",
+    "status": "implemented_tested_pending_publication",
+    "source": {
+      "kind": "direct_user_request",
+      "excerpt": "판단 대기·아래로 이동 불능·반품률 부정확. 판매량 높음 반품률 높음처럼 빨간색 파란색 한줄, 접기 제거"
+    },
+    "uiVersion": "v101",
+    "salesComparison": {
+      "scope": "all_verified_currently_selling_products_same_snapshot_period",
+      "basis": "median_netQty",
+      "thresholdStatus": "implementation_choice_not_user_confirmed_numeric_target",
+      "productQualityJudgment": false
+    },
+    "returnRate": {
+      "numerator": "completed_returnedQty_same_paid_order_cohort",
+      "denominator": "netQty_plus_returnedQty_excluding_completed_cancellations",
+      "observation": "snapshot_generatedAt_completed_claims_only_future_returns_not_final",
+      "notShipmentBasedLifetimeRate": true,
+      "comparison": "pooled_verified_selling_product_cohort_return_rate",
+      "unverified": "confirmation_pending",
+      "zeroDenominator": "em_dash",
+      "filterChangesBaseline": false
+    },
+    "listExpansion": false,
+    "records": "native_dialog_lazy_decoration_existing_fields_preserved",
+    "scrollFix": "ResizeObserver_document_body_scrollingElement_dynamic_height",
+    "verification": {
+      "rules": "passed",
+      "inlineScripts": 7,
+      "screenGroups": 9,
+      "productPerformance": "passed",
+      "saveLockChecks": 9,
+      "priceChecks": 23,
+      "printSheetDom": "identical_to_v100",
+      "legacyChecks": "v94_print_hash_and_old_print_lock_not_reaccepted; existing_woIndexRoot_woTrashIndexRoot_warnings",
+      "responsive": "pending",
+      "live": "pending"
+    },
+    "liveCollectionObservation": {
+      "jobStatus": "running",
+      "revision": 258,
+      "processedOrders": 2260,
+      "expectedOrders": 2956,
+      "sourcePagesComplete": false,
+      "newV2PublishVerified": false
+    },
+    "backup": {
+      "version": "v8",
+      "fileName": "aisel-sales-performance_2026-10-07_v8.zip",
+      "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "pending"
     }
   }
 }
