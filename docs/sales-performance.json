@@ -1,6 +1,6 @@
 {
   "navySelectionAndToolbarImplementation20261007": {
-    "status": "local_verified_deployment_pending",
+    "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "user follow-up: navy product selection, code",
     "supersedes": "mobileToolbarSpacingPlan20261007 planning-only implementation restriction",
@@ -10,7 +10,8 @@
     "sourceFiles": ["scripts/sheet-sales-view.css", "scripts/sheet-sales-view.js"],
     "embeddedIn": "work-order-5aa994e7.html",
     "validation": {"adapterTests": "3 passed", "inlineScripts": "9 compile", "unrelatedHtmlAndPrintMarkup": "unchanged", "mobileWidthsPx": [320, 390, 430], "horizontalOverflow": false, "rightEdgeDifferencePx": 0, "rowGapPx": 8, "tableGapPx": 16, "keyboardFocus": "deep navy outline and soft navy background verified", "detailsDialog": "opens/closes", "iphoneSafari": "not directly tested"},
-    "backup": {"version": "v20-navy-toolbar", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+    "deployment": {"commit": "05791be0678099a0b56f9b81781069647d72484c", "pagesRun": 37514166405, "status": "success", "liveMobileWidthPx": 390, "liveDesktopWidthPx": 1920, "rightEdgeDifferencePx": 0, "rowGapPx": 8, "tableGapPx": 16, "navyFocus": "verified", "proof": "sales-navy-toolbar.png"},
+    "backup": {"version": "v20-navy-toolbar", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileName": "aisel-sales-performance_2026-10-07_v20-navy-toolbar.zip", "fileId": "12xoA3nVydyfg9v4TchMnfAr-_Pt5urQ2", "sizeBytes": 12922, "sha256": "555E9EF94034AD250DF722ADDF3A3F1398AA2FEB5F986993ACF177ADD7A7A882", "sourceCommit": "05791be0678099a0b56f9b81781069647d72484c", "scope": "entire reusable skill folder; verification receipt remains canonical in GitHub"}
   },
   "mobileToolbarSpacingPlan20261007": {
     "topic": "sales_performance_mobile_toolbar_spacing",
