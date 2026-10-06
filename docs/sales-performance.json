@@ -1290,5 +1290,40 @@
       "print": "sheet DOM unchanged",
       "salesScan": "8 inline scripts passed"
     }
+  },
+  "mobileCompact20261007": {
+    "version": 106,
+    "status": "implemented_pending_deployment_verification",
+    "scroll": "natural document scrolling; visible rail and floating controls removed",
+    "row": [
+      "thumbnail",
+      "name",
+      "sales_share_percent",
+      "return_rate_percent"
+    ],
+    "record": "click product name",
+    "share": "complete full selling scope net quantities only; unknown shown as dash",
+    "returnWarning": "strictly greater than 20%; existing paid-order cohort, shipped denominator unverified",
+    "sheetPreference": {
+      "source": "운영시트 신상성과",
+      "status": "preferred_review_only_not_connected",
+      "cafe24": "raw evidence"
+    },
+    "auth": "existing owner-only Firebase unchanged",
+    "verification": {
+      "mobileWidth": 320,
+      "horizontalOverflow": false,
+      "scrollBottom": true,
+      "recordDialog": true,
+      "salesScan": "passed; 7 inline scripts"
+    },
+    "backup": {
+      "version": "v15",
+      "fileId": "1-pzdfGq9fuyja3IAWPdp9uBn7eksqw_O",
+      "bytes": 11121,
+      "shared": false,
+      "status": "name_size_parent_verified"
+    },
+    "sourceCommit": "4f2a9c1"
   }
 }
