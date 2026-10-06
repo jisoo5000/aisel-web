@@ -1130,5 +1130,45 @@
       "pagesRunId": 37497190260,
       "conclusion": "success"
     }
+  },
+  "designerSimplificationPlan20261007": {
+    "status": "planning_only_not_implemented",
+    "date": "2026-10-07",
+    "authority": "사용자: 카페24 판매 중 제품만; 표시한 필터 두 줄 삭제; 기획만",
+    "confirmed": {
+      "scope": "Cafe24 current selling products only; distinguish current status from historical sales",
+      "removeFilters": [
+        "판매 중",
+        "판매 준비",
+        "전체(판매상태)",
+        "전체(분류)",
+        "신상",
+        "스테디셀러",
+        "분류 확인"
+      ],
+      "appChangeAuthorized": false
+    },
+    "proposals": {
+      "row": "사진 · 품명/품번 | 판매량 높음 46장 | 반품률 2.0% (2/100장)",
+      "exampleNumbers": "illustrative_only",
+      "returnDenominator": "same shipped cohort actual shipped units, excluding unshipped cancellations; completed returns in numerator",
+      "metricStatus": "requires shipping evidence verification; existing paid-order ratio is not proven shipped-unit ratio",
+      "returnLabels": "numeric ratio and numerator/denominator always; high/low only with agreed comparison, sufficient sample and observation; otherwise neutral/observing",
+      "colors": "blue favorable sales; red confirmed high returns; neutral for uncertain or immature return evidence",
+      "layout": "keep search and sort; default sales order; small shared period/update line"
+    },
+    "open": [
+      "actual Cafe24 current selling/display criteria and data mapping",
+      "same-cohort shipping/returns evidence",
+      "return high/low reference, sample size and maturity window"
+    ],
+    "backup": {
+      "version": "v10",
+      "status": "uploaded_name_size_parent_verified",
+      "fileId": "1uAeqMvYq-jCF1gLMDREEYVQv0o5sy2Th",
+      "bytes": 9711,
+      "sha256": "2071bc717e664a4d8153a0cf26bdcb78985ef34c74409f3e34e5518b00acf16b",
+      "shared": false
+    }
   }
 }
