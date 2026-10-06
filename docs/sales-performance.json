@@ -1292,7 +1292,7 @@
     }
   },
   "sheetSourceConnection20261007": {
-    "status": "live_webapp_verified_app_deployment_pending",
+    "status": "deployed_verified_live_app",
     "spreadsheetId": "1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0",
     "sheetId": 2026100512,
     "sheetTitle": "🌱 신상_성과",
@@ -1351,7 +1351,21 @@
       "sourcePrivate": true,
       "print": "sheet DOM unchanged",
       "adapterTests": "3 passed",
-      "inlineScripts": "9 compile"
+      "inlineScripts": "9 compile",
+      "pagesRun": 37512045507,
+      "pagesConclusion": "success",
+      "deployedCommit": "59f4127302b1075400f4af78668512e35da18c56",
+      "liveRows": 21,
+      "mobileWidths": [
+        320,
+        390
+      ],
+      "horizontalOverflow": false,
+      "login": "hidden; old Firebase sales reads disabled",
+      "search": "preserves 3rd rank for Pino",
+      "fullNameDialog": "verified",
+      "naturalScroll": "last row reached",
+      "iphoneSafari": "not directly tested"
     },
     "backup": {
       "version": "v18",
