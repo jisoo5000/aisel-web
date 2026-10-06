@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v110 (2026-10-07)
+<!-- AISEL 작업지시서 v111 (2026-10-07)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
@@ -3446,7 +3446,7 @@
           </div>
           <input type="hidden" id="costNegotiationData" value="">
           <input type="hidden" id="costNegotiationLinesData" value="">
-          <div class="noprint" id="negotiationOrphans" role="status"></div>
+          <div id="negotiationOrphans" hidden></div>
           <div hidden><p id="costBreakdown"></p><p id="costConfidence" role="status"></p></div>
         </div>
       </div>
@@ -5357,22 +5357,8 @@
   }
   function materialOrphans_(){return negotiation_.resolveMaterials([...linesWrap.querySelectorAll(".line")].map(readCostRow_),materialMap_()).orphans;}
   function renderMaterialOrphans_(){
-    const host=$("#negotiationOrphans");let orphans;
-    try{orphans=materialOrphans_();}catch(error){host.textContent=error.message+" · 원본 보존, 저장을 중단하세요";return;}
-    const signature=JSON.stringify([orphans,[...linesWrap.querySelectorAll(".line")].map(readCostRow_)]);
-    if(host.dataset.signature===signature)return;host.dataset.signature=signature;host.replaceChildren();
-    if(!orphans.length)return;
-    const warning=document.createElement("p");warning.textContent="보존된 협상 기록 "+orphans.length+"건이 현재 자재 행과 연결되지 않았습니다. 구버전에서 행 ID가 사라졌거나 중복된 경우 같은 이름·금액이어도 자동 적용하지 않습니다. 내용을 확인해 연결하세요.";host.append(warning);
-    for(const entry of orphans){
-      const item=document.createElement("div"),label=document.createElement("p"),select=document.createElement("select"),button=document.createElement("button");
-      label.textContent=(entry.binding?.nm||"자재")+" · 기존 "+(entry.binding?.unit||"미입력")+" × "+(entry.binding?.qty||"1")+" · 최초 "+(entry.metadata?.original||"미기록")+" · 네고 "+(entry.metadata?.negotiated||"미기록");
-      const empty=document.createElement("option");empty.value="";empty.textContent="연결할 현재 자재 선택";select.append(empty);
-      [...linesWrap.querySelectorAll(".line")].forEach((row,index)=>{if(row.negotiation_)return;const option=document.createElement("option");option.value=String(index);option.textContent=(row.querySelector(".nm").value||"자재")+" · "+row.querySelector(".unit").value+" × "+row.querySelector(".qty").value;select.append(option);});
-      button.type="button";button.textContent="확인 후 연결";button.addEventListener("click",()=>{
-        if(select.value==="")return;const row=[...linesWrap.querySelectorAll(".line")][Number(select.value)];if(!row||row.negotiation_)return;
-        row.legacyCostRecord_.costLineId=entry.id;row.negotiation_=negotiation_.clone(entry.metadata);captureMaterialMap_();lineAmt(row);calc();autoPrice_();save();
-      });item.append(label,select,button);host.append(item);
-    }
+    // Retain authoritative historical metadata without showing technical recovery UI.
+    $("#negotiationOrphans").replaceChildren();
   }
   const fixedEditors_=[];
   ["gongim","siyage"].forEach(id=>fixedEditors_.push(negotiation_.attachEditor($("#"+id+"Negotiation"),{
