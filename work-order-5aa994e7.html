@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v97 (2026-10-06)
+<!-- AISEL 작업지시서 v98 (2026-10-06)
+     [v98] 모든 단가·공임·시야게를 기존 한 줄의 최초 가격 > 네고 가격으로 표시. v96 도식화·원가계산서 치수 복원.
      [v97] 최초 견적·네고 입력을 자재 단가·공임 아래로 이동. 샘플 수거 태그를 컬러 태그와 동일한 크기로 정리.
      [v96] 최초 견적·네고 단가·협상자, 작지별 거래처 검수·수동 상태 메뉴, 공장 샘플 버건디 표시. 기존 저장 잠금·인쇄 영역 보존.
      [v95] PDF 저장/인쇄 시 디자이너 로그인 없이 카페24 판매함·진열안함 등록. v94 화면·저장·한글 입력 보호 보존.
@@ -3124,7 +3125,10 @@
     <div class="editor-mobile-caption"><span id="mobileProductCode"></span><span id="mobileProductStatus"></span></div>
   </div>
   <input type="hidden" id="supplierQualityData" value="">
-  <div id="supplierQualityPanel" class="noprint" hidden></div>
+  <div id="supplierQualityPanel" class="noprint" hidden>
+    <div id="costNegotiationMenu" aria-label="원가 협상 세부 정보"></div>
+    <div id="supplierQualityContent"></div>
+  </div>
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
     <button type="button" class="btn ghost nav-btn" id="backToListBtn">← 목록으로</button>
@@ -3360,13 +3364,13 @@
             <div class="fixed-row">
               <span class="k">공임</span>
               <input class="won tnum" id="gongim" type="text" inputmode="numeric" value="6,000" />
+              <div class="nego-fixed noprint" id="gongimNegotiation"></div>
             </div>
-            <div class="nego-fixed noprint" id="gongimNegotiation"></div>
             <div class="fixed-row">
               <span class="k">시야게</span>
               <input class="won tnum" id="siyage" type="text" inputmode="numeric" value="1,200" />
+              <div class="nego-fixed noprint" id="siyageNegotiation"></div>
             </div>
-            <div class="nego-fixed noprint" id="siyageNegotiation"></div>
             <div class="total-row">
               <span class="k">제조원가</span>
               <span class="v tnum" id="totalView">0원</span>
@@ -3389,17 +3393,16 @@
         .has-nego .applied-unit,.has-nego .applied-fixed{display:block!important;color:#000;font-size:inherit}
         .has-nego .applied-unit::before,.has-nego .applied-fixed::before{content:""}
       }
-      .nego-editor{padding:3px 4px;color:#526176;text-align:left}
-      .nego-primary{display:grid;gap:3px}
-      .nego-primary label{display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:3px;font-size:10px;white-space:nowrap}
-      #sheet #costCell .nego-primary input{width:100%;min-width:0;height:22px;box-sizing:border-box;border:1px solid #bdc8d3;border-radius:3px;background:#f5f8fd;color:#18324e;padding:2px 4px;font-size:11px;font-weight:500;line-height:16px;text-align:right}
-      .nego-actions{display:flex;align-items:center;justify-content:space-between;gap:3px;margin-top:3px}
-      .nego-status{display:flex;align-items:center;gap:3px;font-size:0;min-width:0;white-space:nowrap}
-      .nego-status select{width:auto;min-width:0;height:21px;border:1px solid #d5dce3;border-radius:3px;background:white;color:#526176;font-family:inherit;font-size:10px;padding:1px}
-      .nego-more{border:0;background:none;padding:2px;color:#365976;font-size:10px;white-space:nowrap;text-decoration:underline;cursor:pointer}
-      .nego-fixed .nego-primary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-      .nego-fixed .nego-actions{justify-content:flex-end}
-      .nego-fixed .nego-status{font-size:10px}
+      .nego-material,.nego-fixed{min-width:0}
+      .cost-pair{display:grid;grid-template-columns:minmax(0,1fr) 7px minmax(0,1fr);align-items:center;gap:1px;min-width:0;height:24px;padding:0 2px;box-sizing:border-box}
+      .cost-pair-arrow{font-size:10px;line-height:1;text-align:center;color:#526176}
+      #sheet #costCell .cost-pair input{width:100%;min-width:0;height:22px;box-sizing:border-box;margin:0;border:1px solid #bdc8d3;border-radius:3px;background:#f5f8fd;color:#18324e;padding:1px 2px;font-family:inherit;font-size:10px;font-weight:600;line-height:16px;text-align:center}
+      #sheet #costCell .cost-pair input::placeholder{font-size:8px;font-weight:400;letter-spacing:-.35px;color:#67778c}
+      .nego-fixed .cost-pair{height:29px;padding:0}
+      #sheet #costCell .nego-fixed .cost-pair input{height:29px;font-size:11px}
+      #sheet #costCell .nego-fixed .cost-pair input::placeholder{font-size:10px;letter-spacing:-.4px}
+      #costNegotiationMenu{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 0;font-size:12px}
+      #costNegotiationMenu button{border:1px solid #bdc8d3;border-radius:4px;background:#f5f8fd;color:#365976;font-size:11px;padding:5px 8px;cursor:pointer}
       .nego-dialog{width:min(460px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #bdc8d3;border-radius:8px;padding:16px;color:#253447;background:white;max-height:85vh;overflow:auto}
       .nego-dialog::backdrop{background:rgba(20,30,45,.3)}
       .nego-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;font-size:13px}
@@ -3409,7 +3412,7 @@
       .nego-grid input,.nego-grid select{width:100%;min-width:0;box-sizing:border-box;padding:8px;border:1px solid #bdc8d3;border-radius:4px;background:white;color:#253447}
       .nego-note{font-size:11px;line-height:1.6;color:#526176}
       #negotiationOrphans:not(:empty){font-size:11px;line-height:1.5;padding-top:6px;color:#7a3048}
-      @media screen{#sheet #costCell .cost-table th:nth-child(2){width:36%}#sheet #costCell .cost-table td{vertical-align:top}}
+      @media screen{#costCell .unit,#costCell #gongim,#costCell #siyage,#costCell .applied-unit,#costCell .applied-fixed{display:none!important}}
     </style>
     <!-- 주의사항 + SIZE: 화면은 세로, 인쇄는 나란히 -->
     <div class="detail2">
@@ -4160,16 +4163,13 @@
     return actual?{name:actual,source:'actual'}:{name:metadata?.workerProxy||worker||'',source:'worker_proxy'};
   }
   function attachEditor(host, options){
-    const editor=document.createElement('div');editor.className='nego-editor noprint';
-    const primary=document.createElement('div');primary.className='nego-primary';editor.append(primary);
-    const actions=document.createElement('div');actions.className='nego-actions';editor.append(actions);
-    const more=document.createElement('button');more.type='button';more.className='nego-more';more.textContent='상세';
+    const editor=document.createElement('div');editor.className='cost-pair noprint';
+    const arrow=document.createElement('span');arrow.className='cost-pair-arrow';arrow.textContent='>';arrow.setAttribute('aria-hidden','true');
     const dialog=document.createElement('dialog');dialog.className='nego-dialog noprint';
     const heading=document.createElement('div');heading.className='nego-heading';dialog.append(heading);
     const summary=document.createElement('strong');heading.append(summary);
     const close=document.createElement('button');close.type='button';close.textContent='닫기';heading.append(close);
     const grid=document.createElement('div');grid.className='nego-grid';dialog.append(grid);
-    more.addEventListener('click',()=>{refresh();dialog.showModal();});
     close.addEventListener('click',()=>dialog.close());
     const controls={};
     const fields=[...(!options.fixed?[['category','원가 구분',[['','미분류'],['fabric','원단'],['notions','부자재'],['processing','별도 가공'],['loss','로스'],['other','기타']]]]:[]),['original','최초 견적 단가','number'],['negotiated','네고 단가','number'],
@@ -4180,38 +4180,45 @@
       ['includedIn','포함된 항목','text'],['confirmed','견적 확정',[['','미확인'],['yes','확정']]],
       ['negotiator','실제 협상자 (직접 지정)','text']];
     for(const [key,label,type] of fields){
-      const wrap=document.createElement('label');wrap.textContent=key==='original'?'최초 견적':key==='negotiated'?'네고 금액':label;
+      const wrap=document.createElement('label');wrap.textContent=label;
       const control=document.createElement(Array.isArray(type)?'select':'input');
       if(Array.isArray(type))for(const [value,text] of type){const option=document.createElement('option');option.value=value;option.textContent=text;control.append(option);}
       else{control.type='text';if(type==='number')control.inputMode='decimal';}
       control.dataset.negoField=key;control.value=options.get()?.[key]??'';control.setAttribute('aria-label',label);
       control.addEventListener('input',()=>{
         const next=clone(options.get());next[key]=control.value;
+        // Editing the visible pair is explicit input. Merely opening a legacy record never writes metadata.
+        if(key==='negotiated'){
+          if(number(control.value)!==null){
+            if(number(next.original)===null&&number(controls.original.value)!==null)next.original=controls.original.value;
+            next.status='negotiated';
+          }else if(control.value.trim()==='')next.status='';
+        }
         if(!next.workerProxy)next.workerProxy=options.worker();
         options.set(next);options.change();refresh();
       });
-      wrap.append(control);
-      if(key==='original'||key==='negotiated')primary.append(wrap);
-      else if(key==='status'){wrap.className='nego-status';actions.append(wrap);}
-      else grid.append(wrap);
+      if(key==='original'||key==='negotiated'){
+        control.placeholder=key==='original'?'최초 가격':'네고 가격';
+        control.setAttribute('aria-label',control.placeholder);control.title=control.placeholder;
+        if(key==='negotiated')editor.append(arrow);
+        editor.append(control);
+      }else{wrap.append(control);grid.append(wrap);}
       controls[key]=control;
     }
-    actions.append(more);
     const note=document.createElement('p');note.className='nego-note';dialog.append(note);
     function refresh(){
       const m=options.get()||{}, result=evaluate(options.legacy(),m,options.quantity(),options.fixed);
       const who=negotiator(m,options.worker()), money=value=>value===null?'미입력':value.toLocaleString('ko-KR')+'원';
       summary.textContent=options.title()+' · 적용 '+money(result.applied)+' · '+(result.complete?'확정':'추정');
       dialog.setAttribute('aria-label',options.title()+' 협상 상세');
-      more.setAttribute('aria-label',options.title()+' 협상 상세');
       note.textContent=(options.fixed?'완제품 1장당':'1장당 소요량 '+(options.quantity()||'미입력 (기존 계산 ×1)'))+' · 반영액 '+money(result.amount)+
         ' · 절감 '+money(result.saving)+' · '+(who.source==='actual'?'실제 협상자: ':'작지 담당자 기본 대리값: ')+(who.name||'미기록')+
         (result.included?' · '+(m.includedIn||'포함 항목 미기록')+'에 포함, 중복 합산 제외':'')+
         ' · 생산수량과 별도 · VAT 별도 금액은 세금 가산 전';
-      for(const key of Object.keys(controls))if(document.activeElement!==controls[key])controls[key].value=m[key]??'';
+      for(const key of Object.keys(controls))if(document.activeElement!==controls[key])controls[key].value=key==='original'?(m.original??options.legacy()??''):(m[key]??'');
     }
     host.append(editor);document.body.append(dialog);refresh();
-    return {refresh,remove:()=>{dialog.remove();editor.remove();}};
+    return {refresh,openDetails:()=>{refresh();dialog.showModal();},remove:()=>{dialog.remove();editor.remove();}};
   }
   const api={number,evaluate,sameLines,readMaterialMap,resolveMaterials,captureMaterials,assessment,negotiator,attachEditor,clone};
   if(typeof module==='object'&&module.exports)module.exports=api;
@@ -5045,16 +5052,31 @@
   const linesWrap = $("#costLines");
   var supplierQualityUI_ = null;
   function refreshSupplierQuality_(force=false){if(supplierQualityUI_)supplierQualityUI_.refresh(force);}
+  function refreshNegotiationMenu_(){
+    if($("#supplierQualityPanel").hidden)return;
+    const host=$("#costNegotiationMenu"),names=[...linesWrap.querySelectorAll(".line")].map(row=>row.querySelector(".nm").value||"자재");
+    const signature=JSON.stringify(names);if(host.dataset.signature===signature)return;
+    host.dataset.signature=signature;host.replaceChildren();
+    const title=document.createElement("strong");title.textContent="원가 세부 정보";host.append(title);
+    [...names,"공임","시야게"].forEach((name,index)=>{
+      const button=document.createElement("button");button.type="button";button.textContent=name+" 상세";
+      button.addEventListener("click",()=>{
+        const editor=index<names.length?[...linesWrap.querySelectorAll(".line")][index]?.negotiationEditor_:fixedEditors_[index-names.length];
+        editor?.openDetails();
+      });host.append(button);
+    });
+  }
   $("#supplierQualityBtn").addEventListener("click",()=>{
     const host=$("#supplierQualityPanel");host.hidden=!host.hidden;
     $("#supplierQualityBtn").setAttribute("aria-expanded",String(!host.hidden));
     if(host.hidden)return;
-    if(!supplierQualityUI_)supplierQualityUI_=window.SupplierQualityUI.attach(host,{
+    if(!supplierQualityUI_)supplierQualityUI_=window.SupplierQualityUI.attach($("#supplierQualityContent"),{
       get:()=>$("#supplierQualityData").value,set:v=>{$("#supplierQualityData").value=v;},save:()=>save(),
       workOrderId:()=>currentCode||"",worker:()=>$("#designer").value,
       negotiations:()=>window.SupplierQuality.negotiationSummary([...linesWrap.querySelectorAll(".line")].map(readCostRow_),{gongim:$("#gongim").value,siyage:$("#siyage").value},fixedNegotiations_(),$("#designer").value,window.WorkOrderNegotiation)
     });
     refreshSupplierQuality_(true);
+    refreshNegotiationMenu_();
   });
   $("#designer").addEventListener("input",()=>{if(supplierQualityUI_)supplierQualityUI_.refreshNegotiations();});
   const negotiation_ = window.WorkOrderNegotiation;
@@ -5138,6 +5160,7 @@
   // ---------- 계산 (제조원가 + 타겟 판매가) ----------
   function calc(){
     if(supplierQualityUI_)supplierQualityUI_.refreshNegotiations();
+    refreshNegotiationMenu_();
     const sum=totalCost_();
     const costRows=[...linesWrap.querySelectorAll(".line")];
     const vatBases=new Set([...costRows.filter(r=>r.negotiation_?.inclusion!=="included").map(r=>r.negotiation_?.vat||""),...Object.values(fixedNegotiations_()).filter(m=>m.inclusion!=="included").map(m=>m.vat||"")]);
