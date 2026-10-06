@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v108 (2026-10-07)
+<!-- AISEL 작업지시서 v109 (2026-10-07)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
@@ -3467,6 +3467,11 @@
       #sheet #costCell .cost-pair input{width:100%;min-width:0;height:22px;box-sizing:border-box;margin:0;border:1px solid #bdc8d3;border-radius:3px;background:#f5f8fd;color:#18324e;padding:1px 2px;font-family:inherit;font-size:10px;font-weight:600;line-height:16px;text-align:center}
       #sheet #costCell .cost-pair input::placeholder{font-size:8px;font-weight:400;letter-spacing:-.35px;color:#67778c}
       .nego-fixed .cost-pair{height:29px;padding:0}
+      @media screen{
+        /* Preserve the 9px arrow/gaps; each price input is 1.5 times its v108 width. */
+        #sheet #costCell .fixed-row:not(.fixed-loss-row){grid-template-columns:minmax(0,1fr) minmax(133.5px,calc(52.5% - 4.5px))}
+        #sheet #costCell .nego-fixed .cost-pair input.nego-price-empty{background:var(--pink,#f7e3e0);border-color:var(--pink-line,#e3b9b3)}
+      }
       #sheet #costCell .nego-fixed .cost-pair input{height:29px;font-size:11px}
       #sheet #costCell .nego-fixed .cost-pair input::placeholder{font-size:10px;letter-spacing:-.4px}
       #sheet #costCell .cost-table{width:100%;min-width:0;table-layout:fixed}
@@ -4496,6 +4501,8 @@
         (result.included?' · '+(m.includedIn||'포함 항목 미기록')+'에 포함, 중복 합산 제외':'')+
         ' · 생산수량과 별도 · VAT 별도 금액은 세금 가산 전';
       for(const key of Object.keys(controls))if(document.activeElement!==controls[key])controls[key].value=key==='original'?(m.original??options.legacy()??''):(m[key]??'');
+      // Visual cue only: zero is a entered price; blank negotiation still uses the initial quote.
+      controls.negotiated.classList.toggle('nego-price-empty',!!options.fixed&&number(controls.original.value)!==null&&controls.negotiated.value.trim()==='');
     }
     host.append(editor);document.body.append(dialog);refresh();
     return {refresh,openDetails:()=>{refresh();dialog.showModal();},remove:()=>{dialog.remove();editor.remove();}};
