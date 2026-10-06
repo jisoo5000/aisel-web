@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v101 (2026-10-07)
+<!-- AISEL 작업지시서 v102 (2026-10-07)
+     [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
      [v100] 상품성과 분석: 최근7일 비교, 신상7/14일·스테디28일, 상품 기준과 판단 이력.
      [v99] 상단 거래처 품질·협상 메뉴 제거. 최초 가격 > 네고 가격 입력과 저장된 기록 보존.
@@ -119,6 +120,15 @@
   ::-webkit-scrollbar-track { background: #E9ECF2; }
   ::-webkit-scrollbar-thumb { background: #2F3B52; border-radius: 10px; border: 2px solid #E9ECF2; }
   ::-webkit-scrollbar-thumb:hover { background: #1c2536; }
+  @media screen {
+    /* In this legacy quirks document BODY scrolls the viewport. The thin
+       standard scrollbar overrides WebKit styling and can become an overlay. */
+    html { overflow-y: scroll; scrollbar-gutter: stable; scrollbar-width: auto; }
+    body { scrollbar-width: auto; }
+    html::-webkit-scrollbar, body::-webkit-scrollbar { width: 14px; height: 14px; }
+    html::-webkit-scrollbar-track, body::-webkit-scrollbar-track { background: #E9ECF2; }
+    html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb { background: #2F3B52; border: 2px solid #E9ECF2; border-radius: 7px; }
+  }
   @media (prefers-color-scheme: dark) {
     :root {
       --bg: #0D0F13; --sheet: #171A20; --ink: #E8EBF1; --muted: #99A0AC;

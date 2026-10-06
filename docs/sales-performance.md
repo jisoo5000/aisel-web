@@ -26,6 +26,10 @@
 
 검사: `작업지시서/tools/test-sales-scan.cjs`, 기존 화면/상품 분석/저장 잠금/판매가 검사. 실제 인쇄 시트 DOM은 직전 원본 v100과 동일하다. 기존 v94 전체 HTML 지문·오래된 print-area.lock 및 woIndexRoot/woTrashIndexRoot 경고는 기준을 새로 승인해 숨기지 않는다. 배포/백업 영수증은 JSON `designerScanChange20261007`을 따른다. 원본 `a5fa35e`와 공개본 `cfdaff1` 푸시, Pages 성공, 실제 HTML 일치·실상품 10개 한 줄·기록창 분모 검증을 완료했다. 320px/768px 넘침 없음과 마지막 행 스크롤을 확인했고 전체 스킬 v8 ZIP의 Drive 이름·9,342바이트·승인 부모 폴더를 재조회했다. 새 v2 전체 집계의 최종 게시 여부는 이번 UI 완료와 구분한다.
 
+## v102 스크롤바 후속 수정 · 2026-10-07
+
+사용자가 v101 화면에서 아래 상품과 스크롤바가 보이지 않는다고 지적했다. 실제 문서 스크롤과 아래 버튼은 마지막 상품까지 정상이며, 레거시 BackCompat 문서의 BODY가 스크롤 루트다. html의 thin 설정이 화면 스크롤바를 overlay로 표시하고 오른쪽 예약 공간이 0px인 상태를 확인했다. 화면에서만 html overflow-y:scroll·scrollbar-gutter:stable, html/BODY scrollbar-width:auto와 오른쪽 트랙 스타일을 적용해 15px의 스크롤 공간과 실제 보이는 트랙을 확인했다. 문서 모드를 변경하거나 body에 별도 overflow 잠금을 넣지 않는다. 인쇄 미디어·인쇄 시트·판매 자료는 변경하지 않는다. 실제 링크와 백업은 JSON `scrollbarFollowup20261007`에서 확인한다.
+
 ## 집계 기준
 
 - 한국 시간 어제까지 완료된 최근 7일 동안 결제된 주문을 기본으로 직전 7일과 비교하고 최근 28일 추세를 함께 제공한다. 오늘 수치는 완료 기간과 섞지 않는다.

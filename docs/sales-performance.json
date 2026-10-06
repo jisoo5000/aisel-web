@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
-  "release": "v101",
+  "release": "v102",
   "asOfDate": "2026-10-07",
   "timeZone": "Asia/Seoul",
   "purpose": "디자이너가 목록에서 실제 순판매량과 기간 주문 반품률을 바로 비교",
@@ -1088,6 +1088,31 @@
       "pagesConclusion": "success",
       "liveHtml": "exact_published_file_match",
       "existingDesignerUrlPreserved": true
+    }
+  },
+  "scrollbarFollowup20261007": {
+    "source": "사용자: 오류야? 밑에가 안보여? 스크롤바 사라진거야?",
+    "uiVersion": "v102",
+    "finding": "document_scroll_works_last_product_present_viewport_scrollbar_is_overlay_hidden",
+    "verifiedBefore": {
+      "documentMode": "BackCompat",
+      "scrollingElement": "BODY",
+      "reservedScrollbarWidth": 0,
+      "bottomReached": true
+    },
+    "fix": "screen_only_html_overflow_y_scroll_stable_gutter_auto_width_html_and_body_webkit_track",
+    "printLayoutChanged": false,
+    "dataChanged": false,
+    "verification": {
+      "localVisibleScrollbarPixels": 15,
+      "browser": "verified_visible_right_track",
+      "live": "pending"
+    },
+    "backup": {
+      "version": "v9",
+      "fileName": "aisel-sales-performance_2026-10-07_v9.zip",
+      "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "pending"
     }
   }
 }
