@@ -1,0 +1,6 @@
+.sheet-sales-grid{display:grid;grid-template-columns:40px minmax(0,1fr) 90px 90px 80px 70px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid #dce2eb;color:#2f3b52;font-size:13px}
+.sheet-sales-grid span{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sheet-sales-grid span:nth-child(n+5){text-align:right}
+.sheet-sales-head{font-size:11px;color:#7b8594;min-height:30px}
+.sheet-sales-warning{color:#dc173b;font-weight:700}
+@media(max-width:600px){.sheet-sales-grid{grid-template-columns:24px minmax(0,1fr) 35px 35px 46px 46px;gap:4px;font-size:11px;min-height:44px}.sheet-sales-head{font-size:9px;min-height:28px}}

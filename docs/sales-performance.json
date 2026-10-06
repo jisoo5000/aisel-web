@@ -1291,6 +1291,21 @@
       "salesScan": "8 inline scripts passed"
     }
   },
+  "sheetSourceConnection20261007": {
+    "status": "prepared_pending_six_field_sharing_approval_and_webapp_deployment",
+    "spreadsheetId": "1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0",
+    "sheetId": 2026100512,
+    "sheetTitle": "🌱 신상_성과",
+    "sharingObserved": "private_owner_only",
+    "mapping": {"rank": "E sales quantity sort", "name": "A", "designer": "B", "factory": "C", "share": "F whole-store share", "returns": "H as displayed"},
+    "boundary": "first product table only; exclude totals and designer comparisons",
+    "responseFields": ["rank", "name", "designer", "factory", "share", "returns"],
+    "safeMetadata": ["period dates", "read time"],
+    "notChanged": ["sheet values", "source permissions", "Firebase rules", "existing app HTML", "collection schedule"],
+    "returnMeasurement": "current sheet snapshot; not recalculated as mature 7-day post-receipt return applications",
+    "tests": "3 adapter tests passed",
+    "files": ["scripts/sheet-sales-adapter.js", "scripts/sheet-sales-webapp.gs", "scripts/sheet-sales-view.js", "scripts/sheet-sales-view.css"]
+  },
   "sixColumnPlan20261007": {
     "status": "planning_only_no_app_or_sheet_code_changes",
     "title": "판매성과",
