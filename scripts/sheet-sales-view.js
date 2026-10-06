@@ -34,7 +34,9 @@
   document.getElementById('salesSourceNote').textContent='운영시트 신상성과 · 반품률은 시트 기준';
   const sort=document.getElementById('salesSort');sort.replaceChildren(new Option('판매순','quantity'));sort.disabled=true;
   const updated=document.getElementById('salesUpdated');
-  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';updated.after(refresh);
+  const meta=updated.parentElement,info=document.createElement('div');info.className='sheet-sales-meta-info';
+  meta.prepend(info);info.append(document.getElementById('salesPeriod'),updated);
+  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';meta.append(refresh);
   search.addEventListener('input',show);
   async function load(){
    if(busy)return;busy=true;refresh.disabled=true;

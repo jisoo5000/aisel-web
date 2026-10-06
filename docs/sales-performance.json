@@ -1,4 +1,17 @@
 {
+  "navySelectionAndToolbarImplementation20261007": {
+    "status": "local_verified_deployment_pending",
+    "decidedOn": "2026-10-07",
+    "source": "user follow-up: navy product selection, code",
+    "supersedes": "mobileToolbarSpacingPlan20261007 planning-only implementation restriction",
+    "colors": {"deepNavy": "#2F3B52", "softNavy": "#EAF0F7", "tapHighlight": "rgba(47,59,82,.12)"},
+    "scope": ["name active/focus/tap colors", "detail close button", "toolbar and refresh alignment"],
+    "spacingPx": {"betweenRows": 8, "beforeTable": 16, "rightColumn": 88, "controlHeight": 40},
+    "sourceFiles": ["scripts/sheet-sales-view.css", "scripts/sheet-sales-view.js"],
+    "embeddedIn": "work-order-5aa994e7.html",
+    "validation": {"adapterTests": "3 passed", "inlineScripts": "9 compile", "unrelatedHtmlAndPrintMarkup": "unchanged", "mobileWidthsPx": [320, 390, 430], "horizontalOverflow": false, "rightEdgeDifferencePx": 0, "rowGapPx": 8, "tableGapPx": 16, "keyboardFocus": "deep navy outline and soft navy background verified", "detailsDialog": "opens/closes", "iphoneSafari": "not directly tested"},
+    "backup": {"version": "v20-navy-toolbar", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+  },
   "mobileToolbarSpacingPlan20261007": {
     "topic": "sales_performance_mobile_toolbar_spacing",
     "status": "planning_only_no_app_code_changes",
