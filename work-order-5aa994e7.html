@@ -1,7 +1,7 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v104 (2026-10-07)
+<!-- AISEL 작업지시서 v105 (2026-10-07)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
@@ -13702,3 +13702,13 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
   document.documentElement.classList.add('aisel-scroll-ready');update();
 })();
 </script>
+
+<style id="aisel-sales-clean-view">
+@media screen {
+  #salesView #salesTabs,
+  #salesView #salesGroupTabs,
+  #salesView #salesSyncNotice,
+  #salesView #salesCounts,
+  #salesView .sales-scan-note {display:none!important}
+}
+</style>

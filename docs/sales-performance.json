@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
-  "release": "v104",
+  "release": "v105",
   "asOfDate": "2026-10-07",
   "timeZone": "Asia/Seoul",
   "purpose": "디자이너가 목록에서 실제 순판매량과 기간 주문 반품률을 바로 비교",
@@ -1247,6 +1247,36 @@
       "fileId": "1Ivruf18eP7aUMqMYOg1NfOjvIO1FwI48",
       "bytes": 10338,
       "sha256": "0f5f7a62014884553aa5c5cbd3cac735e0db6983c020c442a0ecebe45827f84f",
+      "shared": false
+    }
+  },
+  "blueAreaRemoval20261007": {
+    "authority": "사용자: 응 일단 파란색 삭제 연두색 남기기 코드",
+    "status": "implemented_verifying",
+    "removedFromUI": [
+      "판매 상태 버튼 줄",
+      "상품 분류 버튼 줄",
+      "분홍색 집계 안내문",
+      "판매 중 N개",
+      "긴 계산 설명"
+    ],
+    "preserved": [
+      "품명/품번 검색",
+      "집계 기간",
+      "갱신 시각",
+      "판매순 정렬",
+      "사진/품명/품번",
+      "기록",
+      "고정 스크롤바"
+    ],
+    "implementation": "screen-only visual removal; internal async status nodes retained to preserve existing handlers",
+    "scope": "display cleanup only; claim reconciliation and Cafe24 current selling mapping remain unresolved; 20% warning / sales share still planning",
+    "backup": {
+      "version": "v14",
+      "status": "uploaded_name_size_parent_verified",
+      "fileId": "1VZx0ayEkiA_nuWjrDH8onJAGW6Fw_2pL",
+      "bytes": 10568,
+      "sha256": "41bf256b56747416e2dd0ab7034700f3f8185929aef82a90e2e3f5c7ce5b4f90",
       "shared": false
     }
   }
