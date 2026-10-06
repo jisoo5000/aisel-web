@@ -1291,6 +1291,16 @@
       "salesScan": "8 inline scripts passed"
     }
   },
+  "sixColumnPlan20261007": {
+    "status": "planning_only_no_app_or_sheet_code_changes",
+    "title": "판매성과",
+    "columns": ["순위", "상품명", "디자이너", "공장", "판매 비중", "반품률"],
+    "rankFormat": "1위 / 2위",
+    "sourceSequence": "Cafe24 raw evidence -> 운영시트 신상성과 validated results -> app display",
+    "mobileProposal": "one row with ellipsis and short designer/factory names; omit thumbnail from six-column list and show full information on name click",
+    "unconfirmed": ["mobile short labels", "thumbnail omission", "shared ranks for ties"],
+    "tokens": "zero for routine collection/formula/display if no AI calls; development and requested AI interpretation are separate"
+  },
   "mobileCompact20261007": {
     "version": 106,
     "status": "deployed_verified",
