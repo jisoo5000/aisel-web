@@ -121,6 +121,9 @@
        scrollbar on that root; HTML-only styling left old tabs without a thumb. */
     html { overflow-y: visible; scrollbar-width: auto; scrollbar-color: auto; }
     body { overflow-y: scroll; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: auto; }
+    body::-webkit-scrollbar { width: 16px; height: 16px; }
+    body::-webkit-scrollbar-track { background: #F1F1F1; }
+    body::-webkit-scrollbar-thumb { background: #999; border: 3px solid #F1F1F1; border-radius: 8px; }
   }
   @media (prefers-color-scheme: dark) {
     :root {
