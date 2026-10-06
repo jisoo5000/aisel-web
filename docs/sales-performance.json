@@ -1,6 +1,6 @@
 {
   "fourColumnAndButtonTextImplementation20261007": {
-    "status": "local_verified_deployment_pending",
+    "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "user: just unify refresh text size/color; code; leave everything else unchanged",
     "canonicalPath": "docs/sales-performance.md",
@@ -14,7 +14,8 @@
     "changedSource": "scripts/sheet-sales-view.css and its embedded HTML style block only",
     "validation": {"viewportWidthsPx": [320, 390, 430, 1280], "allHeaderAndBodyColumnsCentered": true, "equalColumnWidths": true, "horizontalOverflow": false, "buttonFontBoth": "13px", "buttonColorBoth": "rgb(47, 59, 82)", "buttonDimensionsBoth": "88x40", "buttonRightEdgesEqual": true, "nameAlign": "left", "scriptsAndUnrelatedHtml": "unchanged"},
     "preserved": ["all scripts", "sales/returns values and calculations", "workorder and print markup", "search focus color", "existing toolbar spacing", "original refresh loading state"],
-    "backup": {"version": "v22-column-buttons", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+    "deployment": {"commit": "039337fdf2ccceeb48fa0de7fc0d458b56e3f40f", "pagesRun": 37516604280, "status": "success", "liveMobileWidthPx": 390, "liveProducts": 21, "buttonStylesMatch": true, "allRowsCentered": true, "proof": "sales-columns-buttons.png", "iphoneSafari": "not directly tested"},
+    "backup": {"version": "v22-column-buttons", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileId": "1Hpovt_7iVIEPkJeHoo-KDiPlk5BZRlEU", "fileName": "aisel-sales-performance_2026-10-07_v22-column-buttons.zip", "sizeBytes": 13678, "sha256": "E072DA23C41B6CFBD1B74F579961BDBC208C7A32B687674F2F63F461F3BAEACC", "sourceCommit": "039337fdf2ccceeb48fa0de7fc0d458b56e3f40f"}
   },
   "fourColumnAndRefreshIconPlan20261007": {
     "status": "planning_only_code_prohibited",
