@@ -4,7 +4,12 @@
 const steps=[59000,64000,69000,74000,79000,84000,89000,94000,98000];
 const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
-function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
+function lineAmount(l){return root.WorkOrderNegotiation?root.WorkOrderNegotiation.evaluate(l.unit,l.negotiation,l.qty).amount||0:Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
+function appliedUnit(l){if(root.WorkOrderNegotiation){const r=root.WorkOrderNegotiation.evaluate(l.unit,l.negotiation,l.qty);return r.included?0:r.applied;}return filled(l.unit)?number(l.unit):null;}
+function fixedCosts(v){
+ let meta={};try{meta=JSON.parse(v.costNegotiationData||"{}");}catch(_){}
+ return Object.fromEntries(["gongim","siyage"].map(key=>[key,root.WorkOrderNegotiation?root.WorkOrderNegotiation.evaluate(v[key],meta[key],1,true).amount:(filled(v[key])?number(v[key]):null)]));
+}
 function signature(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
 const PREVIEW_VERSION=2,PREVIEW_MAX=480,PREVIEW_BYTES=100*1024;
 const previewSignature=src=>"v"+PREVIEW_VERSION+"-"+signature(src);
@@ -63,31 +68,40 @@ function safe(v){
  return String(v).replace(/¦/g,"｜").replace(/,/g,"，").replace(/"/g,"″").replace(/\\/g,"＼").replace(/[\r\n]+/g," ↵ ").slice(0,18000);
 }
 function build(code,v,photo){
- const lines=Array.isArray(v.lines)?v.lines:[],main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
+ const resolved=root.WorkOrderNegotiation?root.WorkOrderNegotiation.resolveMaterials(v.lines||[],v.costNegotiationLinesData):{lines:v.lines||[],orphans:[]};
+ const lines=resolved.lines,main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
  const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc;
- const cost=fc+other+number(v.gongim)+number(v.siyage),target=cost*4;
+ const fixed=fixedCosts(v),cost=fc+other+(fixed.gongim||0)+(fixed.siyage||0),target=cost*4;
  const history=Array.isArray(v.resampleHistory)?v.resampleHistory:[],recent=history[history.length-1]||{};
+ let costComplete=false;
  const missing=[];
- if(!number(main.unit))missing.push("원단 단가 미입력");
+ if(resolved.orphans.length)missing.push("미연결 협상 기록 확인 필요");
+ if(appliedUnit(main)===null)missing.push("원단 단가 미입력");
  if(!filled(main.qty))missing.push("요척 미입력");
- if(!filled(v.gongim))missing.push("공임 미입력");
- if(!filled(v.siyage))missing.push("시야게 미입력");
+ if(fixed.gongim===null)missing.push("공임 미입력");
+ if(fixed.siyage===null)missing.push("시야게 미입력");
+ if(root.WorkOrderNegotiation&&(v.costNegotiationData||lines.some(l=>l.negotiation))){
+  let metadata={};try{metadata=JSON.parse(v.costNegotiationData||"{}");}catch(_){}
+  costComplete=root.WorkOrderNegotiation.assessment(lines,v,metadata).complete;
+  if(!costComplete)missing.push("추정 원가 · 견적/단위/VAT 확인 필요");
+ }
  const price=number(v.targetThreshold),suggested=steps.find(p=>p>=target)||null;
- const approved=!!v.priceConfirmed && price>=target;
- let review=!cost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
+ const approved=!resolved.orphans.length&&!!v.priceConfirmed && price>=target;
+ const hasCost=cost!==0||costComplete;
+ let review=!hasCost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
  !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||""; // Never send an uncompressed original as a failed-preview fallback.
  const status={sampling:"샘플중",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
- v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
- filled(main.unit)?fc:"",lines.length?other:"",filled(v.gongim)?number(v.gongim):"",filled(v.siyage)?number(v.siyage):"",
- cost||"",target||"",!cost||missing.length?"":suggested||"직접 입력",
+ v.fabricWidth,v.fabricSwatchNo,appliedUnit(main)??"",filled(main.qty)?number(main.qty):"",
+ appliedUnit(main)!==null?fc:"",lines.length?other:"",fixed.gongim??"",fixed.siyage??"",
+ hasCost?cost:"",hasCost?target:"",!hasCost||missing.length?"":suggested||"직접 입력",
  approved?price:"",review,missing.join(" · ")||"등록값 합산 · 실지급 원가 미검증",
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
- lines.map(l=>(l.nm||"")+": "+(l.unit||"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
+ lines.map(l=>(l.nm||"")+": "+(appliedUnit(l)??"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
  Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||"",v.designer];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
@@ -205,4 +219,3 @@ sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
 defaultApp.database().ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
 defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 })(typeof globalThis!=="undefined"?globalThis:this);
-

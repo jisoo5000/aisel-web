@@ -1,7 +1,8 @@
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v95 (2026-10-04)
+<!-- AISEL 작업지시서 v96 (2026-10-06)
+     [v96] 최초 견적·네고 단가·협상자, 작지별 거래처 검수·수동 상태 메뉴, 공장 샘플 버건디 표시. 기존 저장 잠금·인쇄 영역 보존.
      [v95] PDF 저장/인쇄 시 디자이너 로그인 없이 카페24 판매함·진열안함 등록. v94 화면·저장·한글 입력 보호 보존.
      [v88] 모바일 도구·샘플·컬러 간소화, 4행 카드, 메모 원가 인식, 휴지통 복구.
      [v87] 레퍼런스 추가 버튼, 모바일 연락처·원단 한 줄, 연한 블루 그레이 입력칸, 문서 구역 제목 통일.
@@ -2669,7 +2670,7 @@
   #galleryGrid .gcard-name {font-size:11.5px;line-height:16px;font-weight:700;color:#2F3B52;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;min-width:0;}
   #galleryGrid .gcard-code-row {display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;overflow:hidden;font-size:10px;line-height:16px;color:#7b8594;}
   #galleryGrid .gcard-code-value {min-width:0;overflow:hidden;text-overflow:ellipsis;}
-  #galleryGrid .gcard-sample-pickup {flex:0 0 auto;background:none;color:#7A3048;font-size:10px;font-weight:700;padding:0;border-radius:0;}
+  #galleryGrid .gcard-sample-pickup {flex:0 0 auto;background:#7A3048;color:#fff;font-size:10px;font-weight:700;padding:3px 6px;border:1px solid #7A3048;border-radius:4px;cursor:pointer;white-space:nowrap;}
   #galleryGrid .gcard-colors-row {display:flex;align-items:center;gap:3px;min-width:0;white-space:nowrap;overflow:hidden;font-size:10px;line-height:16px;color:#7b8594;}
   #galleryGrid .gcard-color-chip {flex:0 1 auto;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px;line-height:16px;}
   #galleryGrid .gcard-color-more {flex:0 0 auto;font-size:10px;color:#637089;}
@@ -2798,8 +2799,8 @@
 @media screen {
   #editorView #statusBar { grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; }
   #editorView #statusBar .status-btn { width:100%; min-width:0; white-space:nowrap; padding:6px 2px; }
-  #editorView #sampleRecoverySeg button { height:36px; min-height:36px; border:1px solid #CBD3DF; border-radius:4px; background:#fff; color:#2F3B52; }
-  #editorView #sampleRecoverySeg button.active[data-value="factory"],
+  #editorView #sampleRecoverySeg button { width:68px; min-width:68px; height:36px; min-height:36px; border:1px solid #CBD3DF; border-radius:4px; background:#fff; color:#2F3B52; }
+  #editorView #sampleRecoverySeg button.active[data-value="factory"] { background:#7A3048; border-color:#7A3048; color:#fff; }
   #editorView #sampleRecoverySeg button.active[data-value="returned"] { background:#2F3B52; border-color:#2F3B52; color:#fff; }
   #editorView #productColors #colorPickerToggle { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:60px; min-width:60px; height:36px; min-height:36px; padding:4px 6px; border:1px solid #CBD3DF; border-radius:4px; background:#fff; color:#2F3B52; font-size:12px; line-height:1.2; white-space:nowrap; }
 }
@@ -3120,6 +3121,8 @@
     <div class="editor-mobile-title"><button type="button" id="mobileBackToListBtn" aria-label="목록으로">← 목록</button><strong id="mobileProductName">작업지시서</strong></div>
     <div class="editor-mobile-caption"><span id="mobileProductCode"></span><span id="mobileProductStatus"></span></div>
   </div>
+  <input type="hidden" id="supplierQualityData" value="">
+  <div id="supplierQualityPanel" class="noprint" hidden></div>
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
     <button type="button" class="btn ghost nav-btn" id="backToListBtn">← 목록으로</button>
@@ -3152,6 +3155,7 @@
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn">+ 새 작지</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
+      <button type="button" class="btn ghost nav-btn" id="supplierQualityBtn" aria-expanded="false" aria-controls="supplierQualityPanel">거래처 품질 · 협상</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
@@ -3368,6 +3372,35 @@
       </div>
     </div>
 
+    <section class="noprint negotiation-panel" aria-label="원가 협상 상세">
+      <details><summary>원가 협상 상세 · 최초 견적 / 네고 / 적용 원가</summary>
+        <p>기존 단가·공임·시야게는 보존됩니다. 아래 협상값을 입력한 항목만 적용 단가로 계산합니다. 자재 수량은 완제품 1장당 소요량이며 생산수량이 아닙니다.</p>
+        <input type="hidden" id="costNegotiationData" value="">
+        <input type="hidden" id="costNegotiationLinesData" value="">
+        <div id="negotiationOrphans" role="status"></div>
+        <div id="negotiationLines"></div><div id="negotiationFixed"></div>
+      </details>
+      <p id="costBreakdown"></p>
+      <p id="costConfidence" role="status">추정 원가 · 견적 확인 필요</p>
+    </section>
+    <style>
+      .applied-unit,.applied-fixed{display:none}
+      .has-nego .applied-unit,.has-nego .applied-fixed{display:block;font-size:11px;color:#365976}
+      .has-nego .applied-unit::before,.has-nego .applied-fixed::before{content:"적용 "}
+      @media print{
+        .has-nego .unit,.has-nego #gongim,.has-nego #siyage{display:none!important}
+        .has-nego .applied-unit,.has-nego .applied-fixed{display:block!important;color:#000;font-size:inherit}
+        .has-nego .applied-unit::before,.has-nego .applied-fixed::before{content:""}
+      }
+      .negotiation-panel{border:1px solid #d5dce3;padding:12px;margin:12px 0;background:#f7f9fb;color:#253447}
+      .negotiation-panel summary{cursor:pointer;font-weight:600;padding:8px 0}
+      .negotiation-panel p{font-size:12px;line-height:1.6}
+      .nego-editor{border-top:1px solid #d5dce3;padding:6px 0}
+      .nego-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .nego-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px}
+      .nego-grid input,.nego-grid select{width:100%;min-width:0;box-sizing:border-box;padding:8px;border:1px solid #bdc8d3;border-radius:4px;background:white;color:#253447}
+      @media(max-width:600px){.nego-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    </style>
     <!-- 주의사항 + SIZE: 화면은 세로, 인쇄는 나란히 -->
     <div class="detail2">
       <div class="cell mat">
@@ -3888,6 +3921,278 @@
   <button type="button" class="scroll-fab" id="scrollBottomBtn" title="맨 아래로">▼<span class="scroll-label">맨 아래로</span></button>
 </div>
 
+<script>
+/* Supplier-quality records are additive; no network or historical writes on read. */
+(function(root){
+  'use strict';
+  const STATES={watch:'관찰',caution:'주의',hold:'사용보류',excluded:'제외(대표결정)'};
+  const clean=v=>String(v??'').trim();
+  const copy=v=>JSON.parse(JSON.stringify(v??{}));
+  function number(v){
+    if(typeof v==='boolean'||v===null||v===undefined||clean(v)==='')return null;
+    const raw=clean(v);if(raw.includes(',')&&!/^\d{1,3}(?:,\d{3})+(?:\.\d*)?$/.test(raw))return null;
+    const s=raw.replace(/,/g,'');
+    if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(s))return null;
+    const n=Number(s);return Number.isFinite(n)?n:null;
+  }
+  function validDate(v){const s=clean(v);if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return false;const d=new Date(s+'T00:00:00Z');return !isNaN(d)&&d.toISOString().slice(0,10)===s;}
+  function vendorKey(type,name){return JSON.stringify([clean(type),clean(name)]);}
+  function validate(record){
+    const r=record||{},errors=[];
+    for(const [key,label] of [['id','기록 ID'],['vendor','거래처'],['workOrderId','작지 품번'],['lot','생산/입고 로트'],['inspectionId','검수 식별번호'],['responsible','기록 담당자'],['defectType','불량 유형/사유']])if(!clean(r[key]))errors.push(label+'를 입력하세요');
+    if(!['factory','fabric'].includes(r.vendorType))errors.push('공장 또는 원단처를 선택하세요');
+    if(!['sample','full'].includes(r.scope))errors.push('표본 검수 또는 전수 검수를 선택하세요');
+    if(!['piece','meter','yard'].includes(r.unit))errors.push('검수 단위를 선택하세요');
+    if(r.vendorType==='factory'&&r.unit!=='piece')errors.push('공장 검수는 장/개 단위로 기록하세요');
+    if(!validDate(r.date))errors.push('올바른 검수일을 입력하세요');
+    for(const [key,label] of [['inspected','검수 수량'],['defective','불량 수량'],['production','전체 로트 수량'],['repairCost','실제 수선비'],['lateDays','실제 지연일']]){
+      if(clean(r[key])!==''&&number(r[key])===null)errors.push(label+'는 0 이상의 숫자여야 합니다');
+    }
+    const inspected=number(r.inspected), defective=number(r.defective), production=number(r.production);
+    if(inspected!==null&&defective!==null&&defective>inspected)errors.push('불량 수량은 검수 수량보다 클 수 없습니다');
+    if(production!==null&&inspected!==null&&inspected>production)errors.push('검수 수량은 전체 로트 수량보다 클 수 없습니다');
+    if(r.unit==='piece'&&['inspected','defective','production'].some(k=>number(r[k])!==null&&!Number.isInteger(number(r[k]))))errors.push('장/개 수량은 정수여야 합니다');
+    if(r.scope==='full'&&(inspected===null||production===null||inspected!==production))errors.push('전수 검수는 전체 로트 수량과 같은 검수 수량이 필요합니다');
+    if(clean(r.evidence)&&!/^https:\/\//i.test(clean(r.evidence)))errors.push('증빙은 기존 보관 파일의 HTTPS 링크로 입력하세요');
+    return errors;
+  }
+  function measure(r){
+    const inspected=number(r.inspected),defective=number(r.defective),production=number(r.production);
+    const valid=validate(r).length===0;
+    return {inspected,defective,rate:valid&&inspected>0&&defective!==null?defective/inspected*100:null,
+      scope:r.scope==='full'&&production===inspected?'full':'sample',unit:r.unit,valid};
+  }
+  function inspectionKey(r){return JSON.stringify([r.vendorType,clean(r.vendor),clean(r.workOrderId),clean(r.lot),clean(r.inspectionId)]);}
+  function deduplicate(records){
+    const byId=new Map();for(const r of records||[])if(r&&clean(r.id))byId.set(clean(r.id),r);
+    const byInspection=new Map(),conflicts=[];
+    for(const r of byId.values()){
+      const key=inspectionKey(r),old=byInspection.get(key);
+      if(!old){byInspection.set(key,r);continue;}
+      const fields=['inspected','defective','production','scope','unit'];
+      if(fields.some(k=>clean(old[k])!==clean(r[k])))conflicts.push(key);
+      if(clean(r.updatedAt)>clean(old.updatedAt))byInspection.set(key,r);
+    }
+    const bad=new Set(conflicts);
+    return {records:[...byInspection].filter(([k])=>!bad.has(k)).map(([,v])=>copy(v)),conflicts:[...bad]};
+  }
+  function summarize(records){
+    const unique=deduplicate(records),groups=new Map();
+    for(const r of unique.records){
+      const m=measure(r), key=JSON.stringify([r.vendorType,clean(r.vendor),m.scope,m.unit]);
+      if(!groups.has(key))groups.set(key,{vendorType:r.vendorType,vendor:clean(r.vendor),scope:m.scope,unit:m.unit,records:0,knownRecords:0,inspected:0,defective:0,rate:null});
+      const g=groups.get(key);g.records++;
+      if(m.rate!==null){g.knownRecords++;g.inspected+=m.inspected;g.defective+=m.defective;g.rate=g.defective/g.inspected*100;}
+    }
+    return {groups:[...groups.values()],conflicts:unique.conflicts};
+  }
+  function upsert(records,record){
+    const errors=validate(record);if(errors.length)throw new Error(errors.join('\n'));
+    const others=(records||[]).filter(r=>r.id!==record.id);
+    if(others.some(r=>inspectionKey(r)===inspectionKey(record)))throw new Error('같은 검수 기록이 있습니다. 기존 기록을 수정하세요');
+    return [...others,copy(record)];
+  }
+  function decision(previous,next,confirmed){
+    if(!Object.hasOwn(STATES,next?.status))throw new Error('거래처 상태를 선택하세요');
+    if(!clean(next.reason)||!validDate(next.date)||!clean(next.decidedBy))throw new Error('결정 사유, 결정일, 결정자를 입력하세요');
+    if(next.status==='excluded'&&confirmed!==true)throw new Error('거래처 제외는 대표의 명시적 확인이 필요합니다');
+    return {...copy(previous),status:next.status,reason:clean(next.reason),date:next.date,decidedBy:clean(next.decidedBy)};
+  }
+  function serialize(records,decisions){return JSON.stringify({version:1,records:copy(records||[]),decisions:copy(decisions||{})});}
+  function deserialize(raw){
+    if(!raw)return {version:1,records:[],decisions:{}};
+    const v=typeof raw==='string'?JSON.parse(raw):copy(raw);
+    if(v.version!==1||!Array.isArray(v.records)||!v.decisions||Array.isArray(v.decisions)||typeof v.decisions!=='object')throw new Error('거래처 품질 기록 형식을 확인하세요');
+    return v;
+  }
+  function negotiationSummary(lines,fixed,metadata,worker,api){
+    const rows=(lines||[]).map((l,i)=>({id:'line-'+i,title:l.nm||'원가 항목',value:l.unit,qty:l.qty,meta:l.negotiation||{},fixed:false}));
+    for(const key of ['gongim','siyage'])rows.push({id:key,title:key==='gongim'?'공임':'시야게',value:fixed?.[key],qty:1,meta:metadata?.[key]||{},fixed:true});
+    return rows.map(r=>{const e=api.evaluate(r.value,r.meta,r.qty,r.fixed);return {id:r.id,title:r.title,original:e.original,negotiated:e.negotiated,status:e.status,rate:e.original>0&&e.status==='negotiated'&&e.negotiated!==null?(e.original-e.negotiated)/e.original*100:e.status==='no_discount'&&e.original>0?0:null,negotiator:api.negotiator(r.meta,worker),confirmed:e.complete};});
+  }
+  const api={STATES,number,validDate,vendorKey,validate,measure,inspectionKey,deduplicate,summarize,upsert,decision,serialize,deserialize,negotiationSummary};
+  if(typeof module==='object'&&module.exports)module.exports=api;root.SupplierQuality=api;
+})(typeof window==='object'?window:globalThis);
+
+/* Compact, explicit-save quality editor. Host supplies existing workorder persistence. */
+(function(root){
+  'use strict';
+  function attach(host,options){
+    const q=root.SupplierQuality,d=host.ownerDocument;
+    const node=(tag,text,cls)=>{const e=d.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};
+    const style=node('style');style.textContent='.sq-panel{background:#f8f6f4;border:1px solid #ddd5ce;border-radius:12px;padding:14px;color:#3e3733}.sq-panel h3{margin:4px 0 10px}.sq-note{font-size:12px;color:#736960;line-height:1.6}.sq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px}.sq-grid label{display:flex;flex-direction:column;gap:4px;font-size:12px}.sq-grid input,.sq-grid select{width:100%;min-width:0;box-sizing:border-box;padding:7px;border:1px solid #d8cdc5;border-radius:5px;background:white}.sq-panel button{padding:6px 10px;cursor:pointer;border:1px solid #c7b6a9;border-radius:6px;background:#fffaf6;color:#4f4138}.sq-card{padding:10px 0;border-top:1px solid #e3dad3}.sq-risk{color:#952b4b;font-weight:600}.sq-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.sq-output{white-space:pre-line;font-size:12px;line-height:1.7}.sq-panel summary{cursor:pointer;padding:8px 0;font-weight:600}';host.append(style);
+    const panel=node('section',undefined,'sq-panel');for(const type of ['input','change'])panel.addEventListener(type,e=>e.stopPropagation());host.append(panel);panel.append(node('h3','거래처 품질 · 협상 기록'));
+    panel.append(node('p','현재 작지 기준 · 표본 불량률은 전체 생산 불량률이 아닙니다. 같은 검수는 한 기록으로 수정하며, 불량 수량에는 중복 없는 불량 제품/원단 수량을 입력하세요.','sq-note'));
+    const msg=node('p','','sq-output');msg.setAttribute('role','status');panel.append(msg);
+    let state,editId='',lastRaw=null,activeCode=null,saving=false,draftRevision=0;panel.addEventListener('input',()=>{draftRevision++;});panel.addEventListener('change',()=>{draftRevision++;});
+    const summary=node('div'),list=node('div');panel.append(summary);
+    const details=node('details');details.append(node('summary','검수 기록 추가 / 수정'));panel.append(details);
+    const grid=node('div',undefined,'sq-grid');details.append(grid);const fields={};
+    const specs=[['vendorType','거래처 구분',[['factory','공장'],['fabric','원단처']]],['vendor','거래처명','text'],['product','제품명','text'],['workOrderId','작지 품번','text'],['lot','생산/입고 로트','text'],['inspectionId','검수 식별번호 (동일 검수는 동일 번호)','text'],['responsible','기록 담당자','text'],['date','검수일','date'],['scope','검수 범위',[['sample','표본 검수'],['full','전체 로트 전수 검수']]],['unit','수량 단위',[['piece','장/개'],['meter','미터'],['yard','야드']]],['inspected','검수 수량','decimal'],['defective','중복 없는 불량 수량','decimal'],['production','전체 로트 수량 (확인된 경우)','decimal'],['defectType','불량 유형 / 사유','text'],['evidence','증빙 링크 (기존 보관 파일)','url'],['repairCost','실제 수선비 (원, 확인된 경우)','decimal'],['lateDays','실제 지연일 (확인된 경우)','decimal']];
+    for(const [key,label,type] of specs){const wrap=node('label',label),input=node(Array.isArray(type)?'select':'input');if(Array.isArray(type))for(const [value,text] of type){const o=node('option',text);o.value=value;input.append(o);}else{input.type=type==='decimal'?'text':type;if(type==='decimal')input.inputMode='decimal';}input.dataset.qualityField=key;input.setAttribute('aria-label',label);wrap.append(input);grid.append(wrap);fields[key]=input;}
+    fields.workOrderId.readOnly=true;
+    details.append(node('p','사진은 이미 승인된 보관 위치의 링크만 입력하세요. 이 메뉴는 사진을 업로드하거나 공유 권한을 바꾸지 않습니다. 수선비와 지연일은 실제 확인값만 기록합니다.','sq-note'));
+    const actions=node('div',undefined,'sq-actions'),save=node('button','기록 저장'),cancel=node('button','입력 취소');save.type=cancel.type='button';actions.append(save,cancel);details.append(actions);
+    const decisionDetails=node('details');decisionDetails.append(node('summary','거래처 사용 상태 결정'));panel.append(decisionDetails);const dg=node('div',undefined,'sq-grid');decisionDetails.append(dg);const decisions={};
+    for(const [key,label,values] of [['vendorType','거래처 구분',[['factory','공장'],['fabric','원단처']]],['vendor','거래처명'],['status','사용 상태',Object.entries(q.STATES)],['reason','결정 사유'],['date','결정일'],['decidedBy','결정자']]){const wrap=node('label',label),input=node(values?'select':'input');if(values)for(const [v,t] of values){const o=node('option',t);o.value=v;input.append(o);}else input.type=key==='date'?'date':'text';input.dataset.qualityDecision=key;wrap.append(input);dg.append(wrap);decisions[key]=input;}
+    decisionDetails.append(node('p','이 작지에 기록한 수동 결정입니다. 전체 거래처 발주 차단은 자동 적용되지 않습니다. 제외는 대표가 근거를 확인하고 직접 결정해야 합니다.','sq-note'));
+    const ds=node('button','상태 결정 저장');ds.type='button';decisionDetails.append(ds);panel.append(list);
+    const neg=node('details');neg.append(node('summary','이 작지 협상 요약'));const negList=node('div',undefined,'sq-output');neg.append(negList);panel.append(neg);
+    function today(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Seoul'});}
+    function reset(){draftRevision++;editId='';for(const key in fields)fields[key].value='';fields.vendorType.value='factory';fields.scope.value='sample';fields.unit.value='piece';fields.workOrderId.value=options.workOrderId?.()||'';fields.responsible.value=options.worker?.()||'';fields.date.value=today();}
+    function load(){state=q.deserialize(options.get());return state;}
+    async function persist(next){const code=options.workOrderId?.();const serialized=q.serialize(next.records,next.decisions);options.set(serialized);try{const result=await options.save();if(result===false)throw new Error('저장 확인 필요: 입력값을 유지했습니다. 연결 상태를 확인하고 다시 저장하세요');if(options.workOrderId?.()===code){state=next;lastRaw=serialized;render();msg.textContent='기록을 저장했습니다';}}catch(e){if(options.workOrderId?.()===code){msg.textContent=e.message;}throw e;}}
+    save.addEventListener('click',async()=>{if(saving)return;saving=true;save.disabled=ds.disabled=true;const startedCode=options.workOrderId?.(),startedRevision=draftRevision;try{load();const r=Object.fromEntries(Object.entries(fields).map(([k,v])=>[k,v.value]));if(r.workOrderId!==options.workOrderId?.())throw new Error('작지가 바뀌었습니다. 입력을 취소하고 다시 기록하세요');r.id=editId||('sq-'+(root.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2)));r.updatedAt=new Date().toISOString();const next={...state,records:q.upsert(state.records,r)};editId=r.id;await persist(next);if(options.workOrderId?.()===startedCode&&editId===r.id&&draftRevision===startedRevision)reset();}catch(e){if(options.workOrderId?.()===startedCode)msg.textContent=e.message;}finally{saving=false;save.disabled=ds.disabled=false;}});
+    cancel.addEventListener('click',()=>{reset();details.open=false;msg.textContent='입력을 취소했습니다';});
+    ds.addEventListener('click',async()=>{if(saving)return;saving=true;save.disabled=ds.disabled=true;const startedCode=options.workOrderId?.();try{load();const v=Object.fromEntries(Object.entries(decisions).map(([k,e])=>[k,e.value]));if(!v.vendor.trim())throw new Error('거래처명을 입력하세요');const key=q.vendorKey(v.vendorType,v.vendor);const confirmed=v.status!=='excluded'||root.confirm(v.vendor+'를 이 작지에서 제외 상태로 기록할까요? 대표가 근거를 확인한 결정만 저장하세요. 전체 발주 차단은 자동으로 적용되지 않습니다.');if(!confirmed)return;const result=q.decision(state.decisions[key],v,confirmed);await persist({...state,decisions:{...state.decisions,[key]:result}});}catch(e){if(options.workOrderId?.()===startedCode)msg.textContent=e.message;}finally{saving=false;save.disabled=ds.disabled=false;}});
+    function render(){
+      summary.replaceChildren();list.replaceChildren();const total=q.summarize(state.records);
+      if(total.conflicts.length)summary.append(node('p','중복 검수의 수량이 다릅니다. '+total.conflicts.length+'건은 합산에서 제외했습니다. 원기록을 확인하세요.','sq-risk'));
+      if(!state.records.length)summary.append(node('p','검수 기록 없음 · 과거 불량률을 추정하지 않습니다','sq-note'));
+      for(const g of total.groups){const unit={piece:'장/개',meter:'m',yard:'yd'}[g.unit]||'';summary.append(node('p',g.vendor+' · '+(g.scope==='full'?'전수 검수 불량률':'표본 검수 불량률')+' '+(g.rate===null?'미확인':g.rate.toFixed(1)+'%')+' · 확인 '+(g.knownRecords?g.defective+'/'+g.inspected+' '+unit:'수량 미확인')+' · 수량 확인 '+g.knownRecords+'/'+g.records+'건','sq-output'));}
+      for(const [key,v] of Object.entries(state.decisions)){let identity;try{identity=JSON.parse(key);}catch(_){continue;}summary.append(node('p',identity[1]+' · '+(q.STATES[v.status]||'미확인')+' · '+v.reason+' · '+v.date+' · 결정자 '+v.decidedBy,v.status==='excluded'||v.status==='hold'?'sq-output sq-risk':'sq-output'));}
+      for(const r of state.records){const card=node('div',undefined,'sq-card'),m=q.measure(r);card.append(node('p',(r.vendorType==='fabric'?'원단처':'공장')+' · '+r.vendor+' · '+r.workOrderId+' / '+r.lot+' / '+r.inspectionId,'sq-output'));card.append(node('p',r.date+' · '+(r.product?r.product+' · ':'')+r.defectType+' · '+(r.scope==='full'?'전수':'표본')+' 불량률 '+(m.rate===null?'미확인':m.rate.toFixed(1)+'%')+' · 담당 '+r.responsible,'sq-note'));card.append(node('p','검수 '+(m.inspected===null?'미확인':m.inspected)+' / 불량 '+(m.defective===null?'미확인':m.defective)+' '+({piece:'장/개',meter:'m',yard:'yd'}[r.unit]||'')+' · 실제 수선비 '+(q.number(r.repairCost)===null?'미확인':q.number(r.repairCost).toLocaleString('ko-KR')+'원')+' · 실제 지연 '+(q.number(r.lateDays)===null?'미확인':q.number(r.lateDays)+'일'),'sq-note'));if(r.evidence&&/^https:\/\//i.test(r.evidence)){const a=node('a','증빙 열기');a.href=r.evidence;a.target='_blank';a.rel='noopener noreferrer';card.append(a);}const edit=node('button','기록 수정');edit.type='button';edit.addEventListener('click',()=>{draftRevision++;editId=r.id;for(const key in fields)fields[key].value=r[key]??'';details.open=true;fields.vendor.focus();});card.append(edit);list.append(card);}
+      refreshNegotiations();
+    }
+    function refreshNegotiations(){const rows=options.negotiations?.()||[];negList.textContent=rows.map(r=>r.title+' · 최초 '+(r.original===null?'미기록':r.original.toLocaleString('ko-KR')+'원')+' · 네고 '+(r.negotiated===null?'미기록':r.negotiated.toLocaleString('ko-KR')+'원')+' · '+({negotiated:'네고됨',no_discount:'할인없음',unrecorded:'미기록'}[r.status]||'미기록')+' · 네고율 '+(r.rate===null?'미확인':r.rate.toFixed(1)+'%')+' · '+(r.negotiator.source==='actual'?'실제 협상자 ':'작지 담당자 대리값 ')+(r.negotiator.name||'미기록')).join('\n');
+    }
+    function refresh(force){const code=options.workOrderId?.()||'';if(code!==activeCode){activeCode=code;editId='';lastRaw=null;msg.textContent='';for(const key in decisions)decisions[key].value='';decisions.vendorType.value='factory';decisions.status.value='watch';decisions.date.value=today();force=true;details.open=false;decisionDetails.open=false;}const raw=options.get()||'';if(!force&&raw===lastRaw)return;if(!force&&panel.contains(d.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(d.activeElement.tagName))return;try{load();lastRaw=raw;render();if(!editId)reset();}catch(e){msg.textContent=e.message;}}
+    refresh(true);decisions.date.value=today();return {refresh,refreshNegotiations};
+  }
+  root.SupplierQualityUI={attach};
+})(typeof window==='object'?window:globalThis);
+
+/* Additive negotiation metadata. Never migrates or writes records on read. */
+(function(root){
+  'use strict';
+  const number = value => {
+    if(value === null || value === undefined || String(value).trim() === '') return null;
+    const text=String(value).replace(/,/g,'').trim();
+    if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+    const result=Number(text); return Number.isFinite(result)?result:null;
+  };
+  const clone = value => JSON.parse(JSON.stringify(value || {}));
+  function evaluate(legacy, metadata, quantity, fixed=false){
+    const m=metadata||{}, original=number(m.original), negotiated=number(m.negotiated);
+    const status=['negotiated','no_discount'].includes(m.status)?m.status:'unrecorded';
+    // Legacy fields historically tolerated labels and leading-dot decimals.
+    // Preserve their arithmetic, while strict metadata parsing keeps them unconfirmed.
+    const oldText=String(legacy??'').replace(fixed?/[^0-9]/g:/[^0-9.]/g,'');
+    const oldValue=fixed?parseInt(oldText,10):parseFloat(oldText);
+    const fallback=Number.isFinite(oldValue)?oldValue:null;
+    let applied=status==='negotiated'?(negotiated??original):original;
+    if(applied===null) applied=fallback;
+    const rawQty=number(quantity), oldQty=parseFloat(String(quantity??'').replace(/[^0-9.]/g,''));
+    const qty=fixed?1:(String(quantity??'').trim()===''?1:(Number.isFinite(oldQty)?oldQty:0));
+    const included=m.inclusion==='included';
+    const amount=included?0:(applied===null?null:Math.round(applied*qty));
+    const complete=m.confirmed==='yes' && status!=='unrecorded' && original!==null && applied!==null &&
+      (status!=='negotiated'||negotiated!==null) && (fixed||rawQty!==null) &&
+      ['separate','included'].includes(m.inclusion) && (!included||!!String(m.includedIn||'').trim()) &&
+      (fixed?m.unit==='per_garment':!!m.unit&&['fabric','notions','processing','loss','other'].includes(m.category)) && ['included','excluded','exempt'].includes(m.vat);
+    const saving=status==='unrecorded'||(status==='negotiated'&&negotiated===null)?null:(original!==null&&applied!==null?Math.round((original-applied)*qty):null);
+    return {original,negotiated,applied,quantity:qty,amount,status,complete,included,saving:included?0:saving};
+  }
+  function canonical(value){
+    if(Array.isArray(value))return value.map(canonical);
+    if(value&&typeof value==='object')return Object.fromEntries(Object.keys(value).sort().filter(k=>value[k]!==undefined).map(k=>[k,canonical(value[k])]));
+    return value;
+  }
+  function sameLines(a,b){
+    const normalize=lines=>(lines||[]).map(l=>({...l,nm:String(l.nm??''),unit:String(l.unit??''),qty:String(l.qty??'')}));
+    return JSON.stringify(canonical(normalize(a)))===JSON.stringify(canonical(normalize(b)));
+  }
+  function readMaterialMap(raw){
+    if(!raw)return {version:1,records:{}};
+    const value=typeof raw==='string'?JSON.parse(raw):clone(raw);
+    if(value.version!==1||!value.records||Array.isArray(value.records)||typeof value.records!=='object')throw new Error('자재 협상 보관 형식을 확인하세요');
+    return value;
+  }
+  function binding(line){return {nm:String(line.nm??''),unit:String(line.unit??''),qty:String(line.qty??'')};}
+  function bindingKey(line){return JSON.stringify(binding(line));}
+  function resolveMaterials(lines,raw){
+    const map=readMaterialMap(raw),source=(lines||[]).map(clone),used=new Set(),ids=new Map();
+    source.forEach(l=>{if(l.costLineId)ids.set(l.costLineId,(ids.get(l.costLineId)||0)+1);});
+    source.forEach(line=>{
+      const id=line.costLineId;
+      if(id&&ids.get(id)===1&&Object.hasOwn(map.records,id)){
+        line.negotiation=clone(map.records[id].metadata);used.add(id);
+      }else if(Object.keys(map.records).length){
+        // v95 strips IDs. A matching label/price/quantity cannot prove row identity:
+        // an identical surviving or newly inserted row may be a different material.
+        // Keep the authoritative map untouched and require explicit reconnection.
+        delete line.negotiation;delete line.costLineId;
+      }
+    });
+    return {lines:source,map,orphans:Object.keys(map.records).filter(id=>!used.has(id)).map(id=>({id,...clone(map.records[id])}))};
+  }
+  function captureMaterials(lines,raw,makeId){
+    const map=readMaterialMap(raw),rows=(lines||[]).map(clone),used=new Set();
+    for(const line of rows){
+      if(!line.negotiation)continue;
+      let id=line.costLineId;
+      if(!id||used.has(id)){do{id=makeId();}while(Object.hasOwn(map.records,id)||used.has(id));}
+      used.add(id);line.costLineId=id;
+      map.records[id]={...(map.records[id]||{}),binding:binding(line),metadata:clone(line.negotiation)};
+    }
+    return {lines:rows,map};
+  }
+  function assessment(lines, fixed, metadata){
+    const entries=(lines||[]).map(l=>({result:evaluate(l.unit,l.negotiation,l.qty),meta:l.negotiation||{}}));
+    for(const id of ['gongim','siyage'])entries.push({result:evaluate(fixed?.[id],metadata?.[id],1,true),meta:metadata?.[id]||{}});
+    const vats=new Set(entries.filter(e=>!e.result.included).map(e=>e.meta.vat||''));
+    const groups={fabric:null,notions:null,processing:null,loss:null,other:null,unclassified:null};
+    for(const l of lines||[]){const key=Object.hasOwn(groups,l.negotiation?.category)?l.negotiation.category:'unclassified',value=evaluate(l.unit,l.negotiation,l.qty).amount;if(value!==null)groups[key]=(groups[key]??0)+value;}
+    return {complete:entries.every(e=>e.result.complete)&&vats.size===1,amount:entries.reduce((sum,e)=>sum+(e.result.amount||0),0),groups};
+  }
+  function negotiator(metadata, worker){
+    const actual=String(metadata?.negotiator||'').trim();
+    return actual?{name:actual,source:'actual'}:{name:metadata?.workerProxy||worker||'',source:'worker_proxy'};
+  }
+  function attachEditor(host, options){
+    const details=document.createElement('details'); details.className='nego-editor';
+    const summary=document.createElement('summary');details.append(summary);
+    const grid=document.createElement('div');grid.className='nego-grid';details.append(grid);
+    const controls={};
+    const fields=[...(!options.fixed?[['category','원가 구분',[['','미분류'],['fabric','원단'],['notions','부자재'],['processing','별도 가공'],['loss','로스'],['other','기타']]]]:[]),['original','최초 견적 단가','number'],['negotiated','네고 단가','number'],
+      ['status','네고 상태',[['','미기록'],['negotiated','네고됨'],['no_discount','할인없음']]],
+      ['unit','단위',options.fixed?[['','미확인'],['per_garment','완제품 1장당']]:[['','미확인'],['yard','야드'],['meter','미터'],['piece','개/장'],['per_garment','완제품 1장당']]],
+      ['vat','VAT',[['','미확인'],['included','포함'],['excluded','별도'],['exempt','면세']]],
+      ['inclusion','원가 반영',[['','미확인'],['separate','별도 합산'],['included','다른 항목에 포함']]],
+      ['includedIn','포함된 항목','text'],['confirmed','견적 확정',[['','미확인'],['yes','확정']]],
+      ['negotiator','실제 협상자 (직접 지정)','text']];
+    for(const [key,label,type] of fields){
+      const wrap=document.createElement('label');wrap.textContent=label;
+      const control=document.createElement(Array.isArray(type)?'select':'input');
+      if(Array.isArray(type))for(const [value,text] of type){const option=document.createElement('option');option.value=value;option.textContent=text;control.append(option);}
+      else{control.type='text';if(type==='number')control.inputMode='decimal';}
+      control.dataset.negoField=key;control.value=options.get()?.[key]??'';control.setAttribute('aria-label',label);
+      control.addEventListener('input',()=>{
+        const next=clone(options.get());next[key]=control.value;
+        if(!next.workerProxy)next.workerProxy=options.worker();
+        options.set(next);options.change();refresh();
+      });
+      wrap.append(control);grid.append(wrap);controls[key]=control;
+    }
+    const note=document.createElement('p');note.className='nego-note';details.append(note);
+    function refresh(){
+      const m=options.get()||{}, result=evaluate(options.legacy(),m,options.quantity(),options.fixed);
+      const who=negotiator(m,options.worker()), money=value=>value===null?'미입력':value.toLocaleString('ko-KR')+'원';
+      summary.textContent=options.title()+' · 적용 '+money(result.applied)+' · '+(result.complete?'확정':'추정');
+      note.textContent=(options.fixed?'완제품 1장당':'1장당 소요량 '+(options.quantity()||'미입력 (기존 계산 ×1)'))+' · 반영액 '+money(result.amount)+
+        ' · 절감 '+money(result.saving)+' · '+(who.source==='actual'?'실제 협상자: ':'작지 담당자 기본 대리값: ')+(who.name||'미기록')+
+        (result.included?' · '+(m.includedIn||'포함 항목 미기록')+'에 포함, 중복 합산 제외':'')+
+        ' · 생산수량과 별도 · VAT 별도 금액은 세금 가산 전';
+      for(const key of Object.keys(controls))if(document.activeElement!==controls[key])controls[key].value=m[key]??'';
+    }
+    host.append(details);refresh();return {refresh,remove:()=>details.remove()};
+  }
+  const api={number,evaluate,sameLines,readMaterialMap,resolveMaterials,captureMaterials,assessment,negotiator,attachEditor,clone};
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  root.WorkOrderNegotiation=api;
+})(typeof window==='object'?window:globalThis);
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
@@ -4712,24 +5017,85 @@
 
   // ---------- 원가 라인 ----------
   const linesWrap = $("#costLines");
-  function lineAmt(row){
-    const u = numf(row.querySelector(".unit").value);
-    const qraw = row.querySelector(".qty").value.trim();
-    const q = qraw === "" ? 1 : numf(qraw);          // 수량 비우면 ×1 (예: 로스 1000)
-    const a = Math.round(u * q);
-    row.querySelector(".amt").textContent = comma(a); row.dataset.amt = a;
+  var supplierQualityUI_ = null;
+  function refreshSupplierQuality_(force=false){if(supplierQualityUI_)supplierQualityUI_.refresh(force);}
+  $("#supplierQualityBtn").addEventListener("click",()=>{
+    const host=$("#supplierQualityPanel");host.hidden=!host.hidden;
+    $("#supplierQualityBtn").setAttribute("aria-expanded",String(!host.hidden));
+    if(host.hidden)return;
+    if(!supplierQualityUI_)supplierQualityUI_=window.SupplierQualityUI.attach(host,{
+      get:()=>$("#supplierQualityData").value,set:v=>{$("#supplierQualityData").value=v;},save:()=>save(),
+      workOrderId:()=>currentCode||"",worker:()=>$("#designer").value,
+      negotiations:()=>window.SupplierQuality.negotiationSummary([...linesWrap.querySelectorAll(".line")].map(readCostRow_),{gongim:$("#gongim").value,siyage:$("#siyage").value},fixedNegotiations_(),$("#designer").value,window.WorkOrderNegotiation)
+    });
+    refreshSupplierQuality_(true);
+  });
+  $("#designer").addEventListener("input",()=>{if(supplierQualityUI_)supplierQualityUI_.refreshNegotiations();});
+  const negotiation_ = window.WorkOrderNegotiation;
+  function fixedNegotiations_(){try{return JSON.parse($("#costNegotiationData").value||"{}");}catch(_){return {};}}
+  function fixedCost_(id){return negotiation_.evaluate($("#"+id).value,fixedNegotiations_()[id],1,true);}
+  function totalCost_(){
+    let total=0;linesWrap.querySelectorAll(".line").forEach(r=>total+=Number(r.dataset.amt||0));
+    return total+(fixedCost_("gongim").amount||0)+(fixedCost_("siyage").amount||0);
   }
-  function makeLine(name="", unit="", qty=""){
-    const row = document.createElement("tr");
-    row.className = "line";
-    row.innerHTML = `<td class="nm-cell"><input type="text" class="nm" placeholder="항목" value="${name}"></td>
-      <td><input type="text" class="unit won tnum" inputmode="numeric" placeholder="단가" value="${unit}"></td>
-      <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면1" value="${qty}"></td>
-      <td><span class="amt">0</span></td>
-      <td class="noprint"><button class="del" title="삭제">✕</button></td>`;
-    row.querySelector(".del").addEventListener("click", ()=>{ row.remove(); calc(); autoPrice_(); save(); });
-    row.querySelectorAll("input").forEach(i=> i.addEventListener("input", ()=>{ lineAmt(row); calc(); autoPrice_(); }));
-    linesWrap.appendChild(row); lineAmt(row);
+  function readCostRow_(r){const value={...r.legacyCostRecord_,nm:r.querySelector(".nm").value,unit:r.querySelector(".unit").value,qty:r.querySelector(".qty").value};if(r.negotiation_)value.negotiation=negotiation_.clone(r.negotiation_);return value;}
+  function materialMap_(){return $("#costNegotiationLinesData").value;}
+  function materialId_(){return "cost-"+(window.crypto?.randomUUID?.()||Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));}
+  function captureMaterialMap_(){
+    const rows=[...linesWrap.querySelectorAll(".line")],before=materialMap_();
+    if(!before&&!rows.some(r=>r.negotiation_))return;
+    const captured=negotiation_.captureMaterials(rows.map(readCostRow_),before,materialId_);
+    rows.forEach((row,index)=>{if(captured.lines[index].costLineId)row.legacyCostRecord_.costLineId=captured.lines[index].costLineId;});
+    $("#costNegotiationLinesData").value=JSON.stringify(captured.map);
+  }
+  function materialOrphans_(){return negotiation_.resolveMaterials([...linesWrap.querySelectorAll(".line")].map(readCostRow_),materialMap_()).orphans;}
+  function renderMaterialOrphans_(){
+    const host=$("#negotiationOrphans");let orphans;
+    try{orphans=materialOrphans_();}catch(error){host.textContent=error.message+" · 원본 보존, 저장을 중단하세요";return;}
+    const signature=JSON.stringify([orphans,[...linesWrap.querySelectorAll(".line")].map(readCostRow_)]);
+    if(host.dataset.signature===signature)return;host.dataset.signature=signature;host.replaceChildren();
+    if(!orphans.length)return;
+    const warning=document.createElement("p");warning.textContent="보존된 협상 기록 "+orphans.length+"건이 현재 자재 행과 연결되지 않았습니다. 구버전에서 행 ID가 사라졌거나 중복된 경우 같은 이름·금액이어도 자동 적용하지 않습니다. 내용을 확인해 연결하세요.";host.append(warning);
+    for(const entry of orphans){
+      const item=document.createElement("div"),label=document.createElement("p"),select=document.createElement("select"),button=document.createElement("button");
+      label.textContent=(entry.binding?.nm||"자재")+" · 기존 "+(entry.binding?.unit||"미입력")+" × "+(entry.binding?.qty||"1")+" · 최초 "+(entry.metadata?.original||"미기록")+" · 네고 "+(entry.metadata?.negotiated||"미기록");
+      const empty=document.createElement("option");empty.value="";empty.textContent="연결할 현재 자재 선택";select.append(empty);
+      [...linesWrap.querySelectorAll(".line")].forEach((row,index)=>{if(row.negotiation_)return;const option=document.createElement("option");option.value=String(index);option.textContent=(row.querySelector(".nm").value||"자재")+" · "+row.querySelector(".unit").value+" × "+row.querySelector(".qty").value;select.append(option);});
+      button.type="button";button.textContent="확인 후 연결";button.addEventListener("click",()=>{
+        if(select.value==="")return;const row=[...linesWrap.querySelectorAll(".line")][Number(select.value)];if(!row||row.negotiation_)return;
+        row.legacyCostRecord_.costLineId=entry.id;row.negotiation_=negotiation_.clone(entry.metadata);captureMaterialMap_();lineAmt(row);calc();autoPrice_();save();
+      });item.append(label,select,button);host.append(item);
+    }
+  }
+  const fixedEditors_=[];
+  ["gongim","siyage"].forEach(id=>fixedEditors_.push(negotiation_.attachEditor($("#negotiationFixed"),{
+    fixed:true,title:()=>id==="gongim"?"공임":"시야게",legacy:()=>$("#"+id).value,quantity:()=>1,worker:()=>$("#designer").value,
+    get:()=>fixedNegotiations_()[id],set:value=>{$("#costNegotiationData").value=JSON.stringify({...fixedNegotiations_(),[id]:value});},change:()=>{calc();autoPrice_();save();}
+  })));
+  function lineAmt(row){
+    const result=negotiation_.evaluate(row.querySelector(".unit").value,row.negotiation_,row.querySelector(".qty").value);
+    const a=result.amount||0;
+    row.querySelector(".amt").textContent=comma(a);row.dataset.amt=a;row.dataset.costConfirmed=result.complete?"yes":"";
+    row.classList.toggle("has-nego",!!row.negotiation_);
+    row.querySelector(".applied-unit").textContent=result.included?"포함 (0)":(result.applied===null?"미입력":comma(result.applied));
+    if(row.negotiationEditor_)row.negotiationEditor_.refresh();
+  }
+  function makeLine(name="", unit="", qty="", metadata, record){
+    const row=document.createElement("tr");row.className="line";
+    row.legacyCostRecord_=record?negotiation_.clone(record):{};
+    row.negotiation_=metadata?negotiation_.clone(metadata):null;
+    row.innerHTML=`<td class="nm-cell"><input type="text" class="nm" placeholder="항목"></td>
+      <td><input type="text" class="unit won tnum" inputmode="numeric" placeholder="기존 단가" aria-label="기존 단가 (보존)"><span class="applied-unit" title="적용 단가"></span></td>
+      <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면1" aria-label="완제품 1장당 소요량"></td>
+      <td><span class="amt">0</span></td><td class="noprint"><button class="del" title="삭제">✕</button></td>`;
+    row.querySelector(".nm").value=name;row.querySelector(".unit").value=unit;row.querySelector(".qty").value=qty;
+    row.negotiationEditor_=negotiation_.attachEditor($("#negotiationLines"),{
+      title:()=>row.querySelector(".nm").value||"자재",legacy:()=>row.querySelector(".unit").value,quantity:()=>row.querySelector(".qty").value,
+      worker:()=>$("#designer").value,get:()=>row.negotiation_,set:value=>{row.negotiation_=value;captureMaterialMap_();},change:()=>{lineAmt(row);calc();autoPrice_();save();}
+    });
+    row.querySelector(".del").addEventListener("click",()=>{row.negotiationEditor_.remove();row.remove();calc();autoPrice_();save();});
+    row.querySelectorAll("input").forEach(i=>i.addEventListener("input",()=>{if(row.negotiation_)captureMaterialMap_();lineAmt(row);calc();autoPrice_();}));
+    linesWrap.appendChild(row);lineAmt(row);
   }
   // 샘플 기본 라인 (로스는 수량 비움 = 그대로 1,000)
   [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
@@ -4745,9 +5111,23 @@
 
   // ---------- 계산 (제조원가 + 타겟 판매가) ----------
   function calc(){
-    let sum = 0;
-    linesWrap.querySelectorAll(".line").forEach(r=> sum += Number(r.dataset.amt||0));
-    sum += num($("#gongim").value) + num($("#siyage").value);
+    if(supplierQualityUI_)supplierQualityUI_.refreshNegotiations();
+    const sum=totalCost_();
+    const costRows=[...linesWrap.querySelectorAll(".line")];
+    const vatBases=new Set([...costRows.filter(r=>r.negotiation_?.inclusion!=="included").map(r=>r.negotiation_?.vat||""),...Object.values(fixedNegotiations_()).filter(m=>m.inclusion!=="included").map(m=>m.vat||"")]);
+    const hasOrphans=materialOrphans_().length>0;
+    renderMaterialOrphans_();
+    const complete=!hasOrphans&&costRows.every(r=>r.dataset.costConfirmed==="yes") && fixedCost_("gongim").complete && fixedCost_("siyage").complete && vatBases.size===1;
+    $("#costConfidence").textContent=hasOrphans?"추정 원가 · 보존된 미연결 협상 기록 확인 필요":complete?"확정 견적 합산 · VAT 별도는 세금 가산 전 · 실지급 별도 확인":"추정 원가 · 미확정 항목 또는 단위/VAT 미확인·혼재";
+    const summary=negotiation_.assessment(costRows.map(readCostRow_),{gongim:$("#gongim").value,siyage:$("#siyage").value},fixedNegotiations_());
+    $("#costBreakdown").textContent=Object.entries({fabric:"원단",notions:"부자재",processing:"별도 가공",loss:"로스",other:"기타",unclassified:"미분류"}).map(([key,label])=>label+" "+(summary.groups[key]===null?"미기록":won(summary.groups[key]))).join(" · ")+" · 공임 "+(fixedCost_("gongim").amount===null?"미입력":won(fixedCost_("gongim").amount))+" · 시야게 "+(fixedCost_("siyage").amount===null?"미입력":won(fixedCost_("siyage").amount));
+    fixedEditors_.forEach(editor=>editor.refresh());
+    ["gongim","siyage"].forEach(id=>{
+      const input=$("#"+id);input.parentElement.classList.toggle("has-nego",!!fixedNegotiations_()[id]);
+      let applied=input.parentElement.querySelector(".applied-fixed");
+      if(!applied){applied=document.createElement("span");applied.className="applied-fixed";input.after(applied);}
+      const amount=fixedCost_(id).amount;applied.textContent=amount===null?"미입력":comma(amount);
+    });
     $("#totalView").textContent = won(sum);
     $("#retailCostView").textContent = won(sum);
 
@@ -4832,10 +5212,8 @@
 
   // 원가 편집 시 자동 올림. 수동 확정한 4배수 이상의 가격은 유지합니다.
   function autoPrice_(persist=true){
-    if(loading) return;
-    let cost=0;
-    linesWrap.querySelectorAll(".line").forEach(r=>cost+=Number(r.dataset.amt||0));
-    cost+=num($("#gongim").value)+num($("#siyage").value);
+    if(loading || materialOrphans_().length) return;
+    const cost=totalCost_();
     const r=priceReview_(cost), current=num($("#targetThreshold").value);
     priceException_=null;
     if(priceConfirmed_ && priceSource_ === "manual" && priceAllowed_(current,cost)){
@@ -5083,7 +5461,8 @@
     const lines = [];
     linesWrap.querySelectorAll(".line").forEach(row=>{
       const name = row.querySelector(".nm").value.trim();
-      const unit = row.querySelector(".unit").value.trim();
+      const evaluated=negotiation_.evaluate(row.querySelector(".unit").value,row.negotiation_,row.querySelector(".qty").value);
+      const unit = evaluated.included?"0":(evaluated.applied===null?"":String(evaluated.applied));
       const qty = row.querySelector(".qty").value.trim();
       const amt = row.dataset.amt || "0";
       if(name){
@@ -5231,8 +5610,8 @@
       })(),
       materials: (document.getElementById("materials") ? document.getElementById("materials").value.trim() : ""),
       costDetail: costLinesToText_(costLines),
-      gongim: $("#gongim").value.trim(),
-      siyage: $("#siyage").value.trim(),
+      gongim: fixedCost_("gongim").amount===null?"":String(fixedCost_("gongim").amount),
+      siyage: fixedCost_("siyage").amount===null?"":String(fixedCost_("siyage").amount),
       manufacturingCost: $("#totalView").textContent.trim(),
       fabricExpectedArrivalDate: $("#fabricExpectedArrivalDate").value,
       fabricActualArrivalDate: $("#fabricActualArrivalDate").value,
@@ -5281,8 +5660,8 @@
       detailCopy: st.output || "",
       materials: st.materials || "",
       costDetail: "",
-      gongim: st.gongim || "",
-      siyage: st.siyage || "",
+      gongim: String(negotiation_.evaluate(st.gongim,(()=>{try{return JSON.parse(st.costNegotiationData||"{}").gongim;}catch(_){return {};}})(),1,true).amount??""),
+      siyage: String(negotiation_.evaluate(st.siyage,(()=>{try{return JSON.parse(st.costNegotiationData||"{}").siyage;}catch(_){return {};}})(),1,true).amount??""),
       manufacturingCost: "",
       fabricExpectedArrivalDate: st.fabricExpectedArrivalDate || "",
       fabricActualArrivalDate: st.fabricActualArrivalDate || "",
@@ -5572,7 +5951,7 @@
   window.getEditLog_ = () => editLog_;
   window.setEditLog_ = (v) => { editLog_ = Array.isArray(v) ? v : []; };
 
-  const TXT_IDS = ["yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
+  const TXT_IDS = ["supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
     "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
     "planChecksData","planGrade","planWhy","planCheckCustom",
     "refLink", "refLink2",
@@ -6051,6 +6430,7 @@
     syncFabricFromMemo_();
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
       pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
+    captureMaterialMap_();
     collectMemoCostBindings_();
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
@@ -6059,12 +6439,11 @@
     st.refLink = st.refLinks[0] || "";
     st.refLink2 = st.refLinks[1] || "";
     const priceNum = num(st.targetThreshold), costNum = num($("#totalView").textContent);
-    st.priceConfirmed = !!priceConfirmed_ && ["manual", "auto"].includes(priceSource_)
+    st.priceConfirmed = !materialOrphans_().length && !!priceConfirmed_ && ["manual", "auto"].includes(priceSource_)
       && priceAllowed_(priceNum, costNum);
     st.priceSource = st.priceConfirmed ? priceSource_ : "";
     st.priceException = priceException_ || null;   // 2026-09-20 추가
-    st.lines = [...linesWrap.querySelectorAll(".line")].map(r=>({
-      nm:r.querySelector(".nm").value, unit:r.querySelector(".unit").value, qty:r.querySelector(".qty").value }));
+    st.lines = [...linesWrap.querySelectorAll(".line")].map(readCostRow_);
     // 원본은 작업지시서 편집화면 고화질용, 썸네일은 목록·제품조회 화면 가벼운 용도로 둘 다 저장
     // (원본 저장을 끄고 싶으면 SAVE_ORIGINAL_PHOTO를 false로 바꾸면 됨 — 아래 상수 참고)
     st.p1 = SAVE_ORIGINAL_PHOTO ? (document.querySelector("#ph1 img").getAttribute("src") || "") : "";
@@ -6380,15 +6759,12 @@
       // 2026-08-13 추가: 내용이 지금과 완전히 같으면 표를 다시 만들지 않습니다.
       // 매번 innerHTML을 비우고 다시 그리면 입력칸이 전부 새로 생기면서 화면이 번쩍이고,
       // 마침 그 칸에 포커스가 가 있었다면 입력 중이던 게 끊기기도 합니다.
-      const currentLines = Array.from(linesWrap.querySelectorAll(".line")).map(row=>({
-        nm: row.querySelector(".nm").value,
-        unit: row.querySelector(".unit").value,
-        qty: row.querySelector(".qty").value
-      }));
-      const linesChanged = JSON.stringify(currentLines) !== JSON.stringify(st.lines.map(l=>({ nm:l.nm||"", unit:l.unit||"", qty:l.qty||"" })));
+      const wantedLines=negotiation_.resolveMaterials(st.lines,materialMap_()).lines;
+      const currentLines=[...linesWrap.querySelectorAll(".line")].map(readCostRow_);
+      const linesChanged=!negotiation_.sameLines(currentLines,wantedLines);
       if(linesChanged){
-        linesWrap.innerHTML="";
-        st.lines.forEach(l=> makeLine(l.nm, l.unit, l.qty));
+        linesWrap.innerHTML="";$("#negotiationLines").innerHTML="";
+        wantedLines.forEach(l=>makeLine(l.nm,l.unit,l.qty,l.negotiation,l));
       }
     }
     restoreMemoCostBindings_();
@@ -6431,6 +6807,7 @@
     lastSavedState_ = st;
     syncFabricFromMemo_();
     renderMobileHeader_();
+    refreshSupplierQuality_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
@@ -9000,7 +9377,7 @@
     autoCreatedCode_ = null;
     lastSavedState_ = null;   // 2026-08-25 추가: 새 작지는 비교 기준 없이 처음부터 씁니다
     showEditor();
-    linesWrap.innerHTML="";
+    linesWrap.innerHTML="";$("#negotiationLines").innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";$("#supplierQualityPanel").hidden=true;$("#supplierQualityBtn").setAttribute("aria-expanded","false");
     [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
     $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
@@ -9242,7 +9619,7 @@
         // PDP·판매 상태인데 입력 완료 체크가 안 된 작지는 옆에 표시가 뜹니다.
         const productName=String(st.pumMyeong||"(품명 미정)");
         const names=window.colorNames_?window.colorNames_(st.selectedColors||[]):(Array.isArray(st.selectedColors)?st.selectedColors:[]);
-        const sampleBadge=st.sampleRecoveryStatus==="factory"?'<span class="gcard-sample-pickup" title="공장에 있어 회수가 필요한 원샘플">샘플 수거</span>':"";
+        const sampleBadge=st.sampleRecoveryStatus==="factory"?'<button type="button" class="gcard-sample-pickup" title="원샘플 위치 확인 및 회수 기록 열기" aria-label="공장 보관 원샘플 확인">샘플 수거</button>':"";
         const safeThumb=/^(data:image\/[^,]+,|https?:\/\/|blob:)/i.test(thumb)?thumb:"";
         card.innerHTML=`<div class="gcard-thumb">${safeThumb?`<img loading="lazy" alt="${esc_(productName)}" src="${esc_(safeThumb)}">`:'<span class="empty" aria-label="사진 없음">✎</span>'}</div>
           <div class="gcard-info">
@@ -10267,7 +10644,7 @@
   // 검색 한 글자마다 작지가 저장되고 -> updatedAt이 바뀌고 -> 목록이 통째로 다시 그려져 깜빡였음.
   // 이제 편집화면(#editorView) 안에서 일어난 입력일 때만 자동저장이 걸림.
   function isInsideEditor_(target){
-    return !!(target && target.closest && target.closest("#editorView"));
+    return !!(target && target.closest && target.closest("#editorView") && !target.closest("#supplierQualityPanel"));
   }
   document.addEventListener("input", (e)=>{ if(isInsideEditor_(e.target)) saveSoon(); });
   document.addEventListener("input", updateSampleFieldHighlights_);
@@ -12672,7 +13049,12 @@ let wordsRedrawTimer_ = null;
 const steps=[59000,64000,69000,74000,79000,84000,89000,94000,98000];
 const number=v=>Number(String(v==null?"":v).replace(/[^0-9.]/g,""))||0;
 const filled=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
-function lineAmount(l){return Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
+function lineAmount(l){return root.WorkOrderNegotiation?root.WorkOrderNegotiation.evaluate(l.unit,l.negotiation,l.qty).amount||0:Math.round(number(l.unit)*(filled(l.qty)?number(l.qty):1));}
+function appliedUnit(l){if(root.WorkOrderNegotiation){const r=root.WorkOrderNegotiation.evaluate(l.unit,l.negotiation,l.qty);return r.included?0:r.applied;}return filled(l.unit)?number(l.unit):null;}
+function fixedCosts(v){
+ let meta={};try{meta=JSON.parse(v.costNegotiationData||"{}");}catch(_){}
+ return Object.fromEntries(["gongim","siyage"].map(key=>[key,root.WorkOrderNegotiation?root.WorkOrderNegotiation.evaluate(v[key],meta[key],1,true).amount:(filled(v[key])?number(v[key]):null)]));
+}
 function signature(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return (h>>>0).toString(16);}
 const PREVIEW_VERSION=2,PREVIEW_MAX=480,PREVIEW_BYTES=100*1024;
 const previewSignature=src=>"v"+PREVIEW_VERSION+"-"+signature(src);
@@ -12731,31 +13113,40 @@ function safe(v){
  return String(v).replace(/¦/g,"｜").replace(/,/g,"，").replace(/"/g,"″").replace(/\\/g,"＼").replace(/[\r\n]+/g," ↵ ").slice(0,18000);
 }
 function build(code,v,photo){
- const lines=Array.isArray(v.lines)?v.lines:[],main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
+ const resolved=root.WorkOrderNegotiation?root.WorkOrderNegotiation.resolveMaterials(v.lines||[],v.costNegotiationLinesData):{lines:v.lines||[],orphans:[]};
+ const lines=resolved.lines,main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
  const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc;
- const cost=fc+other+number(v.gongim)+number(v.siyage),target=cost*4;
+ const fixed=fixedCosts(v),cost=fc+other+(fixed.gongim||0)+(fixed.siyage||0),target=cost*4;
  const history=Array.isArray(v.resampleHistory)?v.resampleHistory:[],recent=history[history.length-1]||{};
+ let costComplete=false;
  const missing=[];
- if(!number(main.unit))missing.push("원단 단가 미입력");
+ if(resolved.orphans.length)missing.push("미연결 협상 기록 확인 필요");
+ if(appliedUnit(main)===null)missing.push("원단 단가 미입력");
  if(!filled(main.qty))missing.push("요척 미입력");
- if(!filled(v.gongim))missing.push("공임 미입력");
- if(!filled(v.siyage))missing.push("시야게 미입력");
+ if(fixed.gongim===null)missing.push("공임 미입력");
+ if(fixed.siyage===null)missing.push("시야게 미입력");
+ if(root.WorkOrderNegotiation&&(v.costNegotiationData||lines.some(l=>l.negotiation))){
+  let metadata={};try{metadata=JSON.parse(v.costNegotiationData||"{}");}catch(_){}
+  costComplete=root.WorkOrderNegotiation.assessment(lines,v,metadata).complete;
+  if(!costComplete)missing.push("추정 원가 · 견적/단위/VAT 확인 필요");
+ }
  const price=number(v.targetThreshold),suggested=steps.find(p=>p>=target)||null;
- const approved=!!v.priceConfirmed && price>=target;
- let review=!cost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
+ const approved=!resolved.orphans.length&&!!v.priceConfirmed && price>=target;
+ const hasCost=cost!==0||costComplete;
+ let review=!hasCost?"원가 미입력":missing.length?"원가 미완료":price && price<target?"기존 판매가 재검토":
  !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||""; // Never send an uncompressed original as a failed-preview fallback.
  const status={sampling:"샘플중",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
- v.fabricWidth,v.fabricSwatchNo,number(main.unit)||"",filled(main.qty)?number(main.qty):"",
- filled(main.unit)?fc:"",lines.length?other:"",filled(v.gongim)?number(v.gongim):"",filled(v.siyage)?number(v.siyage):"",
- cost||"",target||"",!cost||missing.length?"":suggested||"직접 입력",
+ v.fabricWidth,v.fabricSwatchNo,appliedUnit(main)??"",filled(main.qty)?number(main.qty):"",
+ appliedUnit(main)!==null?fc:"",lines.length?other:"",fixed.gongim??"",fixed.siyage??"",
+ hasCost?cost:"",hasCost?target:"",!hasCost||missing.length?"":suggested||"직접 입력",
  approved?price:"",review,missing.join(" · ")||"등록값 합산 · 실지급 원가 미검증",
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
- lines.map(l=>(l.nm||"")+": "+(l.unit||"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
+ lines.map(l=>(l.nm||"")+": "+(appliedUnit(l)??"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
  Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||"",v.designer];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
