@@ -169,7 +169,7 @@
   },
   "status": {
     "frontend": "deployed",
-    "frontendDeploymentCommitPrefix": "b0ab23e7",
+    "frontendDeploymentCommitPrefix": "cfdaff1",
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
@@ -1022,7 +1022,7 @@
   },
   "designerScanChange20261007": {
     "date": "2026-10-07",
-    "status": "implemented_tested_pending_publication",
+    "status": "github_pages_live_verified_backup_verified",
     "source": {
       "kind": "direct_user_request",
       "excerpt": "판단 대기·아래로 이동 불능·반품률 부정확. 판매량 높음 반품률 높음처럼 빨간색 파란색 한줄, 접기 제거"
@@ -1056,8 +1056,9 @@
       "priceChecks": 23,
       "printSheetDom": "identical_to_v100",
       "legacyChecks": "v94_print_hash_and_old_print_lock_not_reaccepted; existing_woIndexRoot_woTrashIndexRoot_warnings",
-      "responsive": "pending",
-      "live": "pending"
+      "responsive": "320px_and_768px_no_horizontal_overflow",
+      "live": "10_real_products_inline_no_expansion_record_dialog_denominator_verified",
+      "scroll": "320px_last_row_reached_bottom_control_updated"
     },
     "liveCollectionObservation": {
       "jobStatus": "running",
@@ -1071,7 +1072,22 @@
       "version": "v8",
       "fileName": "aisel-sales-performance_2026-10-07_v8.zip",
       "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-      "status": "pending"
+      "status": "uploaded_name_size_parent_verified",
+      "fileId": "19GtYYySiHkVf7t3Ai-ytceesS3idXgQR",
+      "url": "https://drive.google.com/file/d/19GtYYySiHkVf7t3Ai-ytceesS3idXgQR/view",
+      "bytes": 9342,
+      "sha256": "94b6347a48709a8ec86b4bc9125a5fcbc82c5b5433e24152baa4266b04dadaf2",
+      "shared": false,
+      "sourceCommit": "cfdaff1a84844831a2e58e3c7fa2db07d04ebac8",
+      "files": 2
+    },
+    "deployment": {
+      "canonicalCommit": "a5fa35e5e225f45647f197536760a8ff09fd1946",
+      "publicCommit": "cfdaff1a84844831a2e58e3c7fa2db07d04ebac8",
+      "pagesRunId": 37495988166,
+      "pagesConclusion": "success",
+      "liveHtml": "exact_published_file_match",
+      "existingDesignerUrlPreserved": true
     }
   }
 }
