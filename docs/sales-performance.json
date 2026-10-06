@@ -1,4 +1,16 @@
 {
+  "searchFocusSkyBlueCorrection20261007": {
+    "status": "implemented_validation_pending",
+    "decidedOn": "2026-10-07",
+    "source": "user: change line in image 1 to sky blue in image 2",
+    "target": "#salesView #salesSearchInput:focus",
+    "outline": {"widthPx": 2, "color": "#8DC0FA", "offsetPx": 0},
+    "colorEvidence": "dominant sky-blue pixels in attached image 2 close-button outline; reference match, not iOS original CSS",
+    "supersedes": "previous AI interpretation of product-name selection and detail close navy colors",
+    "restored": ["product-name button active/focus/selection styles", "detail close button navy override"],
+    "preserved": ["toolbar spacing", "refresh alignment", "sales data", "print markup"],
+    "backup": {"version": "v21-sky-focus", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+  },
   "navySelectionAndToolbarImplementation20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
