@@ -17,7 +17,7 @@
     "serverComputesCollectionDate": true,
     "comparisonDays": 7,
     "trendDays": 28,
-    "currentContractStatus": "locally_implemented_live_v2_publish_pending",
+    "currentContractStatus": "deployed_first_live_v2_publish_in_progress",
     "historicalPublishedSummaryDays": 14
   },
   "startApiContract": {
@@ -785,7 +785,7 @@
     "approvedOn": "2026-10-06",
     "approvalSource": "사용자 후속: 해줘",
     "displayName": "상품성과분석",
-    "status": "locally_implemented_rules_published_app_backend_runner_deployment_pending",
+    "status": "deployed_first_live_v2_summary_run_in_progress",
     "schemaVersion": 2,
     "analysisTargets": [
       "new_product",
@@ -813,8 +813,8 @@
     "seasonal30DayContractChanged": false,
     "verification": {
       "localTests": "passed",
-      "deployment": "pending",
-      "liveV2Snapshot": "pending",
+      "deployment": "backend_site_and_public_pages_verified",
+      "liveV2Snapshot": "first_run_in_progress_after_v30_fix",
       "rulesDeployment": "published_console_reload_exact_full_json_match",
       "localBackendTests": 13,
       "backendTypecheck": "passed",
@@ -835,13 +835,37 @@
       "inlineScriptSyntaxCount": 7,
       "preexistingWarnings": "old_printlock_hash_and_woIndexRoot_trash_flicker_warnings_preserved_no_accept",
       "publisherSyncRulesChecks": 173,
-      "rulesUnrelatedPaths": "unchanged"
+      "rulesUnrelatedPaths": "unchanged",
+      "liveOwnerScreen": "v100_verified",
+      "anonymousBoundary": {
+        "root": 401,
+        "current": 401,
+        "daily": 401,
+        "products": 401,
+        "reviews": 401,
+        "existingWorkorderIndexProbe": 200
+      },
+      "backendAdapterBoundaryChecks": 3,
+      "backendAdapterRange": "28_days_allowed_29_days_rejected",
+      "registrationRegressionChecks": 20,
+      "oauthRegressionChecks": 6,
+      "backendProductionBuild": "passed",
+      "frontendCoherencyFollowup": "implementation_in_progress"
     },
     "backup": {
       "version": "v7",
       "fileName": "aisel-sales-performance_2026-10-07_v7.zip",
       "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-      "status": "pending"
+      "status": "upload_and_download_checksum_verified",
+      "fileId": "1zi3em7QnvK4ZmkpNGjDDYM7u2_W_qguj",
+      "url": "https://drive.google.com/file/d/1zi3em7QnvK4ZmkpNGjDDYM7u2_W_qguj/view",
+      "files": 2,
+      "bytes": 8307,
+      "sha256": "2a12c38c7e8b0c0ce6f691b9f306f3684636b8c9c2dd6f60c4407c606da435b8",
+      "md5": "176853b570878ac6d7a8e62a9cec4a2c",
+      "shared": false,
+      "sourceCommit": "4292e776283a45615b0233cc7e61984083ec3a3f",
+      "installedCopy": "not_present_not_newly_installed"
     },
     "implementedSnapshotContract": {
       "rootFieldsAdded": [
@@ -954,6 +978,45 @@
         "minutes": 73
       },
       "timeoutTest": "120_minutes"
+    },
+    "deployment": {
+      "canonicalToolsCommit": "4dacaf50465b5feac85f657138fc8c5665289442",
+      "publicWebCommit": "53ff25651635d4d8a9005e3100dc652860ac85a2",
+      "canonicalReviewFixCommit": "d3d49c4746ec71a01bdb6cd579d3c0fb9e5edee7",
+      "pagesRunId": 37489061687,
+      "pagesConclusion": "success",
+      "backendSourceCommit": "e69724db1133dc70d62ceba31cfd3315d234b4fa",
+      "backendVersion": 30,
+      "backendDeploymentId": "appgdep_6ac514c56b7c8191a18ded7c3b49e908",
+      "backendStatus": "succeeded",
+      "existingUrlsPreserved": true,
+      "firstV2RunId": 37486605185,
+      "firstV2RunStatus": "in_progress_same_run",
+      "backendVersionId": "appgprj_6abf60c69a24819184b42be754e53602~appgver_520db89a327881918997e2b120e389bb",
+      "backendDeployedAt": "2026-10-06T15:33:39.742660Z"
+    },
+    "backendDeploymentHistory": [
+      {
+        "backendSourceCommit": "c00d1692159eecd5759ce0ea8eae8d65e0dfb30f",
+        "backendVersion": 29,
+        "backendDeploymentId": "appgdep_6ac5115598c881919d1698512162807b",
+        "backendStatus": "succeeded",
+        "status": "superseded_by_v30",
+        "reason": "existing_cafe24_adapter_14_day_guard_blocked_28_day_collection",
+        "firstV2PublishVerified": false
+      }
+    ],
+    "liveProgressObservation": {
+      "observedAt": "2026-10-07T00:39:53+09:00",
+      "source": "parent_authenticated_live_job_readback",
+      "runId": 37486605185,
+      "sameJob": true,
+      "revision": 58,
+      "error": null,
+      "processed": 260,
+      "expected": 2956,
+      "retryScheduled": false,
+      "interpretation": "v30_real_order_processing_progress_not_publish_completion"
     }
   }
 }
