@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "project": "aisel-sales-performance",
-  "release": "v103",
+  "release": "v104",
   "asOfDate": "2026-10-07",
   "timeZone": "Asia/Seoul",
   "purpose": "디자이너가 목록에서 실제 순판매량과 기간 주문 반품률을 바로 비교",
@@ -1213,6 +1213,37 @@
       "verifiedPagesRun": 37501605009,
       "verifiedSourceCommit": "21903b3c1e5f96a4cf8b7bbcca3e8fbd1640b14b",
       "live": "16px right scrollbar visible on supplied new live tab"
+    }
+  },
+  "persistentScrollAndPartialQuantity20261007": {
+    "authority": "사용자: 스크롤바 안 나와; 렌이 맨 위로 가야 함",
+    "status": "deployed_verified_existing_user_tab",
+    "scroll": "persistent DOM scrollbar independent of native visibility; pointer drag, track click, wheel, keyboard; native fallback before script initialization; print excluded",
+    "quantity": "verified current-period daily quantity lower bound for v2 products with unproven full net quantity; do not replace unknown claims with zero; sort by verified quantities and mark provisional",
+    "rank": "hide exact overall ranks until all selling-product quantities verified; Ren not manually pinned",
+    "verification": {
+      "liveFirstProduct": "AS-26F-KT-018",
+      "liveText": "판매 최소 55장 · 확인 중",
+      "sameExistingTabDrag": {
+        "scrollY": 280,
+        "scrollMax": 280,
+        "lastRowBottom": 840.6875,
+        "viewportHeight": 911
+      },
+      "sourceCommit": "d6b80b477afdd10581605fb08ed2d3875f41b6fe",
+      "pagesRun": 37502934977,
+      "conclusion": "success",
+      "pureTests": "partial sum / duplicate day / coverage guard / return unknown / script syntax passed"
+    },
+    "remaining": "claim reconciliation still unresolved; complete net quantity and return ratio not repaired by UI",
+    "previousFixSuperseded": "v102/v103 screenshots of new tabs did not establish existing-tab scrollbar restoration",
+    "backup": {
+      "version": "v13",
+      "status": "uploaded_name_size_parent_verified",
+      "fileId": "1Ivruf18eP7aUMqMYOg1NfOjvIO1FwI48",
+      "bytes": 10338,
+      "sha256": "0f5f7a62014884553aa5c5cbd3cac735e0db6983c020c442a0ecebe45827f84f",
+      "shared": false
     }
   }
 }
