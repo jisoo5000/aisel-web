@@ -1,6 +1,6 @@
 {
   "fixedSortControlSimplificationPlan20261007": {
-    "status": "implemented_verification_pending",
+    "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "latest user code approval following confirmed remove-sort, wider-search, unchanged-refresh plan",
     "canonicalPath": "docs/sales-performance.md",
@@ -14,7 +14,9 @@
     "implementation": "two scoped CSS changes: hide legacy select visually and make toolbar one column; retain select DOM for existing handlers",
     "preservation": "all scripts and HTML outside embedded style block unchanged",
     "previousStatus": "confirmed planning only until subsequent user code instruction",
-    "backup": {"version": "v23-sort-removal", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+    "validation": {"viewportWidthsPx": [320, 390, 1280], "visibleSortRemoved": true, "searchFullWidth": true, "searchGrowthPx": 96, "refreshPositionAndSizeUnchanged": true, "tablePositionAndContentAndOrderUnchanged": true, "horizontalOverflow": false, "allScriptsAndOtherHtml": "identical to pre-change source", "iphoneSafari": "not directly tested"},
+    "deployment": {"commit": "6473df6fb897b4cc08c0e20ccbdc3dc35f23890d", "pagesRun": 37518219343, "status": "success", "proof": "sales-search-expanded.png"},
+    "backup": {"version": "v23-sort-removal", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileId": "1R-ra-Kc2_ShZfcQVe0qYOwOv0UcAvXwy", "fileName": "aisel-sales-performance_2026-10-07_v23-sort-removal.zip", "sizeBytes": 13893, "sha256": "69598988049F1E9FA8440396F66DA5D16FF5F64830C4D8AB8CBAB9D60A23035C", "sourceCommit": "6473df6fb897b4cc08c0e20ccbdc3dc35f23890d"}
   },
   "fourColumnAndButtonTextImplementation20261007": {
     "status": "deployed_live_verified",
