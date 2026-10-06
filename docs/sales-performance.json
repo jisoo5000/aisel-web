@@ -1,10 +1,33 @@
 {
+  "fourColumnAndRefreshIconPlan20261007": {
+    "status": "planning_only_code_prohibited",
+    "decidedOn": "2026-10-07",
+    "source": "user clarified blue area means designer/factory/sales/returns columns; asks refresh emoji and AISEL color",
+    "canonicalPath": "docs/sales-performance.md",
+    "confirmed": ["target is four table columns, not metadata row", "planning only; code prohibited"],
+    "observedSourceStyles": {"sortFontPx": 13, "refreshFontPx": 12, "declaredTextColorBoth": "#2F3B52", "sortDisabled": true, "renderDifference": "native disabled select appearance may differ; not live measured this turn"},
+    "proposed": {
+      "fourColumns": ["designer", "factory", "sales share", "returns"],
+      "columnWidths": "equal within four-column group", "headerAndBody": "same boundaries; center horizontally and vertically",
+      "desktopColumnWidthPx": 72, "desktopGapPx": 8,
+      "mobileColumnWidthPx": 44, "mobileGapPx": 4,
+      "rankAndName": "left aligned; name uses remaining width",
+      "refresh": "monochrome rotating-arrow icon instead of text", "iconColor": "#2F3B52", "iconSizePx": 18,
+      "iconAccessibleName": "새로고침", "nativeEmojiColor": "platform controlled; use a monochrome icon to match AISEL navy",
+      "buttonBoxPx": {"width": 88, "height": 40}, "sortFontPx": 13,
+      "buttonTreatment": "matching white background, border and right edge"
+    },
+    "implementationChanged": false,
+    "supersedes": "AI metadata-target misunderstanding; replaces previous 32px refresh height proposal only in planning",
+    "backupPolicy": "minor planning correction; retain existing full v21 recovery ZIP"
+  },
   "metadataTableSpacingRefinementPlan20261007": {
     "status": "planning_only_code_prohibited",
     "decidedOn": "2026-10-07",
     "source": "user annotated screenshot: blue area spacing and alignment looks crooked; planning only",
     "canonicalPath": "docs/sales-performance.md",
-    "confirmed": ["refine metadata-to-table visual alignment", "do not change code"],
+    "confirmed": ["do not change code"],
+    "interpretationCorrection": "metadata target was an AI misunderstanding; latest user clarified four table columns",
     "proposed": {
       "rightColumnPx": 88, "pagePaddingPx": 16, "controlGapPx": 8,
       "metadataRowAndRefreshHeightPx": 32, "metadataToTableGapPx": 12,
