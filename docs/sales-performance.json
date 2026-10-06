@@ -1,6 +1,6 @@
 {
   "searchFocusSkyBlueCorrection20261007": {
-    "status": "implemented_validation_pending",
+    "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "user: change line in image 1 to sky blue in image 2",
     "target": "#salesView #salesSearchInput:focus",
@@ -9,7 +9,9 @@
     "supersedes": "previous AI interpretation of product-name selection and detail close navy colors",
     "restored": ["product-name button active/focus/selection styles", "detail close button navy override"],
     "preserved": ["toolbar spacing", "refresh alignment", "sales data", "print markup"],
-    "backup": {"version": "v21-sky-focus", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
+    "validation": {"liveMobileWidthPx": 390, "focusOutlineColor": "rgb(141, 192, 250)", "focusOutlineWidth": "2px", "horizontalOverflow": false, "scriptsAndPrintMarkup": "unchanged", "proof": "sales-search-sky-focus.png", "iphoneSafari": "not directly tested"},
+    "deployment": {"commit": "1592ecaa50547d3217590f86070d387bd964765a", "pagesRun": 37514776306, "status": "success"},
+    "backup": {"version": "v21-sky-focus", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileId": "16KxhvgkE1BI6xoXu66mLb-RXJb73uLU4", "fileName": "aisel-sales-performance_2026-10-07_v21-sky-focus.zip", "sizeBytes": 13092, "sha256": "2ECD5CFAA4387CF44A91F18909DC98B9D9DA59AB7DBF289B92CC8806D4FB3F60", "sourceCommit": "1592ecaa50547d3217590f86070d387bd964765a"}
   },
   "navySelectionAndToolbarImplementation20261007": {
     "status": "deployed_live_verified",
