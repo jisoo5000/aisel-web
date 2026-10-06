@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v107 (2026-10-07)
+<!-- AISEL 작업지시서 v108 (2026-10-07)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
@@ -3416,6 +3416,7 @@
           <div class="sec-title sheet-section-title">원가계산서</div>
           <div class="lines-scroll">
             <table class="cost-table">
+              <colgroup><col class="cost-col-name"><col class="cost-col-unit"><col class="cost-col-qty"><col class="cost-col-amount"><col class="cost-col-delete noprint"></colgroup>
               <thead>
                 <tr><th class="h-nm">항목</th><th>단가</th><th>수량</th><th class="h-amt">금액</th><th class="noprint" style="width:22px"></th></tr>
               </thead>
@@ -3434,6 +3435,9 @@
               <span class="k">시야게</span>
               <input class="won tnum" id="siyage" type="text" inputmode="numeric" value="1,200" />
               <div class="nego-fixed noprint" id="siyageNegotiation"></div>
+            </div>
+            <div class="fixed-row fixed-loss-row">
+              <span class="k">로스</span><span class="fixed-loss-value tnum">1,000원</span>
             </div>
             <div class="total-row">
               <span class="k">제조원가</span>
@@ -3465,6 +3469,26 @@
       .nego-fixed .cost-pair{height:29px;padding:0}
       #sheet #costCell .nego-fixed .cost-pair input{height:29px;font-size:11px}
       #sheet #costCell .nego-fixed .cost-pair input::placeholder{font-size:10px;letter-spacing:-.4px}
+      #sheet #costCell .cost-table{width:100%;min-width:0;table-layout:fixed}
+      #sheet #costCell .cost-col-name{width:23%}
+      #sheet #costCell .cost-col-unit{width:42%}
+      #sheet #costCell .cost-col-qty{width:10%}
+      #sheet #costCell .cost-col-amount{width:19%}
+      #sheet #costCell .cost-col-delete{width:6%}
+      #sheet #costCell .cost-table th.noprint,#sheet #costCell .cost-table td.noprint{width:auto!important}
+      #sheet #costCell .cost-table input{box-sizing:border-box}
+      #sheet #costCell .cost-table .del{box-sizing:border-box;width:100%;padding:3px 0}
+      #sheet #costCell .cost-table .qty{box-sizing:border-box;padding:5px 1px}
+      #sheet #costCell .cost-table .qty::placeholder{font-size:8px;letter-spacing:-.5px;font-weight:400}
+      #sheet #costCell .cost-table .amt{padding:5px 3px;text-align:right;overflow-wrap:normal;white-space:nowrap}
+      #sheet #costCell .cost-pair input{font-size:12px}
+      #sheet #costCell .cost-table tr[hidden]{display:none!important}
+      #sheet #costCell .fixed-loss-value{text-align:right;padding:6px 8px;font-size:12.5px;font-weight:700}
+      @media screen and (max-width:360px){
+        #sheet #costCell .cost-col-name{width:19%}
+        #sheet #costCell .cost-col-unit{width:50%}
+        #sheet #costCell .cost-col-amount{width:15%}
+      }
       .nego-dialog{width:min(460px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #bdc8d3;border-radius:8px;padding:16px;color:#253447;background:white;max-height:85vh;overflow:auto}
       .nego-dialog::backdrop{background:rgba(20,30,45,.3)}
       .nego-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;font-size:13px}
@@ -4401,13 +4425,18 @@
     }
     return {lines:rows,map};
   }
+  const FIXED_LOSS=1000;
+  function isFixedLossLine(line){
+    return line?.negotiation?.category==='loss'||/^(?:로스|로스분)(?:\s*\([^)]*\))?$/.test(String(line?.nm||'').trim());
+  }
   function assessment(lines, fixed, metadata){
+    lines=(lines||[]).filter(line=>!isFixedLossLine(line));
     const entries=(lines||[]).map(l=>({result:evaluate(l.unit,l.negotiation,l.qty),meta:l.negotiation||{}}));
     for(const id of ['gongim','siyage'])entries.push({result:evaluate(fixed?.[id],metadata?.[id],1,true),meta:metadata?.[id]||{}});
     const vats=new Set(entries.filter(e=>!e.result.included).map(e=>e.meta.vat||''));
-    const groups={fabric:null,notions:null,processing:null,loss:null,other:null,unclassified:null};
+    const groups={fabric:null,notions:null,processing:null,loss:FIXED_LOSS,other:null,unclassified:null};
     for(const l of lines||[]){const key=Object.hasOwn(groups,l.negotiation?.category)?l.negotiation.category:'unclassified',value=evaluate(l.unit,l.negotiation,l.qty).amount;if(value!==null)groups[key]=(groups[key]??0)+value;}
-    return {complete:entries.every(e=>e.result.complete)&&vats.size===1,amount:entries.reduce((sum,e)=>sum+(e.result.amount||0),0),groups};
+    return {complete:entries.every(e=>e.result.complete)&&vats.size===1,amount:entries.reduce((sum,e)=>sum+(e.result.amount||0),FIXED_LOSS),groups};
   }
   function negotiator(metadata, worker){
     const actual=String(metadata?.negotiator||'').trim();
@@ -4471,7 +4500,7 @@
     host.append(editor);document.body.append(dialog);refresh();
     return {refresh,openDetails:()=>{refresh();dialog.showModal();},remove:()=>{dialog.remove();editor.remove();}};
   }
-  const api={number,evaluate,sameLines,readMaterialMap,resolveMaterials,captureMaterials,assessment,negotiator,attachEditor,clone};
+  const api={FIXED_LOSS,isFixedLossLine,number,evaluate,sameLines,readMaterialMap,resolveMaterials,captureMaterials,assessment,negotiator,attachEditor,clone};
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.WorkOrderNegotiation=api;
 })(typeof window==='object'?window:globalThis);
@@ -5306,7 +5335,7 @@
   function fixedCost_(id){return negotiation_.evaluate($("#"+id).value,fixedNegotiations_()[id],1,true);}
   function totalCost_(){
     let total=0;linesWrap.querySelectorAll(".line").forEach(r=>total+=Number(r.dataset.amt||0));
-    return total+(fixedCost_("gongim").amount||0)+(fixedCost_("siyage").amount||0);
+    return total+(fixedCost_("gongim").amount||0)+(fixedCost_("siyage").amount||0)+negotiation_.FIXED_LOSS;
   }
   function readCostRow_(r){const value={...r.legacyCostRecord_,nm:r.querySelector(".nm").value,unit:r.querySelector(".unit").value,qty:r.querySelector(".qty").value};if(r.negotiation_)value.negotiation=negotiation_.clone(r.negotiation_);return value;}
   function materialMap_(){return $("#costNegotiationLinesData").value;}
@@ -5344,8 +5373,11 @@
   })));
   function lineAmt(row){
     const result=negotiation_.evaluate(row.querySelector(".unit").value,row.negotiation_,row.querySelector(".qty").value);
-    const a=result.amount||0;
-    row.querySelector(".amt").textContent=comma(a);row.dataset.amt=a;row.dataset.costConfirmed=result.complete?"yes":"";
+    // Keep legacy loss records and stable IDs for save/reopen; apply the fixed loss once.
+    const legacyLoss=negotiation_.isFixedLossLine(readCostRow_(row));
+    row.hidden=legacyLoss;
+    const a=legacyLoss?0:(result.amount||0);
+    row.querySelector(".amt").textContent=comma(a);row.dataset.amt=a;row.dataset.costConfirmed=legacyLoss||result.complete?"yes":"";
     row.classList.toggle("has-nego",!!row.negotiation_);
     row.querySelector(".applied-unit").textContent=result.included?"포함 (0)":(result.applied===null?"미입력":comma(result.applied));
     if(row.negotiationEditor_)row.negotiationEditor_.refresh();
@@ -5356,7 +5388,7 @@
     row.negotiation_=metadata?negotiation_.clone(metadata):null;
     row.innerHTML=`<td class="nm-cell"><input type="text" class="nm" placeholder="항목"></td>
       <td><input type="text" class="unit won tnum" inputmode="numeric" placeholder="기존 단가" aria-label="기존 단가 (보존)"><span class="applied-unit" title="적용 단가"></span><div class="nego-material noprint"></div></td>
-      <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면1" aria-label="완제품 1장당 소요량"></td>
+      <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면 1" aria-label="완제품 1장당 소요량"></td>
       <td><span class="amt">0</span></td><td class="noprint"><button class="del" title="삭제">✕</button></td>`;
     row.querySelector(".nm").value=name;row.querySelector(".unit").value=unit;row.querySelector(".qty").value=qty;
     row.negotiationEditor_=negotiation_.attachEditor(row.querySelector(".nego-material"),{
@@ -5367,8 +5399,8 @@
     row.querySelectorAll(".nm,.unit,.qty").forEach(i=>i.addEventListener("input",()=>{if(row.negotiation_)captureMaterialMap_();lineAmt(row);calc();autoPrice_();}));
     linesWrap.appendChild(row);lineAmt(row);
   }
-  // 샘플 기본 라인 (로스는 수량 비움 = 그대로 1,000)
-  [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
+  // 로스 1,000원은 공임·시야게 아래의 고정 비용으로 한 번만 합산합니다.
+  [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
   $("#addLine").addEventListener("click", ()=>{ makeLine(); calc(); autoPrice_(); save(); });
 
   // 단가/공임/시야게 자동 콤마 (.won)
@@ -5382,7 +5414,7 @@
   // ---------- 계산 (제조원가 + 타겟 판매가) ----------
   function calc(){
     const sum=totalCost_();
-    const costRows=[...linesWrap.querySelectorAll(".line")];
+    const costRows=[...linesWrap.querySelectorAll(".line")].filter(row=>!negotiation_.isFixedLossLine(readCostRow_(row)));
     const vatBases=new Set([...costRows.filter(r=>r.negotiation_?.inclusion!=="included").map(r=>r.negotiation_?.vat||""),...Object.values(fixedNegotiations_()).filter(m=>m.inclusion!=="included").map(m=>m.vat||"")]);
     const hasOrphans=materialOrphans_().length>0;
     renderMaterialOrphans_();
@@ -5729,6 +5761,7 @@
   function collectCostLines_(){
     const lines = [];
     linesWrap.querySelectorAll(".line").forEach(row=>{
+      if(negotiation_.isFixedLossLine(readCostRow_(row)))return;
       const name = row.querySelector(".nm").value.trim();
       const evaluated=negotiation_.evaluate(row.querySelector(".unit").value,row.negotiation_,row.querySelector(".qty").value);
       const unit = evaluated.included?"0":(evaluated.applied===null?"":String(evaluated.applied));
@@ -5738,6 +5771,7 @@
         lines.push({ name: name, unit: unit, qty: qty || "1", amt: amt });
       }
     });
+    lines.push({name:"로스",unit:String(negotiation_.FIXED_LOSS),qty:"1",amt:String(negotiation_.FIXED_LOSS)});
     return lines;
   }
 
@@ -9646,7 +9680,7 @@
     lastSavedState_ = null;   // 2026-08-25 추가: 새 작지는 비교 기준 없이 처음부터 씁니다
     showEditor();
     linesWrap.querySelectorAll(".line").forEach(row=>row.negotiationEditor_?.remove());linesWrap.innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";
-    [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""],["로스","1,000",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
+    [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
     $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
     // 2026-08-21 추가: 품명 칸이 빠져 있어서 새 작지를 만들어도 직전 작지 품명이 그대로 남아 있었습니다.
@@ -13415,8 +13449,8 @@ function safe(v){
 }
 function build(code,v,photo){
  const resolved=root.WorkOrderNegotiation?root.WorkOrderNegotiation.resolveMaterials(v.lines||[],v.costNegotiationLinesData):{lines:v.lines||[],orphans:[]};
- const lines=resolved.lines,main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
- const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc;
+ const lines=resolved.lines.filter(l=>!root.WorkOrderNegotiation?.isFixedLossLine(l)),main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
+ const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc+(root.WorkOrderNegotiation?.FIXED_LOSS||1000);
  const fixed=fixedCosts(v),cost=fc+other+(fixed.gongim||0)+(fixed.siyage||0),target=cost*4;
  const history=Array.isArray(v.resampleHistory)?v.resampleHistory:[],recent=history[history.length-1]||{};
  let costComplete=false;
@@ -13442,12 +13476,12 @@ function build(code,v,photo){
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,appliedUnit(main)??"",filled(main.qty)?number(main.qty):"",
- appliedUnit(main)!==null?fc:"",lines.length?other:"",fixed.gongim??"",fixed.siyage??"",
+ appliedUnit(main)!==null?fc:"",other,fixed.gongim??"",fixed.siyage??"",
  hasCost?cost:"",hasCost?target:"",!hasCost||missing.length?"":suggested||"직접 입력",
  approved?price:"",review,missing.join(" · ")||"등록값 합산 · 실지급 원가 미검증",
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
  "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
- lines.map(l=>(l.nm||"")+": "+(appliedUnit(l)??"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
+ [...lines.map(l=>(l.nm||"")+": "+(appliedUnit(l)??"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)),"로스: 1,000원 고정"].join("\n"),
  Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||"",v.designer];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
