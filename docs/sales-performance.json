@@ -169,7 +169,7 @@
   },
   "status": {
     "frontend": "deployed",
-    "frontendDeploymentCommitPrefix": "cfdaff1",
+    "frontendDeploymentCommitPrefix": "665b0f3",
     "ownerGoogleLogin": "verified",
     "protectedSummaryRules": "deployed",
     "machineIdentity": "created",
@@ -1106,13 +1106,29 @@
     "verification": {
       "localVisibleScrollbarPixels": 15,
       "browser": "verified_visible_right_track",
-      "live": "pending"
+      "live": "v102_html_exact_match_real_document_scroll_last_product_verified",
+      "mobile": "320px_no_signal_overflow_last_product_reached",
+      "print": "sheet_DOM_identical_to_v101",
+      "screenGroups": 9,
+      "inlineScripts": 7
     },
     "backup": {
       "version": "v9",
       "fileName": "aisel-sales-performance_2026-10-07_v9.zip",
       "driveFolderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
-      "status": "pending"
+      "status": "uploaded_name_size_parent_verified",
+      "fileId": "1AJqaKIFKsUWgOEdvAkzrPeix7cT90cPG",
+      "bytes": 9606,
+      "sha256": "d4994ddc80a6e4091c5df3cbef6c07dcc70eb7fbbd72d5ffc26e61339f1ca5bb",
+      "shared": false,
+      "files": 2,
+      "sourceCommit": "665b0f33acbc54e4cbcd033223ed03096b8cc3cd"
+    },
+    "deployment": {
+      "canonicalCommit": "8f47848d7f667f3446586744409a64a8efefb558",
+      "publicCommit": "665b0f33acbc54e4cbcd033223ed03096b8cc3cd",
+      "pagesRunId": 37497190260,
+      "conclusion": "success"
     }
   }
 }
