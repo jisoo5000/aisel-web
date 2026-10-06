@@ -1,17 +1,20 @@
 {
   "fixedSortControlSimplificationPlan20261007": {
-    "status": "planning_only_code_prohibited",
+    "status": "implemented_verification_pending",
     "decidedOn": "2026-10-07",
-    "source": "latest user: remove sales-sort control, retain refresh below product-name search, widen search, preserve quantity order; planning only",
+    "source": "latest user code approval following confirmed remove-sort, wider-search, unchanged-refresh plan",
     "canonicalPath": "docs/sales-performance.md",
-    "currentFacts": {"buttonSizeBothPx": {"width": 88, "height": 40}, "fontSizeBothPx": 13, "sortOptions": ["quantity"], "sortDisabled": true, "reason": "sheet view uses fixed quantity-descending order; old select remains"},
-    "confirmed": ["planning only; no code changes", "remove visible sales-sort control", "keep refresh at its current position below product-name search", "expand search into freed sort space", "retain sales-quantity descending order", "preserve everything else"],
+    "beforeImplementationFacts": {"buttonSizeBothPx": {"width": 88, "height": 40}, "fontSizeBothPx": 13, "sortOptions": ["quantity"], "sortDisabled": true, "reason": "sheet view uses fixed quantity-descending order; old select remains"},
+    "confirmed": ["code implementation approved", "remove visible sales-sort control", "keep refresh at its current position below product-name search", "expand search into freed sort space", "retain sales-quantity descending order", "preserve everything else"],
     "layout": {"search": "full available toolbar width after sort removal; no empty reserved sort column", "refreshPlacement": "unchanged below search in metadata row", "refreshLabel": "새로고침", "sorting": "keep quantity descending; same-quantity shared ranks", "periodAndReadTime": "retain below search", "buttonStyle": "retain existing navy 88x40 and 13px"},
     "supersededProposal": "move refresh beside search; latest user says retain current below-search position",
     "sortVerification": {"source": "scripts/sheet-sales-adapter.js", "method": "b.qty - a.qty then original sheet order for ties", "ranking": "competition ranks for tied quantity"},
     "preserved": ["four-column center alignment", "left-aligned product name", "sky-blue search focus", "data and calculations"],
-    "implementationChanged": false,
-    "backupPolicy": "minor planning addition; retain full v22 recovery ZIP"
+    "implementationChanged": true,
+    "implementation": "two scoped CSS changes: hide legacy select visually and make toolbar one column; retain select DOM for existing handlers",
+    "preservation": "all scripts and HTML outside embedded style block unchanged",
+    "previousStatus": "confirmed planning only until subsequent user code instruction",
+    "backup": {"version": "v23-sort-removal", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "pending"}
   },
   "fourColumnAndButtonTextImplementation20261007": {
     "status": "deployed_live_verified",

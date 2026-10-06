@@ -13778,7 +13778,8 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
 .sheet-sales-refresh{font:inherit;color:#637089;border:1px solid #dce2eb;background:white;border-radius:3px;padding:3px 6px;cursor:pointer}
 #salesView .sales-column-head,#salesView #salesAuth{display:none!important}
 #salesView .sales-toolbar,#salesView .sales-meta{display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:8px;align-items:center;min-width:0}
-#salesView .sales-toolbar{margin-bottom:8px}
+#salesView .sales-toolbar{grid-template-columns:minmax(0,1fr);margin-bottom:8px}
+#salesView #salesSort{display:none}
 #salesView .sales-meta{margin:0 0 16px}
 #salesView .sheet-sales-meta-info{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;min-width:0;overflow-wrap:anywhere}
 #salesView #salesSort,#salesView .sheet-sales-refresh{box-sizing:border-box;width:88px;height:40px;padding:7px 8px;border-radius:4px;font:inherit;font-size:13px!important;font-weight:400;color:#2f3b52;background:#fff;border:1px solid #cbd3df;text-align:center;-webkit-tap-highlight-color:rgba(47,59,82,.12)}
