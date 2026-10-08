@@ -1,3 +1,4 @@
+<!-- v127: mobile editable changes, header contacts, sample date and uniform dividers (2026-10-09) -->
 <!-- v126: restore compact mobile gallery typography and matching refresh control (2026-10-09) -->
 <!-- v124: compact mobile header, charcoal typography and all thumbnail colors (2026-10-09) -->
 <!-- v123: mobile menu sizing, uniform link spacing, shared card and sample heading (2026-10-09) -->
@@ -1321,6 +1322,7 @@
   }
 
 </style>
+
 
 <style id="aisel-v119-mobile-identity">
 @media screen and (max-width:600px) {
@@ -6281,6 +6283,7 @@
 
   // v88: 기록은 사용자가 추가할 때만 저장합니다. 숨긴 구형 필드는 보존합니다.
   let resampleHistory_ = [];
+  let mobileUnifiedReady_=false;
   let sampleChangeBaseline_ = null;
   let sampleChangeBaselineCode_ = null;
   // Native date controls stay bounded on iOS; the actual input retains its value and calendar.
@@ -6338,6 +6341,7 @@
   }
   document.querySelectorAll("[data-change-draft]").forEach(btn=>btn.addEventListener("click",()=>fillSampleChangeDraft_(btn.dataset.changeDraft)));
   function renderMeetingHistory_(){
+    if(mobileUnifiedReady_)renderMobileChanges_();
     const wrap=$("#meetingHistoryList");wrap.textContent="";
     const value=$("#meetingNotes").value.trim();
     if(!value)return;
@@ -6351,6 +6355,7 @@
     renderMeetingHistory_();$("#meetingChanges").value="";refreshSampleBaseline_();save();
   });
   function renderResampleHistory_(){
+    if(mobileUnifiedReady_)renderMobileChanges_();
     const wrap=$("#resampleHistoryList");if(!wrap)return;wrap.textContent="";
     resampleHistory_.slice().reverse().forEach((item,revIndex)=>{
       const originalIndex=resampleHistory_.length-1-revIndex;
@@ -7609,6 +7614,7 @@
       }
     }
     $("#sampleRecoveryRow").classList.toggle("overdue", overdue);
+    if(mobileUnifiedReady_)renderMobileSampleDate_();
   }
 
   $("#sampleRecoverySeg").querySelectorAll("button").forEach(btn=>{
@@ -11163,6 +11169,7 @@
     if(name.textContent!==title)name.textContent=title;
     const code=document.getElementById("mobileProductCode"),value=document.getElementById("codeView").textContent.trim();
     if(code.textContent!==value)code.textContent=value;
+    if(mobileUnifiedReady_)renderHeaderNames_();
   }
   // Reuse the actual name input, including its IME/save listeners, only while editing.
   const mobileName=document.getElementById('mobileProductName');
@@ -11245,39 +11252,125 @@
   // Keep the original desktop fields and records; mobile reuses the same IDs and save handlers.
   const mobileRecords=document.createElement('section');mobileRecords.id='mobileSampleRecords';mobileRecords.className='noprint';
   document.querySelector('#sheet > .detail2').before(mobileRecords);
-  const recordLayouts=['meeting','resample'].map(kind=>{
-    const panel=document.getElementById(kind+'HistoryToggle'),input=document.getElementById(kind+'Changes');
-    const home=document.createComment('desktop '+kind+' records');panel.before(home);
-    const textarea=document.createElement('textarea');
-    for(const attribute of input.attributes)if(attribute.name!=='type')textarea.setAttribute(attribute.name,attribute.value);
-    textarea.rows=5;
-    return {panel,input,textarea,home,button:document.getElementById(kind+'AddBtn'),buttonText:document.getElementById(kind+'AddBtn').textContent,desktopValue:input.value,desktopOpen:panel.open,mobileOpen:true};
-  });
   const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
-  let mobileRecordsActive=false;
+  const finalTitle=finalSpec.previousElementSibling,desktopFinalTitle=finalTitle.textContent;
+  const mobileStatus=document.createElement('div');mobileStatus.id='mobileSampleStatus';mobileStatus.className='noprint';
+  const sampleLabel=document.createElement('span');sampleLabel.textContent='샘플';mobileStatus.append(sampleLabel);
+  const sampleDate=document.createElement('span');sampleDate.id='mobileSampleRecoveryDate';mobileStatus.append(sampleDate);
+  document.getElementById('sampleRecoverySection').prepend(mobileStatus);
+  const headerNames=document.createElement('div');headerNames.id='mobileHeaderNames';headerNames.className='noprint';
+  document.querySelector('#sheet > .title-row').append(headerNames);
+  const contactLayouts=['designer','factory'].map(id=>{
+    const input=document.getElementById(id),home=document.createComment('desktop '+id+' field');input.before(home);
+    const view=document.createElement('button');view.type='button';view.id=id==='designer'?'mobileDesignerName':'mobileFactoryName';
+    view.className='mobile-contact-name';view.setAttribute('aria-label',(id==='designer'?'디자이너':'공장')+' 이름 수정');headerNames.append(view);
+    const record={input,home,view,label:id==='designer'?'디자이너':'공장'};
+    view.addEventListener('click',()=>{
+      if(!mobileLayout.matches||namePrintMedia.matches)return;
+      finishHeaderNameEdits_();view.hidden=true;view.after(input);input.classList.add('mobile-name-editor');input.focus();
+    });
+    input.addEventListener('input',renderHeaderNames_);
+    input.addEventListener('blur',()=>finishHeaderNameEdit_(record));
+    input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&!isEditorComposing_()){event.preventDefault();finishHeaderNameEdit_(record);}});
+    return record;
+  });
+  function finishHeaderNameEdit_(record){
+    if(!record.input.classList.contains('mobile-name-editor'))return;
+    if(document.activeElement===record.input)record.input.blur();
+    record.input.classList.remove('mobile-name-editor');record.home.after(record.input);record.view.hidden=false;renderHeaderNames_();
+  }
+  function finishHeaderNameEdits_(){contactLayouts.forEach(finishHeaderNameEdit_);}
+  function renderHeaderNames_(){contactLayouts.forEach(record=>{record.view.textContent=record.input.value.trim()||record.label;});}
+  function renderMobileSampleDate_(){
+    sampleDate.textContent=sampleRecoveryStatus==='returned'&&sampleReturnedDate?'회수 '+sampleReturnedDate:document.getElementById('sampleRecoveryDates').textContent;
+    sampleDate.classList.toggle('overdue',document.getElementById('sampleRecoveryRow').classList.contains('overdue'));
+  }
+
+  let mobileRecordsActive=false,mobileChangesCode_=null,mobileChangesLastSignature_='',mobileMeetingRows_=[];
+  function meetingRows_(value){
+    const starts=[...value.matchAll(/^\[\d{4}-\d{2}-\d{2}[^\]\r\n]*\]/gm)].map(match=>match.index);
+    if(!starts.length)return value?[{source:'meeting',raw:value}]:[];
+    if(starts[0]!==0)starts.unshift(0);
+    return starts.map((start,index)=>({source:'meeting',raw:value.slice(start,starts[index+1]??value.length)}));
+  }
+  function mobileChangesSignature_(){return JSON.stringify([currentCode,document.getElementById('meetingNotes').value,resampleHistory_]);}
+  function resizeChangeText_(textarea){textarea.style.height='auto';textarea.style.height=Math.max(180,Math.min(520,textarea.scrollHeight))+'px';}
+  function addMobileChangeRow_(record){
+    const card=document.createElement('div');card.className='mobile-change-card';card._changeRecord=record;
+    const heading=document.createElement('div');heading.className='mobile-change-heading';
+    const label=document.createElement('span');label.textContent='수정사항';heading.append(label);
+    const field=document.createElement('span');field.className='sample-date-field';
+    const dateLabel=document.createElement('span');dateLabel.className='sample-date-label';dateLabel.setAttribute('aria-hidden','true');field.append(dateLabel);
+    const date=document.createElement('input');date.type='date';date.setAttribute('aria-label','수정사항 날짜');
+    date.value=record.date||'';field.append(date);heading.append(field);
+    const add=document.createElement('button');add.type='button';add.className='mobile-change-add';add.textContent='+';add.setAttribute('aria-label','수정사항 입력칸 추가');heading.append(add);card.append(heading);
+    const textarea=document.createElement('textarea');textarea.rows=7;textarea.className='mobile-change-text';textarea.setAttribute('aria-label','수정사항');textarea.placeholder='수정사항';textarea.value=record.raw??record.changes??'';card.append(textarea);
+    const showDate=()=>{dateLabel.textContent=date.value?date.value.replace(/-/g,'.'):'날짜 선택';};showDate();
+    const commit=()=>{
+      if(loading)return;
+      let text=textarea.value;
+      if(record.source==='meeting'){
+        const chosen=date.value;
+        if(chosen&&text){
+          if(/^\[\d{4}-\d{2}-\d{2}/.test(text))text=text.replace(/^\[\d{4}-\d{2}-\d{2}/,'['+chosen);
+          else if(chosen!==record.date)text='['+chosen+'] '+text;
+        }
+        if(text===record.raw&&date.value===record.date)return;
+        if(text&&mobileMeetingRows_.indexOf(record)<mobileMeetingRows_.length-1&&!text.endsWith('\n'))text+='\n\n';
+        record.raw=text;record.date=date.value;textarea.value=text;
+        document.getElementById('meetingNotes').value=mobileMeetingRows_.map(row=>row.raw).join('');
+      }else{
+        if(record.source==='draft'&&!text.trim())return;
+        if(record.source==='draft'){
+          record.source='resample';record.index=resampleHistory_.length;
+          resampleHistory_.push({id:Date.now(),date:date.value,changes:text});
+        }else{
+          const prior=resampleHistory_[record.index];if(!prior)return;
+          if(prior.date===date.value&&prior.changes===text)return;
+          resampleHistory_[record.index]={...prior,date:date.value,changes:text};
+        }
+        record.date=date.value;record.changes=text;
+      }
+      mobileChangesLastSignature_=mobileChangesSignature_();saveSoon();
+    };
+    date.addEventListener('click',()=>{try{if(date.showPicker)date.showPicker();}catch(_){}});
+    date.addEventListener('change',()=>{showDate();commit();});
+    textarea.addEventListener('input',()=>{resizeChangeText_(textarea);commit();});
+    add.addEventListener('click',async()=>{
+      if(!await waitForEditorComposition_())return;
+      commit();addMobileChangeRow_({source:'draft',date:resampleToday_(),changes:''});
+    });
+    if(record.photo){const photo=document.createElement('img');photo.className='mobile-change-photo';photo.src=record.photo;photo.alt='기존 샘플 사진';card.append(photo);}
+    mobileRecords.append(card);resizeChangeText_(textarea);
+  }
+  function renderMobileChanges_(force=false){
+    if(!mobileUnifiedReady_||!mobileRecordsActive)return;
+    if(!force&&document.activeElement?.closest('#mobileSampleRecords'))return;
+    const signature=mobileChangesSignature_();
+    if(!force&&currentCode===mobileChangesCode_&&signature===mobileChangesLastSignature_)return;
+    const drafts=currentCode===mobileChangesCode_?[...mobileRecords.children].filter(card=>card._changeRecord?.source==='draft').map(card=>({source:'draft',date:card.querySelector('input').value,changes:card.querySelector('textarea').value})):[];
+    mobileMeetingRows_=meetingRows_(document.getElementById('meetingNotes').value);
+    mobileRecords.replaceChildren();
+    mobileMeetingRows_.forEach(record=>{record.date=record.raw.match(/^\[(\d{4}-\d{2}-\d{2})/)?.[1]||'';addMobileChangeRow_(record);});
+    resampleHistory_.forEach((record,index)=>addMobileChangeRow_({...record,source:'resample',index}));
+    drafts.forEach(addMobileChangeRow_);
+    if(!mobileRecords.children.length)addMobileChangeRow_({source:'draft',date:resampleToday_(),changes:''});
+    mobileChangesCode_=currentCode;mobileChangesLastSignature_=signature;
+  }
   function placeMobileRecords_(printing=false){
     const mobile=mobileLayout.matches&&!printing&&!namePrintMedia.matches;
     finalSpec.placeholder=mobile?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
-    if(mobile===mobileRecordsActive)return;
-    recordLayouts.forEach(record=>{
-      const current=mobile?record.input:record.textarea;
-      if(document.activeElement===current)current.blur();
-      // A detached draft must not leave the shared IME save guard waiting forever.
-      editorComposingTargets_.delete(current);
-      if(mobile){
-        record.desktopOpen=record.panel.open;
-        if(record.input.value!==record.desktopValue)record.textarea.value=record.input.value;
-        record.input.replaceWith(record.textarea);mobileRecords.append(record.panel);
-        record.panel.open=record.mobileOpen;record.button.textContent='+';
-      }else{
-        record.mobileOpen=record.panel.open;
-        record.input.value=record.textarea.value.replace(/\r?\n/g,' / ');record.desktopValue=record.input.value;
-        record.textarea.replaceWith(record.input);record.home.after(record.panel);
-        record.panel.open=record.desktopOpen;record.button.textContent=record.buttonText;
-      }
-    });
+    finalTitle.textContent=mobile?desktopFinalTitle+' (최종)':desktopFinalTitle;
+    if(!mobile)finishHeaderNameEdits_();
+    if(mobile===mobileRecordsActive){renderHeaderNames_();renderMobileSampleDate_();return;}
+    const active=document.activeElement;
+    if(active?.closest('#mobileSampleRecords')){active.blur();editorComposingTargets_.delete(active);}
     mobileRecordsActive=mobile;
+    if(mobile)renderMobileChanges_();
+    else{renderMeetingHistory_();renderResampleHistory_();}
+    renderHeaderNames_();renderMobileSampleDate_();
   }
+  mobileUnifiedReady_=true;
   window.addEventListener('beforeprint',()=>placeMobileRecords_(true));
   window.addEventListener('afterprint',()=>placeMobileRecords_());
   if(namePrintMedia.addEventListener)namePrintMedia.addEventListener('change',()=>placeMobileRecords_());
@@ -14547,6 +14640,40 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #sheet #costCell .owner-retail-row #targetThreshold {font-size:22px!important;font-weight:800;color:var(--ink);line-height:1.25;}
  #sheet #costCell .owner-retail-row #targetThreshold {height:42px;padding:6px 8px;}
  #sheet #costCell #totalView.overcost {color:#D6266F;}
+}
+</style>
+
+<style id="aisel-v127-mobile-unified-changes">
+#mobileHeaderNames,#mobileSampleStatus {display:none;}
+@media screen and (max-width:600px) {
+ .owner-view-bar {margin-top:6px;}
+ #editorView #metaAccordionHead,#editorView #metaAccordionBody {display:none!important;}
+ #editorView #mobileSampleStatus {display:flex;align-items:center;flex:1;min-width:0;gap:8px;flex-wrap:wrap;font-size:14px;font-weight:700;color:var(--ink);}
+ #mobileSampleRecoveryDate {font-size:12px;font-weight:400;color:var(--muted);overflow-wrap:anywhere;}
+ #mobileSampleRecoveryDate.overdue {color:#A43A50;}
+ #sheet > .title-row {grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);border-bottom:1.5px solid var(--line);}
+ #sheet > .title-row h1 {grid-column:1;grid-row:1;font-size:18px;}
+ #sheet > .title-row #mobileHeaderNames {display:flex;grid-column:2;grid-row:1;align-items:center;justify-content:flex-end;gap:10px;min-width:0;}
+ #mobileHeaderNames .mobile-contact-name {background:transparent;border:0;border-radius:0;padding:0;min-width:0;min-height:32px;font-size:16px;font-weight:700;line-height:1.35;color:var(--ink);overflow-wrap:anywhere;}
+ #mobileHeaderNames .mobile-contact-name[hidden] {display:none;}
+ #sheet #mobileHeaderNames input.mobile-name-editor {width:100%!important;min-width:0;font-size:16px!important;}
+ #sheet > .meta > .cell:first-child {display:none;}
+ #sheet > .meta > .cell {border-bottom:1.5px solid var(--line);}
+ #sheet > .photos {border-bottom:0;}
+ #sheet #ph1,#sheet .photos-right {border-bottom:1.5px solid var(--line);}
+ #sheet > #mobileSampleRecords {border-top:0;border-bottom:1.5px solid var(--line);}
+ #sheet > .detail2 {border-top:0;}
+ #mobileSampleRecords .mobile-change-card + .mobile-change-card {margin-top:16px;padding-top:12px;border-top:1px solid #CBD3DF;}
+ #mobileSampleRecords .mobile-change-heading {display:grid;grid-template-columns:auto minmax(0,1fr) 36px;align-items:center;gap:8px;margin-bottom:8px;font-size:14px;font-weight:700;color:var(--ink);}
+ #editorView #mobileSampleRecords .mobile-change-heading > span:first-child {grid-column:1;grid-row:1;}
+ #editorView #mobileSampleRecords .mobile-change-heading .sample-date-field {grid-column:2;grid-row:1;width:140px;max-width:100%;justify-self:start;}
+ #editorView #mobileSampleRecords .mobile-change-heading .sample-date-label {font-size:14px;font-weight:400;}
+ #editorView #mobileSampleRecords .mobile-change-heading .mobile-change-add {grid-column:3;grid-row:1;}
+ #mobileSampleRecords .sample-date-field input[type="date"] {position:absolute;inset:0;width:100%!important;min-width:0;height:100%;padding:0;border:0;opacity:0;font-size:16px!important;cursor:pointer;}
+ #mobileSampleRecords .mobile-change-add {width:36px;height:36px;min-height:36px;padding:0;border:0;border-radius:4px;background:#2F3B52;color:#fff;font-size:22px;line-height:1;}
+ #mobileSampleRecords .mobile-change-text {box-sizing:border-box;width:100%;min-width:0;min-height:180px;padding:10px;border:1px solid #CBD3DF;border-radius:4px;background:#F3F6FA;color:var(--ink);font-size:16px;line-height:1.6;resize:vertical;}
+ #mobileSampleRecords .mobile-change-photo {display:block;max-width:100%;max-height:160px;margin-top:8px;object-fit:contain;}
+ #sheet .cell.mat > .tip,#sheet #fabricMemoActions {display:none!important;}
 }
 </style>
 
