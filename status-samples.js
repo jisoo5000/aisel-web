@@ -2,10 +2,9 @@
 (function(){
   "use strict";
   var fields = ["name","color","size","quantity","operation","location","owner","receivedDate","returnedDate","returnDueDate","flowState","flowTotal","officeSent","officeReceived","returnSent","warehouseReceived","cafe24Reflected","sellmateReflected","flowUpdatedAt","flowUpdatedBy"];
-  var labels = {name:"품명",color:"컬러"};
   var records = [], state = {status:"disconnected",records:[]};
   var provider = null, started = false, settled = false, localError = "", el = {};
-  ["sampleFieldLabel","sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
+  ["sampleSearch","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
   function text(value){return value == null ? "" : String(value).trim();}
   function missing(value){return !text(value) || /^[—–-]+$/.test(text(value));}
   function display(value){return missing(value) ? "미입력" : text(value);}
@@ -42,7 +41,7 @@
     var balance = info.counts.officeReceived - info.counts.returnSent;
     return balance > 0 ? {row:row,quantity:balance,review:false,notice:""} : null;
   }
-  function currentRows(){var needle = normalized(sampleFilters.query);return records.filter(function(item){return !needle || normalized(item.row[sampleFilters.field]).indexOf(needle) !== -1;});}
+  function currentRows(){var needle = normalized(sampleFilters.query);return records.filter(function(item){return !needle || normalized(item.row.name).indexOf(needle) !== -1;});}
   function cell(label,value,className){var result = node("span","sample-cell " + (className || ""));result.appendChild(node("span","sample-mobile-label",label));result.appendChild(node("span","",value));return result;}
   function recordElement(item){
     var row = item.row, record = node("article","sample-record" + (item.review ? " sample-office-review" : ""));record.dataset.recordId = row.id;
@@ -65,9 +64,7 @@
   }
   function render(){
     if(document.activeElement !== el.sampleSearch) el.sampleSearch.value = sampleFilters.query;
-    el.sampleField.value = sampleFilters.field;
-    if(el.sampleFieldLabel && el.sampleFieldLabel.textContent !== labels[sampleFilters.field]) el.sampleFieldLabel.textContent = labels[sampleFilters.field];
-    el.sampleSearch.placeholder = labels[sampleFilters.field] + (sampleFilters.field === "name" ? "으로 검색" : "로 검색");
+    el.sampleSearch.placeholder = "품명, 품목으로 검색";
     var busy = state.status === "loading", message = localError || (state.status === "error" ? text(state.message) : "");
     el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
     el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";
@@ -104,7 +101,7 @@
   }
   function change(key,value,replace){var next = {query:sampleFilters.query,field:sampleFilters.field};next[key] = value;navigateSamples_(next,!!replace);}
   el.sampleSearch.addEventListener("input",function(event){var next = text(event.target.value);if(next !== sampleFilters.query) change("query",next,!!sampleFilters.query && !!next);});
-  el.sampleField.addEventListener("change",function(event){change("field",event.target.value,false);});el.sampleReset.addEventListener("click",function(){navigateSamples_({query:"",field:"name"},false);});
+  el.sampleReset.addEventListener("click",function(){navigateSamples_({query:"",field:"name"},false);});
   window.AiselSamples = {render:render,onShow:start,isReady:function(){return settled;}};
   render();restoreView_(window.history.state);
 })();

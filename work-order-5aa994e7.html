@@ -1,3 +1,4 @@
+<!-- v129: mobile drawing/cost/fabric/color order, compact gap and spaced header contacts (2026-10-09) -->
 <!-- v128: shared AISEL list/control colors, typography, spacing; preserve v127 editor/print (2026-10-09) -->
 <!-- v127: mobile editable changes, header contacts, sample date and uniform dividers (2026-10-09) -->
 <!-- v126: restore compact mobile gallery typography and matching refresh control (2026-10-09) -->
@@ -105,7 +106,7 @@
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
 <title>AISEL 작업지시서</title>
-<link rel="stylesheet" href="aisel-ui.css?v=20261009-v1">
+<link rel="stylesheet" href="aisel-ui.css?v=20261009-v2">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
@@ -11265,7 +11266,7 @@
   const contactLayouts=['designer','factory'].map(id=>{
     const input=document.getElementById(id),home=document.createComment('desktop '+id+' field');input.before(home);
     const view=document.createElement('button');view.type='button';view.id=id==='designer'?'mobileDesignerName':'mobileFactoryName';
-    view.className='mobile-contact-name';view.setAttribute('aria-label',(id==='designer'?'디자이너':'공장')+' 이름 수정');headerNames.append(view);
+    view.dataset.contactRole=id==='designer'?'디자이너':'공장';view.className='mobile-contact-name';view.setAttribute('aria-label',(id==='designer'?'디자이너':'공장')+' 이름 수정');headerNames.append(view);
     const record={input,home,view,label:id==='designer'?'디자이너':'공장'};
     view.addEventListener('click',()=>{
       if(!mobileLayout.matches||namePrintMedia.matches)return;
@@ -11359,8 +11360,13 @@
     if(!mobileRecords.children.length)addMobileChangeRow_({source:'draft',date:resampleToday_(),changes:''});
     mobileChangesCode_=currentCode;mobileChangesLastSignature_=signature;
   }
+  const colorSection=document.getElementById('productColors'),colorHome=document.createComment('desktop color section');
+  colorSection.before(colorHome);
   function placeMobileRecords_(printing=false){
     const mobile=mobileLayout.matches&&!printing&&!namePrintMedia.matches;
+    // Reuse the same picker and handlers. Restore its original home for desktop/print.
+    if(mobile){if(colorSection.parentElement.id!=='sheet')document.querySelector('#sheet > .meta').after(colorSection);}
+    else if(colorSection.parentElement.id==='sheet')colorHome.after(colorSection);
     finalSpec.placeholder=mobile?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
     finalTitle.textContent=mobile?desktopFinalTitle+' (최종)':desktopFinalTitle;
     if(!mobile)finishHeaderNameEdits_();

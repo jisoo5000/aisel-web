@@ -89,7 +89,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 <link rel="stylesheet" href="status-samples.css?v=status-recovery-20261009-v18" />
-<link rel="stylesheet" href="aisel-ui.css?v=20261009-v1" />
+<link rel="stylesheet" href="aisel-ui.css?v=20261009-v2" />
 </head>
 <body>
 
@@ -125,10 +125,8 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   <section id="samplesPanel" class="samples-panel" aria-labelledby="samplesTitle" hidden>
     <h2 id="samplesTitle" class="sample-visually-hidden">샘플 관리</h2>
     <div class="sample-search-row" role="search" aria-label="샘플 검색">
-      <label class="sample-visually-hidden" for="sampleField">검색 항목</label>
-      <span class="sample-field-wrap"><select id="sampleField" class="sample-search-field"><option value="name">품명</option><option value="color">컬러</option></select><span class="sample-field-display" aria-hidden="true"><span id="sampleFieldLabel">품명</span><span>▾</span></span></span>
       <label class="sample-visually-hidden" for="sampleSearch">검색어</label>
-      <input id="sampleSearch" class="sample-search-input" type="search" placeholder="품명으로 검색" autocomplete="off" />
+      <input id="sampleSearch" class="sample-search-input" type="search" placeholder="품명, 품목으로 검색" autocomplete="off" />
     </div>
     <p id="sampleError" class="sample-error" role="alert" hidden></p>
     <p id="sampleSyncWarning" class="sample-sync-warning" role="status" hidden></p>
@@ -290,7 +288,7 @@ function changeStatus_(code,name,btn,from,patch,label,notice){
   }).finally(function(){statusChangeBusy_ = false;});
 }
 function markArrived_(code,name,btn){
-  return changeStatus_(code,name,btn,'order',{status:'pdp',arrivedAt:todayStr_()},'도착 확인','물류 도착 확인일을 오늘(한국 시간)로 기록하고 PDP 생성 대기로 이동합니다.');
+  return changeStatus_(code,name,btn,'order',{status:'pdp',arrivedAt:todayStr_()},'도착 확인','물류 도착 확인일을 기록하고 PDP 생성 대기로 이동합니다.');
 }
 function completePdp_(code,name,btn){
   return changeStatus_(code,name,btn,'pdp',{status:'sale'},'PDP 생성 완료','작업지시서와 제품 진행 현황을 판매중으로 변경합니다. 도착 확인일은 유지됩니다.');
@@ -555,7 +553,7 @@ var restoringScroll = false;
 var scrollFrame = null;
 function validSampleFilters_(value){
   value = value || {};
-  return {query:String(value.query || "").trim(),field:["name","color"].indexOf(value.field) !== -1 ? value.field : "name"};
+  return {query:String(value.query || "").trim(),field:"name"};
 }
 function viewState_(scroll){return {aiselStatus:true,filter:filter,query:query,view:workflowView,sampleFilters:Object.assign({},sampleFilters),scrollY:Math.max(0,Number(scroll) || 0)};}
 function viewUrl_(){
@@ -563,7 +561,7 @@ function viewUrl_(){
   if(query) url.searchParams.set("q",query);else url.searchParams.delete("q");
   if(workflowView === "samples") url.searchParams.set("view","samples");else url.searchParams.delete("view");
   if(sampleFilters.query) url.searchParams.set("sq",sampleFilters.query);else url.searchParams.delete("sq");
-  if(sampleFilters.field !== "name") url.searchParams.set("sfield",sampleFilters.field);else url.searchParams.delete("sfield");
+  url.searchParams.delete("sfield");
   ["sloc","sop","sowner","sflow","sattention"].forEach(function(key){url.searchParams.delete(key);});
   return url.pathname + url.search + url.hash;
 }
@@ -665,7 +663,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
 </script>
 <script src="status-samples-flow.js?v=samples-office-20261004-v16-4"></script>
 <script src="status-samples-data.js?v=samples-office-20261004-v16-4"></script>
-<script src="status-samples.js?v=aisel-ui-v1-samples-office-20261004-v16-4"></script>
+<script src="status-samples.js?v=aisel-ui-v2-samples-20261009-v21"></script>
 
 </body>
 </html>

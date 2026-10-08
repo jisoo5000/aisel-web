@@ -1,4 +1,4 @@
-/* AISEL shared screen system v1 (2026-10-09).
+/* AISEL shared screen system v2 (2026-10-09).
    List/control roles only. Garment chips, semantic colors, editor and print
    retain their own contracts. A 44px control keeps the compact 11px label. */
 @media screen {
@@ -101,7 +101,7 @@
     font-size:var(--aisel-menu)!important;font-weight:600;line-height:16px;min-height:44px;
   }
   html body :is(#galleryView,#salesView) .gtab.active {
-    background:#2F3B52;border-color:#2F3B52;color:#fff;font-weight:700;
+    background:var(--aisel-ink);border-color:var(--aisel-ink);color:var(--aisel-bg);font-weight:700;
   }
   html body :is(#galleryView,#salesView) :is(input[type="search"],#gallerySearchInput,select,.gallery-search-type) {
     border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);
@@ -133,7 +133,7 @@
   html body #salesView .sheet-sales-name-label {white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
   html body #salesView .sheet-sales-refresh {background:var(--aisel-bg);height:44px;}
   html body #mainBar .maintab {color:var(--aisel-ink);border-radius:var(--aisel-radius);background:var(--aisel-bg);border-color:var(--aisel-line);}
-  html body #mainBar .maintab.active {background:#2F3B52;border-color:#2F3B52;color:#fff;}
+  html body #mainBar .maintab.active {background:var(--aisel-ink);border-color:var(--aisel-ink);color:var(--aisel-bg);}
   html body #salesView #salesSearchInput:focus {outline:2px solid var(--aisel-focus);outline-offset:2px;}
 }
 
@@ -184,4 +184,33 @@
   html body #salesView .sheet-sales-head {font-size:10px;}
   html body #salesView .sheet-sales-badge {font-size:10px;}
   html body :is(#galleryView,#salesView) input {font-size:16px!important;}
+}
+
+/* v2: equal confirmation actions and the approved mobile editor scope. */
+@media screen {
+  #statusConfirm {color:#30343B;border:1px solid #DEDCD6;box-shadow:0 8px 30px #30343B12;}
+  #statusConfirm .notice {color:#6C727C;}
+  #statusConfirm .confirm-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  #statusConfirm .confirm-actions button {box-sizing:border-box;width:100%;height:44px;min-height:44px;padding:6px 8px;border:1px solid #8C8B85;border-radius:4px;background:#fff;color:#30343B;font-size:13px;font-weight:500;line-height:1.4;box-shadow:none;}
+  #statusConfirm .confirm-actions button:hover {background:#F5F4F1;}
+  #statusConfirm .confirm-actions button:focus-visible {outline:2px solid #30343B;outline-offset:-3px;}
+}
+@media screen and (max-width:600px) {
+  html body #editorView {padding-top:0;}
+  html body #editorView .editor-mobile-head {margin-top:4px;min-height:0;border-color:var(--aisel-line);border-radius:4px 4px 0 0;}
+  html body #editorView :is(.toolbar,#statusBar,#sampleRecoverySection) {border-color:var(--aisel-line);}
+  html body #editorView #statusBar .status-btn {color:var(--aisel-ink);border-color:var(--aisel-line);background:var(--aisel-bg);font-weight:500;}
+  html body #editorView #statusBar .status-btn.active {background:var(--aisel-soft);border-color:var(--aisel-muted);color:var(--aisel-ink);font-weight:600;}
+  html body #editorView .toolbar .tb-row > :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn) {border-color:var(--aisel-line);background:var(--aisel-bg);color:var(--aisel-ink);font-weight:500;}
+  html body #editorView #sheet > .title-row {grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding:8px 16px 8px 12px;column-gap:12px;}
+  html body #editorView #sheet > .title-row h1 {font-size:16px;font-weight:600;color:var(--aisel-ink);}
+  html body #editorView #sheet > .title-row #mobileHeaderNames {justify-content:flex-start;gap:12px;}
+  html body #mobileHeaderNames .mobile-contact-name {flex:1 1 0;text-align:left;min-height:44px;font-size:13px;font-weight:500;color:var(--aisel-ink);}
+  html body #mobileHeaderNames .mobile-contact-name::before {display:block;content:attr(data-contact-role);margin-bottom:3px;font-size:12px;font-weight:400;color:var(--aisel-muted);}
+  html body #editorView #sheet > #productColors {order:4;flex:none;width:100%;margin:0;padding:0;border-bottom:1.5px solid var(--line);}
+  html body #editorView #sheet > #productColors .copygen-card {margin:0;padding:12px;border:0;border-radius:0;background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;}
+  html body #editorView #sheet > #productColors h2 {padding-left:0;color:var(--aisel-ink);font-size:14px;font-weight:600;}
+  html body #editorView #sheet #costCell :is(.cost-table th,.total-row,.owner-retail-row) {background:var(--aisel-soft);color:var(--aisel-ink);}
+  html body #editorView #sheet > .title-row .mod-label {color:var(--aisel-muted);}
+  html body #editorView #sheet > .title-row .date-row {font-size:12px;font-weight:400;color:var(--aisel-muted);}
 }
