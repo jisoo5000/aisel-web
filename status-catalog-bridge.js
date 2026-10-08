@@ -8,8 +8,8 @@
     ? require('./status-pricing-rules.js') : root.AiselStatusPricing;
   const PATH = 'workorderStatusCatalog';
   const FIELDS = ['status','updatedAt','createdAt','pumMyeong','factory','blend','selectedColors',
-    'cat','lines','gongim','siyage','targetThreshold','priceConfirmed','priceSource','arrivedAt'];
-  const ACTIVE = ['planned','order','pdp'];
+    'cat','lines','gongim','siyage','targetThreshold','priceConfirmed','priceSource','arrivedAt','pdpReviewNeeded'];
+  const ACTIVE = ['sampling','samplemgmt','planned','order','pdp'];
   const DAY = 86400000;
   const text = (v,max=500)=>String(v==null?'':v).trim().slice(0,max);
   const number = v=>Number(v)||0;
@@ -53,7 +53,7 @@
         : {salePrice:null,priceState:decision.priceState==='cost_missing'?'cost_missing':'review',ruleVersion:rules.RULE_VERSION};
     }
     return {
-      schemaVersion:1,status:text(source.status,20),pumMyeong:text(source.pumMyeong),
+      schemaVersion:1,status:['planned','samplemgmt'].includes(source.status)?'sampling':text(source.status,20),pdpReviewNeeded:source.pdpReviewNeeded===true,pumMyeong:text(source.pumMyeong),
       factory:text(source.factory,160),blend:text(source.blend),
       colors:colorsFor(source,sharedColors || previous && previous.colors,lookup),
       salePrice:decision.salePrice,priceState:decision.priceState,ruleVersion:decision.ruleVersion,
@@ -181,7 +181,10 @@
   if(typeof module==='object' && module.exports)module.exports=api;
   else root.AiselStatusCatalog=api;
   if(typeof window!=='undefined' && root.firebase && rules){
-    root.aiselStatusCatalogBridge=api.start(root.firebase.database(),{colorLookup:n=>root.colorHex_?root.colorHex_(n):null});
+    root.firebase.auth().onAuthStateChanged(user=>{
+      if(root.aiselStatusCatalogBridge)root.aiselStatusCatalogBridge.stop();
+      root.aiselStatusCatalogBridge=null;
+      if(user)root.aiselStatusCatalogBridge=api.start(root.firebase.database(),{colorLookup:n=>root.colorHex_?root.colorHex_(n):null});
+    });
   }
 })(typeof globalThis!=='undefined'?globalThis:this);
-
