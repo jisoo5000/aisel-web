@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v17 (2026-10-08): 경량 공유 목록, 전체 상태 검색, 탭 이동 기록. 원가와 내부 작업지시서 내용은 읽지 않습니다. -->
+<!-- AISEL 제품 진행 현황 v17.2 (2026-10-09): 간결한 메뉴 간격, 차콜 톤, 판매가 숨김, 도착→상세페이지→PDP 버튼 순서. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -10,7 +10,7 @@
 <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-:root{--bg:#fff;--sheet:#fff;--ink:#191C23;--muted:#69758A;--hair:#D6DCE6;--navy:#2F3B52;--navy-soft:#EAF0F7;--field:#F3F6FA;--field-line:#CBD3DF}
+:root{--bg:#fff;--sheet:#fff;--ink:#242422;--muted:#74746F;--hair:#DEDCD6;--navy:#30302E;--navy-soft:#EEEDE9;--field:#F5F4F1;--field-line:#D8D6D0}
 *{box-sizing:border-box}
 html{color-scheme:light;scrollbar-width:thin;scrollbar-color:#AAB4C4 #F3F6FA}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -27,11 +27,11 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .connection::before{content:"";width:6px;height:6px;border-radius:50%;background:#AAB4C4}
 .connection.ready::before{background:#67816F}
 .connection.error::before{background:#A3264C}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 18px}
-.tab{display:flex;justify-content:center;align-items:center;gap:9px;min-width:0;min-height:42px;border:1px solid var(--field-line);background:var(--sheet);color:var(--muted);border-radius:4px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:normal}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 6px}
+.tab{display:flex;justify-content:center;align-items:center;gap:9px;min-width:0;min-height:42px;border:1px solid var(--field-line);background:var(--sheet);color:var(--navy);border-radius:4px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:normal}
 .tab:hover{border-color:var(--navy);color:var(--navy);background:var(--field)}
 .tab.on{background:var(--navy);border-color:var(--navy);color:#fff}
-.tab-count{flex-shrink:0;font-size:11px;font-weight:700;line-height:20px;min-width:21px;text-align:center;border-radius:3px;background:var(--field);color:var(--muted);font-variant-numeric:tabular-nums;padding:0 4px}
+.tab-count{flex-shrink:0;font-size:11px;font-weight:700;line-height:20px;min-width:21px;text-align:center;border-radius:3px;background:var(--field);color:var(--navy);font-variant-numeric:tabular-nums;padding:0 4px}
 .tab.on .tab-count{background:rgba(255,255,255,.15);color:#fff}
 .toolbar{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:20px}
 .section-heading{display:flex;align-items:baseline;gap:8px;margin:0;font-size:14px;color:var(--navy);font-weight:700}
@@ -55,7 +55,6 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .name{font-size:13px;font-weight:700;line-height:1.45;color:var(--navy);word-break:keep-all;overflow-wrap:anywhere}
 .code{font-size:10.5px;line-height:1.35;color:#637089;font-variant-numeric:tabular-nums;letter-spacing:.15px;overflow-wrap:anywhere}
 .factory{font-size:11.5px;line-height:1.5;color:var(--muted);border-top:1px solid #E3E7EE;padding-top:8px;margin-top:3px;overflow-wrap:anywhere}
-.price{font-size:12.5px;line-height:1.5;font-weight:700;color:var(--navy);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .meta-label{font-size:11px;line-height:1.5;font-weight:400;color:#637089;margin-right:7px}
 .blend{font-size:11px;line-height:1.65;color:#637089;word-break:keep-all;overflow-wrap:anywhere}
 .colors{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:1px}
@@ -65,7 +64,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .arrive-row{margin-top:auto;padding-top:8px;display:flex;flex-direction:column;gap:6px}
 .arrive-btn{width:100%;min-height:36px;border:1px solid transparent;border-radius:4px;padding:8px 4px;font-size:12px;line-height:1.4;font-weight:700;cursor:pointer}
 .arrive-btn.go,.arrive-btn.complete{background:var(--navy);color:#fff}
-.arrive-btn.go:hover,.arrive-btn.complete:hover{background:#232C3D}
+.arrive-btn.go:hover,.arrive-btn.complete:hover{background:#242422}
 .arrive-btn.undo{background:#fff;color:var(--muted);border-color:var(--field-line);font-size:11px}
 .arrive-btn.undo:hover{border-color:var(--navy);color:var(--navy);background:var(--field)}
 .review-btn{background:#fff;color:var(--navy);border-color:var(--field-line)}
@@ -80,10 +79,10 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .viewer .x{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:4px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.95);color:var(--navy);font-size:19px;font-weight:700;line-height:1;cursor:pointer}
 .viewer .x:focus-visible{outline-color:#fff}
 @media(max-width:900px){.search{font-size:16px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:16px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:14px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{margin-bottom:16px}.search-wrap{margin:0 0 12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
-@media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:14px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.price{font-size:12px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
+@media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:6px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:14px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{margin-bottom:16px}.search-wrap{margin:0 0 12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
+@media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:14px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=samples-office-20261004-v16-4" />
+<link rel="stylesheet" href="status-samples.css?v=status-charcoal-20261009-v17-2" />
 </head>
 <body>
 
@@ -395,7 +394,6 @@ function render(){
     var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";body.appendChild(name);
     var code = document.createElement("div");code.className = "code";code.textContent = row.code;body.appendChild(code);
     appendField_(body,"factory","공장",entry.factory);
-    appendField_(body,"price","판매가",priceText_(entry));
     appendField_(body,"blend","혼용률",entry.blend);
     var colors = document.createElement("div");colors.className = "colors";
     var colorLabel = document.createElement("span");colorLabel.className = "colors-label";colorLabel.textContent = "컬러";colors.appendChild(colorLabel);
@@ -417,18 +415,20 @@ function render(){
       review.className = "arrive-btn review-btn" + (entry.pdpReviewNeeded===true ? " on" : "");
       review.textContent = "PDP 재확인 필요";review.setAttribute("aria-pressed",String(entry.pdpReviewNeeded===true));
       review.title = "최종안 변경 가능성이 있어 연경님 확인이 필요합니다. 확인 후 다시 누르면 해제됩니다.";
-      review.addEventListener("click",function(){togglePdpReview_(row.code,entry,review);});actions.appendChild(review);
+      review.addEventListener("click",function(){togglePdpReview_(row.code,entry,review);});
       var button = document.createElement("button");button.type = "button";
       if(entry.status === "order"){
         button.className = "arrive-btn go";button.textContent = "도착 확인";
         button.addEventListener("click",function(){markArrived_(row.code,entry.pumMyeong,button);});
       }else if(entry.status === "pdp"){
         var complete = document.createElement("button");complete.type = "button";complete.className = "arrive-btn complete";complete.textContent = "상세페이지 등록 완료";
-        complete.addEventListener("click",function(){completePdp_(row.code,entry.pumMyeong,complete);});actions.appendChild(complete);
+        complete.addEventListener("click",function(){completePdp_(row.code,entry.pumMyeong,complete);});
         button.className = "arrive-btn undo";button.textContent = "도착 취소";
         button.addEventListener("click",function(){undoArrived_(row.code,entry.pumMyeong,button);});
       }
-      if(entry.status !== "sampling") actions.appendChild(button);body.appendChild(actions);
+      if(entry.status !== "sampling") actions.appendChild(button);
+      if(entry.status === "pdp") actions.appendChild(complete);
+      actions.appendChild(review);body.appendChild(actions);
       if(entry.status === "pdp" && entry.arrivedAt){var arrived = document.createElement("div");arrived.className = "arrived-at";arrived.textContent = "도착일 " + entry.arrivedAt;body.appendChild(arrived);}
     }
     card.appendChild(body);gridEl.appendChild(card);
