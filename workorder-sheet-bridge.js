@@ -69,8 +69,8 @@ function safe(v){
 }
 function build(code,v,photo){
  const resolved=root.WorkOrderNegotiation?root.WorkOrderNegotiation.resolveMaterials(v.lines||[],v.costNegotiationLinesData):{lines:v.lines||[],orphans:[]};
- const lines=resolved.lines,main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
- const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc;
+ const lines=resolved.lines.filter(l=>!root.WorkOrderNegotiation?.isFixedLossLine(l)),main=lines.find(l=>(l.nm||"").includes("원단"))||lines[0]||{};
+ const fc=lineAmount(main),other=lines.reduce((a,l)=>a+lineAmount(l),0)-fc+(root.WorkOrderNegotiation?.FIXED_LOSS||1000);
  const fixed=fixedCosts(v),cost=fc+other+(fixed.gongim||0)+(fixed.siyage||0),target=cost*4;
  const history=Array.isArray(v.resampleHistory)?v.resampleHistory:[],recent=history[history.length-1]||{};
  let costComplete=false;
@@ -96,13 +96,13 @@ function build(code,v,photo){
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,appliedUnit(main)??"",filled(main.qty)?number(main.qty):"",
- appliedUnit(main)!==null?fc:"",lines.length?other:"",fixed.gongim??"",fixed.siyage??"",
+ appliedUnit(main)!==null?fc:"",other,fixed.gongim??"",fixed.siyage??"",
  hasCost?cost:"",hasCost?target:"",!hasCost||missing.length?"":suggested||"직접 입력",
  approved?price:"",review,missing.join(" · ")||"등록값 합산 · 실지급 원가 미검증",
  v.predExpectedQty,p?(v.photoStage==="sample"?"샘플사진":"참고사진"):(v.p1?"사진 연결 대기":"사진 없음"),
- "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html",v.materials,size,v.meetingNotes,
- lines.map(l=>(l.nm||"")+": "+(appliedUnit(l)??"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)).join("\n"),
- Number(v.updatedAt||v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||"",v.designer];
+ "https://jisoo5000.github.io/aisel-web/work-order-5aa994e7.html?code="+encodeURIComponent(code),v.materials,size,v.meetingNotes,
+ [...lines.map(l=>(l.nm||"")+": "+(appliedUnit(l)??"")+" × "+(filled(l.qty)?l.qty:"1(빈칸 기본)")+" = "+lineAmount(l)),"로스: 1,000원 고정"].join("\n"),
+ Number(v.createdAt)||0,[v.yy,v.mm,v.dd].every(filled)?[v.yy,String(v.mm).padStart(2,"0"),String(v.dd).padStart(2,"0")].join("-"):"",recent.round||"",recent.date||"",recent.changes||"",v.designer];
  return "SYNCROW¦"+fields.map(safe).join("¦")+"¦ENDROW";
 }
 const api={build,signature,lineAmount,previewSignature,cachedPreview,previewBlob};root.AiselSheetBridge=api;
@@ -118,10 +118,10 @@ const sameProjectApps=[defaultApp,...(firebase.apps||[]).filter(app=>app!==defau
  app.options.databaseURL===defaultApp.options.databaseURL)];
 function authenticatedApp(){return sameProjectApps.find(app=>app.auth().currentUser)||null;}
 function connection(){
- const app=authenticatedApp();if(!app)return null;
- const db=app.database();return {app,db,uid:app.auth().currentUser.uid,rows:db.ref("workorderSheetRows"),meta:db.ref("workorderSheetMeta")};
+ const app=authenticatedApp()||defaultApp;
+ const db=app.database();return {app,db,uid:app.auth().currentUser?.uid||null,rows:db.ref("workorderSheetRows"),meta:db.ref("workorderSheetMeta")};
 }
-function signedIn(ctx){return ctx.app.auth().currentUser?.uid===ctx.uid;}
+function signedIn(ctx){return (ctx.app.auth().currentUser?.uid||null)===ctx.uid;}
 const running=new Map();
 function show(text){
  let el=document.getElementById("sheetBridgeStatus");
@@ -133,7 +133,8 @@ async function thumbnail(code,v,ctx){
  if(!src)return "";
  const sig=previewSourceKey(v),cached=cachedPreview(v,src);
  if(cached)return cached;
- if(!signedIn(ctx))return "";
+ // Anonymous viewers reuse cached previews; uploads retain their owner authorization.
+ if(!ctx.uid||!signedIn(ctx))return "";
  try{
   const sources=[...new Set([v.p1Thumb,v.p1].filter(Boolean))];
   let preview;
@@ -206,8 +207,7 @@ async function reconcile(){
 }
 let reconciledApp=null;
 function onAuthChange(){
- const app=authenticatedApp();
- if(!app){reconciledApp=null;return;}
+ const app=authenticatedApp()||defaultApp;
  if(reconciledApp===app)return;
  reconciledApp=app;
  return reconcile().catch(err=>{
@@ -216,6 +216,7 @@ function onAuthChange(){
  });
 }
 sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
+defaultApp.database().ref("workorderIndex").on("child_added",snap=>sync(snap.key));
 defaultApp.database().ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
 defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
 })(typeof globalThis!=="undefined"?globalThis:this);
