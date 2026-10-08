@@ -1,4 +1,4 @@
-/* AISEL shared screen system v2 (2026-10-09).
+/* AISEL shared screen system v3 (2026-10-09).
    List/control roles only. Garment chips, semantic colors, editor and print
    retain their own contracts. A 44px control keeps the compact 11px label. */
 @media screen {
@@ -150,15 +150,27 @@
 }
 @media screen and (max-width:800px) {
   .aisel-status {--aisel-menu:11px;--aisel-meta:10px;--aisel-section:12px;padding:16px 16px 48px;}
+  /* Marked status roles grow together; action buttons and other pages retain
+     the shared menu/meta tokens. Search spacing is awaiting clarification. */
+  .aisel-status :is(.workflow-tab,.tab,.name,.sample-product-name) {font-size:12px;}
+  .aisel-status :is(.section-heading,.sample-list-heading h3) {font-size:13px;}
+  .aisel-status :is(.result-count,.tab-count,.sample-result-count) {font-size:11px;}
+  .aisel-status :is(.name,.code,.factory,.blend,.meta-label,.colors-label,.arrived-at,.state,.chip,
+      .sample-product-name,.sample-options,.sample-option-main,.sample-option-sub,.sample-owner,
+      .sample-operation,.sample-date,.sample-return-date,.sample-return-label,.sample-secondary-line,
+      .sample-location-badge) {line-height:18px;}
+  .aisel-status :is(.code,.factory,.blend,.meta-label,.colors-label,.arrived-at,.state,.chip,
+      .sample-options,.sample-option-main,.sample-option-sub,.sample-owner,.sample-operation,
+      .sample-date,.sample-return-date,.sample-return-label,.sample-secondary-line,.sample-location-badge) {font-size:11px;}
   .aisel-status h1 {font-size:16px;}
   .aisel-status .brand {font-size:20px;}
   .aisel-status :is(.search,.sample-search-input) {font-size:16px!important;}
   .aisel-status .sample-list {border-top:1.5px solid var(--aisel-ink);}
   .aisel-status .sample-row {padding:12px 0;}
-  .aisel-status .sample-primary-line {font-size:var(--aisel-meta);line-height:16px;}
+  .aisel-status .sample-primary-line {font-size:11px;line-height:18px;}
   .aisel-status .sample-secondary-line {gap:4px;margin-top:4px;}
   .aisel-status .sample-options {margin-left:4px;}
-  .aisel-status .sample-location-text {border-radius:2px;font-size:var(--aisel-meta);line-height:16px;}
+  .aisel-status .sample-location-text {border-radius:2px;font-size:11px;line-height:18px;}
   .aisel-status .sample-field-wrap {
     display:flex;position:relative;align-items:center;flex:0 0 80px;min-width:0;height:44px;
     border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);
