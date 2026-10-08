@@ -5,7 +5,7 @@
   var labels = {name:"품명",color:"컬러"};
   var records = [], state = {status:"disconnected",records:[]};
   var provider = null, started = false, settled = false, localError = "", el = {};
-  ["sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
+  ["sampleFieldLabel","sampleSearch","sampleField","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
   function text(value){return value == null ? "" : String(value).trim();}
   function missing(value){return !text(value) || /^[—–-]+$/.test(text(value));}
   function display(value){return missing(value) ? "미입력" : text(value);}
@@ -65,7 +65,9 @@
   }
   function render(){
     if(document.activeElement !== el.sampleSearch) el.sampleSearch.value = sampleFilters.query;
-    el.sampleField.value = sampleFilters.field;el.sampleSearch.placeholder = labels[sampleFilters.field] + (sampleFilters.field === "name" ? "으로 검색" : "로 검색");
+    el.sampleField.value = sampleFilters.field;
+    if(el.sampleFieldLabel && el.sampleFieldLabel.textContent !== labels[sampleFilters.field]) el.sampleFieldLabel.textContent = labels[sampleFilters.field];
+    el.sampleSearch.placeholder = labels[sampleFilters.field] + (sampleFilters.field === "name" ? "으로 검색" : "로 검색");
     var busy = state.status === "loading", message = localError || (state.status === "error" ? text(state.message) : "");
     el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
     el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";

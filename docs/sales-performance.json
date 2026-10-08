@@ -1,4 +1,21 @@
 {
+  "aiselSharedScreenUi20261009": {
+    "status": "implemented_verified_pending_pages",
+    "stylesheet": "aisel-ui.css?v=20261009-v1",
+    "workorderVersion": 128,
+    "mobileLabelPx": 11,
+    "mobileMetaPx": 10,
+    "mobileInputPx": 16,
+    "touchTargetPx": 44,
+    "preserve": [
+      "columns_and_alignment",
+      "performance_badges",
+      "return_rate_colors",
+      "read_search_refresh_details",
+      "print"
+    ],
+    "sourceReceipt": "jisoo5000/aisel-tools/docs/aisel-ui-v1-release.json"
+  },
   "compactCriteriaGuidePlan20261007": {
     "status": "planning_only_code_prohibited",
     "decidedOn": "2026-10-07",
