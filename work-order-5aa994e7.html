@@ -1,3 +1,4 @@
+<!-- v117: screen-only width reference color border and mobile drawing order (2026-10-08) -->
 <!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
@@ -7195,11 +7196,23 @@
     });
     updateRefLinkMode_();
   }
+  // v117: URL editors occupy a supplementary row; link and action buttons stay together.
+  function alignReferenceScreenRows_(){
+    let gridRow=1;
+    document.querySelectorAll('#refLinksList > .ref-link-row').forEach(row=>{
+      if(row.hidden)return;
+      const link=row.querySelector('.ref-short-link'),actions=row.querySelector('.ref-actions'),input=row.querySelector('input');
+      if(link)link.style.gridRow=String(gridRow);
+      if(actions)actions.style.gridRow=String(gridRow);
+      if(input)input.style.gridRow=String(gridRow+1);
+      gridRow+=row.classList.contains('is-editing')?2:1;
+    });
+  }
   function openReferenceEditor_(input){
     const row = input.closest("#refLinksList .ref-link-row");
     if(row) row.classList.add("is-editing");
     input.readOnly = false; input.classList.remove("as-link");
-    input.focus();
+    alignReferenceScreenRows_();input.focus();
   }
   // 2026-08-13 추가: 링크 두 개에 같은 방식을 쓰기 위해 공용 함수로 뺐습니다.
   function updateOneRefLinkMode_(sel){
@@ -7225,6 +7238,7 @@
       input.readOnly = false;
       input.classList.remove("as-link");
     }
+    alignReferenceScreenRows_();
   }
   function setupRefLink_(inputSel, editBtnSel, delBtnSel, onDelete){
     const input = $(inputSel);
@@ -12508,10 +12522,10 @@ function renderVariantPanel(){
     // 색이 가려지지 않게 합니다 (배경을 파란색으로 덮으면 무슨 색인지 안 보이기 때문).
     const c = window.colorHex_(v);
     if(c){
-      chip.style.background = c.hex;
-      chip.style.color = c.text;
-      chip.style.borderColor = isSel ? "#1D5FD6" : "transparent";
-      if(isSel) chip.style.boxShadow = "0 0 0 2px #1D5FD6 inset";
+      chip.style.background = isSel ? "#2F3B52" : c.hex;
+      chip.style.color = isSel ? "#FFFFFF" : c.text;
+      chip.style.borderColor = isSel ? "#2F3B52" : "transparent";
+      if(isSel) chip.style.boxShadow = "none";
     }
     chip.textContent = v;
     chip.addEventListener("click", () => addColor(v));
@@ -12555,8 +12569,8 @@ function renderSelectedColors(){
     const chip = document.createElement("span");
     chip.className = "copygen-color-chip";
     const swatch = window.colorHex_(v) || {hex:"#F3F6FA",text:"#2F3B52"};
-    chip.style.background = swatch.hex;
-    chip.style.color = swatch.text;
+    chip.style.background = "#2F3B52";
+    chip.style.color = "#FFFFFF";
     chip.appendChild(document.createTextNode(v));
     const rm = document.createElement("button");
     rm.textContent = "×";
@@ -14089,4 +14103,33 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   #editorView #productColors #colorSwatches .color-dot {width:22px;height:22px;flex-basis:22px;}
  }
  @media print {#mobileCodeSettings,#mobileHeaderActions,.mobile-code-settings-button {display:none!important;}}
+</style>
+
+<style id="aisel-v117-screen-refinement">
+@media screen {
+ #mainBar {max-width:820px;width:100%;padding-left:0;padding-right:0;margin-left:auto;margin-right:auto;}
+ #editorView #refPanel {display:grid!important;grid-template-columns:auto minmax(0,1fr) auto 36px;align-items:center;gap:6px;}
+ #editorView #productColors #colorSwatches .copygen-swatch-btn {box-shadow:none!important;outline:none!important;}
+ #editorView #productColors #colorSwatches .color-dot {outline:none;box-shadow:none;}
+ #editorView #productColors #colorSwatches .copygen-selected-base .color-dot,
+ #editorView #productColors #colorSwatches .copygen-swatch-btn:focus-visible .color-dot {outline:2px solid #2F3B52;outline-offset:2px;}
+ #editorView #productColors #colorSwatches .copygen-add-color:focus-visible {outline:2px solid #2F3B52!important;border-radius:4px;}
+ #editorView #productColors .copygen-variant-panel {background:#F3F6FA;}
+ #editorView #productColors .copygen-variant-panel .copygen-label {color:#536079;}
+ #editorView #productColors #selectedColors .copygen-color-chip button {color:inherit;}
+}
+@media screen and (max-width:600px) {
+ #mainBar {width:calc(100% - 16px);}
+ #editorView .editor-mobile-head {border-radius:10px 10px 0 0;border:1px solid #CBD3DF;border-bottom:0;}
+ body #editorView .toolbar,body.mfold-open #editorView .toolbar {border:1px solid #CBD3DF;border-radius:0;border-bottom:0;}
+ #editorView #statusBar {border:1px solid #CBD3DF;border-radius:0 0 10px 10px;margin-top:0;}
+ body.mfold-open #editorView #refPanel,body:not(.mfold-open) #editorView #refPanel {display:grid!important;}
+ #sheet {display:flex;flex-direction:column;}
+ #sheet > * {order:5;}
+ #sheet > .title-row {display:grid!important;order:1;}
+ #sheet > .photos {display:contents;}
+ #sheet > .photos > #ph1 {order:2;width:100%;flex:none;border-right:0;}
+ #sheet > .meta {display:grid!important;order:3;}
+ #sheet > .photos > .photos-right {order:4;width:100%;}
+}
 </style>
