@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v112 (2026-10-08)
+<!-- AISEL 작업지시서 v113 (2026-10-08)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
@@ -6173,6 +6173,7 @@
       registrationNotice_("한글 입력을 마친 뒤 다시 인쇄해주세요.", false); return;
     }
     if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
+    if(window.validateCostPrint_ && !window.validateCostPrint_())return;
     // 2026-08-29 추가: 인쇄(=작업지시서 확정) 시점에 상태를 PDP로 자동 전환.
     // 이미 PDP·판매·드롭이면 되돌리지 않음(재인쇄 시 상태가 거꾸로 가지 않게).
     // 상세설명 카피생성기(onPdpStageReached_)는 여기서 부르지 않음 — 상태 탭 버튼과 분리해서 유지.
@@ -13900,3 +13901,82 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #editorView .toolbar-sequence {grid-column:1/-1;order:0;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr);}
 }
 </style>
+
+<style id="aisel-v113-cost-print">
+ .print-fixed-value,.print-cost-issue {display:none}
+ @media print {
+  #sheet #costCell .cost-print-omit {display:none!important}
+  #sheet #costCell .cost-table .unit,
+  #sheet #costCell .cost-table .applied-unit,
+  #sheet #costCell .fixed-row input,
+  #sheet #costCell .fixed-row .applied-fixed {display:none!important}
+  body.aisel-print-ready #sheet #costCell .cost-table td {vertical-align:middle!important;text-align:center!important}
+  body.aisel-print-ready #sheet #costCell .cost-table .print-table-value,
+  body.aisel-print-ready #sheet #costCell .cost-table .amt {
+   font-family:inherit;font-size:12.5px!important;font-weight:700;line-height:1.2!important;
+   padding:5px 3px!important;text-align:center!important;white-space:nowrap!important;overflow-wrap:normal!important;
+  }
+  #sheet #costCell .print-fixed-value,#sheet #costCell .fixed-loss-value {
+   display:block;font-family:inherit;font-size:12.5px!important;font-weight:700!important;
+   line-height:1.2!important;padding:6px 8px!important;text-align:right;white-space:nowrap;
+   font-variant-numeric:tabular-nums;
+  }
+  #sheet #costCell .print-cost-issue {display:block;font-size:11px;line-height:1.3;margin:5px 0}
+ }
+</style>
+<script id="aisel-v113-cost-print-script">
+/* A disposable print projection: no edits to saved prices, quantities or totals. */
+(function(root){
+ const cell=document.getElementById('costCell');if(!cell)return;
+ const money=value=>value===null?'—':Number(value).toLocaleString('ko-KR');
+ function snapshot(){
+  const api=root.WorkOrderNegotiation;
+  const rows=[...cell.querySelectorAll('#costLines .line')].map(row=>{
+   const qty=row.querySelector('.qty').value,unit=row.querySelector('.unit').value;
+   const result=api.evaluate(unit,row.negotiation_,qty);
+   const name=row.querySelector('.nm').value.trim();
+   const unused=/^(?:우라|심지)(?:\s|\(|$)/.test(name)&&result.applied===0;
+   const blank=qty.trim()==='',zero=api.number(qty)===0;
+   return {row,name,qty,result,omit:row.hidden||unused||blank||zero,issue:!row.hidden&&!unused&&blank&&(result.amount||0)>0};
+  });
+  let meta={};try{meta=JSON.parse(document.getElementById('costNegotiationData').value||'{}');}catch(_){}
+  const fixed=['gongim','siyage'].map(id=>({id,result:api.evaluate(document.getElementById(id).value,meta[id],1,true)}));
+  return {rows,fixed};
+ }
+ function validate(){
+  const issues=snapshot().rows.filter(item=>item.issue);
+  if(!issues.length)return true;
+  root.alert('수량을 입력한 뒤 인쇄해주세요: '+issues.map(item=>item.name||'자재').join(', '));return false;
+ }
+ function cleanup(){
+  cell.querySelectorAll('.cost-print-omit').forEach(row=>row.classList.remove('cost-print-omit'));
+  cell.querySelectorAll('.print-fixed-value,.print-cost-issue').forEach(el=>el.remove());
+ }
+ function prepare(){
+  cleanup();if(document.body.classList.contains('meeting-print-mode')||document.body.classList.contains('factory-print-mode'))return;
+  const data=snapshot();
+  for(const item of data.rows){
+   item.row.classList.toggle('cost-print-omit',item.omit);
+   const unit=item.row.querySelector('.unit'),unitCell=unit.closest('td');
+   // v83 creates one raw input projection. Replace it with the applied quote.
+   const values=[...unitCell.querySelectorAll('.print-table-value')];
+   let value=values.shift();values.forEach(node=>node.remove());
+   if(!value){value=document.createElement('span');value.className='print-table-value';unit.after(value);}
+   value.textContent=money(item.result.included?0:item.result.applied);
+  }
+  for(const item of data.fixed){
+   const input=document.getElementById(item.id),value=document.createElement('span');
+   value.className='print-fixed-value';value.textContent=item.result.amount===null?'—':money(item.result.amount)+'원';input.after(value);
+  }
+  const issues=data.rows.filter(item=>item.issue);
+  if(issues.length){
+   // Browser Ctrl+P cannot be cancelled. Keep its omitted cost visible as a warning.
+   const notice=document.createElement('p');notice.className='print-cost-issue';
+   notice.textContent='수량 확인 필요: '+issues.map(item=>(item.name||'자재')+' '+money(item.result.amount)+'원').join(', ')+' (제조원가에 포함)';
+   cell.querySelector('.cost-table').after(notice);
+  }
+ }
+ root.WorkOrderCostPrint={snapshot,prepare,cleanup,validate};root.validateCostPrint_=validate;
+ root.addEventListener('beforeprint',prepare);root.addEventListener('afterprint',cleanup);
+})(window);
+</script>
