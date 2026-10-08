@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
-<!-- AISEL 작업지시서 v111 (2026-10-07)
+<!-- AISEL 작업지시서 v112 (2026-10-08)
      [v103] 기본 브라우저 스크롤바 복원; BODY 스크롤 루트에 적용.
      [v102] 화면 스크롤바를 상시 표시하고 오른쪽 공간을 유지. 기존 문서 스크롤·인쇄 보존.
      [v101] 접기 없는 판매량·기간 주문 반품률 한 줄, 기록 대화상자, 비동기 목록 스크롤 버튼 갱신.
@@ -3217,7 +3217,6 @@
         <input id="seq" type="text" inputmode="numeric" placeholder="001" />
       </div>
       <button class="btn" id="genBtn">다음 번호 ▷</button>
-      <button type="button" class="btn ghost nav-btn jump-btn" data-jump="sampleRecoverySection">원샘플</button>
     </div>
     <!-- 2026-08-13 추가: 저장된 작지에서 카테고리를 바꿨을 때만 나타납니다 -->
     <button class="btn" id="moveCodeBtn" style="display:none;background:#8A5A18;border-color:#8A5A18;color:#fff;">품번 옮기기</button>
@@ -4532,8 +4531,7 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  /* ================= 로그인 게이트 (2026-08-13 추가, 13-4) =================
-     지금은 주소를 아는 사람은 누구나 앱을 열 수 있습니다.
+  /* ================= 로그인 게이트 (2026-08-13 추가, 13-4) ==========     지금은 주소를 아는 사람은 누구나 앱을 열 수 있습니다.
      아래 두 줄만 고치면 구글 로그인을 요구하고 허용 명단에 있는 사람만 들어옵니다.
 
        1) LOGIN_GATE_ENABLED 를 true 로 바꿉니다
@@ -4855,7 +4853,7 @@
   const WO_INDEX_VERSION = 4;   // 2026-09-20: 4 — 확정 안 된 가격(기본값 59,000 포함)은 색인에서 비웁니다
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
-  const WO_INDEX_KEYS = ["status","createdAt","pumMyeong","yy","mm","dd","cafe24Done",
+  const WO_INDEX_KEYS = ["status","createdAt","updatedAt","pumMyeong","yy","mm","dd","cafe24Done",
     "fabricNameField","fabricSupplierField","designer","blend","factory",
     "predExpectedQty","predExpectedDays","predActualQty","predActualDays",
     "sampleRecoveryStatus","photoStage",
@@ -4885,12 +4883,11 @@
     e.thumb    = s.p1Thumb || "";   // 압축 썸네일만
     return e;
   }
-  // updatedAt 을 뺀 알맹이만 비교합니다. 목록에 안 나오는 칸(원가·메모 등)만 고쳤을 때는
-  // 색인을 아예 다시 쓰지 않아서 다른 사람 화면이 새로 그려지지 않습니다.
+  // 수정 시각도 비교하여 원가·메모 편집이 목록 정렬에 반영되게 합니다.
   function woIndexSig_(e){
     if(!e) return "";
     const c = Object.assign({}, e);
-    delete c.updatedAt;
+    // v112: content modification time is part of the visible list ordering.
     return JSON.stringify(c);
   }
 
@@ -6175,7 +6172,6 @@
       registrationNotice_("한글 입력을 마친 뒤 다시 인쇄해주세요.", false); return;
     }
     if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
-    setModifiedToday();
     // 2026-08-29 추가: 인쇄(=작업지시서 확정) 시점에 상태를 PDP로 자동 전환.
     // 이미 PDP·판매·드롭이면 되돌리지 않음(재인쇄 시 상태가 거꾸로 가지 않게).
     // 상세설명 카피생성기(onPdpStageReached_)는 여기서 부르지 않음 — 상태 탭 버튼과 분리해서 유지.
@@ -6451,6 +6447,8 @@
           ["workorderIndex/" + code + "/status"]: next,
           ["workorderIndex/" + code + "/updatedAt"]: now
         };
+        const modifiedParts=modificationDateParts_(now);
+        for(const [key,value] of Object.entries(modifiedParts))updates["workorders/"+code+"/"+key]=value;
         if(sharing){
           if(shared.exists()) updates["workorderShare/" + code + "/status"] = next;
           else updates["workorderShare/" + code] = woShareEntryFromIndex_({...((allWorkOrders || {})[code] || {}), status: next});
@@ -6458,7 +6456,9 @@
         await firebase.database().ref().update(updates);
         if(currentCode !== code) return;
         currentStatus = next;
-        if(lastSavedState_) lastSavedState_ = {...lastSavedState_, status: next};
+        if(lastSavedState_)lastSavedState_={...lastSavedState_,status:next,updatedAt:now,...modifiedParts};
+        if(editorContentBaseline_)editorContentBaseline_={...editorContentBaseline_,status:next,updatedAt:now,...modifiedParts};
+        for(const [key,value] of Object.entries(modifiedParts))document.getElementById(key).value=value;
         updateStatusButtons();
         refreshCafe24Bar_();
         if(next === "sampling") ensureSampleMgmtRow_(code, pumInput.value.trim());
@@ -6783,7 +6783,7 @@
       createdAt_ = !isNaN(fromMeetingDate) ? fromMeetingDate : Date.now();
     }
     st.createdAt = createdAt_;
-    st.updatedAt = Date.now();
+    st.updatedAt = lastSavedState_?.updatedAt || st.createdAt;
     return st;
   }
   // 2026-08-25 추가: 마지막으로 "서버에도 있고 화면에도 반영된" 상태.
@@ -6791,6 +6791,7 @@
   // 다른 사람이 고친 내용을 아직 화면에 반영하지 않은 상태(입력 중 보류)에서는
   // 이 값을 일부러 갱신하지 않습니다. 그래야 내가 안 건드린 칸이 패치에 안 실립니다.
   let lastSavedState_ = null;
+  let editorContentBaseline_ = null;
   function sameValue_(a, b){
     const ta = typeof a, tb = typeof b;
     if(a === b) return true;
@@ -6815,13 +6816,13 @@
   function writeIndexIfChanged_(code, st){
     if(!code || !st) return Promise.resolve();
     const e = woIndexEntryFrom_(st);
+    e.updatedAt = sortKeyForOrder_(st);
     const sig = woIndexSig_(e);
     const known = (lastIndexSig_[code] !== undefined)
       ? lastIndexSig_[code]
       : woIndexSig_((allWorkOrders && allWorkOrders[code]) || null);
     if(known === sig) return pendingIndexWrites_[code] || Promise.resolve();
     lastIndexSig_[code] = sig;
-    e.updatedAt = st.updatedAt || Date.now();
     const indexWrite = woIndexRoot.child(code).set(e).catch(()=>{ delete lastIndexSig_[code]; return false; });
     pendingIndexWrites_[code]=indexWrite;
     indexWrite.then(()=>{if(pendingIndexWrites_[code]===indexWrite)delete pendingIndexWrites_[code];});
@@ -6891,11 +6892,21 @@
     const state=editorSaveState_(),id=++state.serial,revision=state.revision;
     state.latest=id;state.queued=false;state.result="pending";
     if(newOrderMode_ && !autoCreatedCode_)autoCreatedCode_=targetCode;
-    const patch=buildPatch_(lastSavedState_,st);
+    // Compare with the normalized screen after loading, so defaults and read-only viewing
+    // cannot turn old workorders into newly modified records.
+    const patch=buildPatch_(editorContentBaseline_,st);
+    for(const key of ["updatedAt","createdAt","myy","mmm","mdd"])delete patch[key];
     // A retry also includes unacknowledged fields, even if Firebase emitted its optimistic snapshot.
     const unresolved=new Set(state.failedKeys.keys());
     for(const entry of state.pending.values())for(const key of entry.keys)unresolved.add(key);
     for(const key of unresolved)if(Object.prototype.hasOwnProperty.call(st,key))patch[key]=st[key]===undefined?null:st[key];
+    const contentChanged=Object.keys(patch).some(key=>!["updatedAt","createdAt","myy","mmm","mdd"].includes(key));
+    if(contentChanged || !editorContentBaseline_){
+      st.updatedAt=Date.now();
+      const parts=editorContentBaseline_ ? modificationDateParts_(st.updatedAt) : {myy:st.yy,mmm:st.mm,mdd:st.dd};
+      Object.assign(st,parts);Object.assign(patch,parts,{updatedAt:st.updatedAt});
+      if(!lastSavedState_?.createdAt)patch.createdAt=st.createdAt;
+    }
     lastSentJSON=JSON.stringify(st);lastSentUpdatedAt_=st.updatedAt;
     if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;renderEditorSaveState_(state);return Promise.resolve(true);}
     const keys=Object.keys(patch);state.pending.set(id,{keys,revision});renderEditorSaveState_(state);
@@ -6903,7 +6914,8 @@
     const writePromise=Promise.resolve().then(()=>keys.length?targetRef.update(patch):undefined).then(async()=>{
       originalWritten=true;
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
-      if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;newOrderMode_=false;autoCreatedCode_=null;}
+      if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
+        for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";}
       if(state.latest===id){
         if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
         state.indexFailed=false;
@@ -6934,7 +6946,6 @@
       if(typeof waitForEditorComposition_==="function" && !await waitForEditorComposition_())return;
       if(!isCurrentSaveState_(state))return;
       clearTimeout(saveT);saveT=null;
-      setModifiedToday();
       originalSaved=await save()===true;
       if(!originalSaved || !isCurrentSaveState_(state))return;
       // External transfers start only after this record's original write succeeded.
@@ -7107,6 +7118,7 @@
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
+    editorContentBaseline_=collect();
   }
   function updateRefLinkMode_(){
     document.querySelectorAll("#refLinksList .ref-link-row:not([hidden]) input").forEach(input=>updateOneRefLinkMode_("#" + input.id));
@@ -7259,8 +7271,7 @@
     renderCoordiBacklinks_();
   }
 
-  /* ============ 코디에 내 제품 골라 넣기 (2026-08-25 추가) ============
-     외부 주소를 붙여넣는 방식은 두 가지가 안 됩니다.
+  /* ============ 코디에 내 제품 골라 넣기 (2026-08-25 추가) =====     외부 주소를 붙여넣는 방식은 두 가지가 안 됩니다.
        1. 브라우저는 다른 사이트(카페24 포함) 사진을 대신 가져오지 못해 썸네일이 안 뜹니다
        2. 상품을 내리거나 옮기면 주소가 죽습니다
      그래서 내 제품은 주소가 아니라 "품번"을 저장합니다.
@@ -7608,6 +7619,7 @@
     pendingRemoteState = null;
     lastSentJSON = null;
     lastSentUpdatedAt_ = null;
+    editorContentBaseline_ = null;
     lastSavedState_ = null;   // 2026-08-25 추가: 비교 기준도 함께 비웁니다
   }
   function attachWoRef(code){
@@ -7623,6 +7635,7 @@
     pendingRemoteState = null;
     lastSentJSON = null;
     lastSentUpdatedAt_ = null;
+    editorContentBaseline_ = null;
     lastSavedState_ = null;
     priceConfirmed_ = false;
     priceSource_ = "";
@@ -8076,12 +8089,15 @@
     const d = new Date();
     $("#yy").value = d.getFullYear(); $("#mm").value = d.getMonth()+1; $("#dd").value = d.getDate();
   }
-  // 2026-08-13 추가: 왼쪽 날짜(디자인회의일)는 처음 만들 때만 채우고 이후 자동으로 바뀌지 않습니다.
-  // 저장·인쇄 시에는 오른쪽 수정일만 오늘 날짜로 갱신합니다.
-  function setModifiedToday(){
-    const d = new Date();
-    $("#myy").value = d.getFullYear(); $("#mmm").value = d.getMonth()+1; $("#mdd").value = d.getDate();
+  function modificationDateParts_(at){
+    const date=new Date(at);
+    const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Seoul",year:"numeric",month:"numeric",day:"numeric"}).formatToParts(date).map(part=>[part.type,part.value]));
+    return {myy:String(Number(parts.year)),mmm:String(Number(parts.month)),mdd:String(Number(parts.day))};
   }
+  function setModifiedToday(){
+    for(const [id,value] of Object.entries(modificationDateParts_(Date.now())))document.getElementById(id).value=value;
+  }
+  ["myy","mmm","mdd"].forEach(id=>document.getElementById(id).readOnly=true);
 
   // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
   function setMainTabActive_(which){
@@ -9671,6 +9687,7 @@
     // 이 상태에서는 품번이 겹쳐도 기존 작지 내용을 화면에 불러오지 않고, 그 품번으로 저장도 안 됨.
     newOrderMode_ = true;
     autoCreatedCode_ = null;
+    editorContentBaseline_ = null;
     lastSavedState_ = null;   // 2026-08-25 추가: 새 작지는 비교 기준 없이 처음부터 씁니다
     showEditor();
     linesWrap.querySelectorAll(".line").forEach(row=>row.negotiationEditor_?.remove());linesWrap.innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";
@@ -9720,6 +9737,7 @@
     if(typeof renderName1 === "function") renderName1();
     $("#cafe24Done").checked = false;
     editLog_ = [];
+    editorContentBaseline_ = null;
     createdAt_ = null;   // 새 작지는 처음 저장될 때 생성 시각이 새로 정해집니다
     const outputEl = document.getElementById("output");
     if(outputEl){
@@ -9854,17 +9872,19 @@
     alert(`${okCount}/${list.length}개를 구글시트로 보냈습니다. (제조원가·원가상세는 화면을 열어 저장/인쇄해야 정확히 반영됩니다)`);
   });
 
-  // 2026-08-13 추가: 목록 정렬용 시각을 계산합니다.
-  // 1순위 createdAt(생성 시각 기록) → 2순위 디자인회의 날짜(yy/mm/dd) → 3순위 최종 수정 시각.
-  // 오늘 하루 테스트 삼아 여러 번 저장된 예전 작지가 최종 수정 시각 때문에 맨 위로
-  // 몰리지 않도록, 기록이 없을 때는 회의 날짜를 최종 수정 시각보다 먼저 씁니다.
+  // v112: sort by the last content modification; use creation date for legacy records.
   function sortKeyForOrder_(st){
-    if(st.createdAt) return st.createdAt;
-    if(st.yy && st.mm && st.dd){
-      const t = new Date(Number(st.yy), Number(st.mm) - 1, Number(st.dd)).getTime();
-      if(!isNaN(t)) return t;
+    if(Number(st.updatedAt)>0)return Number(st.updatedAt);
+    if(st.myy && st.mmm && st.mdd){
+      const t=new Date(Number(st.myy),Number(st.mmm)-1,Number(st.mdd)).getTime();
+      if(Number.isFinite(t))return t;
     }
-    return st.updatedAt || 0;
+    if(Number(st.createdAt)>0)return Number(st.createdAt);
+    if(st.yy && st.mm && st.dd){
+      const t=new Date(Number(st.yy),Number(st.mm)-1,Number(st.dd)).getTime();
+      if(Number.isFinite(t))return t;
+    }
+    return 0;
   }
 
   function renderGallery(){
@@ -10695,7 +10715,6 @@
     if(!await waitForEditorComposition_()){
       alert("한글 입력을 마친 뒤 다시 인쇄해주세요."); return;
     }
-    setModifiedToday();
     if(await save() === false){
       alert("저장하지 못해 인쇄를 멈췄습니다. 연결을 확인한 뒤 다시 눌러주세요."); return;
     }
@@ -11134,8 +11153,7 @@ let wordsShared_ = {};   // 파이어베이스에서 읽은 것
 // 클로드 API 배달원(구글 앱스 스크립트) 주소. CopygenRelay.gs 배포 후 여기에 붙여넣기
 const COPYGEN_RELAY_URL = "https://script.google.com/macros/s/AKfycbxHGBHi3878TPQEJAngnbaTYVPNAc1cQuT95DsqPazIKI6dUh7rCGwrg6q2iXOpnOKvZw/exec";
 
-/* ================= 작업지시서 저장소 (품명 중복 체크의 기준 데이터) =================
-   이 목록은 이제 컴퓨터 하나에만 저장되지 않고 지금 열려있는 작지(품번) 안에 같이 저장됩니다.
+/* ================= 작업지시서 저장소 (품명 중복 체크의 기준 데이터) ==========   이 목록은 이제 컴퓨터 하나에만 저장되지 않고 지금 열려있는 작지(품번) 안에 같이 저장됩니다.
    작지 편집화면 스크립트(다른 <script> 블록)에서 window.getPdpRows_/setPdpRows_/triggerWorkOrderSave_ 로 연결됩니다. */
 let rows = [];
 window.getPdpRows_ = () => rows;
@@ -11282,8 +11300,7 @@ window.setNameParts_ = (v) => {
   if(typeof updatePreview === "function") updatePreview();
 };
 
-/* ================= 셀링포인트 (2026-08-13 추가) =================
-   편안함 / 날씬 / 반전 디테일 세 영역. 원단·디테일·핏(★)보다 상위 개념이라 ★★로 구분.
+/* ================= 셀링포인트 (2026-08-13 추가) ==========   편안함 / 날씬 / 반전 디테일 세 영역. 원단·디테일·핏(★)보다 상위 개념이라 ★★로 구분.
    선택값은 작지에 st.sellingPoints 로 함께 저장되어 나중에 성적표 분석에 쓰임.
    단어는 전부 붙여쓰기로 통일 (띄어쓰기가 섞이면 같은 태그가 두 개로 갈라져 집계가 어긋남). */
 // 목록의 순서가 곧 우선순위입니다. 앞에 있을수록 품명에 먼저 들어갑니다.
@@ -11459,8 +11476,7 @@ function setupSpAdd(groupKey){
 Object.keys(SP_UI).forEach(setupSpAdd);
 
 // 작지 편집화면 스크립트에서 읽고 쓰는 통로 (pdpRows 와 같은 방식)
-/* ================= 고친 기록 저장 (2026-08-13 추가, 13-5) =================
-   AI가 만든 이름과 문장을 지수님이 어떻게 고치시는지 원본과 함께 남깁니다.
+/* ================= 고친 기록 저장 (2026-08-13 추가, 13-5) ==========   AI가 만든 이름과 문장을 지수님이 어떻게 고치시는지 원본과 함께 남깁니다.
    이 기록이 쌓이면 어떤 방향으로 고치시는지 패턴이 보이고, 그것을 규칙에 반영해
    점점 손댈 일이 줄어듭니다. 지금은 저장만 하고 분석은 나중에 합니다. */
 let aiSuggestedName_ = "";     // AI가 만든 이름 (조립 결과)
@@ -11816,8 +11832,7 @@ function syncKeywordsFromFabric(){
   ta.value = current.join(", ");
 }
 
-/* ================= 사진 판독 (2026-08-13 추가) =================
-   작지에 사진(도식화·레퍼런스·실물)을 넣으면 자동으로 읽어서
+/* ================= 사진 판독 (2026-08-13 추가) ==========   작지에 사진(도식화·레퍼런스·실물)을 넣으면 자동으로 읽어서
    셀링포인트 · 아이템명 · 고유명을 채웁니다. 판독 결과는 바로 선택된 상태로 들어가고,
    틀린 것만 지수님이 빼시면 됩니다.
    도식화에서는 형태(넥라인·밑단·랩·절개 등)가 잘 읽히고,
@@ -11923,8 +11938,7 @@ ${spGroups.twist.join(", ")}
 - 정말로 slim이나 twist가 하나도 없는 옷이라면 빈 배열로 두되, 그 이유를 note에 분명히 적습니다.`;
 }
 
-/* ================= 셀링포인트 사용 현황 (2026-08-13 추가, 13-10) =================
-   기타로 직접 입력한 단어가 자주 쓰이면 정식 버튼으로 올려야 합니다.
+/* ================= 셀링포인트 사용 현황 (2026-08-13 추가, 13-10) ==========   기타로 직접 입력한 단어가 자주 쓰이면 정식 버튼으로 올려야 합니다.
    매번 손으로 치면 오타로 같은 태그가 두 개로 갈라지기 때문입니다.
    아래 버튼을 누르면 지금까지 만든 작지 전체에서 셀링포인트 사용 횟수를 세어 보여줍니다. */
 window.showSellingPointUsage_ = async function(){
@@ -12890,8 +12904,7 @@ function refreshCopygenOutputState_(){
     lastGenerated = "";
   }
 }
-/* ================= 자동 갱신 (2026-08-13 추가) =================
-   셀링포인트·원단·품명·컬러가 바뀌면 상세설명을 자동으로 다시 씁니다.
+/* ================= 자동 갱신 (2026-08-13 추가) ==========   셀링포인트·원단·품명·컬러가 바뀌면 상세설명을 자동으로 다시 씁니다.
    다만 지수님이 결과창을 직접 고치셨다면 그 문장을 함부로 덮어쓰지 않고
    "재료가 바뀌었습니다 · 다시 쓰기" 바만 띄웁니다.
    연속으로 버튼을 여러 개 누를 때는 손을 멈춘 뒤 한 번만 호출합니다(호출 비용 절감). */
@@ -13867,3 +13880,15 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 
 <script src="status-pricing-rules.js?v=status17"></script>
 <script src="status-catalog-bridge.js?v=status17.1"></script>
+<style id="aisel-v112-toolbar">
+@media screen and (min-width:701px){
+ #editorView .toolbar-fields {display:grid;grid-template-columns:minmax(0,20fr) minmax(0,38fr) minmax(0,42fr);gap:8px;align-items:end;width:100%;}
+ #editorView .toolbar-fields > .tf {min-width:0;max-width:none;}
+ #editorView .toolbar-sequence {grid-column:auto;grid-template-columns:minmax(0,18fr) minmax(0,24fr);gap:8px;align-items:end;}
+ #editorView .toolbar-fields #moveCodeBtn {grid-column:1/-1;}
+}
+@media screen and (max-width:700px){
+ #editorView .toolbar-fields {grid-template-columns:minmax(0,1fr) minmax(0,2fr);}
+ #editorView .toolbar-sequence {grid-column:1/-1;order:0;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr);}
+}
+</style>
