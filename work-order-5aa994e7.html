@@ -1,3 +1,4 @@
+<!-- v119: mobile header identity editing and duplicate metadata removal (2026-10-08) -->
 <!-- v118: remove redundant mobile code settings button (2026-10-08) -->
 <!-- v117: screen-only width reference color border and mobile drawing order (2026-10-08) -->
 <!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
@@ -1315,6 +1316,21 @@
     .ss-table-wrap { overflow: hidden !important; margin-top: 1mm !important; }
   }
 
+</style>
+
+<style id="aisel-v119-mobile-identity">
+@media screen and (max-width:600px) {
+ #sheet > .meta > .cell:nth-child(2) {display:none!important;}
+ #mobileProductName,#mobileProductCode {cursor:pointer;}
+ #mobileProductName[hidden] {display:none;}
+ #editorView .editor-mobile-title .mobile-title-input {
+  box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:24px;
+  margin:0;padding:0;border:0;border-radius:0;background:transparent;
+  font-size:16px;font-weight:700;line-height:1.5;color:inherit;
+ }
+ #editorView .editor-mobile-title .mobile-title-input:focus {outline:0;border-bottom:1px solid #2F3B52;}
+ #mobileProductName:focus-visible,#mobileProductCode:focus-visible {outline:2px solid #2F3B52;outline-offset:2px;}
+}
 </style>
 <style>
 /* ---------- 상세페이지 카피 생성기 + 원단정보 인식 (통합, copygen- 접두사로 격리) ---------- */
@@ -3195,8 +3211,8 @@
        뜨는 다른 경고(setCodeChangeNotice_)가 이 자리를 그대로 씁니다. -->
   <div class="code-pending-hint" id="codePendingHint"></div>
   <div class="editor-mobile-head noprint">
-    <div class="editor-mobile-title"><button type="button" id="mobileBackToListBtn" aria-label="목록으로">← 목록</button><strong id="mobileProductName">작업지시서</strong></div>
-    <div class="editor-mobile-caption"><span id="mobileProductCode"></span><span id="mobileProductStatus"></span></div>
+    <div class="editor-mobile-title"><strong id="mobileProductName" role="button" tabindex="0" aria-label="품명 수정">작업지시서</strong></div>
+    <div class="editor-mobile-caption"><span id="mobileProductCode" role="button" tabindex="0" aria-label="카테고리 수정"></span></div>
   </div>
   <input type="hidden" id="supplierQualityData" value="">
   <!-- TOOLBAR (화면 전용) -->
@@ -11129,12 +11145,32 @@
 
   function renderMobileHeader_(){
     const name=document.getElementById("mobileProductName");if(!name)return;
-    name.textContent=document.getElementById("pumMyeong").value.trim()||"새 작업지시서";
-    document.getElementById("mobileProductCode").textContent=document.getElementById("codeView").textContent.trim();
-    const active=document.querySelector("#statusBar .status-btn.active");
-    document.getElementById("mobileProductStatus").textContent=active?active.textContent.trim():"";
+    const title=document.getElementById("pumMyeong").value.trim()||"새 작업지시서";
+    if(name.textContent!==title)name.textContent=title;
+    const code=document.getElementById("mobileProductCode"),value=document.getElementById("codeView").textContent.trim();
+    if(code.textContent!==value)code.textContent=value;
   }
-  document.getElementById("mobileBackToListBtn").addEventListener("click",()=>document.getElementById("backToListBtn").click());
+  // Reuse the actual name input, including its IME/save listeners, only while editing.
+  const mobileName=document.getElementById('mobileProductName');
+  const nameHome=document.createComment('original product name input');pumInput.before(nameHome);
+  function finishMobileNameEdit_(){
+    if(!pumInput.classList.contains('mobile-title-input'))return;
+    pumInput.classList.remove('mobile-title-input');
+    if(document.activeElement===pumInput)pumInput.blur();
+    nameHome.after(pumInput);
+    mobileName.hidden=false;renderMobileHeader_();
+  }
+  function beginMobileNameEdit_(){
+    if(!window.matchMedia('(max-width:600px)').matches||window.matchMedia('print').matches)return;
+    mobileName.hidden=true;mobileName.after(pumInput);pumInput.classList.add('mobile-title-input');pumInput.focus();
+  }
+  mobileName.addEventListener('click',beginMobileNameEdit_);
+  mobileName.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();beginMobileNameEdit_();}});
+  pumInput.addEventListener('blur',finishMobileNameEdit_);
+  pumInput.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing&&!isEditorComposing_()){event.preventDefault();finishMobileNameEdit_();}});
+  window.addEventListener('beforeprint',finishMobileNameEdit_);
+  const namePrintMedia=window.matchMedia('print');
+  if(namePrintMedia.addEventListener)namePrintMedia.addEventListener('change',event=>{if(event.matches)finishMobileNameEdit_();});
   document.getElementById("pumMyeong").addEventListener("input",renderMobileHeader_);
   renderMobileHeader_();
 
@@ -11151,23 +11187,33 @@
     codeSeason.innerHTML=document.getElementById('season').innerHTML;codeCategory.innerHTML=catSel.innerHTML;
     codeSeason.value=document.getElementById('season').value;codeCategory.value=catSel.value;
     const editable=codePending_||newOrderMode_;
-    codeSeason.disabled=codeCategory.disabled=!editable;
-    document.getElementById('mobileCodeApply').hidden=!editable;
-    document.getElementById('mobileCodeHelp').textContent=editable?'시즌과 카테고리를 확인하면 순번은 자동으로 정해집니다.':'저장된 품번은 유지됩니다. 카테고리 변경은 데스크톱에서 할 수 있습니다.';
+    codeSeason.disabled=!editable;codeCategory.disabled=false;
+    document.getElementById('mobileCodeApply').hidden=false;
+    document.getElementById('mobileCodeApply').textContent=editable?'품번 생성':'분류 적용';
+    document.getElementById('mobileCodeHelp').textContent=editable?'시즌과 카테고리를 확인하면 순번은 자동으로 정해집니다.':'카테고리를 수정해도 저장된 품번은 유지됩니다.';
     if(!codeSettings.open){if(codeSettings.showModal)codeSettings.showModal();else codeSettings.setAttribute('open','');}
   }
   window.openMobileCodeSettings_=openMobileCodeSettings_;
   document.getElementById('mobileCodeApply').addEventListener('click',()=>{
-    if(!(codePending_||newOrderMode_)||loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;
-    document.getElementById('season').value=codeSeason.value;catSel.value=codeCategory.value;
-    try{localStorage.setItem('aisel_current_season',codeSeason.value);}catch(e){}
-    pumInput.dataset.auto='1';clearPendingCode_();suggestSeq();codeSettings.close();saveSoon();
+    if(loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;
+    const creating=codePending_||newOrderMode_;
+    const changed=catSel.value!==codeCategory.value;
+    catSel.value=codeCategory.value;
+    if(creating){
+      document.getElementById('season').value=codeSeason.value;
+      try{localStorage.setItem('aisel_current_season',codeSeason.value);}catch(e){}
+      clearPendingCode_();suggestSeq();
+    }
+    codeSettings.close();renderMobileHeader_();if(creating||changed)saveSoon();
   });
   for(const id of ['saveBtn','factorySaveBtn','printBtn'])document.getElementById(id).addEventListener('click',event=>{
     if(codePending_&&window.matchMedia('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
   },true);
   const codeView=document.getElementById('codeView');
   codeView.addEventListener('click',openMobileCodeSettings_);
+  const headerCode=document.getElementById('mobileProductCode');
+  headerCode.addEventListener('click',openMobileCodeSettings_);
+  headerCode.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openMobileCodeSettings_();}});
   const mobileActions=document.createElement('div');mobileActions.id='mobileHeaderActions';
   document.querySelector('.editor-mobile-head').appendChild(mobileActions);
   const newAction=document.getElementById('newBtn'),deleteAction=document.getElementById('deleteBtn');
@@ -11175,6 +11221,7 @@
   newAction.before(newHome);deleteAction.before(deleteHome);
   const mobileLayout=window.matchMedia('(max-width:600px)');
   function placeCompactMobileActions_(){
+    if(!mobileLayout.matches)finishMobileNameEdit_();
     if(mobileLayout.matches){mobileActions.append(newAction,deleteAction);}else{newHome.after(newAction);deleteHome.after(deleteAction);if(codeSettings.open)codeSettings.close();}
   }
   placeCompactMobileActions_();if(mobileLayout.addEventListener)mobileLayout.addEventListener('change',placeCompactMobileActions_);else mobileLayout.addListener(placeCompactMobileActions_);
