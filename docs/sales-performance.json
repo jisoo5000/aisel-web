@@ -1,6 +1,6 @@
 {
   "aiselSharedScreenUi20261009": {
-    "status": "implemented_verified_pending_pages",
+    "status": "implemented_pages_verified",
     "stylesheet": "aisel-ui.css?v=20261009-v1",
     "workorderVersion": 128,
     "mobileLabelPx": 11,
