@@ -1,4 +1,4 @@
-<!-- v120: mobile header links and five actions in one row (2026-10-08) -->
+<!-- v121: mobile action consistency, actual color chips and closing picker (2026-10-09) -->
 <!-- v119: mobile header identity editing and duplicate metadata removal (2026-10-08) -->
 <!-- v118: remove redundant mobile code settings button (2026-10-08) -->
 <!-- v117: screen-only width reference color border and mobile drawing order (2026-10-08) -->
@@ -11224,6 +11224,7 @@
   const mobileLayout=window.matchMedia('(max-width:600px)');
   function placeCompactMobileActions_(){
     if(!mobileLayout.matches)finishMobileNameEdit_();
+    document.getElementById('factorySaveBtn').textContent=mobileLayout.matches?'공장 저장':'공장 저장/인쇄';
     // The existing five action buttons stay in their original toolbar order.
     newHome.after(newAction);deleteHome.after(deleteAction);
     if(mobileLayout.matches)document.querySelector('.editor-mobile-head').appendChild(headerReference);
@@ -12574,6 +12575,8 @@ function renderVariantPanel(){
     // 색이 가려지지 않게 합니다 (배경을 파란색으로 덮으면 무슨 색인지 안 보이기 때문).
     const c = window.colorHex_(v);
     if(c){
+      chip.style.setProperty('--workorder-color-bg', c.hex);
+      chip.style.setProperty('--workorder-color-text', c.text);
       chip.style.background = isSel ? "#2F3B52" : c.hex;
       chip.style.color = isSel ? "#FFFFFF" : c.text;
       chip.style.borderColor = isSel ? "#2F3B52" : "transparent";
@@ -12592,6 +12595,14 @@ function addColor(v){
   if(!v) return;
   selectedColors = normalizeColorList_([...selectedColors, v]);
   renderSelectedColors();
+  // Mobile selection finishes one choice; desktop retains its multi-choice panel.
+  if(window.matchMedia('(max-width:600px)').matches){
+    const family = openBase;
+    openBase = null;
+    renderSwatches();
+    const trigger = [...$("colorSwatches").querySelectorAll('button')].find(button=>button.title===family);
+    if(trigger) trigger.focus({preventScroll:true});
+  }
   renderVariantPanel();
   if(window.onCopygenMaterialChanged_) window.onCopygenMaterialChanged_();
   persistRows_();   // 2026-08-13 추가: 컬러도 셀링포인트·pdpRows처럼 작지에 함께 저장
@@ -12621,6 +12632,8 @@ function renderSelectedColors(){
     const chip = document.createElement("span");
     chip.className = "copygen-color-chip";
     const swatch = window.colorHex_(v) || {hex:"#F3F6FA",text:"#2F3B52"};
+    chip.style.setProperty('--workorder-color-bg', swatch.hex);
+    chip.style.setProperty('--workorder-color-text', swatch.text);
     chip.style.background = "#2F3B52";
     chip.style.color = "#FFFFFF";
     chip.appendChild(document.createTextNode(v));
@@ -14219,6 +14232,38 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  body #editorView .tb-row > .btn {
   height:48px;min-height:48px;max-height:48px;padding:3px 1px;font-size:10px;
   line-height:1.3;white-space:normal;overflow-wrap:normal;word-break:keep-all;
+ }
+}
+</style>
+
+<style id="aisel-v121-mobile-controls">
+@media screen and (max-width:600px) {
+ #editorView .editor-mobile-head {grid-template-columns:minmax(0,1fr) auto;}
+ body #editorView .editor-mobile-head #refPanel {
+  grid-template-columns:max-content auto 26px;width:max-content;max-width:100%;align-self:start;
+ }
+ #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {
+  width:max-content;min-width:0;justify-self:start;padding:0 10px;font-size:14px;
+ }
+ body #editorView .toolbar > .tb-row {grid-auto-rows:60px;}
+ body #editorView .toolbar .tb-row > :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn) {
+  height:60px;min-height:60px;max-height:60px;font-size:14px;font-weight:600;
+  line-height:1.2;border:1px solid #2F3B52;word-break:keep-all;overflow-wrap:anywhere;
+ }
+ body #editorView .tb-row > #deleteBtn {
+  background:#F6EEF1;color:#7D3C4D;border-color:#DCC8CF;
+ }
+ body #editorView .tb-row > #deleteBtn:hover {background:#EFE1E7;}
+ #editorView #productColors #selectedColors .copygen-color-chip,
+ #editorView #productColors #variantPanel .copygen-color-chip {
+  background:var(--workorder-color-bg,#F3F6FA)!important;
+  color:var(--workorder-color-text,#2F3B52)!important;
+ }
+ #editorView #productColors #selectedColors .copygen-color-chip {
+  box-shadow:inset 0 0 0 1px rgba(47,59,82,.12);
+ }
+ #editorView #productColors #variantPanel .copygen-selected {
+  border-color:#2F3B52!important;box-shadow:0 0 0 1px #2F3B52!important;
  }
 }
 </style>
