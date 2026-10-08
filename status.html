@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v18 (2026-10-09): 등록완료 조회·PDP 복구·실행 취소, 상태 확인창, 가벼운 차콜 메뉴. -->
+<!-- AISEL 제품 진행 현황 v19 (2026-10-09): 발주생산 도착 확인→PDP 생성 완료→판매중, 한국 시간 도착 확인일, 단계별 버튼 하나. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -64,15 +64,8 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .chip.light{border-color:rgba(0,0,0,.14)}
 .arrive-row{margin-top:auto;padding-top:6px;display:flex;flex-direction:column;gap:2px}
 .arrive-btn{width:100%;min-height:44px;border:1px solid transparent;border-radius:3px;padding:5px 4px;font-size:12px;line-height:1.4;font-weight:500;cursor:pointer;background:#fff;color:var(--navy)}
-.arrive-btn.go,.arrive-btn.complete,.arrive-btn.restore{border-color:#BAB9B3;color:var(--navy);background:#fff}
+.arrive-btn.go,.arrive-btn.complete,.arrive-btn.restore{border-color:#8C8B85;color:var(--navy);background:#fff}
 .arrive-btn.go:hover,.arrive-btn.complete:hover,.arrive-btn.restore:hover{background:#F5F4F1;border-color:var(--navy)}
-.arrive-btn.undo{background:#fff;color:var(--muted);font-size:11px}
-.arrive-btn.undo:hover{border-color:var(--navy);color:var(--navy);background:var(--field)}
-.review-btn{display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;color:var(--muted)}
-.review-btn::before{content:"";width:12px;height:12px;border:1px solid #C6C4BE;border-radius:2px;display:grid;place-items:center;font-size:10px;line-height:1}
-.review-btn.on{color:var(--navy)}
-.review-btn.on::before{content:"✓";background:#EEEDE9;color:var(--navy);border-color:#AAA89F}
-.review-btn:hover{color:var(--navy);background:#FAF9F7}
 .arrive-btn:disabled{opacity:.55;cursor:default}
 .arrived-at{font-size:10.5px;color:var(--muted);text-align:center}
 .empty{background:var(--field);border:1px solid var(--hair);border-radius:6px;padding:56px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
@@ -185,9 +178,9 @@ function normalizeStatus_(key){return ["planned","samplemgmt"].indexOf(key)!==-1
 var STATES = [
   {key:"sampling",label:"샘플중",bg:"#EEF1F6",fg:"#4B5566",desc:function(n){return "샘플 진행 중인 제품 " + n + "개입니다.";},empty:"지금 샘플 진행 중인 제품이 없습니다."},
   {key:"order",label:"발주생산",bg:"#FFF6E5",fg:"#8A5A18",desc:function(n){return "공장에 발주한 제품 " + n + "개입니다.";},empty:"지금 발주된 제품이 없습니다."},
-  {key:"pdp",label:"PDP",bg:"#F3F1EC",fg:"#7A7364",desc:function(n){return "제품 " + n + "개가 상세페이지 등록을 기다리고 있습니다.";},empty:"상세페이지 등록을 기다리는 제품이 없습니다."},
+  {key:"pdp",label:"PDP",bg:"#F3F1EC",fg:"#7A7364",desc:function(n){return "제품 " + n + "개가 PDP 생성을 기다리고 있습니다.";},empty:"PDP 생성을 기다리는 제품이 없습니다."},
   {key:"planned",label:"예정",bg:"#EEF1F6",fg:"#4B5566"},
-  {key:"sale",label:"등록완료",bg:"#F3F1EC",fg:"#5E6059",desc:function(n){return "최근 30일 내 등록완료 제품 " + n + "개입니다. 잘못 처리한 제품은 PDP로 되돌릴 수 있습니다.";},empty:"최근 30일 내 등록완료 제품이 없습니다."}
+  {key:"sale",label:"판매중",bg:"#F3F1EC",fg:"#5E6059",desc:function(n){return "최근 30일 내 판매중 제품 " + n + "개입니다. 잘못 처리한 제품은 PDP로 되돌릴 수 있습니다.";},empty:"최근 30일 내 판매중 제품이 없습니다."}
 ];
 var SHARED = ["sampling","order","pdp","sale"];
 var ACTIVE = ["sampling","order","pdp"];
@@ -211,10 +204,10 @@ var searchEl = document.getElementById("search");
 var lastSig = null;
 
 /* 상태 이동은 기존 원본/색인/공유 자료와 경량 목록을 한 번에 바꿉니다. */
-function todayStr_(){
-  var d = new Date();
-  var p = function(n){return n < 10 ? "0" + n : "" + n;};
-  return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+function todayStr_(date){
+  var parts = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(date || new Date());
+  var values = {};parts.forEach(function(part){values[part.type] = part.value;});
+  return values.year + '-' + values.month + '-' + values.day;
 }
 var statusChangeBusy_ = false;
 var statusConfirmResolve_ = null;
@@ -296,16 +289,13 @@ function changeStatus_(code,name,btn,from,patch,label,notice){
   }).finally(function(){statusChangeBusy_ = false;});
 }
 function markArrived_(code,name,btn){
-  return changeStatus_(code,name,btn,'order',{status:'pdp',arrivedAt:todayStr_()},'도착 확인','도착일을 오늘로 기록하고 PDP 등록 대기로 이동합니다.');
-}
-function undoArrived_(code,name,btn){
-  return changeStatus_(code,name,btn,'pdp',{status:'order',arrivedAt:null},'도착 취소','발주생산으로 되돌리며 도착일을 지웁니다.');
+  return changeStatus_(code,name,btn,'order',{status:'pdp',arrivedAt:todayStr_()},'도착 확인','물류 도착 확인일을 오늘(한국 시간)로 기록하고 PDP 생성 대기로 이동합니다.');
 }
 function completePdp_(code,name,btn){
-  return changeStatus_(code,name,btn,'pdp',{status:'sale'},'등록완료로 변경','등록완료 메뉴에서 최근 30일 내 제품을 찾고 PDP로 되돌릴 수 있습니다.');
+  return changeStatus_(code,name,btn,'pdp',{status:'sale'},'PDP 생성 완료','작업지시서와 제품 진행 현황을 판매중으로 변경합니다. 도착 확인일은 유지됩니다.');
 }
 function restorePdp_(code,name,btn){
-  return changeStatus_(code,name,btn,'sale',{status:'pdp'},'PDP로 되돌리기','등록 대기로 되돌립니다. 기존 도착일은 유지합니다.');
+  return changeStatus_(code,name,btn,'sale',{status:'pdp'},'PDP로 되돌리기','PDP 생성 대기로 되돌립니다. 기존 도착 확인일은 유지합니다.');
 }
 function undoLatestChange_(){
   var record = lastStatusUndo_;
@@ -328,10 +318,6 @@ function undoLatestChange_(){
 }
 document.getElementById('statusToastUndo').addEventListener('click',undoLatestChange_);
 document.getElementById('statusToastDismiss').addEventListener('click',function(){document.getElementById('statusToast').hidden = true;lastStatusUndo_ = null;});
-
-function togglePdpReview_(code,entry,btn){
-  return writeStatusPatch_(code,{pdpReviewNeeded:entry.pdpReviewNeeded!==true},btn,"저장됨");
-}
 
 /* 세 진행 상태를 집계하고, 검색은 판매 상태도 포함합니다. */
 function countOf(key){
@@ -360,7 +346,7 @@ function renderTabs(){
     ? (dataReady ? "연결이 끊겼습니다. 마지막으로 받은 정보를 표시합니다." : "연결을 확인한 뒤 새로고침해 주세요.")
     : catalogMissing ? "제품 요약 정보가 아직 연결되지 않았습니다. 작업지시서 동기화를 기다리고 있습니다."
     : !dataReady ? "제품 정보를 불러오고 있습니다."
-    : query ? "현재 탭과 관계없이 품명·품번으로 검색합니다. 최근 30일 등록완료 상태도 포함합니다."
+    : query ? "현재 탭과 관계없이 품명·품번으로 검색합니다. 최근 30일 판매중 상태도 포함합니다."
     : countOf(filter) ? current.desc(countOf(filter)) : current.empty;
 }
 function rowsNow(){
@@ -496,7 +482,7 @@ function render(){
     var body = document.createElement("div");body.className = "body";
     var state = stateOf(entry.status);
     var badge = document.createElement("span");badge.className = "state";
-    badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = entry.status === "pdp" ? "PDP · 등록 대기" : state.label;badge.setAttribute("aria-label","현재 상태: " + badge.textContent);body.appendChild(badge);
+    badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = entry.status === "pdp" ? "PDP · 생성 대기" : state.label;badge.setAttribute("aria-label","현재 상태: " + badge.textContent);body.appendChild(badge);
     var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";body.appendChild(name);
     var code = document.createElement("div");code.className = "code";code.textContent = row.code;body.appendChild(code);
     appendField_(body,"factory","공장",entry.factory);
@@ -515,33 +501,24 @@ function render(){
       chip.textContent = typeof color === "object" ? color.n : color;colors.appendChild(chip);
     });
     body.appendChild(colors);
-    if(ACTIVE.indexOf(entry.status) !== -1){
+    if(entry.status === "pdp" || entry.status === "sale"){
+      var arrived = document.createElement("div");arrived.className = "arrived-at";
+      arrived.textContent = "도착 확인일 " + (entry.arrivedAt || "미입력");body.appendChild(arrived);
+    }
+    if(entry.status === "order" || entry.status === "pdp" || entry.status === "sale"){
       var actions = document.createElement("div");actions.className = "arrive-row";
-      var review = document.createElement("button");review.type = "button";
-      review.className = "arrive-btn review-btn" + (entry.pdpReviewNeeded===true ? " on" : "");
-      review.textContent = "재확인 필요";review.setAttribute("aria-pressed",String(entry.pdpReviewNeeded===true));
-      review.title = "최종안 변경 가능성이 있어 연경님 확인이 필요합니다. 확인 후 다시 누르면 해제됩니다.";
-      review.addEventListener("click",function(){togglePdpReview_(row.code,entry,review);});
       var button = document.createElement("button");button.type = "button";
       if(entry.status === "order"){
         button.className = "arrive-btn go";button.textContent = "도착 확인";
         button.addEventListener("click",function(){markArrived_(row.code,entry.pumMyeong,button);});
       }else if(entry.status === "pdp"){
-        var complete = document.createElement("button");complete.type = "button";complete.className = "arrive-btn complete";complete.textContent = "등록완료로 변경";
-        complete.addEventListener("click",function(){completePdp_(row.code,entry.pumMyeong,complete);});
-        button.className = "arrive-btn undo";button.textContent = "도착 취소";
-        button.addEventListener("click",function(){undoArrived_(row.code,entry.pumMyeong,button);});
+        button.className = "arrive-btn complete";button.textContent = "PDP 생성 완료";
+        button.addEventListener("click",function(){completePdp_(row.code,entry.pumMyeong,button);});
+      }else{
+        button.className = "arrive-btn restore";button.textContent = "PDP로 되돌리기";
+        button.addEventListener("click",function(){restorePdp_(row.code,entry.pumMyeong,button);});
       }
-      if(entry.status !== "sampling") actions.appendChild(button);
-      if(entry.status === "pdp") actions.appendChild(complete);
-      actions.appendChild(review);body.appendChild(actions);
-      if(entry.status === "pdp" && entry.arrivedAt){var arrived = document.createElement("div");arrived.className = "arrived-at";arrived.textContent = "도착일 " + entry.arrivedAt;body.appendChild(arrived);}
-    }
-    if(entry.status === "sale"){
-      var completedActions = document.createElement("div");completedActions.className = "arrive-row";
-      var restore = document.createElement("button");restore.type = "button";restore.className = "arrive-btn restore";restore.textContent = "PDP로 되돌리기";
-      restore.addEventListener("click",function(){restorePdp_(row.code,entry.pumMyeong,restore);});completedActions.appendChild(restore);body.appendChild(completedActions);
-      if(entry.arrivedAt){var completedArrival = document.createElement("div");completedArrival.className = "arrived-at";completedArrival.textContent = "도착일 " + entry.arrivedAt;body.appendChild(completedArrival);}
+      actions.appendChild(button);body.appendChild(actions);
     }
     card.appendChild(body);gridEl.appendChild(card);
     if(photoObserver) photoObserver.observe(thumb);
