@@ -1,3 +1,4 @@
+<!-- v130: compact mobile list controls, single-line ratings and unified search (2026-10-09) -->
 <!-- v129: mobile drawing/cost/fabric/color order, compact gap and spaced header contacts (2026-10-09) -->
 <!-- v128: shared AISEL list/control colors, typography, spacing; preserve v127 editor/print (2026-10-09) -->
 <!-- v127: mobile editable changes, header contacts, sample date and uniform dividers (2026-10-09) -->
@@ -3072,14 +3073,7 @@
     </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
-    <div class="gallery-search-type">
-      <select id="gallerySearchType" aria-label="검색 기준">
-        <option value="pumMyeong">품명</option>
-        <option value="code">품번</option>
-      </select>
-      <span class="gallery-search-type-display" aria-hidden="true"><span id="gallerySearchTypeLabel">품명</span><span>▾</span></span>
-    </div>
-    <input type="text" id="gallerySearchInput" placeholder="검색어 입력">
+    <input type="search" id="gallerySearchInput" placeholder="품명, 품목으로 검색" aria-label="품명, 품목 또는 품번으로 검색">
   </div>
   <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
     <h3>삭제 복원</h3>
@@ -4887,7 +4881,7 @@
   const WO_INDEX_VERSION = 4;   // 2026-09-20: 4 — 확정 안 된 가격(기본값 59,000 포함)은 색인에서 비웁니다
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
-  const WO_INDEX_KEYS = ["status","createdAt","updatedAt","pumMyeong","yy","mm","dd","cafe24Done",
+  const WO_INDEX_KEYS = ["status","createdAt","updatedAt","pumMyeong","cat","yy","mm","dd","cafe24Done",
     "fabricNameField","fabricSupplierField","designer","blend","factory",
     "predExpectedQty","predExpectedDays","predActualQty","predActualDays",
     "sampleRecoveryStatus","photoStage",
@@ -9816,7 +9810,6 @@
     clearTimeout(gallerySearchTimer_);
     gallerySearchTimer_ = setTimeout(renderGallery, 200);
   });
-  $("#gallerySearchType").addEventListener("change", ()=> renderGallery());
   $("#newBtn").addEventListener("click", ()=>{
     bumpUsed(num($("#seq").value));   // 지금 번호를 '사용함'으로 기록 → 다음 작지는 +1
     startNewWorkOrder();
@@ -9895,17 +9888,25 @@
     renderStatusCounts_($("#qoCounts"), qoStatusFilterVal);
   }
 
+  // v130: a shared predicate keeps gallery and sheet export in agreement.
+  // Older lightweight indexes lack cat; their product-code category is the fallback.
+  // Persist cat on normal saves, without migrating or fetching all original orders.
+  function matchesGallerySearch_(code, st, query){
+    const q = String(query || "").trim().toLocaleLowerCase("ko");
+    if(!q) return true;
+    const hasCat = st.cat !== undefined && st.cat !== null && String(st.cat).trim() !== "";
+    const category = (hasCat ? CATS[Number(st.cat)] : null)
+      || CATS.find(cat=>cat.code === String(code).split("-")[2]);
+    return [st.pumMyeong, code, category?.name].some(value=>
+      String(value || "").toLocaleLowerCase("ko").includes(q));
+  }
+
   let lastGallerySig_ = null;
   $("#galleryExportSheetBtn")?.addEventListener("click", async ()=>{
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
-    const type = $("#gallerySearchType").value;
     const list = Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>{
-        if(!q) return true;
-        const target = type === "code" ? code : (st.pumMyeong || "");
-        return target.toLowerCase().includes(q);
-      });
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q));
     if(!list.length){ alert("지금 목록에 보이는 작지가 없습니다."); return; }
     if(!confirm(`지금 화면에 보이는 작지 ${list.length}개를 구글시트로 내보낼까요? 같은 품번이 이미 시트에 있으면 그 줄을 덮어씁니다.`)) return;
     const btn = $("#galleryExportSheetBtn");
@@ -9940,15 +9941,10 @@
   }
 
   function renderGallery(){
-    const searchType = $("#gallerySearchType");
-    const searchTypeLabel = $("#gallerySearchTypeLabel");
-    const searchTypeText = searchType.selectedOptions[0]?.textContent || "품명";
-    if(searchTypeLabel.textContent !== searchTypeText) searchTypeLabel.textContent = searchTypeText;
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
-    const type = $("#gallerySearchType").value;
     const sig = JSON.stringify({
-      f: galleryFilter, q, type,
-      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length, st.coordiCode1, st.coordiCode2, st.coordiCode3])
+      f: galleryFilter, q,
+      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.cat, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length, st.coordiCode1, st.coordiCode2, st.coordiCode3])
     });
     if(sig === lastGallerySig_) return; // 실제로 바뀐 게 없으면 다시 그리지 않음 (썸네일 깜빡임 방지)
     lastGallerySig_ = sig;
@@ -9966,11 +9962,7 @@
 
     Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>{
-        if(!q) return true;
-        const target = type === "code" ? code : (st.pumMyeong || "");
-        return target.toLowerCase().includes(q);
-      })
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q))
       .sort((a,b)=> (sortKeyForOrder_(b[1]) - sortKeyForOrder_(a[1])))
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
@@ -11069,7 +11061,7 @@
   let skipHistoryPop_=false;
   function snapshotRoute_(){
     return {...appRoute_,scroll:window.scrollY,filter:galleryFilter,
-      query:$("#gallerySearchInput").value,searchType:$("#gallerySearchType").value};
+      query:$("#gallerySearchInput").value};
   }
   function recordRoute_(view,code){
     if(restoringRoute_)return;
@@ -11129,7 +11121,6 @@
     try{
       galleryFilter=state.filter === "all" ? "all" : normalizeWorkOrderStatus_(state.filter);
       $("#gallerySearchInput").value=state.query||"";
-      $("#gallerySearchType").value=state.searchType||"pumMyeong";
       $("#galleryTabs").querySelectorAll(".gtab").forEach(b=>b.classList.toggle("active",b.dataset.status===galleryFilter));
       detachWoRefNow_("뒤로/앞으로 이동");
       if(state.view==="editor"&&state.code&&allWorkOrders[state.code])openWorkOrderBeforeHistory_(state.code);
@@ -14143,7 +14134,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
   const updated=document.getElementById('salesUpdated');
   const meta=updated.parentElement,info=document.createElement('div');info.className='sheet-sales-meta-info';
   meta.prepend(info);info.append(document.getElementById('salesPeriod'),updated);
-  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';meta.append(refresh);
+  const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';refresh.id='sheetSalesRefresh';meta.append(refresh);
   search.addEventListener('input',show);
   async function load(){
    if(busy)return;busy=true;refresh.disabled=true;
@@ -14685,30 +14676,20 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<style id="aisel-v126-compact-mobile-labels">
-.gallery-search-type {display:contents;}
-.gallery-search-type-display {display:none;}
+
+
+<style id="aisel-v130-list-refinement">
 @media screen and (max-width:600px) {
- #galleryView .gallery-search {align-items:center;}
- #galleryView .gallery-search-type {
-  display:inline-flex;position:relative;flex:0 0 auto;align-items:center;
-  box-sizing:border-box;min-width:64px;height:36px;padding:5px 8px;
-  border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);
+ html body #mainBar .maintab {font-size:13px;}
+ html body #galleryView #galleryTrashBtn,
+ html body #salesView #sheetSalesRefresh {
+  box-sizing:border-box;height:28px;min-height:28px;padding:3px 8px;
+  font-size:11px!important;font-weight:700;line-height:1.25;white-space:nowrap;
  }
- #galleryView .gallery-search-type-display {
-  display:inline-flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
-  font-family:var(--kfont);font-size:11px;font-weight:700;line-height:1.25;pointer-events:none;
- }
- /* The original native select stays operable, accessible and 16px for iOS
-    focus. Its compact visual label follows the small status-tab typography. */
- #galleryView #gallerySearchType {
-  position:absolute;inset:0;box-sizing:border-box;width:100%;height:100%;
-  margin:0;padding:0;border:0;opacity:0;font-size:16px!important;cursor:pointer;
- }
- #galleryView .gallery-search-type:focus-within {outline:2px solid var(--accent);outline-offset:0;}
- #salesView .sheet-sales-refresh {
-  height:36px;min-height:36px;padding:5px 8px;
-  font-size:11px!important;font-weight:700;line-height:1.25;color:#30343B;
- }
+ #salesView .sales-meta {grid-template-columns:minmax(0,1fr) auto;}
+ html body #salesView #sheetSalesRefresh {width:auto;}
+ html body #salesView .sheet-sales-name {flex-wrap:nowrap;gap:4px;}
+ html body #salesView .sheet-sales-name-label {flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ html body #salesView .sheet-sales-badge {flex:0 0 32px;width:32px;}
 }
 </style>
