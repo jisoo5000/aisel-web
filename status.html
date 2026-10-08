@@ -383,15 +383,27 @@ function photoSource_(value){
 function readPhotoLeaf_(code,leaf){
   return firebase.database().ref("workorderShare/" + code + "/" + leaf).once("value").then(function(snap){return photoSource_(snap.val());});
 }
+/* v23: the legacy share retention excludes sampling. Only the existing small
+   thumbnail leaf is requested; never download the index tree or original p1. */
+function readThumbnailFallback_(code){
+  return readPhotoLeaf_(code,"thumb").catch(function(){return "";}).then(function(src){
+    if(src) return src;
+    return firebase.database().ref("workorderIndex/" + code + "/thumb").once("value").then(function(snap){return photoSource_(snap.val());});
+  });
+}
 function photoRecord_(code,version){
   if(photoCache[code] && photoCache[code].version === version) return photoCache[code];
   var record = {version:version,source:null,promise:null,fallback:null,fallbackSource:null};
   photoCache[code] = record;
-  record.promise = readPhotoLeaf_(code,"thumbUrl").then(function(src){
+  record.promise = readPhotoLeaf_(code,"thumbUrl").catch(function(){return "";}).then(function(src){
     if(src) return src;
-    record.fallback = readPhotoLeaf_(code,"thumb").then(function(fallback){record.fallbackSource = fallback;return fallback;});
+    record.fallback = readThumbnailFallback_(code).then(function(fallback){record.fallbackSource = fallback;return fallback;});
     return record.fallback;
-  }).then(function(src){record.source = src;return src;}).catch(function(err){
+  }).then(function(src){
+    record.source = src;
+    if(!src && photoCache[code] === record) delete photoCache[code];
+    return src;
+  }).catch(function(err){
     if(photoCache[code] === record) delete photoCache[code];
     throw err;
   });
@@ -402,7 +414,8 @@ function showPhoto_(thumb,code,entry){
   thumb._photoRequested = true;
   var record = photoRecord_(code,String(entry.sourceUpdatedAt || ""));
   record.promise.then(function(src){
-    if(!thumb.isConnected || !src) return;
+    if(!thumb.isConnected) return;
+    if(!src){thumb.title = "등록된 사진이 없습니다";return;}
     var image = document.createElement("img");
     image.setAttribute("loading","lazy");image.setAttribute("decoding","async");
     image.alt = entry.pumMyeong || code;
@@ -416,6 +429,7 @@ function showPhoto_(thumb,code,entry){
       thumb.title = "누르면 사진이 크게 보입니다";
     }
     function photoFailed_(){
+      if(photoCache[code] === record) delete photoCache[code];
       thumb.textContent = "▧";thumb.className = "thumb";
       thumb.removeAttribute("role");thumb.removeAttribute("tabindex");
       thumb.removeAttribute("aria-label");thumb.title = "사진을 불러오지 못했습니다";
@@ -425,7 +439,7 @@ function showPhoto_(thumb,code,entry){
     image.addEventListener("error",function(){
       if(fallbackTried){photoFailed_();return;}
       fallbackTried = true;
-      if(!record.fallback) record.fallback = readPhotoLeaf_(code,"thumb");
+      if(!record.fallback) record.fallback = readThumbnailFallback_(code);
       record.fallback.then(function(fallback){
         if(!fallback || fallback === currentSource){photoFailed_();return;}
         currentSource = fallback;record.source = fallback;record.fallbackSource = fallback;record.promise = Promise.resolve(fallback);image.src = fallback;
