@@ -1,3 +1,4 @@
+<!-- v123: mobile menu sizing, uniform link spacing, shared card and sample heading (2026-10-09) -->
 <!-- v122: mobile cost layout, input zoom prevention, owner retail view, return-rate colors (2026-10-09) -->
 <!-- v119: mobile header identity editing and duplicate metadata removal (2026-10-08) -->
 <!-- v118: remove redundant mobile code settings button (2026-10-08) -->
@@ -11224,7 +11225,16 @@
   const headerReference=document.getElementById('refPanel'),referenceHome=document.createComment('desktop reference panel');
   headerReference.before(referenceHome);
   const mobileLayout=window.matchMedia('(max-width:600px)');
+  const sampleHeading=document.querySelector('#metaAccordionHead > span:last-child');
+  const desktopSampleHeading=sampleHeading.textContent;
+  function updateSampleHeading_(){
+    sampleHeading.textContent=mobileLayout.matches&&!window.matchMedia('print').matches?'샘플':desktopSampleHeading;
+  }
+  window.addEventListener('beforeprint',()=>{sampleHeading.textContent=desktopSampleHeading;});
+  window.addEventListener('afterprint',updateSampleHeading_);
+  if(namePrintMedia.addEventListener)namePrintMedia.addEventListener('change',updateSampleHeading_);
   function placeCompactMobileActions_(){
+    updateSampleHeading_();
     if(!mobileLayout.matches)finishMobileNameEdit_();
     document.getElementById('factorySaveBtn').textContent=mobileLayout.matches?'공장 저장':'공장 저장/인쇄';
     // The existing five action buttons stay in their original toolbar order.
@@ -14384,3 +14394,33 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  // under their current database permissions; this is not a data-access boundary.
 })(window);
 </script>
+
+<style id="aisel-v123-mobile-menu-consistency">
+@media screen and (max-width:600px) {
+ body #editorView .toolbar,body.mfold-open #editorView .toolbar {padding:8px 6px 4px;}
+ body #editorView .toolbar > .tb-row {grid-auto-rows:40px;gap:4px;}
+ #editorView #statusBar {padding:4px 6px 8px;gap:4px;border-top:0;}
+ body #editorView .toolbar .tb-row > :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn),
+ #editorView #statusBar .status-btn {
+  box-sizing:border-box;width:100%;min-width:0;height:40px;min-height:40px;max-height:40px;
+  padding:4px 2px;border:1px solid #BAC2CF;border-radius:4px;
+  font-family:var(--kfont);font-size:11px;font-weight:600;line-height:1.25;letter-spacing:0;
+  color:#2F3B52;background:#fff;white-space:normal;word-break:keep-all;overflow-wrap:normal;
+ }
+ #editorView #statusBar .status-btn.active {background:#2F3B52;border-color:#2F3B52;color:#fff;}
+ body #editorView .tb-row > #deleteBtn:hover {background:#F3F6FA;}
+ body #editorView .editor-mobile-head #refPanel {grid-template-columns:max-content auto 32px;gap:6px;}
+ #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {
+  width:100%;height:32px;min-height:32px;padding:0 6px;
+  font-family:var(--kfont);font-size:11px;font-weight:600;line-height:1.25;letter-spacing:0;
+  color:#2F3B52;border-color:#BAC2CF;
+ }
+ #editorView .editor-mobile-head #refPanel .ref-actions {gap:6px;}
+ #editorView .editor-mobile-head #refPanel .ref-actions .ref-icon-btn,
+ #editorView .editor-mobile-head #refPanel #refAddBtn {
+  box-sizing:border-box;width:32px;min-width:32px;height:32px;min-height:32px;
+  flex:0 0 32px;padding:0;color:#2F3B52;
+ }
+ #editorView .editor-mobile-head #refPanel .ref-actions .ref-icon-btn {border-color:#BAC2CF;}
+}
+</style>
