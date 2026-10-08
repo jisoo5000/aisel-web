@@ -1,3 +1,4 @@
+<!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
@@ -3234,7 +3235,7 @@
       <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장/인쇄</span><span class="mobile-print-label">인쇄</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
-      <button type="button" class="btn ghost nav-btn mfold-toggle" id="mfoldToggle" aria-expanded="false" aria-controls="seasonField categoryField statusBar moveCodeBtn">더보기</button>
+
     </div>
   </div>
 
@@ -3316,7 +3317,7 @@
 <section id="productColors" class="copygen-scope noprint"><div class="copygen-card">
 <div class="color-heading"><h2>컬러</h2>
 <div class="copygen-selected-colors" id="selectedColors"></div>
-<button type="button" id="colorPickerToggle" aria-controls="colorPicker" aria-expanded="false"><span class="color-picker-label">선택</span><span class="color-picker-arrow" aria-hidden="true">▾</span></button></div>
+</div>
 <details id="colorPicker"><summary>+ 컬러 선택</summary>
 <div class="copygen-sub">컬러를 선택하거나 직접 추가할 수 있습니다.</div>
 <div class="copygen-swatch-grid" id="colorSwatches"></div>
@@ -5063,22 +5064,15 @@
   window.applyItemCategoryFromPhoto_ = function(itemName){
     const name = String(itemName || "").trim();
 
-    // 카테고리가 갈리는 아이템은 자동으로 바꾸지 않습니다.
-    // 다만 새 작지라면 품번이 계속 미정으로 남으면 저장이 안 되므로, 기본값 그대로 번호를 매깁니다.
-    if(ITEM_AMBIGUOUS.includes(name)){
-      if(codePending_){
-        assignCodeNow_();
-        setCodeChangeNotice_(name + "은 원단과 봉제에 따라 카테고리가 갈립니다. 기본값(" + currentCat().name + ")으로 품번을 매겼으니 다르면 카테고리를 바꿔주세요.");
-      }
+    // v116: viewing/rereading saved workorders never changes their category or code.
+    if(!codePending_)return false;
+    const code = ITEM_TO_CAT_CODE[name];
+    if(ITEM_AMBIGUOUS.includes(name)||!code){
+      setCodeChangeNotice_('카테고리 확인이 필요합니다. 품번 설정에서 골라주세요.');
+      if(window.openMobileCodeSettings_)window.openMobileCodeSettings_();
       return false;
     }
 
-    const code = ITEM_TO_CAT_CODE[name];
-    if(!code){
-      // 표에 없는 아이템도 새 작지면 번호는 매겨야 저장이 됩니다
-      if(codePending_) assignCodeNow_();
-      return false;
-    }
     const idx = CATS.findIndex(c => c.code === code);
     if(idx === -1) return false;
 
@@ -5089,20 +5083,7 @@
       assignCodeNow_();
       return true;
     }
-    // 2026-08-13 재수정: 저장 전 새 작지라도 품번이 이미 정해졌다면 다시 매기지 않습니다.
-    // (여러 번 사진을 다시 읽거나 카테고리를 만지면 그 사이 자동저장이 서로 다른 품번으로
-    // 여러 번 나가 같은 작지가 여러 개 생기는 문제가 있었습니다. 품번은 한 번만 정해집니다.)
-    if(catSel.value !== String(idx)){
-      catSel.value = String(idx);
-      pumInput.dataset.auto = "1";
-      applyCat();
-      if(newOrderMode_){
-        setCodeChangeNotice_("사진으로는 " + CATS[idx].name + " 같습니다. 카테고리만 맞췄고 품번은 그대로입니다.");
-      }else{
-        refreshMoveCodeBtn_();
-        setCodeChangeNotice_("사진으로는 " + CATS[idx].name + " 같습니다. 카테고리를 바꾸시려면 직접 골라주세요 (품번은 그대로 유지됩니다).");
-      }
-    }
+
     return false;
   };
 
@@ -6886,8 +6867,10 @@
     renderEditorSaveState_(state);
   }
   const pendingSaveWrites_ = new Set();
+  let initialCreationWrite_=null,initialCreationRef_=null;
   function save(){
     if(loading || !woRef || statusChanging_)return false;
+    if(newOrderMode_ && initialCreationWrite_&&initialCreationRef_===woRef)return initialCreationWrite_;
     if(typeof isEditorComposing_==="function" && isEditorComposing_()){saveSoon();return false;}
     if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
     if(codeConflictNow_()){updateCodeConflictUI_();return false;}
@@ -6915,7 +6898,13 @@
     if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;renderEditorSaveState_(state);return Promise.resolve(true);}
     const keys=Object.keys(patch);state.pending.set(id,{keys,revision});renderEditorSaveState_(state);
     let originalWritten=false;
-    const writePromise=Promise.resolve().then(()=>keys.length?targetRef.update(patch):undefined).then(async()=>{
+    const creating=newOrderMode_&&!editorContentBaseline_;
+    const writePromise=Promise.resolve().then(async()=>{
+      if(creating){
+        const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
+        if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
+      }else if(keys.length)await targetRef.update(patch);
+    }).then(async()=>{
       originalWritten=true;
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
       if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
@@ -6935,6 +6924,13 @@
     }).finally(()=>{
       state.pending.delete(id);renderEditorSaveState_(state);
     });
+    if(creating){
+      initialCreationWrite_=writePromise;initialCreationRef_=targetRef;
+      writePromise.then(ok=>{
+        if(initialCreationWrite_===writePromise){initialCreationWrite_=null;initialCreationRef_=null;}
+        if(ok&&isCurrentSaveState_(state)&&Object.keys(buildPatch_(editorContentBaseline_,collect())).some(k=>!['updatedAt','createdAt','myy','mmm','mdd'].includes(k)))saveSoon();
+      });
+    }
     pendingSaveWrites_.add(writePromise);
     writePromise.then(()=>pendingSaveWrites_.delete(writePromise));
     return writePromise;
@@ -9757,6 +9753,7 @@
     // 사진을 넣어 카테고리가 판별되거나, 카테고리를 직접 고르는 순간 번호가 매겨집니다.
     $("#seq").value = "";
     showPendingCode_();
+    try{const preset=localStorage.getItem('aisel_current_season');if([...document.getElementById('season').options].some(o=>o.value===preset))document.getElementById('season').value=preset;}catch(e){}
     if(typeof toggleMetaAccordion_ === "function") toggleMetaAccordion_(false);   // 2026-08-21 추가: 새 작지는 메타 정보를 접은 채로 시작
     if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
     if(typeof refreshPlanChecks_ === "function") refreshPlanChecks_();
@@ -11128,7 +11125,47 @@
 
   // v115: keep actions in their shared grid at every viewport; listeners stay unique.
   document.querySelector('#editorView .toolbar-sequence').id='mobileSequenceTools';
-  document.getElementById('mfoldToggle').setAttribute('aria-controls','statusBar moveCodeBtn');
+
+  // v116: mobile settings live beside the printed code; stored codes stay stable.
+  const codeSettings=document.createElement('dialog');codeSettings.id='mobileCodeSettings';codeSettings.className='noprint';
+  codeSettings.innerHTML='<form method="dialog"><h3>품번 설정</h3><p id="mobileCodeHelp"></p><label>시즌<select id="mobileCodeSeason"></select></label><label>카테고리<select id="mobileCodeCategory"></select></label><div class="code-settings-actions"><button type="button" id="mobileCodeApply" class="btn">품번 생성</button><button type="submit" class="btn ghost">닫기</button></div></form>';
+  document.body.appendChild(codeSettings);
+  const codeSeason=document.getElementById('mobileCodeSeason'),codeCategory=document.getElementById('mobileCodeCategory');
+  function openMobileCodeSettings_(){
+    if(!window.matchMedia('(max-width:600px)').matches)return;
+    codeSeason.innerHTML=document.getElementById('season').innerHTML;codeCategory.innerHTML=catSel.innerHTML;
+    codeSeason.value=document.getElementById('season').value;codeCategory.value=catSel.value;
+    const editable=codePending_||newOrderMode_;
+    codeSeason.disabled=codeCategory.disabled=!editable;
+    document.getElementById('mobileCodeApply').hidden=!editable;
+    document.getElementById('mobileCodeHelp').textContent=editable?'시즌과 카테고리를 확인하면 순번은 자동으로 정해집니다.':'저장된 품번은 유지됩니다. 카테고리 변경은 데스크톱에서 할 수 있습니다.';
+    if(!codeSettings.open){if(codeSettings.showModal)codeSettings.showModal();else codeSettings.setAttribute('open','');}
+  }
+  window.openMobileCodeSettings_=openMobileCodeSettings_;
+  document.getElementById('mobileCodeApply').addEventListener('click',()=>{
+    if(!(codePending_||newOrderMode_)||loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;
+    document.getElementById('season').value=codeSeason.value;catSel.value=codeCategory.value;
+    try{localStorage.setItem('aisel_current_season',codeSeason.value);}catch(e){}
+    pumInput.dataset.auto='1';clearPendingCode_();suggestSeq();codeSettings.close();saveSoon();
+  });
+  for(const id of ['saveBtn','factorySaveBtn','printBtn'])document.getElementById(id).addEventListener('click',event=>{
+    if(codePending_&&window.matchMedia('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
+  },true);
+  const codeView=document.getElementById('codeView');
+  const mobileCodeHint=document.createElement('button');mobileCodeHint.type='button';mobileCodeHint.className='mobile-code-settings-button noprint';mobileCodeHint.textContent='품번 설정';codeView.after(mobileCodeHint);
+  mobileCodeHint.addEventListener('click',openMobileCodeSettings_);
+  codeView.addEventListener('click',openMobileCodeSettings_);
+  const mobileActions=document.createElement('div');mobileActions.id='mobileHeaderActions';
+  document.querySelector('.editor-mobile-head').appendChild(mobileActions);
+  const newAction=document.getElementById('newBtn'),deleteAction=document.getElementById('deleteBtn');
+  const newHome=document.createComment('desktop new action'),deleteHome=document.createComment('desktop delete action');
+  newAction.before(newHome);deleteAction.before(deleteHome);
+  const mobileLayout=window.matchMedia('(max-width:600px)');
+  function placeCompactMobileActions_(){
+    if(mobileLayout.matches){mobileActions.append(newAction,deleteAction);}else{newHome.after(newAction);deleteHome.after(deleteAction);if(codeSettings.open)codeSettings.close();}
+  }
+  placeCompactMobileActions_();if(mobileLayout.addEventListener)mobileLayout.addEventListener('change',placeCompactMobileActions_);else mobileLayout.addListener(placeCompactMobileActions_);
+
 
   firebase.auth().onAuthStateChanged(()=>queueLegacySampleStatuses_(allWorkOrders));
 
@@ -11422,7 +11459,7 @@ function renderSpGroup(groupKey){
   });
   const addBtn = document.createElement("button");
   addBtn.className = "copygen-chip copygen-add-new";
-  addBtn.textContent = "+ 기타";
+  addBtn.type="button";addBtn.textContent = "+";addBtn.title="컬러 직접 추가";addBtn.setAttribute("aria-label","컬러 직접 추가");
   addBtn.addEventListener("click", () => {
     $(ui.row).classList.toggle("copygen-open");
     $(ui.input).focus();
@@ -11609,7 +11646,7 @@ function renderName1(){
   const addBtn = document.createElement("button");
   addBtn.className = "copygen-chip copygen-add-new";
   addBtn.style.flex = "0 0 auto";
-  addBtn.textContent = "+ 기타";
+  addBtn.type="button";addBtn.textContent = "+";addBtn.title="컬러 직접 추가";addBtn.setAttribute("aria-label","컬러 직접 추가");
   addBtn.addEventListener("click", () => {
     $("addNameRow").classList.toggle("copygen-open");
     $("newNameInput").focus();
@@ -11676,7 +11713,7 @@ function renderFabricGroup(groupKey, containerId){
   });
   const addBtn = document.createElement("button");
   addBtn.className = "copygen-chip copygen-add-new";
-  addBtn.textContent = "+ 기타";
+  addBtn.type="button";addBtn.textContent = "+";addBtn.title="컬러 직접 추가";addBtn.setAttribute("aria-label","컬러 직접 추가");
   const addRowId = { fabric:"addFabricRow", detail:"addDetailRow", fit:"addFitRow" }[groupKey];
   const inputId = { fabric:"newFabricInput", detail:"newDetailInput", fit:"newFitInput" }[groupKey];
   addBtn.addEventListener("click", () => {
@@ -11720,7 +11757,7 @@ function renderItemGroup(list, containerId, addRowId){
   });
   const addBtn = document.createElement("button");
   addBtn.className = "copygen-chip copygen-add-new";
-  addBtn.textContent = "+ 기타";
+  addBtn.type="button";addBtn.textContent = "+";addBtn.title="컬러 직접 추가";addBtn.setAttribute("aria-label","컬러 직접 추가");
   addBtn.addEventListener("click", () => {
     $(addRowId).classList.toggle("copygen-open");
     $(addRowId).querySelector("input").focus();
@@ -12417,13 +12454,9 @@ const COLOR_VARIANTS = {
 let selectedColors = [];
 let openBase = null;
 
-const colorPickerToggle=$("colorPickerToggle"), colorPicker=$("colorPicker");
-colorPickerToggle.addEventListener("click",()=>{colorPicker.open=!colorPicker.open;});
-colorPicker.addEventListener("toggle",()=>{
-  colorPickerToggle.setAttribute("aria-expanded",String(colorPicker.open));
-  colorPickerToggle.querySelector(".color-picker-label").textContent=colorPicker.open?"접기":"선택";
-  colorPickerToggle.querySelector(".color-picker-arrow").textContent=colorPicker.open?"▴":"▾";
-});
+const colorPicker=$("colorPicker");colorPicker.open=true;
+const paletteHeading=document.querySelector('#productColors .color-heading');
+paletteHeading.appendChild($("colorSwatches"));paletteHeading.appendChild($("selectedColors"));
 
 function renderSwatches(){
   const grid = $("colorSwatches");
@@ -12435,8 +12468,9 @@ function renderSwatches(){
     dot.className = "color-dot";
     dot.style.background = c.hex;
     dot.setAttribute("aria-hidden", "true");
-    btn.append(dot, document.createTextNode(c.key));
+    btn.type='button';btn.title=c.key;btn.setAttribute('aria-label',c.key+' 계열');btn.setAttribute('aria-expanded',String(openBase===c.key));btn.append(dot);
     btn.addEventListener("click", () => {
+      $("addColorRow").classList.remove("copygen-open");
       openBase = (openBase === c.key) ? null : c.key;
       renderSwatches();
       renderVariantPanel();
@@ -12445,8 +12479,9 @@ function renderSwatches(){
   });
   const addBtn = document.createElement("button");
   addBtn.className = "copygen-swatch-btn copygen-add-color";
-  addBtn.textContent = "+ 기타";
+  addBtn.type="button";addBtn.textContent = "+";addBtn.title="컬러 직접 추가";addBtn.setAttribute("aria-label","컬러 직접 추가");
   addBtn.addEventListener("click", () => {
+    openBase=null;renderSwatches();renderVariantPanel();
     $("addColorRow").classList.toggle("copygen-open");
     $("newColorInput").focus();
   });
@@ -14009,4 +14044,49 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #editorView #printBtn .desktop-print-label {display:inline;}
  #editorView #printBtn .mobile-print-label {display:none;}
 }
+</style>
+
+<style id="aisel-v116-compact-mobile">
+ #mobileHeaderActions,.mobile-code-settings-button {display:none;}
+ #mobileCodeSettings {width:min(360px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #cbd3df;border-radius:10px;padding:18px;color:#2f3b52;}
+ #mobileCodeSettings::backdrop {background:#0005;}
+ #mobileCodeSettings label {display:flex;flex-direction:column;gap:5px;margin:12px 0;}
+ #mobileCodeSettings select {width:100%;height:40px;}
+ #mobileCodeSettings p {font-size:13px;line-height:1.5;}
+ .code-settings-actions {display:flex;gap:8px;}
+ #editorView #productColors .color-heading {display:grid!important;grid-template-columns:auto minmax(0,1fr);gap:4px 8px;align-items:center;}
+ #editorView #productColors .color-heading h2 {margin:0;white-space:nowrap;}
+ #editorView #productColors #colorSwatches {display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:3px;min-width:0;width:100%;margin:0;}
+ #editorView #productColors #colorSwatches .copygen-swatch-btn {display:flex;justify-content:center;align-items:center;box-sizing:border-box;min-width:0;width:100%;height:32px;min-height:32px;padding:0;border:0;background:transparent;border-radius:50%;}
+ #editorView #productColors #colorSwatches .color-dot {display:block;width:24px;height:24px;flex:0 0 24px;margin:0;border:1px solid #bac1cd;border-radius:50%;box-sizing:border-box;}
+ #editorView #productColors #colorSwatches .copygen-selected-base .color-dot {outline:2px solid #2f3b52;outline-offset:2px;}
+ #editorView #productColors #colorSwatches .copygen-add-color {font-size:24px;color:#2f3b52;}
+ #editorView #productColors #selectedColors {grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;margin:0;}
+ #editorView #productColors #selectedColors:empty {display:none;}
+ #editorView #productColors #colorPickerToggle {display:none!important;}
+ #editorView #productColors #colorPicker {display:block;}
+ #editorView #productColors #colorPicker > summary,#editorView #productColors #colorPicker > .copygen-sub {display:none!important;}
+ #editorView #productColors #variantPanel:empty {display:none;}
+ @media screen and (max-width:600px){
+  body #editorView .toolbar-fields {display:none!important;}
+  body.mfold-open #editorView .toolbar-fields,body:not(.mfold-open) #editorView .toolbar-fields {display:none!important;}
+  body #editorView .tb-row > #mfoldToggle {display:none!important;}
+  body #editorView .toolbar > .tb-row {grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:40px;}
+  body #editorView .tb-row > #saveBtn,body #editorView .tb-row > #factorySaveBtn,body #editorView .tb-row > #printBtn {grid-row:1;}
+  #editorView .editor-mobile-head {min-height:72px;padding-right:142px;position:relative;}
+  #mobileHeaderActions {display:flex;position:absolute;right:10px;top:18px;gap:5px;width:128px;}
+  #editorView #mobileHeaderActions .btn {display:inline-flex!important;align-items:center;justify-content:center;width:61.5px;min-width:0;height:36px;min-height:36px;padding:3px 1px;font-size:11px;white-space:nowrap;}
+  #editorView #mobileHeaderActions #deleteBtn {background:#7b3547;border-color:#7b3547;color:#fff;}
+  #editorView .editor-mobile-title {display:flex;flex-wrap:wrap;gap:4px;min-width:0;}
+  #editorView .editor-mobile-title strong {white-space:normal;overflow-wrap:anywhere;}
+  #editorView .statusbar {display:grid!important;}
+  #editorView #refPanel,#editorView #metaAccordion {display:block!important;}
+  #editorView .mobile-code-settings-button {display:inline-block;padding:2px 4px;margin-left:4px;background:#fff;border:1px solid #cbd3df;border-radius:3px;color:#536079;font-size:10px;}
+  #editorView #productColors .color-heading {gap:4px 3px;}
+  #editorView #productColors .color-heading h2 {font-size:12px;}
+  #editorView #productColors #colorSwatches {gap:2px;}
+  #editorView #productColors #colorSwatches .copygen-swatch-btn {height:28px;min-height:28px;}
+  #editorView #productColors #colorSwatches .color-dot {width:22px;height:22px;flex-basis:22px;}
+ }
+ @media print {#mobileCodeSettings,#mobileHeaderActions,.mobile-code-settings-button {display:none!important;}}
 </style>
