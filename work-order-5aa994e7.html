@@ -1,4 +1,6 @@
+<!-- v125: mobile sample records, final-spec hint, centered link and cost/retail theme (2026-10-09) -->
 <!-- v124: compact mobile header, charcoal typography and all thumbnail colors (2026-10-09) -->
+<!-- v123: mobile menu sizing, uniform link spacing, shared card and sample heading (2026-10-09) -->
 <!-- v122: mobile cost layout, input zoom prevention, owner retail view, return-rate colors (2026-10-09) -->
 <!-- v119: mobile header identity editing and duplicate metadata removal (2026-10-08) -->
 <!-- v118: remove redundant mobile code settings button (2026-10-08) -->
@@ -11233,8 +11235,48 @@
   window.addEventListener('beforeprint',()=>{sampleHeading.textContent=desktopSampleHeading;});
   window.addEventListener('afterprint',updateSampleHeading_);
   if(namePrintMedia.addEventListener)namePrintMedia.addEventListener('change',updateSampleHeading_);
+  // Keep the original desktop fields and records; mobile reuses the same IDs and save handlers.
+  const mobileRecords=document.createElement('section');mobileRecords.id='mobileSampleRecords';mobileRecords.className='noprint';
+  document.querySelector('#sheet > .detail2').before(mobileRecords);
+  const recordLayouts=['meeting','resample'].map(kind=>{
+    const panel=document.getElementById(kind+'HistoryToggle'),input=document.getElementById(kind+'Changes');
+    const home=document.createComment('desktop '+kind+' records');panel.before(home);
+    const textarea=document.createElement('textarea');
+    for(const attribute of input.attributes)if(attribute.name!=='type')textarea.setAttribute(attribute.name,attribute.value);
+    textarea.rows=5;
+    return {panel,input,textarea,home,button:document.getElementById(kind+'AddBtn'),buttonText:document.getElementById(kind+'AddBtn').textContent,desktopValue:input.value,desktopOpen:panel.open,mobileOpen:true};
+  });
+  const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
+  let mobileRecordsActive=false;
+  function placeMobileRecords_(printing=false){
+    const mobile=mobileLayout.matches&&!printing&&!namePrintMedia.matches;
+    finalSpec.placeholder=mobile?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
+    if(mobile===mobileRecordsActive)return;
+    recordLayouts.forEach(record=>{
+      const current=mobile?record.input:record.textarea;
+      if(document.activeElement===current)current.blur();
+      // A detached draft must not leave the shared IME save guard waiting forever.
+      editorComposingTargets_.delete(current);
+      if(mobile){
+        record.desktopOpen=record.panel.open;
+        if(record.input.value!==record.desktopValue)record.textarea.value=record.input.value;
+        record.input.replaceWith(record.textarea);mobileRecords.append(record.panel);
+        record.panel.open=record.mobileOpen;record.button.textContent='+';
+      }else{
+        record.mobileOpen=record.panel.open;
+        record.input.value=record.textarea.value.replace(/\r?\n/g,' / ');record.desktopValue=record.input.value;
+        record.textarea.replaceWith(record.input);record.home.after(record.panel);
+        record.panel.open=record.desktopOpen;record.button.textContent=record.buttonText;
+      }
+    });
+    mobileRecordsActive=mobile;
+  }
+  window.addEventListener('beforeprint',()=>placeMobileRecords_(true));
+  window.addEventListener('afterprint',()=>placeMobileRecords_());
+  if(namePrintMedia.addEventListener)namePrintMedia.addEventListener('change',()=>placeMobileRecords_());
   function placeCompactMobileActions_(){
     updateSampleHeading_();
+    placeMobileRecords_();
     if(!mobileLayout.matches)finishMobileNameEdit_();
     document.getElementById('factorySaveBtn').textContent=mobileLayout.matches?'공장 저장':'공장 저장/인쇄';
     // The existing five action buttons stay in their original toolbar order.
@@ -14467,5 +14509,37 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 @media screen and (max-width:600px) and (prefers-color-scheme:dark) {
  :root:not([data-theme="light"]) :is(#galleryView,#editorView) {--ink:#E8EBF1;--muted:#99A0AC;}
+}
+</style>
+
+<style id="aisel-v125-mobile-records-theme">
+#mobileSampleRecords {display:none;}
+@media screen and (max-width:600px) {
+ #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {
+  display:flex;align-items:center;justify-content:center;line-height:1.25;text-align:center;
+ }
+ .owner-view-bar {margin-top:12px;}
+ #sheet > #mobileSampleRecords {display:block;order:5;padding:12px;border-top:1.5px solid var(--line);border-bottom:1.5px solid var(--line);}
+ #editorView #mobileSampleRecords .sample-log-toggle {padding:0;border-top:0;}
+ #editorView #mobileSampleRecords .sample-log-toggle + .sample-log-toggle {margin-top:16px;padding-top:12px;border-top:1px solid #CBD3DF;}
+ #editorView #mobileSampleRecords .sample-log-entry {grid-template-columns:minmax(0,1fr) 36px;gap:8px;align-items:center;}
+ #editorView #mobileSampleRecords .sample-date-field {grid-column:1;grid-row:1;width:140px;max-width:100%;}
+ #editorView #mobileSampleRecords .sample-log-entry > button {grid-column:2;grid-row:1;width:36px;height:36px;min-height:36px;font-size:22px;}
+ #editorView #mobileSampleRecords .sample-log-entry > textarea {
+  grid-column:1 / -1;grid-row:2;box-sizing:border-box;width:100%;min-width:0;min-height:132px;
+  padding:10px;border:1px solid #CBD3DF;border-radius:4px;background:#F3F6FA;
+  color:var(--ink);font-size:16px;line-height:1.6;resize:vertical;
+ }
+ #sheet #costCell .cost-table th,
+ #sheet #costCell .total-row,
+ #sheet #costCell .owner-retail-row {background:#F3F6FA;color:var(--ink);}
+ #sheet #costCell .total-row {border-color:#CBD3DF;}
+ #sheet #costCell .cost-table th {font-size:14px;font-weight:700;line-height:1.25;}
+ #sheet #costCell .total-row .k,
+ #sheet #costCell .owner-retail-row > label {font-size:14px;font-weight:700;letter-spacing:0;color:var(--ink);}
+ #sheet #costCell .total-row .v,
+ #sheet #costCell .owner-retail-row #targetThreshold {font-size:22px!important;font-weight:800;color:var(--ink);line-height:1.25;}
+ #sheet #costCell .owner-retail-row #targetThreshold {height:42px;padding:6px 8px;}
+ #sheet #costCell #totalView.overcost {color:#D6266F;}
 }
 </style>
