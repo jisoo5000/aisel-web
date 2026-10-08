@@ -1,3 +1,4 @@
+<!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
 <script>window.AiselSheetSalesMode=true;</script>
@@ -3209,12 +3210,12 @@
       </select>
     </div>
     <div class="tf grow" id="categoryField">
-      <label>카테고리 (품명 자동)</label>
+      <label>카테고리<span class="toolbar-auto-note"> (품명 자동)</span></label>
       <select id="cat"></select>
     </div>
     <div class="toolbar-sequence">
       <div class="tf">
-        <label for="seq">순번 (자동)</label>
+        <label for="seq">순번<span class="toolbar-auto-note"> (자동)</span></label>
         <input id="seq" type="text" inputmode="numeric" placeholder="001" />
       </div>
       <button class="btn" id="genBtn">다음 번호 ▷</button>
@@ -11125,25 +11126,9 @@
   document.getElementById("pumMyeong").addEventListener("input",renderMobileHeader_);
   renderMobileHeader_();
 
-  // v88: move existing controls so their save/print listeners remain unique.
-  (function placeMobileTools_(){
-    const remove=document.getElementById('deleteBtn');
-    const factory=document.getElementById('factorySaveBtn');
-    const sequence=document.querySelector('#editorView .toolbar-sequence');
-    sequence.id='mobileSequenceTools';
-    const header=document.querySelector('#editorView .editor-mobile-head');
-    const factoryHome=document.createComment('factory action desktop position');
-    const removeHome=document.createComment('delete action desktop position');
-    factory.before(factoryHome); remove.before(removeHome);
-    document.getElementById('mfoldToggle').setAttribute('aria-controls','mobileSequenceTools seasonField categoryField statusBar moveCodeBtn');
-    const mobile=window.matchMedia('(max-width: 600px)');
-    function place(){
-      if(mobile.matches){sequence.appendChild(factory);header.appendChild(remove);}
-      else{factoryHome.after(factory);removeHome.after(remove);}
-    }
-    place();
-    if(mobile.addEventListener)mobile.addEventListener('change',place);else mobile.addListener(place);
-  })();
+  // v115: keep actions in their shared grid at every viewport; listeners stay unique.
+  document.querySelector('#editorView .toolbar-sequence').id='mobileSequenceTools';
+  document.getElementById('mfoldToggle').setAttribute('aria-controls','statusBar moveCodeBtn');
 
   firebase.auth().onAuthStateChanged(()=>queueLegacySampleStatuses_(allWorkOrders));
 
@@ -13993,3 +13978,35 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  root.addEventListener('beforeprint',prepare);root.addEventListener('afterprint',cleanup);
 })(window);
 </script>
+
+<style id="aisel-v115-toolbar">
+@media screen {
+ body #editorView .toolbar-fields {display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:end;width:100%;order:0;}
+ #editorView .toolbar-fields > .tf {display:flex!important;min-width:0;max-width:none;}
+ #editorView #categoryField {grid-column:span 2;}
+ #editorView .toolbar-sequence {display:contents;}
+ #editorView .toolbar-sequence .tf {min-width:0;}
+ #editorView .toolbar-fields select,#editorView .toolbar-fields #seq,#editorView .toolbar-fields #genBtn {box-sizing:border-box;width:100%;height:34px;min-height:34px;max-height:34px;margin:0;}
+ #editorView #genBtn {align-self:end;}
+ body #editorView .toolbar > .tb-row {order:1;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0;}
+ body #editorView .tb-row > .btn {order:0;}
+}
+@media screen and (max-width:600px) {
+ body:not(.mfold-open) #editorView .toolbar-fields,body.mfold-open #editorView .toolbar-fields {display:grid!important;grid-template-columns:minmax(0,20fr) minmax(0,36fr) minmax(0,16fr) minmax(0,28fr);gap:5px;}
+ #editorView #categoryField {grid-column:auto;}
+ #editorView .toolbar-auto-note {display:none;}
+ #editorView #season {font-size:11px;letter-spacing:-.3px;appearance:none;padding-right:9px;background-image:linear-gradient(45deg,transparent 50%,#536079 50%),linear-gradient(135deg,#536079 50%,transparent 50%);background-position:calc(100% - 6px) 18px,calc(100% - 3px) 18px;background-size:3px 3px;background-repeat:no-repeat;}
+ #editorView .toolbar-fields label {font-size:10px;letter-spacing:0;white-space:nowrap;}
+ #editorView .toolbar-fields select,#editorView .toolbar-fields #seq,#editorView .toolbar-fields #genBtn {height:40px;min-height:40px;max-height:40px;padding:4px 2px;font-size:12px;}
+ body #editorView .toolbar > .tb-row {order:1;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:40px;gap:6px;}
+ body:not(.mfold-open) #editorView .tb-row > .btn,body.mfold-open #editorView .tb-row > .btn {display:inline-flex!important;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-width:0;height:40px;min-height:40px;max-height:40px;padding:4px 2px;font-size:11px;line-height:1.2;}
+ body #editorView .tb-row > #newBtn {grid-row:1;grid-column:1;order:0;}
+ body #editorView .tb-row > #deleteBtn {grid-row:1;grid-column:2;order:0;background:#7b3547;border-color:#7b3547;color:#fff;}
+ body #editorView .tb-row > #mfoldToggle {grid-row:1;grid-column:3;order:0;}
+ body #editorView .tb-row > #saveBtn {grid-row:2;grid-column:1;order:0;}
+ body #editorView .tb-row > #factorySaveBtn {grid-row:2;grid-column:2;order:0;}
+ body #editorView .tb-row > #printBtn {display:inline-flex!important;grid-row:2;grid-column:3;order:0;}
+ #editorView #printBtn .desktop-print-label {display:inline;}
+ #editorView #printBtn .mobile-print-label {display:none;}
+}
+</style>
