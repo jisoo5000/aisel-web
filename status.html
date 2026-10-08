@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v17.2 (2026-10-09): 간결한 메뉴 간격, 차콜 톤, 판매가 숨김, 도착→상세페이지→PDP 버튼 순서. -->
+<!-- AISEL 제품 진행 현황 v18 (2026-10-09): 등록완료 조회·PDP 복구·실행 취소, 상태 확인창, 가벼운 차콜 메뉴. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
      안 해두면 첫 사진을 받을 때 그제서야 연결을 맺느라 0.3초쯤 더 걸립니다. -->
@@ -27,21 +27,22 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .connection::before{content:"";width:6px;height:6px;border-radius:50%;background:#AAB4C4}
 .connection.ready::before{background:#67816F}
 .connection.error::before{background:#A3264C}
-.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 6px}
-.tab{display:flex;justify-content:center;align-items:center;gap:9px;min-width:0;min-height:42px;border:1px solid var(--field-line);background:var(--sheet);color:var(--navy);border-radius:4px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer;white-space:normal}
-.tab:hover{border-color:var(--navy);color:var(--navy);background:var(--field)}
-.tab.on{background:var(--navy);border-color:var(--navy);color:#fff}
-.tab-count{flex-shrink:0;font-size:11px;font-weight:700;line-height:20px;min-width:21px;text-align:center;border-radius:3px;background:var(--field);color:var(--navy);font-variant-numeric:tabular-nums;padding:0 4px}
-.tab.on .tab-count{background:rgba(255,255,255,.15);color:#fff}
+.tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin:0 0 6px;border-bottom:1px solid var(--hair)}
+.tab{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:5px;min-width:0;min-height:44px;border:0;border-bottom:2px solid transparent;background:var(--sheet);color:var(--muted);border-radius:0;padding:7px 3px;font-size:13px;font-weight:500;cursor:pointer;white-space:normal}
+.tab:hover{color:var(--navy);background:#FAF9F7}
+.tab.on{border-bottom-color:var(--navy);color:var(--navy);font-weight:600}
+.tab-count{flex-shrink:0;font-size:11px;font-weight:400;line-height:16px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tab.on .tab-count{color:var(--muted)}
 .toolbar{display:flex;flex-direction:column;align-items:stretch;gap:12px;margin-bottom:20px}
 .section-heading{display:flex;align-items:baseline;gap:8px;margin:0;font-size:14px;color:var(--navy);font-weight:700}
 .result-count{font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
 .desc{margin:5px 0 0;font-size:12px;line-height:1.6;color:var(--muted);word-break:keep-all}
 .search-wrap{position:relative;display:block;width:100%;order:-1}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#637089;pointer-events:none;width:16px;height:16px}
-.search{width:100%;height:40px;min-width:0;border:1px solid var(--field-line);background:var(--field);border-radius:4px;padding:8px 12px 8px 37px;font-size:13px;color:var(--navy)}
+.search{width:100%;height:40px;min-width:0;border:1px solid #E4E1DC;background:#fff;border-radius:4px;padding:8px 12px 8px 37px;font-size:13px;color:var(--navy)}
 .search::placeholder{color:#637089}
 .search:focus{border-color:var(--navy);background:#fff}
+.search:focus-visible{outline:1px solid var(--navy);outline-offset:-1px}
 .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 14px}
 .card{min-width:0;background:var(--sheet);border:1px solid var(--hair);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
 .thumb{aspect-ratio:3/4;position:relative;background:var(--field);display:flex;align-items:center;justify-content:center;color:#AAB4C4;font-size:26px;border-bottom:1px solid #E3E7EE;overflow:hidden}
@@ -50,7 +51,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .thumb.can-open:focus-visible{outline-offset:-3px}
 .thumb.can-open::after{content:"↗";position:absolute;bottom:8px;right:8px;width:24px;height:24px;display:grid;place-items:center;background:rgba(255,255,255,.9);border:1px solid rgba(47,59,82,.12);border-radius:4px;color:var(--navy);font-size:15px;pointer-events:none}
 .body{flex:1;min-width:0;padding:12px;display:flex;flex-direction:column;gap:6px}
-.state{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;border-radius:3px;padding:3px 7px;font-size:10.5px;line-height:1.4;font-weight:700;margin-bottom:2px}
+.state{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;border-radius:3px;padding:3px 7px;font-size:10.5px;line-height:1.4;font-weight:500;margin-bottom:2px}
 .state::before{content:"";width:4px;height:4px;background:currentColor;border-radius:50%}
 .name{font-size:13px;font-weight:700;line-height:1.45;color:var(--navy);word-break:keep-all;overflow-wrap:anywhere}
 .code{font-size:10.5px;line-height:1.35;color:#637089;font-variant-numeric:tabular-nums;letter-spacing:.15px;overflow-wrap:anywhere}
@@ -61,15 +62,17 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .colors-label{font-size:11px;line-height:1.5;color:#637089;margin-right:2px}
 .chip{border-radius:3px;padding:2px 6px;font-size:10.5px;line-height:1.4;font-weight:600;background:#EFEFEF;color:#666;border:1px solid transparent;overflow-wrap:anywhere;max-width:100%}
 .chip.light{border-color:rgba(0,0,0,.14)}
-.arrive-row{margin-top:auto;padding-top:8px;display:flex;flex-direction:column;gap:6px}
-.arrive-btn{width:100%;min-height:36px;border:1px solid transparent;border-radius:4px;padding:8px 4px;font-size:12px;line-height:1.4;font-weight:700;cursor:pointer}
-.arrive-btn.go,.arrive-btn.complete{background:var(--navy);color:#fff}
-.arrive-btn.go:hover,.arrive-btn.complete:hover{background:#242422}
-.arrive-btn.undo{background:#fff;color:var(--muted);border-color:var(--field-line);font-size:11px}
+.arrive-row{margin-top:auto;padding-top:6px;display:flex;flex-direction:column;gap:2px}
+.arrive-btn{width:100%;min-height:44px;border:1px solid transparent;border-radius:3px;padding:5px 4px;font-size:12px;line-height:1.4;font-weight:500;cursor:pointer;background:#fff;color:var(--navy)}
+.arrive-btn.go,.arrive-btn.complete,.arrive-btn.restore{border-color:#BAB9B3;color:var(--navy);background:#fff}
+.arrive-btn.go:hover,.arrive-btn.complete:hover,.arrive-btn.restore:hover{background:#F5F4F1;border-color:var(--navy)}
+.arrive-btn.undo{background:#fff;color:var(--muted);font-size:11px}
 .arrive-btn.undo:hover{border-color:var(--navy);color:var(--navy);background:var(--field)}
-.review-btn{background:#fff;color:var(--navy);border-color:var(--field-line)}
-.review-btn.on{background:#f7e3e0;color:#8A3548;border-color:#e3b9b3}
-.review-btn:hover{border-color:var(--navy)}
+.review-btn{display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;color:var(--muted)}
+.review-btn::before{content:"";width:12px;height:12px;border:1px solid #C6C4BE;border-radius:2px;display:grid;place-items:center;font-size:10px;line-height:1}
+.review-btn.on{color:var(--navy)}
+.review-btn.on::before{content:"✓";background:#EEEDE9;color:var(--navy);border-color:#AAA89F}
+.review-btn:hover{color:var(--navy);background:#FAF9F7}
 .arrive-btn:disabled{opacity:.55;cursor:default}
 .arrived-at{font-size:10.5px;color:var(--muted);text-align:center}
 .empty{background:var(--field);border:1px solid var(--hair);border-radius:6px;padding:56px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
@@ -78,11 +81,21 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .viewer img{display:block;width:auto;height:auto;max-width:92vw;max-height:86vh;background:#fff;border-radius:4px}
 .viewer .x{position:absolute;top:14px;right:16px;width:42px;height:42px;border-radius:4px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.95);color:var(--navy);font-size:19px;font-weight:700;line-height:1;cursor:pointer}
 .viewer .x:focus-visible{outline-color:#fff}
+.status-confirm{width:min(360px,calc(100vw - 32px));border:1px solid var(--hair);border-radius:8px;padding:22px;color:var(--ink);background:#fff}
+.status-confirm::backdrop{background:rgba(36,36,34,.25)}
+.status-confirm h2{margin:0 0 12px;font-size:16px;font-weight:600}
+.status-confirm p{margin:8px 0;font-size:14px;overflow-wrap:anywhere}
+.status-confirm .transition{font-weight:600}.status-confirm .notice{font-size:12px;color:var(--muted)}
+.confirm-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.confirm-actions button{min-height:44px;padding:8px 12px;border:1px solid var(--hair);border-radius:4px;background:#fff;color:var(--navy);font-size:13px;font-weight:500;cursor:pointer}
+.confirm-actions .apply{border-color:var(--navy)}
+.status-toast{position:fixed;z-index:60;bottom:max(16px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(480px,calc(100vw - 24px));display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--hair);border-radius:6px;background:#fff;color:var(--navy);box-shadow:0 3px 16px rgba(36,36,34,.12)}
+.status-toast p{flex:1;min-width:0;margin:0;font-size:12px;overflow-wrap:anywhere}.status-toast button{min-height:44px;border:0;background:#fff;color:var(--navy);padding:6px;font-size:12px;white-space:nowrap;cursor:pointer}.status-toast .dismiss{color:var(--muted)}
 @media(max-width:900px){.search{font-size:16px}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:6px;gap:5px}.tab{gap:5px;padding:8px 4px;font-size:14px}.tab-count{min-width:17px;font-size:10px;padding:0 3px}.toolbar{margin-bottom:16px}.search-wrap{margin:0 0 12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
-@media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:5px;min-height:42px;font-size:14px;padding:8px 3px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
+@media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:6px;gap:2px}.tab{gap:4px;padding:7px 2px;font-size:14px}.tab-count{font-size:10px}.toolbar{margin-bottom:16px}.search-wrap{margin:0 0 12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
+@media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=status-charcoal-20261009-v17-2" />
+<link rel="stylesheet" href="status-samples.css?v=status-recovery-20261009-v18" />
 </head>
 <body>
 
@@ -141,6 +154,19 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   <img id="viewerImg" alt="" />
 </div>
 
+<dialog id="statusConfirm" class="status-confirm" aria-labelledby="statusConfirmTitle" aria-describedby="statusConfirmProduct statusConfirmTransition statusConfirmNotice">
+  <h2 id="statusConfirmTitle">진행 상태 변경</h2>
+  <p id="statusConfirmProduct"></p>
+  <p id="statusConfirmTransition" class="transition"></p>
+  <p id="statusConfirmNotice" class="notice"></p>
+  <div class="confirm-actions"><button type="button" id="statusConfirmCancel" autofocus>취소</button><button type="button" id="statusConfirmApply" class="apply">변경</button></div>
+</dialog>
+<div id="statusToast" class="status-toast" hidden>
+  <p id="statusToastMessage" role="status" aria-live="polite"></p>
+  <button type="button" id="statusToastUndo">실행 취소</button>
+  <button type="button" id="statusToastDismiss" class="dismiss" aria-label="변경 안내 닫기">닫기</button>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -161,13 +187,13 @@ var STATES = [
   {key:"order",label:"발주생산",bg:"#FFF6E5",fg:"#8A5A18",desc:function(n){return "공장에 발주한 제품 " + n + "개입니다.";},empty:"지금 발주된 제품이 없습니다."},
   {key:"pdp",label:"PDP",bg:"#F3F1EC",fg:"#7A7364",desc:function(n){return "제품 " + n + "개가 상세페이지 등록을 기다리고 있습니다.";},empty:"상세페이지 등록을 기다리는 제품이 없습니다."},
   {key:"planned",label:"예정",bg:"#EEF1F6",fg:"#4B5566"},
-  {key:"sale",label:"판매",bg:"#ECF2EC",fg:"#4F6552"}
+  {key:"sale",label:"등록완료",bg:"#F3F1EC",fg:"#5E6059",desc:function(n){return "최근 30일 내 등록완료 제품 " + n + "개입니다. 잘못 처리한 제품은 PDP로 되돌릴 수 있습니다.";},empty:"최근 30일 내 등록완료 제품이 없습니다."}
 ];
 var SHARED = ["sampling","order","pdp","sale"];
 var ACTIVE = ["sampling","order","pdp"];
-var TABS = [STATES[0],STATES[1],STATES[2],{key:"all",label:"전체",desc:function(n){return "샘플중·발주생산·PDP 제품 " + n + "개입니다.";},empty:"지금 진행 중인 제품이 없습니다."}];
+var TABS = [STATES[0],STATES[1],STATES[2],STATES[4],{key:"all",label:"전체",desc:function(n){return "샘플중·발주생산·PDP 제품 " + n + "개입니다.";},empty:"지금 진행 중인 제품이 없습니다."}];
 function stateOf(key){return STATES.filter(function(s){return s.key === key;})[0] || null;}
-function validFilter(key){return ["sampling","order","pdp","all"].indexOf(key) !== -1 ? key : "order";}
+function validFilter(key){return ["sampling","order","pdp","sale","all"].indexOf(key) !== -1 ? key : "order";}
 function normalizeSearch(value){return String(value || "").toLowerCase().replace(/\s+/g, "");}
 
 var workflowView = "products";
@@ -190,38 +216,118 @@ function todayStr_(){
   var p = function(n){return n < 10 ? "0" + n : "" + n;};
   return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
-function writeStatusPatch_(code, patch, btn, okText){
+var statusChangeBusy_ = false;
+var statusConfirmResolve_ = null;
+var lastStatusUndo_ = null;
+var undoInProgress_ = false;
+function finishStatusConfirm_(accepted){
+  var resolve = statusConfirmResolve_;statusConfirmResolve_ = null;
+  document.getElementById('statusConfirm').close();
+  if(resolve) resolve(accepted);
+}
+document.getElementById('statusConfirmCancel').addEventListener('click',function(){finishStatusConfirm_(false);});
+document.getElementById('statusConfirmApply').addEventListener('click',function(){finishStatusConfirm_(true);});
+document.getElementById('statusConfirm').addEventListener('cancel',function(ev){ev.preventDefault();finishStatusConfirm_(false);});
+function confirmStatusChange_(name,before,next,label,notice){
+  if(statusConfirmResolve_) return Promise.resolve(false);
+  var dialog = document.getElementById('statusConfirm');
+  document.getElementById('statusConfirmProduct').textContent = name;
+  document.getElementById('statusConfirmTransition').textContent = '현재 ' + stateOf(before).label + ' → ' + stateOf(next).label;
+  document.getElementById('statusConfirmNotice').textContent = notice;
+  document.getElementById('statusConfirmApply').textContent = label;
+  return new Promise(function(resolve){statusConfirmResolve_ = resolve;dialog.showModal();});
+}
+function showStatusToast_(message,canUndo){
+  document.getElementById('statusToastMessage').textContent = message;
+  document.getElementById('statusToastUndo').hidden = !canUndo;
+  document.getElementById('statusToastUndo').disabled = false;
+  document.getElementById('statusToastUndo').textContent = '실행 취소';
+  document.getElementById('statusToast').hidden = false;
+}
+function rememberStatusUndo_(code,before,patch){
+  var rollback = {status:before.status};
+  if(Object.prototype.hasOwnProperty.call(patch,'arrivedAt')) rollback.arrivedAt = before.arrivedAt || null;
+  lastStatusUndo_ = {code:code,name:before.pumMyeong || code,status:patch.status,version:patch.updatedAt,patch:rollback};
+  showStatusToast_((before.pumMyeong || code) + ' · ' + stateOf(patch.status).label + '로 변경했습니다.',true);
+}
+function sameCatalogVersion_(entry,version){return String(entry.sourceUpdatedAt || '') === String(version || '');}
+function writeStatusPatch_(code, patch, btn, okText, before){
   patch = Object.assign({},patch);
   if(!patch.updatedAt) patch.updatedAt = Date.now();
-  if(btn){btn.disabled = true;btn.textContent = "처리 중...";}
+  if(btn){btn.disabled = true;btn.textContent = '처리 중...';}
   var updates = {};
-  ["workorders","workorderIndex","workorderShare"].forEach(function(path){
-    Object.keys(patch).forEach(function(key){updates[path + "/" + code + "/" + key] = patch[key];});
+  ['workorders','workorderIndex','workorderShare'].forEach(function(path){
+    Object.keys(patch).forEach(function(key){updates[path + '/' + code + '/' + key] = patch[key];});
   });
-  ["status","arrivedAt","pdpReviewNeeded"].forEach(function(key){
-    if(Object.prototype.hasOwnProperty.call(patch,key)) updates["workorderStatusCatalog/" + code + "/" + key] = patch[key];
+  ['status','arrivedAt','pdpReviewNeeded'].forEach(function(key){
+    if(Object.prototype.hasOwnProperty.call(patch,key)) updates['workorderStatusCatalog/' + code + '/' + key] = patch[key];
   });
-  if(patch.updatedAt) updates["workorderStatusCatalog/" + code + "/sourceUpdatedAt"] = patch.updatedAt;
+  updates['workorderStatusCatalog/' + code + '/sourceUpdatedAt'] = patch.updatedAt;
   return firebase.database().ref().update(updates).then(function(){
-    if(btn) btn.textContent = okText;
+    if(btn){btn.disabled = false;btn.textContent = okText;}
+    if(before) rememberStatusUndo_(code,before,patch);
+    return true;
   }).catch(function(err){
     console.error(err);
-    if(btn){btn.disabled = false;btn.textContent = "실패 · 다시 시도";}
-    alert("저장에 실패했습니다. 인터넷을 확인하고 다시 눌러주세요.");
+    if(btn){btn.disabled = false;btn.textContent = '실패 · 다시 시도';}
+    alert('저장에 실패했습니다. 인터넷을 확인하고 다시 눌러주세요.');
+    return false;
   });
 }
+function changeStatus_(code,name,btn,from,patch,label,notice){
+  if(statusChangeBusy_ || undoInProgress_) return Promise.resolve(false);
+  var before = Object.assign({},all[code]);
+  if(before.status !== from){showStatusToast_('상태가 변경되었습니다. 현재 목록을 확인해 주세요.',false);return Promise.resolve(false);}
+  statusChangeBusy_ = true;
+  return confirmStatusChange_(name || code,from,patch.status,label,notice).then(function(accepted){
+    if(!accepted) return false;
+    if(btn) btn.disabled = true;
+    return firebase.database().ref('workorderStatusCatalog/' + code).once('value').then(function(snap){
+      var latest = snap.val();
+      if(!latest || latest.status !== from || !sameCatalogVersion_(latest,before.sourceUpdatedAt)){
+        if(btn) btn.disabled = false;
+        lastStatusUndo_ = null;showStatusToast_('다른 변경이 반영되었습니다. 현재 상태를 확인한 뒤 다시 눌러주세요.',false);return false;
+      }
+      return writeStatusPatch_(code,patch,btn,'변경 완료',latest);
+    });
+  }).catch(function(err){
+    console.error(err);if(btn) btn.disabled = false;
+    showStatusToast_('상태를 확인하지 못했습니다. 다시 시도해 주세요.',false);return false;
+  }).finally(function(){statusChangeBusy_ = false;});
+}
 function markArrived_(code,name,btn){
-  if(!confirm('"' + (name || code) + '" 오늘 도착 처리할까요?\n\n상세페이지 등록(PDP) 단계로 넘어갑니다.')) return;
-  return writeStatusPatch_(code,{status:"pdp",arrivedAt:todayStr_()},btn,"도착 처리됨");
+  return changeStatus_(code,name,btn,'order',{status:'pdp',arrivedAt:todayStr_()},'도착 확인','도착일을 오늘로 기록하고 PDP 등록 대기로 이동합니다.');
 }
 function undoArrived_(code,name,btn){
-  if(!confirm('"' + (name || code) + '" 도착 처리를 취소하고 발주생산으로 되돌릴까요?')) return;
-  return writeStatusPatch_(code,{status:"order",arrivedAt:null},btn,"되돌림");
+  return changeStatus_(code,name,btn,'pdp',{status:'order',arrivedAt:null},'도착 취소','발주생산으로 되돌리며 도착일을 지웁니다.');
 }
 function completePdp_(code,name,btn){
-  if(!confirm('"' + (name || code) + '" 상세페이지 등록을 완료했나요?\n\n판매 상태로 이동하며 진행 목록에서는 숨겨집니다. 품명 검색으로 다시 찾을 수 있습니다.')) return;
-  return writeStatusPatch_(code,{status:"sale",updatedAt:Date.now()},btn,"등록 완료");
+  return changeStatus_(code,name,btn,'pdp',{status:'sale'},'등록완료로 변경','등록완료 메뉴에서 최근 30일 내 제품을 찾고 PDP로 되돌릴 수 있습니다.');
 }
+function restorePdp_(code,name,btn){
+  return changeStatus_(code,name,btn,'sale',{status:'pdp'},'PDP로 되돌리기','등록 대기로 되돌립니다. 기존 도착일은 유지합니다.');
+}
+function undoLatestChange_(){
+  var record = lastStatusUndo_;
+  if(!record || undoInProgress_ || statusChangeBusy_) return Promise.resolve(false);
+  undoInProgress_ = true;
+  var button = document.getElementById('statusToastUndo');button.disabled = true;button.textContent = '확인 중...';
+  return firebase.database().ref('workorderStatusCatalog/' + record.code).once('value').then(function(snap){
+    var latest = snap.val();
+    if(lastStatusUndo_ !== record) return false;
+    if(!latest || latest.status !== record.status || !sameCatalogVersion_(latest,record.version)){
+      lastStatusUndo_ = null;showStatusToast_('이후에 변경된 내용이 있어 실행 취소할 수 없습니다. 현재 상태를 확인해 주세요.',false);return false;
+    }
+    return writeStatusPatch_(record.code,record.patch,button,'실행 취소').then(function(ok){
+      if(ok){lastStatusUndo_ = null;showStatusToast_(record.name + ' · ' + stateOf(record.patch.status).label + '로 되돌렸습니다.',false);}
+      return ok;
+    });
+  }).catch(function(err){
+    console.error(err);showStatusToast_('상태를 확인하지 못했습니다. 실행 취소를 다시 눌러주세요.',true);return false;
+  }).finally(function(){undoInProgress_ = false;if(button.isConnected){button.disabled = false;button.textContent = '실행 취소';}});
+}
+document.getElementById('statusToastUndo').addEventListener('click',undoLatestChange_);
+document.getElementById('statusToastDismiss').addEventListener('click',function(){document.getElementById('statusToast').hidden = true;lastStatusUndo_ = null;});
 
 function togglePdpReview_(code,entry,btn){
   return writeStatusPatch_(code,{pdpReviewNeeded:entry.pdpReviewNeeded!==true},btn,"저장됨");
@@ -231,7 +337,7 @@ function togglePdpReview_(code,entry,btn){
 function countOf(key){
   return Object.keys(all).filter(function(code){
     var status = all[code].status;
-    return ACTIVE.indexOf(status) !== -1 && (key === "all" || key === status);
+    return key === "sale" ? status === "sale" : ACTIVE.indexOf(status) !== -1 && (key === "all" || key === status);
   }).length;
 }
 function renderTabs(){
@@ -254,7 +360,7 @@ function renderTabs(){
     ? (dataReady ? "연결이 끊겼습니다. 마지막으로 받은 정보를 표시합니다." : "연결을 확인한 뒤 새로고침해 주세요.")
     : catalogMissing ? "제품 요약 정보가 아직 연결되지 않았습니다. 작업지시서 동기화를 기다리고 있습니다."
     : !dataReady ? "제품 정보를 불러오고 있습니다."
-    : query ? "현재 탭과 관계없이 품명·품번으로 검색합니다. 샘플중과 판매 상태도 포함합니다."
+    : query ? "현재 탭과 관계없이 품명·품번으로 검색합니다. 최근 30일 등록완료 상태도 포함합니다."
     : countOf(filter) ? current.desc(countOf(filter)) : current.empty;
 }
 function rowsNow(){
@@ -263,7 +369,7 @@ function rowsNow(){
     .filter(function(row){
       if(SHARED.indexOf(row.e.status) === -1) return false;
       if(needle) return normalizeSearch(row.code).indexOf(needle) !== -1 || normalizeSearch(row.e.pumMyeong).indexOf(needle) !== -1;
-      return ACTIVE.indexOf(row.e.status) !== -1 && (filter === "all" || row.e.status === filter);
+      return filter === "sale" ? row.e.status === "sale" : ACTIVE.indexOf(row.e.status) !== -1 && (filter === "all" || row.e.status === filter);
     }).sort(function(a,b){
       var aDate = String(a.e.createdAt || ""), bDate = String(b.e.createdAt || "");
       return bDate.localeCompare(aDate) || b.code.localeCompare(a.code);
@@ -390,7 +496,7 @@ function render(){
     var body = document.createElement("div");body.className = "body";
     var state = stateOf(entry.status);
     var badge = document.createElement("span");badge.className = "state";
-    badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = state.label;body.appendChild(badge);
+    badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = entry.status === "pdp" ? "PDP · 등록 대기" : state.label;badge.setAttribute("aria-label","현재 상태: " + badge.textContent);body.appendChild(badge);
     var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";body.appendChild(name);
     var code = document.createElement("div");code.className = "code";code.textContent = row.code;body.appendChild(code);
     appendField_(body,"factory","공장",entry.factory);
@@ -413,7 +519,7 @@ function render(){
       var actions = document.createElement("div");actions.className = "arrive-row";
       var review = document.createElement("button");review.type = "button";
       review.className = "arrive-btn review-btn" + (entry.pdpReviewNeeded===true ? " on" : "");
-      review.textContent = "PDP 재확인 필요";review.setAttribute("aria-pressed",String(entry.pdpReviewNeeded===true));
+      review.textContent = "재확인 필요";review.setAttribute("aria-pressed",String(entry.pdpReviewNeeded===true));
       review.title = "최종안 변경 가능성이 있어 연경님 확인이 필요합니다. 확인 후 다시 누르면 해제됩니다.";
       review.addEventListener("click",function(){togglePdpReview_(row.code,entry,review);});
       var button = document.createElement("button");button.type = "button";
@@ -421,7 +527,7 @@ function render(){
         button.className = "arrive-btn go";button.textContent = "도착 확인";
         button.addEventListener("click",function(){markArrived_(row.code,entry.pumMyeong,button);});
       }else if(entry.status === "pdp"){
-        var complete = document.createElement("button");complete.type = "button";complete.className = "arrive-btn complete";complete.textContent = "상세페이지 등록 완료";
+        var complete = document.createElement("button");complete.type = "button";complete.className = "arrive-btn complete";complete.textContent = "등록완료로 변경";
         complete.addEventListener("click",function(){completePdp_(row.code,entry.pumMyeong,complete);});
         button.className = "arrive-btn undo";button.textContent = "도착 취소";
         button.addEventListener("click",function(){undoArrived_(row.code,entry.pumMyeong,button);});
@@ -430,6 +536,12 @@ function render(){
       if(entry.status === "pdp") actions.appendChild(complete);
       actions.appendChild(review);body.appendChild(actions);
       if(entry.status === "pdp" && entry.arrivedAt){var arrived = document.createElement("div");arrived.className = "arrived-at";arrived.textContent = "도착일 " + entry.arrivedAt;body.appendChild(arrived);}
+    }
+    if(entry.status === "sale"){
+      var completedActions = document.createElement("div");completedActions.className = "arrive-row";
+      var restore = document.createElement("button");restore.type = "button";restore.className = "arrive-btn restore";restore.textContent = "PDP로 되돌리기";
+      restore.addEventListener("click",function(){restorePdp_(row.code,entry.pumMyeong,restore);});completedActions.appendChild(restore);body.appendChild(completedActions);
+      if(entry.arrivedAt){var completedArrival = document.createElement("div");completedArrival.className = "arrived-at";completedArrival.textContent = "도착일 " + entry.arrivedAt;body.appendChild(completedArrival);}
     }
     card.appendChild(body);gridEl.appendChild(card);
     if(photoObserver) photoObserver.observe(thumb);
