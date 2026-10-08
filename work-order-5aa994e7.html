@@ -1,3 +1,4 @@
+<!-- v131: first-screen cost summary and single sample-recovery dialog (2026-10-09) -->
 <!-- v130: compact mobile list controls, single-line ratings and unified search (2026-10-09) -->
 <!-- v129: mobile drawing/cost/fabric/color order, compact gap and spaced header contacts (2026-10-09) -->
 <!-- v128: shared AISEL list/control colors, typography, spacing; preserve v127 editor/print (2026-10-09) -->
@@ -7132,6 +7133,7 @@
       }
     }
     loading = false;
+    if(mobileUnifiedReady_)renderMobileCostSummary_();
     if(currentCode) $("#codeView").textContent = currentCode;
     applyCat();
     updateRefLinkMode_(); if(typeof updateCoordiLinkMode_ === "function") updateCoordiLinkMode_();
@@ -7687,6 +7689,7 @@
     priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
+    if(mobileUnifiedReady_)renderMobileCostSummary_();
     sampleChangeBaseline_=null; sampleChangeBaselineCode_=null;
     if(typeof appRoute_!=="undefined" && appRoute_.view==="editor" && !restoringRoute_){
       appRoute_={...appRoute_,code};history.replaceState({...history.state,...appRoute_},"");
@@ -7704,7 +7707,7 @@
         resetEditorSaveFeedback_(!!st);
       }
       if(!st){
-        if(isFirst){ loading = false; return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
+        if(isFirst){ loading = false;if(mobileUnifiedReady_)renderMobileCostSummary_();return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
         // 2026-09-20 추가: 열어둔 작지가 밑에서 사라졌습니다(다른 기기에서 삭제·품번 이동).
         // 예전에는 화면이 그대로 남아서 한 글자만 쳐도 부분 저장이 나가 "품명만 있는 빈 작지"가 되살아났습니다.
         // 내가 지운 것(justDeletedCode_)과 내가 옮기는 중(movingCodeNow_)은 각자 처리하므로 여기서 제외합니다.
@@ -7719,6 +7722,7 @@
       // 대신 품번이 겹친다는 경고를 띄우고 저장을 막음.
       if(newOrderMode_){
         if(isFirst) loading = false;
+        if(mobileUnifiedReady_)renderMobileCostSummary_();
         updateCodeConflictUI_();
         return;
       }
@@ -11252,6 +11256,54 @@
   const sampleLabel=document.createElement('span');sampleLabel.textContent='샘플';mobileStatus.append(sampleLabel);
   const sampleDate=document.createElement('span');sampleDate.id='mobileSampleRecoveryDate';mobileStatus.append(sampleDate);
   document.getElementById('sampleRecoverySection').prepend(mobileStatus);
+  // Mobile summary reads existing values; recovery applies through the existing buttons.
+  const mobileSummary=document.createElement('div');mobileSummary.id='mobileMeetingSummary';mobileSummary.className='noprint';
+  const costJump=document.createElement('button');costJump.type='button';costJump.id='mobileCostJump';
+  costJump.innerHTML='<span>원가</span><strong id="mobileCostTotal"></strong><span class="mobile-cost-arrow" aria-hidden="true">↓</span>';
+  const sampleOpen=document.createElement('button');sampleOpen.type='button';sampleOpen.id='mobileSampleRecoveryButton';
+  sampleOpen.setAttribute('aria-haspopup','dialog');sampleOpen.setAttribute('aria-controls','mobileSampleRecoveryDialog');
+  mobileSummary.append(costJump,sampleOpen);document.getElementById('statusBar').after(mobileSummary);
+  const costValue=document.getElementById('totalView'),costSummary=document.getElementById('mobileCostTotal');
+  function renderMobileCostSummary_(){
+    const value=loading?'불러오는 중':costValue.textContent.trim();costJump.disabled=loading;sampleOpen.disabled=loading;if(costSummary.textContent!==value)costSummary.textContent=value;
+    costJump.classList.toggle('overcost',costValue.classList.contains('overcost'));
+    costJump.setAttribute('aria-label','원가 '+value+' · 원가계산서로 이동');
+  }
+  renderMobileCostSummary_();new MutationObserver(renderMobileCostSummary_).observe(costValue,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});
+  costJump.addEventListener('click',()=>{
+    const cell=document.getElementById('costCell');cell.setAttribute('tabindex','-1');cell.focus({preventScroll:true});
+    cell.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+  });
+  const recoveryDialog=document.createElement('dialog');recoveryDialog.id='mobileSampleRecoveryDialog';recoveryDialog.className='noprint';
+  recoveryDialog.setAttribute('aria-labelledby','mobileRecoveryTitle');recoveryDialog.setAttribute('aria-describedby','mobileRecoveryProduct mobileRecoveryNotice mobileRecoveryError');
+  recoveryDialog.innerHTML='<h2 id="mobileRecoveryTitle">샘플 회수</h2><p id="mobileRecoveryProduct"></p><div class="mobile-recovery-options" role="group" aria-label="샘플 보관 상태"><button type="button" data-recovery="factory" aria-pressed="false">공장 보관</button><button type="button" data-recovery="returned" aria-pressed="false">회수 완료</button></div><dl><div><dt>공장 전달일</dt><dd id="mobileRecoveryFactoryDate"></dd></div><div><dt>회수일</dt><dd id="mobileRecoveryReturnedDate"></dd></div></dl><p id="mobileRecoveryOverdue" role="status" hidden></p><p id="mobileRecoveryNotice"></p><p id="mobileRecoveryError" role="alert" hidden></p><div class="mobile-recovery-actions"><button type="button" id="mobileRecoveryCancel" autofocus>취소</button><button type="button" id="mobileRecoveryApply">적용</button></div>';
+  document.body.append(recoveryDialog);
+  const recoveryApply=document.getElementById('mobileRecoveryApply');let recoverySelected='',recoverySnapshot='';
+  function sampleRecoverySignature_(){return JSON.stringify([currentCode,sampleRecoveryStatus,sampleFactorySentDate,sampleReturnedDate]);}
+  function renderRecoveryChoice_(){
+    recoveryDialog.querySelectorAll('[data-recovery]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.recovery===recoverySelected)));
+    recoveryApply.disabled=!['factory','returned'].includes(recoverySelected)||recoverySelected===sampleRecoveryStatus;
+    document.getElementById('mobileRecoveryNotice').textContent=recoveryApply.disabled?'기존 보관 상태와 날짜를 확인할 수 있습니다.':recoverySelected==='returned'?'회수 완료로 변경하고 회수일을 기록합니다.':'공장 보관으로 변경하고 공장 전달일을 기록합니다.';
+  }
+  sampleOpen.addEventListener('click',()=>{
+    if(!mobileLayout.matches||namePrintMedia.matches||loading||recoveryDialog.open)return;
+    recoverySelected=sampleRecoveryStatus;recoverySnapshot=sampleRecoverySignature_();
+    document.getElementById('mobileRecoveryProduct').textContent=document.getElementById('pumMyeong').value.trim()||'품명 미입력';
+    document.getElementById('mobileRecoveryFactoryDate').textContent=sampleFactorySentDate||'미입력';
+    document.getElementById('mobileRecoveryReturnedDate').textContent=sampleReturnedDate||'미입력';
+    const overdue=document.getElementById('mobileRecoveryOverdue');overdue.hidden=!document.getElementById('sampleRecoveryRow').classList.contains('overdue');overdue.textContent=(document.getElementById('sampleRecoveryDates').textContent.match(/⚠️ .*/)||[''])[0];
+    document.getElementById('mobileRecoveryError').hidden=true;renderRecoveryChoice_();recoveryDialog.showModal();
+  });
+  recoveryDialog.querySelectorAll('[data-recovery]').forEach(button=>button.addEventListener('click',()=>{recoverySelected=button.dataset.recovery;renderRecoveryChoice_();}));
+  document.getElementById('mobileRecoveryCancel').addEventListener('click',()=>recoveryDialog.close());
+  recoveryApply.addEventListener('click',()=>{
+    if(recoveryApply.disabled)return;
+    if(loading||!mobileLayout.matches||namePrintMedia.matches||codeConflictNow_()||recoverySnapshot!==sampleRecoverySignature_()){
+      const error=document.getElementById('mobileRecoveryError');error.textContent='작지 또는 샘플 상태가 변경되었습니다. 창을 닫고 다시 확인해 주세요.';error.hidden=false;recoveryApply.disabled=true;return;
+    }
+    document.querySelector('#sampleRecoverySeg button[data-value="'+recoverySelected+'"]').click();recoveryDialog.close();
+  });
+
   const headerNames=document.createElement('div');headerNames.id='mobileHeaderNames';headerNames.className='noprint';
   document.querySelector('#sheet > .title-row').append(headerNames);
   const contactLayouts=['designer','factory'].map(id=>{
@@ -11278,6 +11330,9 @@
   function renderMobileSampleDate_(){
     sampleDate.textContent=sampleRecoveryStatus==='returned'&&sampleReturnedDate?'회수 '+sampleReturnedDate:document.getElementById('sampleRecoveryDates').textContent;
     sampleDate.classList.toggle('overdue',document.getElementById('sampleRecoveryRow').classList.contains('overdue'));
+    sampleOpen.textContent='샘플 · '+(sampleRecoveryStatus==='returned'?'회수 완료':sampleRecoveryStatus==='factory'?'공장 보관':'상태 확인');
+    sampleOpen.classList.toggle('at-factory',sampleRecoveryStatus==='factory');sampleOpen.classList.toggle('returned',sampleRecoveryStatus==='returned');sampleOpen.classList.toggle('overdue',document.getElementById('sampleRecoveryRow').classList.contains('overdue'));
+    sampleOpen.setAttribute('aria-label',sampleOpen.textContent+' · '+(sampleDate.textContent||'날짜 미입력')+' · 상태 및 날짜 확인');
   }
 
   let mobileRecordsActive=false,mobileChangesCode_=null,mobileChangesLastSignature_='',mobileMeetingRows_=[];
@@ -11355,6 +11410,7 @@
   colorSection.before(colorHome);
   function placeMobileRecords_(printing=false){
     const mobile=mobileLayout.matches&&!printing&&!namePrintMedia.matches;
+    if(!mobile&&recoveryDialog.open)recoveryDialog.close();
     // Reuse the same picker and handlers. Restore its original home for desktop/print.
     if(mobile){if(colorSection.parentElement.id!=='sheet')document.querySelector('#sheet > .meta').after(colorSection);}
     else if(colorSection.parentElement.id==='sheet')colorHome.after(colorSection);
@@ -14692,4 +14748,41 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html body #salesView .sheet-sales-name-label {flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
  html body #salesView .sheet-sales-badge {flex:0 0 32px;width:32px;}
 }
+</style>
+
+
+<style id="aisel-v131-mobile-meeting-summary">
+#mobileMeetingSummary {display:none;}
+#mobileSampleRecoveryDialog {box-sizing:border-box;width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - 48px);overflow:auto;padding:20px;border:1px solid var(--aisel-line);border-radius:6px;background:var(--aisel-bg);color:var(--aisel-ink);font-family:var(--kfont);box-shadow:0 8px 30px #30343B12;}
+#mobileSampleRecoveryDialog::backdrop {background:#0004;}
+#mobileSampleRecoveryDialog h2 {margin:0 0 12px;font-size:16px;font-weight:600;}
+#mobileRecoveryProduct {margin:0 0 16px;font-size:13px;line-height:1.5;overflow-wrap:anywhere;}
+#mobileSampleRecoveryDialog :is(.mobile-recovery-options,.mobile-recovery-actions) {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#mobileSampleRecoveryDialog button {box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:8px 6px;border:1px solid var(--aisel-muted);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;}
+#mobileSampleRecoveryDialog button[aria-pressed="true"] {background:var(--aisel-soft);border-color:var(--aisel-ink);font-weight:600;}
+#mobileSampleRecoveryDialog button:disabled {opacity:.5;cursor:default;}
+#mobileSampleRecoveryDialog button:focus-visible {outline:2px solid var(--aisel-focus);outline-offset:-3px;}
+#mobileSampleRecoveryDialog dl {margin:16px 0;font-size:12px;color:var(--aisel-muted);}
+#mobileSampleRecoveryDialog dl > div {display:flex;justify-content:space-between;gap:12px;margin:8px 0;}
+#mobileSampleRecoveryDialog dd {margin:0;color:var(--aisel-ink);font-variant-numeric:tabular-nums;}
+#mobileRecoveryNotice,#mobileRecoveryError,#mobileRecoveryOverdue {font-size:12px;line-height:1.6;}
+#mobileRecoveryNotice {color:var(--aisel-muted);margin:0 0 16px;}
+#mobileRecoveryError {color:#914A5F;}
+#mobileRecoveryOverdue {color:var(--aisel-ink);font-weight:600;}
+@media screen and (max-width:600px) {
+ html body #editorView #metaAccordion {display:none!important;}
+ html body #editorView #statusBar {border-radius:0;border-bottom:0;padding-bottom:4px;margin-bottom:0;}
+ html body #editorView #mobileMeetingSummary {display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;max-width:820px;box-sizing:border-box;margin:0 auto 8px;padding:4px 6px 8px;border:1px solid var(--aisel-line);border-top:0;border-radius:0 0 4px 4px;background:var(--aisel-bg);color:var(--aisel-ink);}
+ #mobileCostJump {display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;min-height:44px;padding:4px 6px;border:0;background:transparent;color:var(--aisel-ink);font-family:var(--kfont);font-size:12px;text-align:left;cursor:pointer;}
+ #mobileCostJump > span:first-child {color:var(--aisel-muted);flex-shrink:0;}
+ #mobileCostTotal {font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+ #mobileCostJump .mobile-cost-arrow {font-size:12px;color:var(--aisel-muted);}
+ #mobileCostJump.overcost #mobileCostTotal {color:#D6266F;}
+ #mobileSampleRecoveryButton {flex:0 1 auto;min-width:0;min-height:44px;padding:8px 10px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-family:var(--kfont);font-size:12px;font-weight:500;cursor:pointer;}
+ #mobileSampleRecoveryButton.at-factory {border-color:var(--aisel-ink);font-weight:600;}
+ #mobileSampleRecoveryButton.overdue::after {content:" · !";}
+ #mobileSampleRecoveryButton.returned {color:var(--aisel-muted);}
+ #mobileMeetingSummary button:focus-visible,#costCell:focus-visible {outline:2px solid var(--aisel-focus);outline-offset:-3px;}
+}
+@media print {#mobileMeetingSummary,#mobileSampleRecoveryDialog {display:none!important;}}
 </style>
