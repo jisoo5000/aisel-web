@@ -1,3 +1,4 @@
+<!-- v120: mobile header links and five actions in one row (2026-10-08) -->
 <!-- v119: mobile header identity editing and duplicate metadata removal (2026-10-08) -->
 <!-- v118: remove redundant mobile code settings button (2026-10-08) -->
 <!-- v117: screen-only width reference color border and mobile drawing order (2026-10-08) -->
@@ -7241,7 +7242,8 @@
       const shortLink = refRow.querySelector(".ref-short-link");
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
-        shortLink.textContent = val || "링크 입력";
+        const mobileHeaderLink=window.matchMedia('(max-width:600px)').matches && !!refRow.closest('.editor-mobile-head');
+        shortLink.textContent = mobileHeaderLink ? '🔗 링크' + (index ? ' '+(index+1) : '') : val || "링크 입력";
         shortLink.title = val || "레퍼런스 링크 입력";
         if(val){ shortLink.href = /^https?:\/\//i.test(val) ? val : "https://" + val; shortLink.removeAttribute("role"); shortLink.removeAttribute("tabindex"); }
         else { shortLink.removeAttribute("href"); shortLink.setAttribute("role", "button"); shortLink.tabIndex = 0; }
@@ -11214,15 +11216,19 @@
   const headerCode=document.getElementById('mobileProductCode');
   headerCode.addEventListener('click',openMobileCodeSettings_);
   headerCode.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openMobileCodeSettings_();}});
-  const mobileActions=document.createElement('div');mobileActions.id='mobileHeaderActions';
-  document.querySelector('.editor-mobile-head').appendChild(mobileActions);
   const newAction=document.getElementById('newBtn'),deleteAction=document.getElementById('deleteBtn');
   const newHome=document.createComment('desktop new action'),deleteHome=document.createComment('desktop delete action');
   newAction.before(newHome);deleteAction.before(deleteHome);
+  const headerReference=document.getElementById('refPanel'),referenceHome=document.createComment('desktop reference panel');
+  headerReference.before(referenceHome);
   const mobileLayout=window.matchMedia('(max-width:600px)');
   function placeCompactMobileActions_(){
     if(!mobileLayout.matches)finishMobileNameEdit_();
-    if(mobileLayout.matches){mobileActions.append(newAction,deleteAction);}else{newHome.after(newAction);deleteHome.after(deleteAction);if(codeSettings.open)codeSettings.close();}
+    // The existing five action buttons stay in their original toolbar order.
+    newHome.after(newAction);deleteHome.after(deleteAction);
+    if(mobileLayout.matches)document.querySelector('.editor-mobile-head').appendChild(headerReference);
+    else{referenceHome.after(headerReference);if(codeSettings.open)codeSettings.close();}
+    updateRefLinkMode_();
   }
   placeCompactMobileActions_();if(mobileLayout.addEventListener)mobileLayout.addEventListener('change',placeCompactMobileActions_);else mobileLayout.addListener(placeCompactMobileActions_);
 
@@ -14176,5 +14182,43 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #sheet > .photos > #ph1 {order:2;width:100%;flex:none;border-right:0;}
  #sheet > .meta {display:grid!important;order:3;}
  #sheet > .photos > .photos-right {order:4;width:100%;}
+}
+</style>
+
+<style id="aisel-v120-mobile-header-links">
+@media screen and (max-width:600px) {
+ #editorView .editor-mobile-head {
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  grid-template-rows:auto auto;gap:4px 8px;padding:12px;align-items:start;
+ }
+ #editorView .editor-mobile-title {grid-column:1;grid-row:1;}
+ #editorView .editor-mobile-caption {grid-column:1;grid-row:2;margin-top:0;}
+ body #editorView .editor-mobile-head #refPanel {
+  grid-column:2;grid-row:1 / span 2;align-self:center;
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto 26px;
+  gap:4px 3px;width:100%;min-width:0;max-width:none;margin:0;padding:0;border:0;
+  background:transparent;border-radius:0;
+ }
+ #editorView .editor-mobile-head #refPanel .sec-title-np {display:none;}
+ #editorView .editor-mobile-head #refPanel .ref-short-link {
+  grid-column:1;height:32px;min-height:32px;padding:0 3px;line-height:30px;
+  font-size:11px;text-align:center;white-space:nowrap;
+ }
+ #editorView .editor-mobile-head #refPanel .ref-actions {grid-column:2;gap:3px;}
+ #editorView .editor-mobile-head #refPanel .ref-actions .ref-icon-btn {
+  width:26px;min-width:26px;height:32px;min-height:32px;flex:0 0 26px;padding:3px;
+ }
+ #editorView .editor-mobile-head #refPanel #refAddBtn {grid-column:3;width:26px;min-width:26px;height:32px;min-height:32px;padding:3px;}
+ #editorView .editor-mobile-head #refPanel .ref-action-icon {width:16px;height:16px;flex:0 0 16px;}
+ body #editorView .toolbar > .tb-row {grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:48px;gap:4px;}
+ body #editorView .tb-row > #newBtn {grid-column:1;grid-row:1;}
+ body #editorView .tb-row > #deleteBtn {grid-column:2;grid-row:1;}
+ body #editorView .tb-row > #saveBtn {grid-column:3;grid-row:1;}
+ body #editorView .tb-row > #factorySaveBtn {grid-column:4;grid-row:1;}
+ body #editorView .tb-row > #printBtn {grid-column:5;grid-row:1;}
+ body #editorView .tb-row > .btn {
+  height:48px;min-height:48px;max-height:48px;padding:3px 1px;font-size:10px;
+  line-height:1.3;white-space:normal;overflow-wrap:normal;word-break:keep-all;
+ }
 }
 </style>
