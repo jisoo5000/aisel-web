@@ -1,4 +1,4 @@
-<!-- v125: mobile sample records, final-spec hint, centered link and cost/retail theme (2026-10-09) -->
+<!-- v126: restore compact mobile gallery typography and matching refresh control (2026-10-09) -->
 <!-- v124: compact mobile header, charcoal typography and all thumbnail colors (2026-10-09) -->
 <!-- v123: mobile menu sizing, uniform link spacing, shared card and sample heading (2026-10-09) -->
 <!-- v122: mobile cost layout, input zoom prevention, owner retail view, return-rate colors (2026-10-09) -->
@@ -3067,10 +3067,13 @@
     </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
-    <select id="gallerySearchType">
-      <option value="pumMyeong">품명</option>
-      <option value="code">품번</option>
-    </select>
+    <div class="gallery-search-type">
+      <select id="gallerySearchType" aria-label="검색 기준">
+        <option value="pumMyeong">품명</option>
+        <option value="code">품번</option>
+      </select>
+      <span class="gallery-search-type-display" aria-hidden="true"><span id="gallerySearchTypeLabel">품명</span><span>▾</span></span>
+    </div>
     <input type="text" id="gallerySearchInput" placeholder="검색어 입력">
   </div>
   <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
@@ -9928,6 +9931,10 @@
   }
 
   function renderGallery(){
+    const searchType = $("#gallerySearchType");
+    const searchTypeLabel = $("#gallerySearchTypeLabel");
+    const searchTypeText = searchType.selectedOptions[0]?.textContent || "품명";
+    if(searchTypeLabel.textContent !== searchTypeText) searchTypeLabel.textContent = searchTypeText;
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const type = $("#gallerySearchType").value;
     const sig = JSON.stringify({
@@ -14488,22 +14495,21 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {color:var(--ink);}
  #galleryView > .gallery-head h2 {font-size:18px;color:var(--ink);}
  #galleryView #galleryTabs .gtab,
- #galleryView #gallerySearchType,
- #galleryView #galleryTrashBtn {font-size:16px;font-weight:600;line-height:1.35;color:var(--ink);}
- #galleryView #galleryTabs .gtab {min-height:48px;padding:6px 2px;white-space:normal;overflow-wrap:anywhere;text-wrap:balance;}
+ #galleryView #galleryTrashBtn {font-size:11px;font-weight:700;line-height:1.25;color:var(--ink);}
+ #galleryView #galleryTabs .gtab {height:36px;min-height:36px;padding:6px 0;white-space:nowrap;overflow-wrap:normal;}
  #galleryView #galleryTabs .gtab.active {color:#fff;}
  #galleryView #gallerySearchInput {min-width:0;font-size:16px;color:var(--ink);}
  #galleryView #gallerySearchInput::placeholder {color:var(--muted);}
  #galleryView #galleryCounts {font-size:12px;color:var(--muted);}
  #galleryView #galleryCounts .active {color:var(--ink);}
- #galleryView #galleryGrid .gcard-info {grid-template-rows:repeat(4,auto);align-content:start;gap:4px;}
+ #galleryView #galleryGrid .gcard-info {grid-template-rows:repeat(4,auto);align-content:start;gap:2px;}
  #galleryView #galleryGrid .gcard-name,
- #galleryView #galleryGrid .gcard.newcard .gcard-title {font-size:16px;font-weight:700;line-height:1.4;color:var(--ink);}
+ #galleryView #galleryGrid .gcard.newcard .gcard-title {font-size:11px;font-weight:700;line-height:16px;color:var(--ink);}
  #galleryView #galleryGrid .gcard-name {white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
  #galleryView #galleryGrid .gcard-code-row,
- #galleryView #galleryGrid .gcard-date {font-size:12px;line-height:18px;color:var(--muted);}
- #galleryView #galleryGrid .gcard-colors-row {flex-wrap:wrap;align-items:flex-start;gap:4px;white-space:normal;overflow:visible;font-size:12px;line-height:18px;}
- #galleryView #galleryGrid .gcard-color-chip {flex:0 1 auto;height:auto;min-height:20px;padding:1px 5px;font-size:12px;line-height:18px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
+ #galleryView #galleryGrid .gcard-date {font-size:10px;line-height:16px;color:var(--muted);}
+ #galleryView #galleryGrid .gcard-colors-row {flex-wrap:wrap;align-items:flex-start;gap:3px;white-space:normal;overflow:visible;font-size:10px;line-height:16px;}
+ #galleryView #galleryGrid .gcard-color-chip {flex:0 1 auto;height:auto;min-height:16px;padding:0 4px;font-size:10px;line-height:16px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
  #galleryView #galleryGrid .gcard-color-mobile-extra {display:inline-flex!important;}
  #galleryView #galleryGrid .gcard-color-more {display:none;}
 }
@@ -14541,5 +14547,33 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #sheet #costCell .owner-retail-row #targetThreshold {font-size:22px!important;font-weight:800;color:var(--ink);line-height:1.25;}
  #sheet #costCell .owner-retail-row #targetThreshold {height:42px;padding:6px 8px;}
  #sheet #costCell #totalView.overcost {color:#D6266F;}
+}
+</style>
+
+<style id="aisel-v126-compact-mobile-labels">
+.gallery-search-type {display:contents;}
+.gallery-search-type-display {display:none;}
+@media screen and (max-width:600px) {
+ #galleryView .gallery-search {align-items:center;}
+ #galleryView .gallery-search-type {
+  display:inline-flex;position:relative;flex:0 0 auto;align-items:center;
+  box-sizing:border-box;min-width:64px;height:36px;padding:5px 8px;
+  border:1.5px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);
+ }
+ #galleryView .gallery-search-type-display {
+  display:inline-flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+  font-family:var(--kfont);font-size:11px;font-weight:700;line-height:1.25;pointer-events:none;
+ }
+ /* The original native select stays operable, accessible and 16px for iOS
+    focus. Its compact visual label follows the small status-tab typography. */
+ #galleryView #gallerySearchType {
+  position:absolute;inset:0;box-sizing:border-box;width:100%;height:100%;
+  margin:0;padding:0;border:0;opacity:0;font-size:16px!important;cursor:pointer;
+ }
+ #galleryView .gallery-search-type:focus-within {outline:2px solid var(--accent);outline-offset:0;}
+ #salesView .sheet-sales-refresh {
+  height:36px;min-height:36px;padding:5px 8px;
+  font-size:11px!important;font-weight:700;line-height:1.25;color:#30343B;
+ }
 }
 </style>
