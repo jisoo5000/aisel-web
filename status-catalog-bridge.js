@@ -184,7 +184,8 @@
     root.firebase.auth().onAuthStateChanged(user=>{
       if(root.aiselStatusCatalogBridge)root.aiselStatusCatalogBridge.stop();
       root.aiselStatusCatalogBridge=null;
-      if(user)root.aiselStatusCatalogBridge=api.start(root.firebase.database(),{colorLookup:n=>root.colorHex_?root.colorHex_(n):null});
+      // Match the existing app session; database rules remain authoritative.
+      root.aiselStatusCatalogBridge=api.start(root.firebase.database(),{colorLookup:n=>root.colorHex_?root.colorHex_(n):null});
     });
   }
 })(typeof globalThis!=='undefined'?globalThis:this);
