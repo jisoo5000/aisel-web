@@ -1,3 +1,4 @@
+<!-- v118: remove redundant mobile code settings button (2026-10-08) -->
 <!-- v117: screen-only width reference color border and mobile drawing order (2026-10-08) -->
 <!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
@@ -11166,8 +11167,6 @@
     if(codePending_&&window.matchMedia('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
   },true);
   const codeView=document.getElementById('codeView');
-  const mobileCodeHint=document.createElement('button');mobileCodeHint.type='button';mobileCodeHint.className='mobile-code-settings-button noprint';mobileCodeHint.textContent='품번 설정';codeView.after(mobileCodeHint);
-  mobileCodeHint.addEventListener('click',openMobileCodeSettings_);
   codeView.addEventListener('click',openMobileCodeSettings_);
   const mobileActions=document.createElement('div');mobileActions.id='mobileHeaderActions';
   document.querySelector('.editor-mobile-head').appendChild(mobileActions);
@@ -14061,7 +14060,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 </style>
 
 <style id="aisel-v116-compact-mobile">
- #mobileHeaderActions,.mobile-code-settings-button {display:none;}
+ #mobileHeaderActions {display:none;}
  #mobileCodeSettings {width:min(360px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #cbd3df;border-radius:10px;padding:18px;color:#2f3b52;}
  #mobileCodeSettings::backdrop {background:#0005;}
  #mobileCodeSettings label {display:flex;flex-direction:column;gap:5px;margin:12px 0;}
@@ -14095,14 +14094,13 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   #editorView .editor-mobile-title strong {white-space:normal;overflow-wrap:anywhere;}
   #editorView .statusbar {display:grid!important;}
   #editorView #refPanel,#editorView #metaAccordion {display:block!important;}
-  #editorView .mobile-code-settings-button {display:inline-block;padding:2px 4px;margin-left:4px;background:#fff;border:1px solid #cbd3df;border-radius:3px;color:#536079;font-size:10px;}
   #editorView #productColors .color-heading {gap:4px 3px;}
   #editorView #productColors .color-heading h2 {font-size:12px;}
   #editorView #productColors #colorSwatches {gap:2px;}
   #editorView #productColors #colorSwatches .copygen-swatch-btn {height:28px;min-height:28px;}
   #editorView #productColors #colorSwatches .color-dot {width:22px;height:22px;flex-basis:22px;}
  }
- @media print {#mobileCodeSettings,#mobileHeaderActions,.mobile-code-settings-button {display:none!important;}}
+ @media print {#mobileCodeSettings,#mobileHeaderActions {display:none!important;}}
 </style>
 
 <style id="aisel-v117-screen-refinement">
