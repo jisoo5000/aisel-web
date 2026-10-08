@@ -1,4 +1,4 @@
-<!-- v121: mobile action consistency, actual color chips and closing picker (2026-10-09) -->
+<!-- v122: mobile cost layout, input zoom prevention, owner retail view, return-rate colors (2026-10-09) -->
 <!-- v119: mobile header identity editing and duplicate metadata removal (2026-10-08) -->
 <!-- v118: remove redundant mobile code settings button (2026-10-08) -->
 <!-- v117: screen-only width reference color border and mobile drawing order (2026-10-08) -->
@@ -5519,6 +5519,8 @@
     priceConfirmed_=!!r.autoPrice; priceSource_=r.autoPrice ? "auto" : "";
     calc(); if(persist !== false) save();
   }
+  // Reuse the existing price input, calculation and field-level save path.
+  window.WorkOrderRetail = { calc, autoPrice: autoPrice_, review: priceReview_, select: selectRetailPrice_ };
 
   // ---------- 제품 입고일: 지연 자동계산 ----------
   function calcDelay_(expectedVal, actualVal){
@@ -13908,7 +13910,8 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
 .sheet-sales-dialog h3{font-size:16px}.sheet-sales-dialog p{font-size:13px}.sheet-sales-dialog button{padding:8px 16px}
 .sheet-sales-grid span:nth-child(n+3){text-align:center}
 .sheet-sales-head{font-size:11px;color:#7b8594;min-height:30px}
-.sheet-sales-warning{color:#dc173b;font-weight:700}
+.sheet-sales-caution{color:#986575;font-weight:700}
+.sheet-sales-warning{color:#A63F57;font-weight:700}
 .sheet-sales-refresh{font:inherit;color:#637089;border:1px solid #dce2eb;background:white;border-radius:3px;padding:3px 6px;cursor:pointer}
 #salesView .sales-column-head,#salesView #salesAuth{display:none!important}
 #salesView .sales-toolbar,#salesView .sales-meta{display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:8px;align-items:center;min-width:0}
@@ -13952,7 +13955,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
      if(rating){const badge=document.createElement('span');badge.className='sheet-sales-badge sheet-sales-badge-'+rating.key;badge.textContent=rating.label;badge.title='최근 30일 매장 전체 판매비중·반품률 기준';cell.append(badge);cell.setAttribute('aria-label',value+' · 성과 '+rating.label);}
      cell.addEventListener('click',()=>details(values));
     }
-    if(i===5){cell.title=value+' · 운영시트에 표시된 반품률';if(item.returns>=20)cell.className='sheet-sales-warning';}
+    if(i===5){cell.title=value+' · 운영시트에 표시된 반품률';if(item.returns>=20)cell.className='sheet-sales-warning';else if(item.returns>=15)cell.className='sheet-sales-caution';}
     row.append(cell);
    });host.append(row);
   }
@@ -14267,3 +14270,117 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  }
 }
 </style>
+
+<style id="aisel-v122-cost-screen">
+@media screen {
+ #sheet #costCell .cost-col-unit {width:calc(42% - 8px);}
+ #sheet #costCell .cost-col-qty {width:calc(10% + 8px);}
+ #sheet #costCell .cost-table .qty,
+ #sheet #costCell .cost-table .amt {font-size:16px;font-weight:700;line-height:1.35;}
+ #sheet #costCell .cost-table .amt {white-space:normal;overflow-wrap:anywhere;}
+ #sheet #costCell .cost-table .qty {text-align:center;}
+ #sheet #costCell .owner-retail-row {display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;margin-top:8px;padding:10px 12px;border:1px solid #cbd3df;border-radius:6px;background:#f3f6fa;}
+ #sheet #costCell .owner-retail-row[hidden] {display:none!important;}
+ #sheet #costCell .owner-retail-row > label {font-size:13px;font-weight:700;}
+ #sheet #costCell .owner-retail-row #targetThreshold {box-sizing:border-box;width:100%;min-width:0;font-size:16px;height:36px;padding:6px 8px;}
+ #sheet #costCell .owner-retail-tools {grid-column:1/-1;min-width:0;}
+ #sheet #costCell .owner-retail-tools summary {cursor:pointer;font-size:12px;color:#536079;}
+ #sheet #costCell .owner-retail-tools p {font-size:12px;line-height:1.5;margin:8px 0;color:#536079;}
+ #sheet #costCell .owner-retail-tools button {border:1px solid #cbd3df;border-radius:4px;background:#fff;padding:7px 10px;font:inherit;font-size:12px;cursor:pointer;}
+ .owner-view-bar {box-sizing:border-box;max-width:820px;margin:0 auto 8px;padding:0 12px;display:flex;flex-wrap:wrap;gap:4px 12px;justify-content:flex-end;align-items:center;color:#637089;font-size:12px;}
+ .owner-view-bar button {border:0;background:none;text-decoration:underline;text-underline-offset:3px;padding:6px 0;font:inherit;color:#536079;cursor:pointer;}
+ .owner-view-bar [role="status"]:empty {display:none;}
+}
+@media screen and (max-width:600px) {
+ html {-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+ /* iOS focuses small controls by zooming the page. Preserve user pinch zoom. */
+ body input:not([type="hidden"]):not([type="file"]):not([type="checkbox"]):not([type="radio"]),
+ body select,body textarea {font-size:16px!important;}
+ #sheet #costCell .cost-pair {height:30px;}
+ #sheet #costCell .cost-pair input {height:28px;line-height:22px;}
+ #sheet > .photos > .photos-right {order:3;border-bottom:1.5px solid var(--line);}
+ #sheet > .meta {order:4;}
+ #mobileCodeSettings {width:min(360px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:80dvh;overflow:auto;}
+ #mobileCodeSettings select {box-sizing:border-box;min-width:0;max-width:100%;}
+ .owner-view-bar {width:calc(100% - 16px);padding:0;}
+}
+@media screen and (max-width:360px) {
+ #sheet #costCell .cost-col-unit {width:calc(46% - 8px);}
+ #sheet #costCell .cost-col-amount {width:19%;}
+}
+@media print {
+ .owner-view-bar,.owner-retail-row {display:none!important;}
+}
+</style>
+<script id="aisel-v122-owner-retail">
+(function(root){
+ 'use strict';
+ const cost=document.getElementById('costCell'),input=document.getElementById('targetThreshold');
+ const totalLabel=cost.querySelector('.total-row .k'),add=document.getElementById('addLine');
+ const printedCostLabel=totalLabel.textContent;
+ function screenLabels(){totalLabel.textContent='원가';add.textContent='+ 항목 추가';}
+ function printLabels(){totalLabel.textContent=printedCostLabel;}
+ screenLabels();root.addEventListener('beforeprint',printLabels);root.addEventListener('afterprint',screenLabels);
+ const printMedia=root.matchMedia('print');
+ if(printMedia.addEventListener)printMedia.addEventListener('change',event=>event.matches?printLabels():screenLabels());
+
+ // One existing field/listener set, reused below cost. No copied price or new save path.
+ const row=document.createElement('div');row.id='ownerRetailRow';row.className='owner-retail-row noprint';row.hidden=true;
+ const label=document.createElement('label');label.htmlFor='targetThreshold';label.textContent='판매가';row.append(label,input);
+ const tools=document.createElement('details');tools.className='owner-retail-tools';
+ const summary=document.createElement('summary');summary.textContent='판매가 계산';tools.append(summary);
+ const calculated=document.createElement('p');calculated.id='ownerRetailCalculation';tools.append(calculated);
+ const use=document.createElement('button');use.type='button';use.textContent='추천 판매가 적용';tools.append(use);
+ row.append(tools);cost.querySelector('.cost-fixed').append(row);
+ const bar=document.createElement('div');bar.className='owner-view-bar noprint';bar.id='ownerViewBar';
+ const account=document.createElement('button');account.type='button';account.id='ownerViewLogin';account.textContent='대표자 로그인';
+ const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(account,message);
+ document.getElementById('mainBar').after(bar);
+
+ let owner=false,busy=false;
+ function verifiedOwner(user){return !!user&&user.emailVerified===true&&String(user.email||'').toLowerCase()==='sooana1214@gmail.com';}
+ function updateCalculation(){
+  if(!owner){calculated.textContent='';return;}
+  const amount=Number(document.getElementById('totalView').textContent.replace(/[^0-9]/g,''))||0;
+  const review=root.WorkOrderRetail?.review(amount);
+  if(!review)return;
+  const money=n=>n.toLocaleString('ko-KR')+'원';
+  calculated.textContent='원가 × 4: '+money(review.target)+' · '+(review.autoPrice?'추천 판매가 '+money(review.autoPrice):'직접 입력 필요');
+  use.disabled=!review.autoPrice;
+ }
+ function applyOwner(user){
+  owner=verifiedOwner(user);row.hidden=!owner;input.disabled=!owner;
+  if(!owner)tools.open=false;
+  account.textContent=owner?'대표자 보기 · 로그아웃':'대표자 로그인';
+  account.setAttribute('aria-expanded',String(owner));updateCalculation();
+ }
+ applyOwner(null);
+ new MutationObserver(updateCalculation).observe(document.getElementById('totalView'),{childList:true,characterData:true,subtree:true});
+ use.addEventListener('click',()=>{
+  if(!owner)return;
+  const amount=Number(document.getElementById('totalView').textContent.replace(/[^0-9]/g,''))||0;
+  const review=root.WorkOrderRetail?.review(amount);
+  if(review?.autoPrice)root.WorkOrderRetail.select(review.autoPrice);
+ });
+ try{
+  // Share the existing named Google session; the public workorder remains open.
+  const app=(firebase.apps||[]).find(app=>app.name==='aiselSalesReadOnly')||firebase.initializeApp(firebase.app().options,'aiselWorkorderOwner');
+  const auth=app.auth();auth.onAuthStateChanged(user=>{applyOwner(user);message.textContent='';});
+  account.addEventListener('click',async()=>{
+   if(busy)return;busy=true;account.disabled=true;message.textContent='';
+   try{
+    if(owner){await auth.signOut();applyOwner(null);return;}
+    // Open directly from the tap so Safari retains the popup user gesture.
+    const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
+    const result=await auth.signInWithPopup(provider);
+    if(!verifiedOwner(result.user)){await auth.signOut();applyOwner(null);message.textContent='대표 계정으로 로그인해 주세요.';}
+   }catch(error){
+    if(!owner)applyOwner(null);
+    message.textContent=error?.code==='auth/popup-closed-by-user'?'':'로그인을 완료하지 못했습니다. 다시 시도해 주세요.';
+   }finally{busy=false;account.disabled=false;}
+  });
+ }catch(error){account.disabled=true;message.textContent='대표자 로그인을 불러오지 못했습니다.';}
+ // Display separation only. Legacy workorder/index/share/sheet prices remain
+ // under their current database permissions; this is not a data-access boundary.
+})(window);
+</script>
