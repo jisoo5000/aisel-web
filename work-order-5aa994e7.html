@@ -1,3 +1,4 @@
+<!-- v160: protect new input from late own saves and deferred remote updates; persist change-date edits (2026-10-10) -->
 <!-- v159: add approved scarf category for legacy Jiae workorders (2026-10-10) -->
 <!-- v158: merge independent mobile cost edits without false draft conflicts; readable field-level choices (2026-10-10) -->
 <!-- v157: mobile draft notice removed without blocking saves; cost commas and revised heading/table gaps (2026-10-10) -->
@@ -6429,10 +6430,11 @@
   let lastSentJSON = null;   // 내가 방금 보낸 내용 (그대로 되돌아오면 다시 그릴 필요 없음)
   // 2026-09-20 추가: 위 lastSentJSON 비교는 서버가 키를 정렬해서 돌려주고 null 칸은 빼서 돌려주므로
   // 사실상 맞은 적이 없었습니다. 그래서 내 저장의 되돌림이 전부 "남의 수정"으로 처리돼 보류됐다가
-  // 마지막 0.6초 타이핑을 지웠습니다. 저장 시각(updatedAt)으로 비교하면 정확히 맞습니다.
+  // 마지막 0.6초 타이핑을 지웠습니다. v160은 연속 저장 응답마다 시각과 실제 서버 내용을 함께 대조합니다.
   let lastSentUpdatedAt_ = null;
   let movingCodeNow_ = false;  // 2026-09-20 추가: 품번 옮기기 중에는 옛 품번의 null 스냅샷을 "삭제됨"으로 안 봅니다
   let pendingRemoteState = null; // 입력 중이라 잠깐 미뤄둔 다른 기기의 최신 내용
+  let remoteStateSerial_ = 0;
 
   // v88: 기록은 사용자가 추가할 때만 저장합니다. 숨긴 구형 필드는 보존합니다.
   let resampleHistory_ = [];
@@ -7354,12 +7356,35 @@
   // Save feedback belongs to this exact record connection and edit revision.
   let editorSaveFeedback_ = null;
   function editorSaveState_(){
-    if(!editorSaveFeedback_ || editorSaveFeedback_.ref !== woRef || editorSaveFeedback_.code !== currentCode){
-      editorSaveFeedback_={ref:woRef,code:currentCode,revision:0,serial:0,latest:0,result:null,queued:false,confirmed:false,manual:false,sheetError:false,indexFailed:false,pending:new Map(),failedKeys:new Map(),fieldSuccess:new Map()};
+    if(!editorSaveFeedback_ || editorSaveFeedback_.ref !== woRef || editorSaveFeedback_.code !== currentCode || editorSaveFeedback_.owner!==draftOwner_()){
+      editorSaveFeedback_={ref:woRef,code:currentCode,owner:draftOwner_(),revision:0,serial:0,latest:0,result:null,queued:false,confirmed:false,manual:false,sheetError:false,indexFailed:false,pending:new Map(),failedKeys:new Map(),fieldSuccess:new Map(),sentSnapshots:[]};
     }
     return editorSaveFeedback_;
   }
-  function isCurrentSaveState_(state){return state===editorSaveFeedback_ && state.ref===woRef && state.code===currentCode;}
+  function isCurrentSaveState_(state){return state===editorSaveFeedback_ && state.ref===woRef && state.code===currentCode && state.owner===draftOwner_();}
+  function serverSnapshotSignature_(value){
+    function canonical(v){
+      if(v===undefined||v===null)return undefined;
+      if(Array.isArray(v))return v.length?v.map(item=>canonical(item)??null):undefined;
+      if(v&&typeof v==='object'){
+        const result={};for(const key of Object.keys(v).sort()){const part=canonical(v[key]);if(part!==undefined)result[key]=part;}
+        return Object.keys(result).length?result:undefined;
+      }
+      return v;
+    }
+    return JSON.stringify(canonical(value));
+  }
+  function ownSaveEcho_(st){
+    const state=editorSaveFeedback_;
+    if(!state||!isCurrentSaveState_(state)||!st?.updatedAt)return false;
+    const candidates=state.sentSnapshots.filter(item=>item.at===st.updatedAt);
+    if(!candidates.length)return false;
+    const signature=serverSnapshotSignature_(st),sent=candidates.find(item=>item.signature===signature);
+    if(!sent)return false;
+    // An earlier response acknowledges an earlier save, not the current draft.
+    if(sent.id===state.latest)lastSavedState_=st;
+    return true;
+  }
   function renderEditorSaveState_(state,allowLoading=false){
     if(!isCurrentSaveState_(state) || (loading&&!allowLoading))return;
     const button=$("#saveBtn");if(!button || codeConflictNow_())return;
@@ -7394,6 +7419,9 @@
     if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
     if(codeConflictNow_()){updateCodeConflictUI_();return false;}
     if(draftContext?.remotePending){
+      // Keep writing/IME intact. Reconcile after leaving the input, or through
+      // the explicit Save handler which already settles composition and blur.
+      if(isTypingNow()){const state=editorSaveState_();state.queued=true;renderEditorSaveState_(state);return false;}
       const remote=draftContext.remotePending;draftContext.remotePending=null;draftContext.candidate=localDraftRecord_(draftContext);draftContext.candidates=[draftContext.candidate,...draftContext.candidates.filter(r=>r.id!==draftContext.id)];draftContext.liveConflict=true;draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);
       rejectEditorSave_('동시 변경된 내용을 확인해 주세요.');if(mobileDraftMode_())restoreDraft_(draftContext);return false;
     }
@@ -7425,10 +7453,12 @@
     lastSentJSON=JSON.stringify(st);lastSentUpdatedAt_=st.updatedAt;
     if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);renderEditorSaveState_(state);return Promise.resolve(true);}
     const keys=Object.keys(patch);state.pending.set(id,{keys,revision});renderEditorSaveState_(state);
+    state.sentSnapshots.push({id,at:st.updatedAt,signature:serverSnapshotSignature_({...lastSavedState_,...patch})});
+    while(state.sentSnapshots.length>16&&!state.pending.has(state.sentSnapshots[0].id))state.sentSnapshots.shift();
     let originalWritten=false;
     const creating=newOrderMode_&&!editorContentBaseline_;
     const writePromise=Promise.resolve().then(async()=>{
-      if(draftContext){if(!draftContext.loaded)await draftContext.ready;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
+      if(draftContext){if(!draftContext.loaded)await draftContext.ready;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.remotePending||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
       if(creating){
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
@@ -7438,12 +7468,12 @@
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
       if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
         for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";}
-      if(state.latest===id){
+      if(isCurrentSaveState_(state)&&state.latest===id){
         if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
         state.indexFailed=false;
         try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
       }
-      if(state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);}
+      if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);}
       return true;
     }).catch(()=>{
       if(originalWritten && state.latest===id)state.indexFailed=true;
@@ -8206,8 +8236,10 @@
       appRoute_={...appRoute_,code};history.replaceState({...history.state,...appRoute_},"");
     }
     woRef = woRoot.child(code);
+    const subscribedRef=woRef;
     let firstSnapshot = true;
     woListener = (snapshot)=>{
+      if(woRef!==subscribedRef||currentCode!==code)return;
       const st = snapshot.val();
       // 2026-08-25 추가: 목록에서 연 직후 첫 응답은 "불러오기"입니다.
       // 내용이 비어 있어도 저장 잠금을 반드시 풀어야 화면이 멈추지 않습니다.
@@ -8242,14 +8274,19 @@
         updateCodeConflictUI_();
         return;
       }
-      // 2026-09-20 수정: 내가 방금 보낸 저장이 그대로 돌아온 것이면 다시 그리지 않습니다.
-      // 저장 시각으로 비교합니다 (문자열 비교는 키 순서 때문에 맞은 적이 없었습니다 — 4054줄 주석).
-      if(!isFirst && st.updatedAt && st.updatedAt === lastSentUpdatedAt_){ lastSavedState_ = st; return; }
+      // v160: earlier own responses also stay out of the conflict path. Match
+      // the complete expected server content, not just an updatedAt timestamp.
+      if(!isFirst&&ownSaveEcho_(st))return;
       const json = JSON.stringify(st);
       if(json === lastSentJSON && !isFirst) return; // 내가 방금 보낸 내용이 그대로 돌아온 것뿐이라 다시 그릴 필요 없음
-      if(!isFirst&&currentDraft_(activeDraft_)&&activeDraft_.dirty){activeDraft_.remotePending=st;return;}
-      if(isTypingNow() && !isFirst){
-        pendingRemoteState = st; // 지금 어딘가 칸에 입력 중이면 화면을 다시 그리지 않고 잠깐 보류
+      remoteStateSerial_++;
+      if(!isFirst&&currentDraft_(activeDraft_)&&activeDraft_.dirty){
+        activeDraft_.remotePending=st;
+        if(!isTypingNow()&&!document.querySelector('.draft-conflict-dialog'))saveSoon();
+        return;
+      }
+      if(isTypingNow() && (!isFirst||activeDraft_?.liveConflict)){
+        pendingRemoteState = {state:st,ref:woRef,code:currentCode,owner:draftOwner_(),serial:remoteStateSerial_};
         return;
       }
       queueLegacySampleStatuses_({[code]:st});
@@ -8261,9 +8298,25 @@
   }
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
   document.addEventListener("focusout", ()=>{
-    if(!pendingRemoteState) return;
-    const st = pendingRemoteState; pendingRemoteState = null;
-    setTimeout(()=>{ if(!isTypingNow()) applyState(st); }, 60);
+    const pending=pendingRemoteState,ctx=activeDraft_;
+    if(!pending&&!(currentDraft_(ctx)&&ctx.remotePending))return;
+    if(pending)pendingRemoteState=null;
+    const ref=woRef,code=currentCode,owner=draftOwner_();
+    setTimeout(()=>{
+      if(ref!==woRef||code!==currentCode||owner!==draftOwner_())return;
+      if(pending&&(pending.ref!==woRef||pending.code!==currentCode||pending.owner!==draftOwner_()))return;
+      if(pending&&pending.serial!==remoteStateSerial_){
+        if(currentDraft_(activeDraft_)&&activeDraft_.remotePending&&!isTypingNow())save();
+        return;
+      }
+      if(isTypingNow()){if(pending&&!pendingRemoteState)pendingRemoteState=pending;return;}
+      const active=captureDraft_();
+      if(pending){
+        if(active?.dirty)active.remotePending=pending.state;
+        else applyState(pending.state);
+      }
+      if(currentDraft_(active)&&active.remotePending)save();
+    },60);
   });
 
   // 날짜: 오늘 자동 + 포커스 시 전체선택(덮어쓰기 편하게)
@@ -11833,7 +11886,7 @@
 
   let mobileRecordsActive=false,mobileChangesCode_=null,mobileChangesLastSignature_='',mobileMeetingRows_=[];
   function meetingRows_(value){
-    const starts=[...value.matchAll(/^\[\d{4}-\d{2}-\d{2}[^\]\r\n]*\]/gm)].map(match=>match.index);
+    const starts=[...value.matchAll(/^\[(?:\d{4}-\d{2}-\d{2}|날짜 미정)[^\]\r\n]*\]/gm)].map(match=>match.index);
     if(!starts.length)return value?[{source:'meeting',raw:value}]:[];
     if(starts[0]!==0)starts.unshift(0);
     return starts.map((start,index)=>({source:'meeting',raw:value.slice(start,starts[index+1]??value.length)}));
@@ -11870,8 +11923,10 @@
         const chosen=date.value;
         if(chosen&&text){
           if(/^\[\d{4}-\d{2}-\d{2}/.test(text))text=text.replace(/^\[\d{4}-\d{2}-\d{2}/,'['+chosen);
+          else if(/^\[날짜 미정/.test(text))text=text.replace(/^\[날짜 미정/,'['+chosen);
           else if(chosen!==record.date)text='['+chosen+'] '+text;
         }
+        if(!chosen&&record.date&&/^\[\d{4}-\d{2}-\d{2}/.test(text))text=text.replace(/^\[\d{4}-\d{2}-\d{2}/,'[날짜 미정');
         if(text===record.raw&&date.value===record.date)return;
         if(text&&mobileMeetingRows_.indexOf(record)<mobileMeetingRows_.length-1&&!text.endsWith('\n'))text+='\n\n';
         record.raw=text;record.date=date.value;textarea.value=text;
@@ -11895,7 +11950,8 @@
       mobileChangesLastSignature_=mobileChangesSignature_();saveSoon();
     };
     date.addEventListener('click',()=>{try{if(date.showPicker)date.showPicker();}catch(_){}});
-    date.addEventListener('change',()=>{showDate();commit();});
+    const dateChanged=()=>{if(date.validity.badInput)return;showDate();commit();};
+    date.addEventListener('input',dateChanged);date.addEventListener('change',dateChanged);
     textarea.addEventListener('input',commit);
     add.addEventListener('click',async()=>{
       if(!await waitForEditorComposition_())return;
