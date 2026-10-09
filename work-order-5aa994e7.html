@@ -1,3 +1,4 @@
+<!-- v161: registration order, manual modification date, unified name input focus and English fiber blend (2026-10-10) -->
 <!-- v160: protect new input from late own saves and deferred remote updates; persist change-date edits (2026-10-10) -->
 <!-- v159: add approved scarf category for legacy Jiae workorders (2026-10-10) -->
 <!-- v158: merge independent mobile cost edits without false draft conflicts; readable field-level choices (2026-10-10) -->
@@ -6895,6 +6896,7 @@
   },true);
 
 
+  let manualModifiedDate_ = '', blendNormalizePending_ = false;
   function collect(){
     syncFabricFromMemo_();
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
@@ -6903,6 +6905,7 @@
     collectMemoCostBindings_();
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
+    st.modifiedDate = manualModifiedDate_;
     // v87: 첫 두 칸은 예전 앱과 호환하고, 추가 링크는 배열로 함께 저장합니다.
     st.refLinks = collectReferenceLinks_();
     st.refLink = st.refLinks[0] || "";
@@ -6946,13 +6949,10 @@
     st.editLog = editLog_;                      // 고친 기록 (원본과 고친 버전)
     // 2026-08-13 추가: 처음 만든 시각을 한 번만 기록합니다. 저장할 때마다 바뀌는 updatedAt과 달리
     // 이 값은 절대 안 바뀌므로, 목록을 "최근 만든 순"으로 정렬할 때 씁니다.
-    // 2026-08-13 재수정: 생성 시각 기록이 없던 예전 작지는 지금 시각(Date.now())이 아니라
-    // 이미 적어두신 디자인회의 날짜(yy/mm/dd)를 기준으로 삼습니다. 오늘 시각을 쓰면 테스트
-    // 삼아 몇 번 저장한 예전 작지가 전부 "오늘 만든 것"처럼 맨 위로 몰리는 문제가 있었습니다.
+    // v161: 신규 등록은 실제 시각, 예전 생성 시각 미기재는 유효한 기존 작성일만 사용합니다.
+    // 날짜를 알 수 없는 과거 작지를 오늘 등록한 것으로 추정하지 않습니다.
     if(!createdAt_){
-      const yy = num($("#yy").value), mm = num($("#mm").value), dd = num($("#dd").value);
-      const fromMeetingDate = (yy && mm && dd) ? new Date(yy, mm - 1, dd).getTime() : NaN;
-      createdAt_ = !isNaN(fromMeetingDate) ? fromMeetingDate : Date.now();
+      createdAt_ = newOrderMode_ ? Date.now() : (sortKeyForOrder_({yy:$("#yy").value,mm:$("#mm").value,dd:$("#dd").value})||null);
     }
     st.createdAt = createdAt_;
     st.updatedAt = lastSavedState_?.updatedAt || st.createdAt;
@@ -6988,7 +6988,7 @@
   function writeIndexIfChanged_(code, st){
     if(!code || !st) return Promise.resolve();
     const e = woIndexEntryFrom_(st);
-    e.updatedAt = sortKeyForOrder_(st);
+    e.updatedAt = Number(st.updatedAt) || sortKeyForOrder_(st);
     const sig = woIndexSig_(e);
     const known = (lastIndexSig_[code] !== undefined)
       ? lastIndexSig_[code]
@@ -7197,7 +7197,7 @@
       if(path[0]==='lines')return (rowNames.get(path[1])||'원가 항목')+(path.length>2?' · '+(names[path.at(-1)]||'세부 내용'):'');
       if(path[0]==='costNegotiationLinesData')return (rowNames.get(path[2])||'보관된 원가 항목')+' · 협상 기록';
       if(path[0]==='costNegotiationData')return ({gongim:'공임',siyage:'시야게'}[path[1]]||'원가')+' · '+(names[path.at(-1)]||'협상 기록');
-      return ({gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
+      return ({gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
     }
     function choice(b,l,r,path){
       const id=JSON.stringify(identity(path));
@@ -7325,7 +7325,7 @@
     if(!conflicts.length){apply({});return;}
     const dialog=document.createElement('dialog');dialog.className='draft-conflict-dialog noprint';
     const title=document.createElement('p');title.textContent=plan?'같은 칸에 서로 다른 수정이 있습니다. 사용할 값을 선택해 주세요.':'저장된 내용과 초안이 다릅니다. 사용할 내용을 선택해 주세요.';dialog.append(title);
-    const labels={designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
+    const labels={designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
     const selectors={};conflicts.forEach((conflict,i)=>{
       const key=plan?conflict.id:conflict;
       const section=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
@@ -7413,6 +7413,7 @@
   function rejectEditorSave_(reason){const state=editorSaveState_();state.queued=false;state.result=false;state.confirmed=false;state.blockReason=reason;renderEditorSaveState_(state);return false;}
   function save(){
     if(loading || !woRef || statusChanging_)return false;
+    normalizePendingBlend_();
     const draftContext=captureDraft_();
     if(newOrderMode_ && initialCreationWrite_&&initialCreationRef_===woRef)return initialCreationWrite_;
     if(typeof isEditorComposing_==="function" && isEditorComposing_()){saveSoon();return false;}
@@ -7446,7 +7447,8 @@
     const contentChanged=Object.keys(patch).some(key=>!["updatedAt","createdAt","myy","mmm","mdd"].includes(key));
     if(contentChanged || !editorContentBaseline_){
       st.updatedAt=Date.now();
-      const parts=editorContentBaseline_ ? modificationDateParts_(st.updatedAt) : {myy:st.yy,mmm:st.mm,mdd:st.dd};
+      const chosen=validDateInput_(st.modifiedDate);
+      const parts=chosen ? datePartsFromInput_(chosen) : editorContentBaseline_ ? modificationDateParts_(st.updatedAt) : {myy:st.yy,mmm:st.mm,mdd:st.dd};
       Object.assign(st,parts);Object.assign(patch,parts,{updatedAt:st.updatedAt});
       if(!lastSavedState_?.createdAt)patch.createdAt=st.createdAt;
     }
@@ -7467,7 +7469,8 @@
       originalWritten=true;
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
       if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
-        for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";}
+        for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";
+        refreshModifiedDateInput_();}
       if(isCurrentSaveState_(state)&&state.latest===id){
         if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
         state.indexFailed=false;
@@ -7552,6 +7555,8 @@
     }
   }
   function applyState(st){
+    manualModifiedDate_=validDateInput_(st.modifiedDate);
+    blendNormalizePending_=false;
     const resetSampleDraft=!sampleChangeBaseline_ || sampleChangeBaselineCode_ !== currentCode;
     if(resetSampleDraft){
       sampleChangeBaseline_=sampleChangeState_(st); sampleChangeBaselineCode_=currentCode;
@@ -7592,6 +7597,7 @@
       if(document.activeElement === el) return;
       if(el.value !== v) el.value = v;
     });
+    refreshModifiedDateInput_();
     renderReferenceLinks_(referenceLinksFromState_(st), true);
     refreshAllDelays_();
     // 카피생성기 쪽 "생성 결과" 칸도 이 작지의 저장된 상세설명으로 복원됐으니
@@ -8717,8 +8723,57 @@
   }
   function setModifiedToday(){
     for(const [id,value] of Object.entries(modificationDateParts_(Date.now())))document.getElementById(id).value=value;
+    refreshModifiedDateInput_();
   }
   ["myy","mmm","mdd"].forEach(id=>document.getElementById(id).readOnly=true);
+
+  function validDateInput_(value){
+    const text=String(value||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(text))return '';
+    const [y,m,d]=text.split('-').map(Number),date=new Date(0);date.setUTCFullYear(y,m-1,d);date.setUTCHours(0,0,0,0);
+    return y>0&&date.getUTCFullYear()===y&&date.getUTCMonth()===m-1&&date.getUTCDate()===d?text:'';
+  }
+  function datePartsFromInput_(value){const [y,m,d]=value.split('-').map(Number);return {myy:String(y),mmm:String(m),mdd:String(d)};}
+  function refreshModifiedDateInput_(){
+    const input=document.getElementById('manualModifiedDate');if(!input||document.activeElement===input)return;
+    const displayed=['myy','mmm','mdd'].map(id=>document.getElementById(id).value);
+    const value=manualModifiedDate_||validDateInput_(displayed.map((v,i)=>String(v).padStart(i?2:4,'0')).join('-'));
+    if(input.value!==value)input.value=value;
+  }
+  const modifiedDateDisplay=document.querySelector('#sheet .title-spacer > .date-row');
+  const modifiedDateEditor=document.createElement('div');modifiedDateEditor.className='manual-modified-date-row noprint';
+  const modifiedDateLabel=document.createElement('label');modifiedDateLabel.htmlFor='manualModifiedDate';modifiedDateLabel.textContent='수정';modifiedDateLabel.className='mod-label';
+  const modifiedDateInput=document.createElement('input');modifiedDateInput.type='date';modifiedDateInput.id='manualModifiedDate';modifiedDateInput.setAttribute('aria-label','작업지시서 수정일');
+  modifiedDateEditor.append(modifiedDateLabel,modifiedDateInput);modifiedDateDisplay.after(modifiedDateEditor);
+  const commitModifiedDate=()=>{
+    if(loading||modifiedDateInput.validity.badInput)return;
+    const value=modifiedDateInput.value;if(value&&!validDateInput_(value))return;
+    manualModifiedDate_=value;saveSoon();
+  };
+  modifiedDateInput.addEventListener('input',commitModifiedDate);modifiedDateInput.addEventListener('change',commitModifiedDate);
+
+  // Only complete known fiber expressions are rewritten. Product names and notes remain exact.
+  function englishBlend_(value){
+    const names={polyester:'POLYESTER',poly:'POLYESTER','폴리에스터':'POLYESTER','폴리':'POLYESTER',polyurethane:'POLYURETHANE',spandex:'POLYURETHANE',elastane:'POLYURETHANE','폴리우레탄':'POLYURETHANE','스판덱스':'POLYURETHANE','스판':'POLYURETHANE',cotton:'COTTON','코튼':'COTTON','면':'COTTON',nylon:'NYLON','나일론':'NYLON',rayon:'RAYON','레이온':'RAYON',wool:'WOOL','울':'WOOL',linen:'LINEN','린넨':'LINEN',acrylic:'ACRYLIC','아크릴':'ACRYLIC'};
+    const source=String(value||'').trim();if(!source)return '';
+    const expression=new RegExp('('+Object.keys(names).sort((a,b)=>b.length-a.length).join('|')+')(?:\\s*(\\d+(?:\\.\\d+)?)(\\s*%)?)?','igy');
+    const parts=[];let at=0;
+    while(at<source.length){
+      expression.lastIndex=at;const match=expression.exec(source);if(!match||(!match[2]&&match[3]))return value;
+      const next=expression.lastIndex;if(next<source.length&&!/[\s/,+·]/.test(source[next])&&!/^[가-힣]/.test(source.slice(next)))return value;
+      parts.push(names[match[1].toLowerCase()]+(match[2]?' '+match[2]+'%':''));
+      at=next;const separator=source.slice(at).match(/^[\s/,+·]+/);if(separator)at+=separator[0].length;
+      if(at===source.length&&separator&&/[\/,+·]/.test(separator[0]))return value;
+    }
+    return parts.join(' / ');
+  }
+  function normalizePendingBlend_(){
+    const input=document.getElementById('blend');
+    if(!blendNormalizePending_||!mobileDraftMode_()||isEditorComposing_()||document.activeElement===input)return false;
+    blendNormalizePending_=false;const converted=englishBlend_(input.value);if(converted===input.value)return false;
+    input.value=converted;return true;
+  }
+  document.getElementById('blend').addEventListener('input',()=>{if(!loading&&mobileDraftMode_())blendNormalizePending_=true;});
+  document.getElementById('blend').addEventListener('blur',()=>{if(normalizePendingBlend_())saveSoon();});
 
   // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
   function setMainTabActive_(which){
@@ -10369,6 +10424,7 @@
     editLog_ = [];
     editorContentBaseline_ = null;
     createdAt_ = null;   // 새 작지는 처음 저장될 때 생성 시각이 새로 정해집니다
+    manualModifiedDate_='';blendNormalizePending_=false;
     const outputEl = document.getElementById("output");
     if(outputEl){
       outputEl.value = "";
@@ -10516,19 +10572,20 @@
     alert(`${okCount}/${list.length}개를 구글시트로 보냈습니다. (제조원가·원가상세는 화면을 열어 저장/인쇄해야 정확히 반영됩니다)`);
   });
 
-  // v112: sort by the last content modification; use creation date for legacy records.
+  // v161: registration order is stable across edits. Keep known legacy creation dates.
   function sortKeyForOrder_(st){
-    if(Number(st.updatedAt)>0)return Number(st.updatedAt);
-    if(st.myy && st.mmm && st.mdd){
-      const t=new Date(Number(st.myy),Number(st.mmm)-1,Number(st.mdd)).getTime();
-      if(Number.isFinite(t))return t;
-    }
-    if(Number(st.createdAt)>0)return Number(st.createdAt);
+    const created=Number(st.createdAt);
+    if(Number.isFinite(created)&&created>0&&Number.isFinite(new Date(created).getTime()))return created;
     if(st.yy && st.mm && st.dd){
-      const t=new Date(Number(st.yy),Number(st.mm)-1,Number(st.dd)).getTime();
-      if(Number.isFinite(t))return t;
+      const date=[st.yy,st.mm,st.dd].map((v,i)=>String(v).padStart(i?2:4,'0')).join('-');
+      if(validDateInput_(date))return Date.parse(date+'T00:00:00+09:00');
     }
     return 0;
+  }
+  function compareRegisteredOrders_(a,b){
+    const first=sortKeyForOrder_(a[1]),second=sortKeyForOrder_(b[1]);
+    if(!first||!second)return first?-1:second?1:a[0].localeCompare(b[0],'en');
+    return second-first||a[0].localeCompare(b[0],'en');
   }
 
   function renderGallery(){
@@ -10554,19 +10611,15 @@
     Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>matchesGallerySearch_(code, st, q))
-      .sort((a,b)=> (sortKeyForOrder_(b[1]) - sortKeyForOrder_(a[1])))
+      .sort(compareRegisteredOrders_)
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
         const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
         // 2026-08-13 수정: 카드 아래 표시를 품번에서 날짜로 변경.
-        // 작지에 적힌 등록일(yy/mm/dd)을 우선 쓰고, 없으면 마지막 저장 시각으로 대신함.
+        // v161: 목록 정렬과 같은 등록일을 표시하며 수정일로 대체하지 않습니다.
         let dateLabel = "";
-        if(st.yy && st.mm && st.dd){
-          dateLabel = `${String(st.yy).trim()}.${String(st.mm).trim()}.${String(st.dd).trim()}`;
-        } else if(st.updatedAt){
-          const d = new Date(st.updatedAt);
-          dateLabel = `${String(d.getFullYear()).slice(2)}.${d.getMonth()+1}.${d.getDate()}`;
-        }
+        const registeredAt=sortKeyForOrder_(st);
+        if(registeredAt){const d=modificationDateParts_(registeredAt);dateLabel=`${d.myy}.${d.mmm}.${d.mdd}`;}
         const card = document.createElement("div");
         card.className = "gcard" + (thumb ? " has-photo" : "");
         // 2026-08-13 추가: 품번을 품명과 날짜 사이에 표시.
@@ -11032,7 +11085,7 @@
   // ---------- 이전/다음 작지 (목록 화면 정렬 순서 기준) ----------
   function sortedCodes_(){
     return Object.entries(allWorkOrders || {})
-      .sort((a,b)=> (sortKeyForOrder_(b[1]) - sortKeyForOrder_(a[1])))
+      .sort(compareRegisteredOrders_)
       .map(([code])=> code);
   }
   function stepWorkOrder_(direction){
@@ -16093,5 +16146,25 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html:root body #editorView #localDraftStatus {display:none!important;}
  html:root body #editorView #sheet #costCell > .sec-title {margin-bottom:12px!important;}
  html:root body #editorView #sheet #costCell .cost-table {margin-bottom:8px;}
+}
+</style>
+
+<style id="aisel-v161-mobile-date-name-inputs">
+.manual-modified-date-row {display:none;}
+@media screen and (max-width:600px) {
+ html body #editorView #sheet .title-spacer > .date-row {display:none;}
+ html body #editorView #sheet .manual-modified-date-row {display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;}
+ html body #editorView #sheet #manualModifiedDate {box-sizing:border-box;width:140px;min-width:0;height:32px;padding:2px 4px;border:1px solid var(--form-line);border-radius:4px;background:var(--form-bg);color:var(--form-text);font:400 16px/24px var(--kfont);text-align:center;color-scheme:light;}
+ html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor {
+  border:1px solid var(--form-line)!important;border-radius:4px;background:var(--form-bg)!important;
+  color:var(--form-text)!important;-webkit-text-fill-color:var(--form-text)!important;
+  font-size:16px!important;font-weight:400;line-height:1.5;
+ }
+ html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor:focus {border-color:var(--aisel-edit-focus)!important;}
+ html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor::placeholder {color:var(--form-muted);-webkit-text-fill-color:var(--form-muted);}
+ :root[data-theme="dark"] #editorView #sheet #manualModifiedDate {color-scheme:dark;}
+}
+@media screen and (max-width:600px) and (prefers-color-scheme:dark) {
+ :root:not([data-theme="light"]) #editorView #sheet #manualModifiedDate {color-scheme:dark;}
 }
 </style>
