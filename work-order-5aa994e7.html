@@ -1,3 +1,4 @@
+<!-- v156: mobile cost fields centered, symmetric 4px unit-price spacing and equal 12px section gaps (2026-10-09) -->
 <!-- v155: mobile color panel shares the sheet outline; approved typography and warm-gray visual standards (2026-10-09) -->
 <!-- v154: mobile uniform warm-gray lines and equal photo actions; explicit sheet return-request metric labels (2026-10-09) -->
 <!-- v153: durable device drafts and coalesced sheet synchronization (2026-10-09) -->
@@ -15829,5 +15830,26 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button.active {font-weight:600;}
  html:root body #editorView #sheet .sizespec > .unit-note {font-size:12px;font-weight:400;line-height:1.5;}
  html:root body #editorView :is(.ref-action-icon,.mobile-change-delete .ref-action-icon) {stroke-width:1.8;}
+}
+</style>
+
+<style id="aisel-v156-mobile-cost-alignment-spacing">
+/* Screen-only cost controls. The existing iPad layout adapter reuses this
+   mobile contract; desktop and print retain their original rules. */
+@media screen and (max-width:600px) {
+ html:root body #editorView #sheet #costCell .cost-table {margin-bottom:12px;}
+ html:root body #editorView #sheet #costCell .cost-table :is(th,td) {vertical-align:middle;}
+ html:root body #editorView #sheet #costCell .cost-table :is(.h-amt,.amt) {text-align:center;}
+ html:root body #editorView #sheet #costCell .cost-table .cost-pair {
+  box-sizing:border-box;height:40px;min-height:40px;padding:4px;gap:4px;align-items:center;
+ }
+ html:root body #editorView #sheet #costCell .cost-table .cost-pair input {
+  box-sizing:border-box;height:32px;margin:0;padding:2px 4px;line-height:24px;text-align:center;
+ }
+ html:root body #editorView #sheet #costCell .fixed-row .cost-pair {align-items:center;}
+ html:root body #editorView #sheet #costCell .fixed-row .cost-pair input {
+  box-sizing:border-box;height:32px;margin:0;padding:2px 1px;line-height:24px;text-align:center;
+ }
+ html:root body #editorView #sheet #costCell .cost-pair-arrow {text-align:center;align-self:center;}
 }
 </style>
