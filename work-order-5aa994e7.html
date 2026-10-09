@@ -1,3 +1,4 @@
+<!-- v145: unify mobile sample, color and narrow change-section headings at 16px semibold (2026-10-09) -->
 <!-- v144: white editorial photo area and actions, factory +8px, quiet typography and lines, charcoal selected controls and monochrome reference icon (2026-10-09) -->
 <!-- v143: AISEL list header above navigation with restrained underline tabs (2026-10-09) -->
 <!-- v142: centered link controls, lighter compact photo actions, aligned factory names, smaller sample buttons and owner-login bottom clearance (2026-10-09) -->
@@ -15199,5 +15200,17 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   font-size:12px;line-height:18px;font-weight:400;color:var(--aisel-muted);
  }
  html body #galleryView #galleryGrid .gcard-sample-pickup {background:#7A3048;color:#FFFFFF;}
+}
+</style>
+
+<style id="aisel-v145-mobile-section-titles">
+/* Match mobile body headings while retaining compact metadata and original controls. */
+@media screen and (max-width:600px) {
+ html body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {font-size:16px;font-weight:600;line-height:1.4;}
+ html body #editorView #sheet #productColors .color-heading h2 {font-size:16px;font-weight:600;line-height:1.4;}
+ html body #editorView #mobileSampleRecords .mobile-change-heading > span:first-child {
+  font-size:16px;font-weight:600;line-height:1.4;
+  white-space:normal;word-break:keep-all;overflow-wrap:anywhere;
+ }
 }
 </style>
