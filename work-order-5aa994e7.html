@@ -1,3 +1,4 @@
+<!-- v150: desktop/tablet sheet colors match mobile palette without changing document dimensions (2026-10-09) -->
 <!-- v149: clear sales-performance title and quiet recent-release scope beneath search (2026-10-09) -->
 <!-- v148: desktop editing panel outside the unchanged A4 sheet, shared modification records and mobile palette (2026-10-09) -->
 <!-- v147: slightly soften rose negotiation-needed colors while retaining readable emphasis (2026-10-09) -->
@@ -15325,5 +15326,56 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html body #salesView .sales-scope-note {
   margin:0 0 8px;color:var(--aisel-muted);font-size:12px;font-weight:400;line-height:1.4;
  }
+}
+</style>
+
+<style id="aisel-v150-desktop-sheet-palette">
+/* Screen colors only. Retain every sheet dimension, type size and panel breakpoint. */
+@media screen and (min-width:601px) {
+ html body #editorView #sheet {
+  --ink:var(--aisel-ink);--navy:var(--aisel-ink);--muted:var(--aisel-muted);
+  --line:var(--aisel-line);--hair:var(--aisel-line);--field-line:var(--aisel-line);
+  --field:var(--aisel-soft);--sheet:var(--aisel-bg);--accent:var(--aisel-ink);
+  background:var(--aisel-bg);color:var(--aisel-ink);border-color:var(--aisel-line);box-shadow:none;
+ }
+ html body #editorView #sheet #ph1 {background:var(--aisel-bg);}
+ html body #editorView #sheet :is(h1,.sheet-section-title,.sec-title) {color:var(--aisel-ink);}
+ html body #editorView #sheet > .meta .designer > :is(input,.code) {
+  background:var(--aisel-bg)!important;border-color:var(--aisel-line)!important;
+  color:var(--aisel-ink)!important;-webkit-text-fill-color:var(--aisel-ink)!important;
+ }
+ html body #editorView #sheet > .meta .designer > input::placeholder {
+  color:var(--aisel-muted);-webkit-text-fill-color:var(--aisel-muted);
+ }
+ html body #editorView #sheet > .meta .designer > .k {color:var(--aisel-ink);}
+ html body #editorView #sheet :is(.cost-table th,.sizespec th,.total-row,.owner-retail-row) {
+  background:var(--aisel-soft);color:var(--aisel-ink);
+ }
+ html body #editorView #sheet #costCell input:not(.nego-price-empty) {
+  background:var(--aisel-bg);color:var(--aisel-ink);border-color:var(--aisel-line);
+ }
+ html body #editorView #sheet :is(.add,.ss-toggle-btn,.ss-addrow .add,.ss-table-wrap button) {
+  background:var(--aisel-bg);color:var(--aisel-ink);border-color:var(--aisel-line);
+ }
+ html body #editorView #sheet #totalView:not(.overcost) {color:var(--aisel-ink);}
+ html body #editorView #sheet :is(input,textarea,select):focus {
+  outline-color:#CCD8E9!important;border-color:#CCD8E9!important;
+ }
+ html body #editorView #desktopEditPanel #productColors :is(.copygen-swatch-btn,.copygen-add-color) {
+  background:#FFFFFF;color:#30343B;border-color:#DEDCD6;
+ }
+ html body #editorView #desktopEditPanel #productColors .copygen-selected-base .color-dot {outline-color:#30343B;}
+ html body #editorView #sheet #costCell .cost-pair input.nego-price-empty {
+  background:#F7ECEE;border-color:#CCA0A9;color:#975568;
+ }
+ html body #editorView #sheet #costCell .cost-pair input.nego-price-empty::placeholder {color:#975568;}
+ html body #editorView #sheet > .meta .designer > input:focus {
+  outline-color:#CCD8E9!important;border-color:#CCD8E9!important;
+ }
+ html body #editorView #desktopEditPanel :is(h2,.sec-title-np,.mobile-change-heading) {color:#30343B;}
+ html body #editorView #desktopEditPanel #refPanel :is(.ref-link-input,.ref-short-link,.ref-icon-btn,#refAddBtn) {
+  background:#FFFFFF!important;color:#30343B!important;border-color:#DEDCD6!important;box-shadow:none;
+ }
+
 }
 </style>
