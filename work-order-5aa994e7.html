@@ -1,3 +1,4 @@
+<!-- v142: centered link controls, lighter compact photo actions, aligned factory names, smaller sample buttons and owner-login bottom clearance (2026-10-09) -->
 <!-- v141: slightly wider yellow gaps, compact gray photo actions, balanced image spacing, closer owner login and factory left shift (2026-10-09) -->
 <!-- v140: mobile factory offset, wider contact editing and unified right-side photo actions; tighter sheet/login gaps (2026-10-09) -->
 <!-- v139: shared magnifier fields and exact product-name/code search (2026-10-09) -->
@@ -15074,5 +15075,28 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   min-width:36px;padding:0 4px;background:#6C727C;color:#FFFFFF;border-color:#6C727C;
  }
  html body #editorView #sheet #ph1 > .photo-src > button:disabled {color:#FFFFFF;}
+}
+</style>
+
+<style id="aisel-v142-mobile-controls-footer">
+@media screen and (max-width:600px) {
+ html body #editorView .editor-mobile-head #refPanel {align-self:center;}
+ html body #editorView #mobileMeetingSummary #sampleRecoverySeg button {
+  width:58px;min-width:58px;height:30px;min-height:30px;
+ }
+ /* Align short and five-character names near the midpoint of the 48px year field. */
+ html body #mobileHeaderNames #mobileFactoryName {
+  transform:none;text-align:left;padding-left:4px;padding-right:4px;
+ }
+ html body #editorView #sheet #ph1 > .photo-src > button {
+  height:26px;min-height:26px;font-weight:500;
+  background:#F3F2EE;color:#30343B;border-color:#DEDCD6;
+ }
+ html body #editorView #sheet #ph1 > .photo-src > button:disabled {color:#30343B;}
+ /* Reclaim the shorter action row while preserving image dimensions and both 8px gaps. */
+ html body #editorView #sheet > .photos > #ph1 {
+  height:calc(clamp(340px,85vw,560px) - 38px);padding-top:42px;
+ }
+ html body #ownerViewBar {padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));}
 }
 </style>
