@@ -1,3 +1,4 @@
+<!-- v146: rose negotiation-needed cue and mobile label, existing quote logic and filled prices preserved (2026-10-09) -->
 <!-- v145: unify mobile sample, color and narrow change-section headings at 16px semibold (2026-10-09) -->
 <!-- v144: white editorial photo area and actions, factory +8px, quiet typography and lines, charcoal selected controls and monochrome reference icon (2026-10-09) -->
 <!-- v143: AISEL list header above navigation with restrained underline tabs (2026-10-09) -->
@@ -4578,6 +4579,7 @@
       for(const key of Object.keys(controls))if(document.activeElement!==controls[key])controls[key].value=key==='original'?(m.original??options.legacy()??''):(m[key]??'');
       // Visual cue only: zero is a entered price; blank negotiation still uses the initial quote.
       const needsQuote=options.fixed||mobileQuoteMedia?.matches?number(controls.original.value)!==null:number(options.quantity())>0;
+      controls.negotiated.placeholder=mobileQuoteMedia?.matches?'네고 필요':'네고 가격';
       controls.negotiated.classList.toggle('nego-price-empty',needsQuote&&controls.negotiated.value.trim()==='');
     }
     host.append(editor);document.body.append(dialog);refresh();
@@ -15211,6 +15213,17 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html body #editorView #mobileSampleRecords .mobile-change-heading > span:first-child {
   font-size:16px;font-weight:600;line-height:1.4;
   white-space:normal;word-break:keep-all;overflow-wrap:anywhere;
+ }
+}
+</style>
+
+<style id="aisel-v146-mobile-negotiation-cue">
+@media screen and (max-width:600px) {
+ html body #editorView #sheet #costCell .cost-pair input.nego-price-empty {
+  background:#F3E2E5;border-color:#BE7A88;color:#8B3E50;
+ }
+ html body #editorView #sheet #costCell .cost-pair input.nego-price-empty::placeholder {
+  color:#8B3E50;font-weight:500;opacity:1;
  }
 }
 </style>
