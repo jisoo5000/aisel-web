@@ -1,3 +1,4 @@
+<!-- v138: mobile row gaps, right-aligned contacts and drawing actions beside title (2026-10-09) -->
 <!-- v137: move existing owner login beneath the work-order area (2026-10-09) -->
 <!-- v136: unified mobile editing focus, size guide beside title and equal table strokes (2026-10-09) -->
 <!-- v135: softer mobile list action text, slightly shorter tabs and compact header spacing (2026-10-09) -->
@@ -8017,6 +8018,8 @@
   ["ph1Cam", "ph1Album"].forEach(id=>{
     const inp = $("#" + id);
     if(!inp) return;
+    // Keep the mobile picker click from opening the photo box's default picker too.
+    inp.addEventListener("click", e=>{ if(window.matchMedia("screen and (max-width:600px)").matches) e.stopPropagation(); });
     inp.addEventListener("change", e=>{
       loadImgFile(e.target.files[0], $("#ph1"));
       e.target.value = "";   // 같은 파일을 다시 골라도 반응하도록 비움
@@ -14965,5 +14968,21 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html:root body #editorView #sheet .sizespec > .ss-addrow {grid-column:1/-1;grid-row:2;min-width:0;margin-top:8px;}
  html:root body #editorView #sheet .sizespec > .ss-table-wrap {grid-column:1/-1;grid-row:3;min-width:0;}
  html:root body #editorView #sheet .sizespec :is(table,th,td) {border:1px solid var(--form-line)!important;}
+}
+</style>
+
+<style id="aisel-v138-mobile-gaps-drawing-actions">
+/* Mobile screen spacing only: reuse photo actions and preserve image content size. */
+@media screen and (max-width:600px) {
+ html body #editorView #sheet #costCell .fixed-row + .fixed-row {margin-top:2px;}
+ html body #editorView #sheet > .title-row {grid-template-columns:minmax(0,1fr) auto;row-gap:2px;}
+ html body #editorView #sheet > .title-row #mobileHeaderNames {justify-content:flex-end;width:141px;max-width:100%;gap:12px;}
+ html body #mobileHeaderNames .mobile-contact-name {flex:0 1 auto;min-height:40px;}
+ html body #mobileHeaderNames #mobileDesignerName {width:51px;padding-left:0;padding-right:0;}
+ html body #mobileHeaderNames #mobileFactoryName {flex:0 0 78px;width:78px;text-align:right;}
+ html body #sheet #mobileHeaderNames input.mobile-name-editor {flex:1 1 0;width:0!important;}
+ html body #sheet #mobileHeaderNames #factory.mobile-name-editor {flex:0 0 78px;width:78px!important;}
+ html body #editorView #sheet > .photos > #ph1 {height:calc(clamp(340px,85vw,560px) - 32px);padding-bottom:16px;}
+ html body #editorView #sheet #ph1 > .photo-src {left:calc(12px + 3em + 8px);top:10px;bottom:auto;font-size:16px;}
 }
 </style>
