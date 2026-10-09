@@ -1,3 +1,4 @@
+<!-- v144: white editorial photo area and actions, factory +8px, quiet typography and lines, charcoal selected controls and monochrome reference icon (2026-10-09) -->
 <!-- v143: AISEL list header above navigation with restrained underline tabs (2026-10-09) -->
 <!-- v142: centered link controls, lighter compact photo actions, aligned factory names, smaller sample buttons and owner-login bottom clearance (2026-10-09) -->
 <!-- v141: slightly wider yellow gaps, compact gray photo actions, balanced image spacing, closer owner login and factory left shift (2026-10-09) -->
@@ -7302,7 +7303,14 @@
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
         const mobileHeaderLink=window.matchMedia('(max-width:600px)').matches && !!refRow.closest('.editor-mobile-head');
-        shortLink.textContent = mobileHeaderLink ? '🔗 링크' + (index ? ' '+(index+1) : '') : val || "링크 입력";
+        if(mobileHeaderLink){
+          const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+          icon.setAttribute('class','ref-action-icon');icon.setAttribute('viewBox','0 0 24 24');
+          icon.setAttribute('aria-hidden','true');icon.setAttribute('focusable','false');
+          const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+          path.setAttribute('d','M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2');
+          icon.append(path);shortLink.replaceChildren(icon,document.createTextNode('링크'+(index?' '+(index+1):'')));
+        }else shortLink.textContent=val || "링크 입력";
         shortLink.title = val || "레퍼런스 링크 입력";
         if(val){ shortLink.href = /^https?:\/\//i.test(val) ? val : "https://" + val; shortLink.removeAttribute("role"); shortLink.removeAttribute("tabindex"); }
         else { shortLink.removeAttribute("href"); shortLink.setAttribute("role", "button"); shortLink.tabIndex = 0; }
@@ -15135,5 +15143,61 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   height:calc(clamp(340px,85vw,560px) - 38px);padding-top:42px;
  }
  html body #ownerViewBar {padding-bottom:calc(32px + env(safe-area-inset-bottom,0px));}
+}
+</style>
+
+<style id="aisel-v144-mobile-editorial-theme">
+@media screen and (max-width:600px) {
+ html body :is(#editorView,#galleryView) {
+  --form-bg:var(--aisel-bg);--form-soft:var(--aisel-soft);--form-line:var(--aisel-line);
+  --form-text:var(--aisel-ink);--form-muted:var(--aisel-muted);--form-action:var(--aisel-ink);
+  font-family:var(--kfont);color:var(--aisel-ink);
+ }
+ html body #mobileHeaderNames #mobileFactoryName {transform:translateX(8px);}
+ html body #editorView #sheet #ph1 {background:#FFFFFF;}
+ html body #editorView #sheet #ph1 > .photo-src > button {
+  background:#FFFFFF;color:#4A4742;border:1px solid #DEDCD6;
+ }
+ html body #editorView #sheet #ph1 > .photo-src > button:disabled {color:#4A4742;}
+ html body #editorView #sheet {border-color:var(--aisel-line);box-shadow:none;}
+ html body #editorView #sheet :is(.title-row,#ph1,.photos-right,#mobileSampleRecords,.meta > .cell) {
+  border-bottom-width:1px;border-bottom-color:var(--aisel-line);
+ }
+ html body #editorView #sheet > .detail2 {border-top-color:var(--aisel-line);}
+ html body #editorView #mobileProductName {font-size:16px;font-weight:600;letter-spacing:0;}
+ html body #editorView #sheet :is(h1,.sheet-section-title),
+ html body #editorView #mobileSampleRecords .mobile-change-heading,
+ html body #editorView #productColors .color-heading h2 {font-size:16px;font-weight:600;letter-spacing:0;}
+ html body #editorView #sheet :is(.date-row,.date-row input) {
+  font-size:12px;font-weight:400;color:var(--aisel-muted);
+ }
+ html body #editorView :is(#mobileProductCode,#mobileSampleRecoveryDate:not(.overdue)),
+ html body #mobileHeaderNames .mobile-contact-name::before {
+  font-size:12px;font-weight:400;color:var(--aisel-muted);
+ }
+ html body #editorView .editor-mobile-head #refPanel :is(.ref-short-link,.ref-icon-btn,#refAddBtn) {
+  background:var(--aisel-bg);color:var(--aisel-ink);border-color:var(--aisel-line);box-shadow:none;
+ }
+ html body #editorView .editor-mobile-head #refPanel .ref-short-link {gap:4px;font-weight:500;}
+ html body #editorView .editor-mobile-head #refPanel .ref-action-icon {stroke-width:1.8;}
+ html body #editorView :is(.toolbar .btn,#statusBar .status-btn,#sampleRecoverySeg button) {
+  background:var(--aisel-bg);color:var(--aisel-ink);border-color:var(--aisel-line);font-weight:500;
+ }
+ html body #editorView :is(#statusBar .status-btn.active,#sampleRecoverySeg button.active[data-value]) {
+  background:#30343B;color:#FFFFFF;border-color:#30343B;font-weight:600;
+ }
+ html body #mainBar .maintab {font-weight:600;}
+ html body #mainBar .maintab.active {background:#30343B;color:#FFFFFF;border-color:#30343B;}
+ html body #galleryView .gallery-head h2 {font-size:18px;font-weight:600;}
+ html body #galleryView #galleryGrid .gcard {border-width:1px;border-color:var(--aisel-line);border-radius:4px;box-shadow:none;}
+ html body #galleryView #galleryGrid .gcard-info {padding:12px;}
+ html body #galleryView #galleryGrid .gcard-thumb {background:#FFFFFF;}
+ html body #galleryView #galleryGrid .gcard.newcard .gcard-title {font-size:14px;font-weight:500;color:var(--aisel-ink);}
+ html body #galleryView #galleryTabs .gtab.active {background:#30343B;color:#FFFFFF;border-color:#30343B;}
+ html body #galleryView #galleryGrid .gcard-name {font-size:13px;line-height:18px;font-weight:500;color:var(--aisel-ink);}
+ html body #galleryView #galleryGrid :is(.gcard-code-row,.gcard-date) {
+  font-size:12px;line-height:18px;font-weight:400;color:var(--aisel-muted);
+ }
+ html body #galleryView #galleryGrid .gcard-sample-pickup {background:#7A3048;color:#FFFFFF;}
 }
 </style>
