@@ -1,6 +1,6 @@
-/** Prepared only. Do not deploy without approval of the six-field access scope.
- * Standalone read-only project: no existing write bridge or Cafe24 collector changes.
- * Include sheet-sales-adapter.js as a .gs file in the same project.
+/** v154: existing approved six-field, read-only sales endpoint.
+ * Update the existing adapter .gs alongside this file; preserve the deployment URL.
+ * The new return-request metric is identified explicitly in safe response metadata.
  */
 function doGet(e){
   if(!e||e.parameter.action!=='sales')return salesJson_({ok:false,error:'unsupported_request'});

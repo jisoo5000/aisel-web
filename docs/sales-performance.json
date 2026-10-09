@@ -21,18 +21,43 @@
     "decidedOn": "2026-10-07",
     "source": "user two annotated images: raise date; add rating criteria below it; remove marked title/source text; reduce gaps; preserve table position; planning only",
     "canonicalPath": "docs/sales-performance.md",
-    "confirmed": ["raise date slightly", "show all three existing rating rules", "remove marked body title and source note", "compact spacing", "preserve rank/name header and first-row start position", "no app code changes"],
-    "removedTextPlan": ["body heading 판매성과", "운영시트 신상성과 · 반품률은 시트 기준"],
+    "confirmed": [
+      "raise date slightly",
+      "show all three existing rating rules",
+      "remove marked body title and source note",
+      "compact spacing",
+      "preserve rank/name header and first-row start position",
+      "no app code changes"
+    ],
+    "removedTextPlan": [
+      "body heading 판매성과",
+      "운영시트 신상성과 · 반품률은 시트 기준"
+    ],
     "topNavigation": "keep 판매성과/작업지시서 tabs",
     "proposed": {
       "placement": "below date in space freed by removing body heading; no table downward shift",
-      "fontPx": "11-12", "lineHeightPx": "15-16", "gapPx": 4,
+      "fontPx": "11-12",
+      "lineHeightPx": "15-16",
+      "gapPx": 4,
       "style": "three compact left-aligned text lines; existing badge colors for labels, navy body; no card, blue border or large padding",
-      "copy": ["좋음  판매 ≥20% · 반품 <20%", "보통  판매 10~20% 미만 · 반품 <20%", "저조  판매 <10% 또는 반품 ≥20%"],
+      "copy": [
+        "좋음  판매 ≥20% · 반품 <20%",
+        "보통  판매 10~20% 미만 · 반품 <20%",
+        "저조  판매 <10% 또는 반품 ≥20%"
+      ],
       "mobile": "use full table width for guide if needed; exact wrapping and table-coordinate preservation require later implementation check"
     },
     "metricBasis": "same recent-30-day whole-store sales share; existing sheet return-rate values; normal includes 10 and excludes 20",
-    "preserved": ["table start position", "six columns and centered four metric columns", "quantity-descending sort", "performance badges", "full-width search", "refresh below search on right, 88x40", "detail dialog", "source data and print"],
+    "preserved": [
+      "table start position",
+      "six columns and centered four metric columns",
+      "quantity-descending sort",
+      "performance badges",
+      "full-width search",
+      "refresh below search on right, 88x40",
+      "detail dialog",
+      "source data and print"
+    ],
     "implementationChanged": false,
     "appValidation": "not performed; planning only",
     "backupPolicy": "minor planning refinement; retain v24 full skill recovery ZIP without duplicate backup"
@@ -156,54 +181,199 @@
     "decidedOn": "2026-10-07",
     "source": "latest user code approval following confirmed remove-sort, wider-search, unchanged-refresh plan",
     "canonicalPath": "docs/sales-performance.md",
-    "beforeImplementationFacts": {"buttonSizeBothPx": {"width": 88, "height": 40}, "fontSizeBothPx": 13, "sortOptions": ["quantity"], "sortDisabled": true, "reason": "sheet view uses fixed quantity-descending order; old select remains"},
-    "confirmed": ["code implementation approved", "remove visible sales-sort control", "keep refresh at its current position below product-name search", "expand search into freed sort space", "retain sales-quantity descending order", "preserve everything else"],
-    "layout": {"search": "full available toolbar width after sort removal; no empty reserved sort column", "refreshPlacement": "unchanged below search in metadata row", "refreshLabel": "새로고침", "sorting": "keep quantity descending; same-quantity shared ranks", "periodAndReadTime": "retain below search", "buttonStyle": "retain existing navy 88x40 and 13px"},
+    "beforeImplementationFacts": {
+      "buttonSizeBothPx": {
+        "width": 88,
+        "height": 40
+      },
+      "fontSizeBothPx": 13,
+      "sortOptions": [
+        "quantity"
+      ],
+      "sortDisabled": true,
+      "reason": "sheet view uses fixed quantity-descending order; old select remains"
+    },
+    "confirmed": [
+      "code implementation approved",
+      "remove visible sales-sort control",
+      "keep refresh at its current position below product-name search",
+      "expand search into freed sort space",
+      "retain sales-quantity descending order",
+      "preserve everything else"
+    ],
+    "layout": {
+      "search": "full available toolbar width after sort removal; no empty reserved sort column",
+      "refreshPlacement": "unchanged below search in metadata row",
+      "refreshLabel": "새로고침",
+      "sorting": "keep quantity descending; same-quantity shared ranks",
+      "periodAndReadTime": "retain below search",
+      "buttonStyle": "retain existing navy 88x40 and 13px"
+    },
     "supersededProposal": "move refresh beside search; latest user says retain current below-search position",
-    "sortVerification": {"source": "scripts/sheet-sales-adapter.js", "method": "b.qty - a.qty then original sheet order for ties", "ranking": "competition ranks for tied quantity"},
-    "preserved": ["four-column center alignment", "left-aligned product name", "sky-blue search focus", "data and calculations"],
+    "sortVerification": {
+      "source": "scripts/sheet-sales-adapter.js",
+      "method": "b.qty - a.qty then original sheet order for ties",
+      "ranking": "competition ranks for tied quantity"
+    },
+    "preserved": [
+      "four-column center alignment",
+      "left-aligned product name",
+      "sky-blue search focus",
+      "data and calculations"
+    ],
     "implementationChanged": true,
     "implementation": "two scoped CSS changes: hide legacy select visually and make toolbar one column; retain select DOM for existing handlers",
     "preservation": "all scripts and HTML outside embedded style block unchanged",
     "previousStatus": "confirmed planning only until subsequent user code instruction",
-    "validation": {"viewportWidthsPx": [320, 390, 1280], "visibleSortRemoved": true, "searchFullWidth": true, "searchGrowthPx": 96, "refreshPositionAndSizeUnchanged": true, "tablePositionAndContentAndOrderUnchanged": true, "horizontalOverflow": false, "allScriptsAndOtherHtml": "identical to pre-change source", "iphoneSafari": "not directly tested"},
-    "deployment": {"commit": "6473df6fb897b4cc08c0e20ccbdc3dc35f23890d", "pagesRun": 37518219343, "status": "success", "proof": "sales-search-expanded.png"},
-    "backup": {"version": "v23-sort-removal", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileId": "1R-ra-Kc2_ShZfcQVe0qYOwOv0UcAvXwy", "fileName": "aisel-sales-performance_2026-10-07_v23-sort-removal.zip", "sizeBytes": 13893, "sha256": "69598988049F1E9FA8440396F66DA5D16FF5F64830C4D8AB8CBAB9D60A23035C", "sourceCommit": "6473df6fb897b4cc08c0e20ccbdc3dc35f23890d"}
+    "validation": {
+      "viewportWidthsPx": [
+        320,
+        390,
+        1280
+      ],
+      "visibleSortRemoved": true,
+      "searchFullWidth": true,
+      "searchGrowthPx": 96,
+      "refreshPositionAndSizeUnchanged": true,
+      "tablePositionAndContentAndOrderUnchanged": true,
+      "horizontalOverflow": false,
+      "allScriptsAndOtherHtml": "identical to pre-change source",
+      "iphoneSafari": "not directly tested"
+    },
+    "deployment": {
+      "commit": "6473df6fb897b4cc08c0e20ccbdc3dc35f23890d",
+      "pagesRun": 37518219343,
+      "status": "success",
+      "proof": "sales-search-expanded.png"
+    },
+    "backup": {
+      "version": "v23-sort-removal",
+      "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "name_size_parent_verified",
+      "fileId": "1R-ra-Kc2_ShZfcQVe0qYOwOv0UcAvXwy",
+      "fileName": "aisel-sales-performance_2026-10-07_v23-sort-removal.zip",
+      "sizeBytes": 13893,
+      "sha256": "69598988049F1E9FA8440396F66DA5D16FF5F64830C4D8AB8CBAB9D60A23035C",
+      "sourceCommit": "6473df6fb897b4cc08c0e20ccbdc3dc35f23890d"
+    }
   },
   "fourColumnAndButtonTextImplementation20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "user: just unify refresh text size/color; code; leave everything else unchanged",
     "canonicalPath": "docs/sales-performance.md",
-    "scope": ["four equal-width center-aligned table columns", "matching sales-sort/refresh button text and appearance"],
+    "scope": [
+      "four equal-width center-aligned table columns",
+      "matching sales-sort/refresh button text and appearance"
+    ],
     "refreshLabel": "새로고침",
     "iconProposal": "not implemented; latest direct instruction keeps refresh text",
-    "columnWidthsPx": {"desktop": 72, "mobile": 44},
-    "columnGapsPx": {"desktop": 8, "mobile": 4},
+    "columnWidthsPx": {
+      "desktop": 72,
+      "mobile": 44
+    },
+    "columnGapsPx": {
+      "desktop": 8,
+      "mobile": 4
+    },
     "headerAndBodyAlignment": "designer/factory/share/returns centered; rank/name left",
-    "buttonStyle": {"fontSizePx": 13, "fontWeight": 400, "textColor": "#2F3B52", "widthPx": 88, "heightPx": 40, "background": "#FFFFFF", "border": "#CBD3DF"},
+    "buttonStyle": {
+      "fontSizePx": 13,
+      "fontWeight": 400,
+      "textColor": "#2F3B52",
+      "widthPx": 88,
+      "heightPx": 40,
+      "background": "#FFFFFF",
+      "border": "#CBD3DF"
+    },
     "changedSource": "scripts/sheet-sales-view.css and its embedded HTML style block only",
-    "validation": {"viewportWidthsPx": [320, 390, 430, 1280], "allHeaderAndBodyColumnsCentered": true, "equalColumnWidths": true, "horizontalOverflow": false, "buttonFontBoth": "13px", "buttonColorBoth": "rgb(47, 59, 82)", "buttonDimensionsBoth": "88x40", "buttonRightEdgesEqual": true, "nameAlign": "left", "scriptsAndUnrelatedHtml": "unchanged"},
-    "preserved": ["all scripts", "sales/returns values and calculations", "workorder and print markup", "search focus color", "existing toolbar spacing", "original refresh loading state"],
-    "deployment": {"commit": "039337fdf2ccceeb48fa0de7fc0d458b56e3f40f", "pagesRun": 37516604280, "status": "success", "liveMobileWidthPx": 390, "liveProducts": 21, "buttonStylesMatch": true, "allRowsCentered": true, "proof": "sales-columns-buttons.png", "iphoneSafari": "not directly tested"},
-    "backup": {"version": "v22-column-buttons", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileId": "1Hpovt_7iVIEPkJeHoo-KDiPlk5BZRlEU", "fileName": "aisel-sales-performance_2026-10-07_v22-column-buttons.zip", "sizeBytes": 13678, "sha256": "E072DA23C41B6CFBD1B74F579961BDBC208C7A32B687674F2F63F461F3BAEACC", "sourceCommit": "039337fdf2ccceeb48fa0de7fc0d458b56e3f40f"}
+    "validation": {
+      "viewportWidthsPx": [
+        320,
+        390,
+        430,
+        1280
+      ],
+      "allHeaderAndBodyColumnsCentered": true,
+      "equalColumnWidths": true,
+      "horizontalOverflow": false,
+      "buttonFontBoth": "13px",
+      "buttonColorBoth": "rgb(47, 59, 82)",
+      "buttonDimensionsBoth": "88x40",
+      "buttonRightEdgesEqual": true,
+      "nameAlign": "left",
+      "scriptsAndUnrelatedHtml": "unchanged"
+    },
+    "preserved": [
+      "all scripts",
+      "sales/returns values and calculations",
+      "workorder and print markup",
+      "search focus color",
+      "existing toolbar spacing",
+      "original refresh loading state"
+    ],
+    "deployment": {
+      "commit": "039337fdf2ccceeb48fa0de7fc0d458b56e3f40f",
+      "pagesRun": 37516604280,
+      "status": "success",
+      "liveMobileWidthPx": 390,
+      "liveProducts": 21,
+      "buttonStylesMatch": true,
+      "allRowsCentered": true,
+      "proof": "sales-columns-buttons.png",
+      "iphoneSafari": "not directly tested"
+    },
+    "backup": {
+      "version": "v22-column-buttons",
+      "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "name_size_parent_verified",
+      "fileId": "1Hpovt_7iVIEPkJeHoo-KDiPlk5BZRlEU",
+      "fileName": "aisel-sales-performance_2026-10-07_v22-column-buttons.zip",
+      "sizeBytes": 13678,
+      "sha256": "E072DA23C41B6CFBD1B74F579961BDBC208C7A32B687674F2F63F461F3BAEACC",
+      "sourceCommit": "039337fdf2ccceeb48fa0de7fc0d458b56e3f40f"
+    }
   },
   "fourColumnAndRefreshIconPlan20261007": {
     "status": "planning_only_code_prohibited",
     "decidedOn": "2026-10-07",
     "source": "user clarified blue area means designer/factory/sales/returns columns; asks refresh emoji and AISEL color",
     "canonicalPath": "docs/sales-performance.md",
-    "confirmed": ["target is four table columns, not metadata row", "planning only; code prohibited"],
-    "observedSourceStyles": {"sortFontPx": 13, "refreshFontPx": 12, "declaredTextColorBoth": "#2F3B52", "sortDisabled": true, "renderDifference": "native disabled select appearance may differ; not live measured this turn"},
+    "confirmed": [
+      "target is four table columns, not metadata row",
+      "planning only; code prohibited"
+    ],
+    "observedSourceStyles": {
+      "sortFontPx": 13,
+      "refreshFontPx": 12,
+      "declaredTextColorBoth": "#2F3B52",
+      "sortDisabled": true,
+      "renderDifference": "native disabled select appearance may differ; not live measured this turn"
+    },
     "proposed": {
-      "fourColumns": ["designer", "factory", "sales share", "returns"],
-      "columnWidths": "equal within four-column group", "headerAndBody": "same boundaries; center horizontally and vertically",
-      "desktopColumnWidthPx": 72, "desktopGapPx": 8,
-      "mobileColumnWidthPx": 44, "mobileGapPx": 4,
+      "fourColumns": [
+        "designer",
+        "factory",
+        "sales share",
+        "returns"
+      ],
+      "columnWidths": "equal within four-column group",
+      "headerAndBody": "same boundaries; center horizontally and vertically",
+      "desktopColumnWidthPx": 72,
+      "desktopGapPx": 8,
+      "mobileColumnWidthPx": 44,
+      "mobileGapPx": 4,
       "rankAndName": "left aligned; name uses remaining width",
-      "refresh": "monochrome rotating-arrow icon instead of text", "iconColor": "#2F3B52", "iconSizePx": 18,
-      "iconAccessibleName": "새로고침", "nativeEmojiColor": "platform controlled; use a monochrome icon to match AISEL navy",
-      "buttonBoxPx": {"width": 88, "height": 40}, "sortFontPx": 13,
+      "refresh": "monochrome rotating-arrow icon instead of text",
+      "iconColor": "#2F3B52",
+      "iconSizePx": 18,
+      "iconAccessibleName": "새로고침",
+      "nativeEmojiColor": "platform controlled; use a monochrome icon to match AISEL navy",
+      "buttonBoxPx": {
+        "width": 88,
+        "height": 40
+      },
+      "sortFontPx": 13,
       "buttonTreatment": "matching white background, border and right edge"
     },
     "implementationChanged": false,
@@ -215,17 +385,33 @@
     "decidedOn": "2026-10-07",
     "source": "user annotated screenshot: blue area spacing and alignment looks crooked; planning only",
     "canonicalPath": "docs/sales-performance.md",
-    "confirmed": ["do not change code"],
+    "confirmed": [
+      "do not change code"
+    ],
     "interpretationCorrection": "metadata target was an AI misunderstanding; latest user clarified four table columns",
     "proposed": {
-      "rightColumnPx": 88, "pagePaddingPx": 16, "controlGapPx": 8,
-      "metadataRowAndRefreshHeightPx": 32, "metadataToTableGapPx": 12,
-      "tableHeaderHeightPx": 28, "metadataFontPx": 11, "metadataLineHeightPx": 16,
-      "alignment": {"metadata": "vertically centered with refresh", "rankAndName": "left", "designerAndFactory": "center", "percentages": "right"},
+      "rightColumnPx": 88,
+      "pagePaddingPx": 16,
+      "controlGapPx": 8,
+      "metadataRowAndRefreshHeightPx": 32,
+      "metadataToTableGapPx": 12,
+      "tableHeaderHeightPx": 28,
+      "metadataFontPx": 11,
+      "metadataLineHeightPx": 16,
+      "alignment": {
+        "metadata": "vertically centered with refresh",
+        "rankAndName": "left",
+        "designerAndFactory": "center",
+        "percentages": "right"
+      },
       "tableColumns": "identical boundaries for header and body",
       "narrowScreen": "metadata wraps in left column only"
     },
-    "preserved": ["sky-blue search focus", "sort/refresh common right edge", "sales and returns definitions"],
+    "preserved": [
+      "sky-blue search focus",
+      "sort/refresh common right edge",
+      "sales and returns definitions"
+    ],
     "implementationChanged": false,
     "supersedes": "no deployed behavior superseded until implementation authorization",
     "backupPolicy": "minor planning refinement; retain existing full v21 skill recovery ZIP without duplicate backup"
@@ -235,28 +421,114 @@
     "decidedOn": "2026-10-07",
     "source": "user: change line in image 1 to sky blue in image 2",
     "target": "#salesView #salesSearchInput:focus",
-    "outline": {"widthPx": 2, "color": "#8DC0FA", "offsetPx": 0},
+    "outline": {
+      "widthPx": 2,
+      "color": "#8DC0FA",
+      "offsetPx": 0
+    },
     "colorEvidence": "dominant sky-blue pixels in attached image 2 close-button outline; reference match, not iOS original CSS",
     "supersedes": "previous AI interpretation of product-name selection and detail close navy colors",
-    "restored": ["product-name button active/focus/selection styles", "detail close button navy override"],
-    "preserved": ["toolbar spacing", "refresh alignment", "sales data", "print markup"],
-    "validation": {"liveMobileWidthPx": 390, "focusOutlineColor": "rgb(141, 192, 250)", "focusOutlineWidth": "2px", "horizontalOverflow": false, "scriptsAndPrintMarkup": "unchanged", "proof": "sales-search-sky-focus.png", "iphoneSafari": "not directly tested"},
-    "deployment": {"commit": "1592ecaa50547d3217590f86070d387bd964765a", "pagesRun": 37514776306, "status": "success"},
-    "backup": {"version": "v21-sky-focus", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileId": "16KxhvgkE1BI6xoXu66mLb-RXJb73uLU4", "fileName": "aisel-sales-performance_2026-10-07_v21-sky-focus.zip", "sizeBytes": 13092, "sha256": "2ECD5CFAA4387CF44A91F18909DC98B9D9DA59AB7DBF289B92CC8806D4FB3F60", "sourceCommit": "1592ecaa50547d3217590f86070d387bd964765a"}
+    "restored": [
+      "product-name button active/focus/selection styles",
+      "detail close button navy override"
+    ],
+    "preserved": [
+      "toolbar spacing",
+      "refresh alignment",
+      "sales data",
+      "print markup"
+    ],
+    "validation": {
+      "liveMobileWidthPx": 390,
+      "focusOutlineColor": "rgb(141, 192, 250)",
+      "focusOutlineWidth": "2px",
+      "horizontalOverflow": false,
+      "scriptsAndPrintMarkup": "unchanged",
+      "proof": "sales-search-sky-focus.png",
+      "iphoneSafari": "not directly tested"
+    },
+    "deployment": {
+      "commit": "1592ecaa50547d3217590f86070d387bd964765a",
+      "pagesRun": 37514776306,
+      "status": "success"
+    },
+    "backup": {
+      "version": "v21-sky-focus",
+      "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "name_size_parent_verified",
+      "fileId": "16KxhvgkE1BI6xoXu66mLb-RXJb73uLU4",
+      "fileName": "aisel-sales-performance_2026-10-07_v21-sky-focus.zip",
+      "sizeBytes": 13092,
+      "sha256": "2ECD5CFAA4387CF44A91F18909DC98B9D9DA59AB7DBF289B92CC8806D4FB3F60",
+      "sourceCommit": "1592ecaa50547d3217590f86070d387bd964765a"
+    }
   },
   "navySelectionAndToolbarImplementation20261007": {
     "status": "deployed_live_verified",
     "decidedOn": "2026-10-07",
     "source": "user follow-up: navy product selection, code",
     "supersedes": "mobileToolbarSpacingPlan20261007 planning-only implementation restriction",
-    "colors": {"deepNavy": "#2F3B52", "softNavy": "#EAF0F7", "tapHighlight": "rgba(47,59,82,.12)"},
-    "scope": ["name active/focus/tap colors", "detail close button", "toolbar and refresh alignment"],
-    "spacingPx": {"betweenRows": 8, "beforeTable": 16, "rightColumn": 88, "controlHeight": 40},
-    "sourceFiles": ["scripts/sheet-sales-view.css", "scripts/sheet-sales-view.js"],
+    "colors": {
+      "deepNavy": "#2F3B52",
+      "softNavy": "#EAF0F7",
+      "tapHighlight": "rgba(47,59,82,.12)"
+    },
+    "scope": [
+      "name active/focus/tap colors",
+      "detail close button",
+      "toolbar and refresh alignment"
+    ],
+    "spacingPx": {
+      "betweenRows": 8,
+      "beforeTable": 16,
+      "rightColumn": 88,
+      "controlHeight": 40
+    },
+    "sourceFiles": [
+      "scripts/sheet-sales-view.css",
+      "scripts/sheet-sales-view.js"
+    ],
     "embeddedIn": "work-order-5aa994e7.html",
-    "validation": {"adapterTests": "3 passed", "inlineScripts": "9 compile", "unrelatedHtmlAndPrintMarkup": "unchanged", "mobileWidthsPx": [320, 390, 430], "horizontalOverflow": false, "rightEdgeDifferencePx": 0, "rowGapPx": 8, "tableGapPx": 16, "keyboardFocus": "deep navy outline and soft navy background verified", "detailsDialog": "opens/closes", "iphoneSafari": "not directly tested"},
-    "deployment": {"commit": "05791be0678099a0b56f9b81781069647d72484c", "pagesRun": 37514166405, "status": "success", "liveMobileWidthPx": 390, "liveDesktopWidthPx": 1920, "rightEdgeDifferencePx": 0, "rowGapPx": 8, "tableGapPx": 16, "navyFocus": "verified", "proof": "sales-navy-toolbar.png"},
-    "backup": {"version": "v20-navy-toolbar", "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H", "status": "name_size_parent_verified", "fileName": "aisel-sales-performance_2026-10-07_v20-navy-toolbar.zip", "fileId": "12xoA3nVydyfg9v4TchMnfAr-_Pt5urQ2", "sizeBytes": 12922, "sha256": "555E9EF94034AD250DF722ADDF3A3F1398AA2FEB5F986993ACF177ADD7A7A882", "sourceCommit": "05791be0678099a0b56f9b81781069647d72484c", "scope": "entire reusable skill folder; verification receipt remains canonical in GitHub"}
+    "validation": {
+      "adapterTests": "3 passed",
+      "inlineScripts": "9 compile",
+      "unrelatedHtmlAndPrintMarkup": "unchanged",
+      "mobileWidthsPx": [
+        320,
+        390,
+        430
+      ],
+      "horizontalOverflow": false,
+      "rightEdgeDifferencePx": 0,
+      "rowGapPx": 8,
+      "tableGapPx": 16,
+      "keyboardFocus": "deep navy outline and soft navy background verified",
+      "detailsDialog": "opens/closes",
+      "iphoneSafari": "not directly tested"
+    },
+    "deployment": {
+      "commit": "05791be0678099a0b56f9b81781069647d72484c",
+      "pagesRun": 37514166405,
+      "status": "success",
+      "liveMobileWidthPx": 390,
+      "liveDesktopWidthPx": 1920,
+      "rightEdgeDifferencePx": 0,
+      "rowGapPx": 8,
+      "tableGapPx": 16,
+      "navyFocus": "verified",
+      "proof": "sales-navy-toolbar.png"
+    },
+    "backup": {
+      "version": "v20-navy-toolbar",
+      "folderId": "16tzmu_ssUYaGJvmBEp_mAorkE7x5G24H",
+      "status": "name_size_parent_verified",
+      "fileName": "aisel-sales-performance_2026-10-07_v20-navy-toolbar.zip",
+      "fileId": "12xoA3nVydyfg9v4TchMnfAr-_Pt5urQ2",
+      "sizeBytes": 12922,
+      "sha256": "555E9EF94034AD250DF722ADDF3A3F1398AA2FEB5F986993ACF177ADD7A7A882",
+      "sourceCommit": "05791be0678099a0b56f9b81781069647d72484c",
+      "scope": "entire reusable skill folder; verification receipt remains canonical in GitHub"
+    }
   },
   "mobileToolbarSpacingPlan20261007": {
     "topic": "sales_performance_mobile_toolbar_spacing",
@@ -271,7 +543,10 @@
       "scope": "planning only; code prohibited"
     },
     "proposed": {
-      "rows": ["search + sales sort", "period/read time + refresh"],
+      "rows": [
+        "search + sales sort",
+        "period/read time + refresh"
+      ],
       "horizontalPagePaddingPx": 16,
       "horizontalControlGapPx": 8,
       "verticalControlRowGapPx": 8,
@@ -281,7 +556,11 @@
       "leftEdges": "search, metadata and table aligned",
       "rightEdges": "sort, refresh and table aligned",
       "narrowScreen": "metadata wraps inside left column; refresh remains in right column",
-      "reviewWidthsPx": [320, 390, 430]
+      "reviewWidthsPx": [
+        320,
+        390,
+        430
+      ]
     },
     "implementationChanged": false,
     "deploymentRequested": false,
@@ -1741,5 +2020,24 @@
       "status": "name_size_parent_verified"
     },
     "sourceCommit": "4f2a9c1"
+  },
+  "headerCompatibilityRecovery20261009": {
+    "appVersion": "v154",
+    "status": "source_patch_verified_apps_script_deployment_pending",
+    "authorization": "user_응_아까_내가_말한거_다_고쳐_코드",
+    "metric": "estimated-receipt-return-request-rate",
+    "fullLabel": "추정 수령 기준 반품 신청률",
+    "shortLabel": "반품 신청%",
+    "sixFieldsOnly": true,
+    "sourceWrites": false,
+    "formulasChanged": false,
+    "thresholdChanged": false,
+    "unknownAsZero": false,
+    "verifiedProducts": 21,
+    "unknownRates": 9,
+    "tests": 10,
+    "liveRecoveryComplete": false,
+    "blocker": "no_existing_AppsScript_edit_deploy_tool_or_authenticated_runtime_in_session",
+    "receipt": "jisoo5000/aisel-tools/docs/workorder-v154-release.json"
   }
 }

@@ -10,3 +10,18 @@ test('incomplete counts do not invent final rankings or turn absent rates into z
 test('rejects missing headers, duplicate names and invalid percentages',()=>{
  assert.throws(()=>parse([]));const x=structuredClone(rows);x[6][0]='예시 A';assert.throws(()=>parse(x));const y=structuredClone(rows);y[6][7]='101%';assert.throws(()=>parse(y));
 });
+test('accepts the renamed receipt-based request rate and identifies its meaning',()=>{
+ const input=structuredClone(rows);input[4][7]='추정 수령 기준\n반품 신청률';input[4][5]='전체\n판매비중';
+ const result=parse(input);assert.equal(result.items.length,3);assert.equal(result.returnMetric.key,'estimated-receipt-return-request-rate');assert.equal(result.returnMetric.shortLabel,'반품 신청%');assert.ok(result.returnMetric.note.includes('최종 반품 완료율'));assert.deepEqual(result.items.map(item=>item.rank),[1,2,2]);assert.equal(result.items[2].returns,null);
+ assert.deepEqual(Object.keys(result.items[0]).sort(),['designer','factory','name','rank','returns','share']);
+});
+test('retains explicit legacy semantics without silently selecting competing rate columns',()=>{
+ assert.equal(parse(rows).returnMetric.key,'legacy-sheet-return-rate');
+ const input=structuredClone(rows);input[4].push('추정 수령 기준 반품 신청률');assert.throws(()=>parse(input),/반품 지표 열/);
+ const duplicate=structuredClone(rows);duplicate[4].push('반품률');assert.throws(()=>parse(duplicate),/필수 열/);
+});
+test('does not reinterpret maturity gaps as zero and rejects unverified metrics',()=>{
+ const input=structuredClone(rows);input[4][7]='추정 수령 기준 반품 신청률';input[5][7]='—';input[6][7]='0.0%';
+ const result=parse(input);assert.equal(result.items.find(item=>item.name==='예시 A').returns,null);assert.equal(result.items.find(item=>item.name==='예시 B').returns,0);
+ input[4][7]='최종 반품 완료율';assert.throws(()=>parse(input),/머리글/);
+});
