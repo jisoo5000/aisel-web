@@ -1,3 +1,4 @@
+<!-- v158: merge independent mobile cost edits without false draft conflicts; readable field-level choices (2026-10-10) -->
 <!-- v157: mobile draft notice removed without blocking saves; cost commas and revised heading/table gaps (2026-10-10) -->
 <!-- v156: mobile cost fields centered, symmetric 4px unit-price spacing and equal 12px section gaps (2026-10-09) -->
 <!-- v155: mobile color panel shares the sheet outline; approved typography and warm-gray visual standards (2026-10-09) -->
@@ -7158,6 +7159,141 @@
     if(typeof value==='object')return Object.values(value).map(draftValueText_).join(' · ').slice(0,500);
     return String(value);
   }
+  // v158: compare business values, not object key order, numeric display or
+  // blank editor rows. Stable IDs identify rows but never appear in the dialog.
+  function mobileDraftMerge_(record,current){
+    const base={...record.values,...record.base},local=record.values;
+    const conflicts=[],seen=new Map(),costKeys=new Set(['lines','costNegotiationLinesData','costNegotiationData','gongim','siyage']);
+    const names={nm:'항목명',unit:'최초 단가 / 단위',qty:'수량',original:'최초 가격',negotiated:'네고 가격',status:'네고 상태',confirmed:'확인 상태',inclusion:'원가 포함 여부',includedIn:'포함 항목',category:'분류',vat:'부가세',negotiator:'협상자',workerProxy:'담당자'};
+    const numeric=new Set(['unit','qty','original','negotiated','gongim','siyage']);
+    const object=v=>v&&typeof v==='object'&&!Array.isArray(v);
+    function canonical(v,key){
+      if(v===null||v===undefined||v==='')return undefined;
+      if(numeric.has(key)){
+        const n=negotiation_.number(v);if(n!==null)return n;
+      }
+      if(key==='status'&&v==='unrecorded')return undefined;
+      if(Array.isArray(v))return v.map(x=>canonical(x));
+      if(object(v)){
+        const out={};for(const k of Object.keys(v).sort()){const value=canonical(v[k],k);if(value!==undefined)out[k]=value;}
+        return Object.keys(out).length?out:undefined;
+      }
+      return v;
+    }
+    const same=(a,b,key)=>JSON.stringify(canonical(a,key))===JSON.stringify(canonical(b,key));
+    const emptyRow=row=>Object.entries(row||{}).every(([k,v])=>k==='costLineId'||canonical(v,k)===undefined);
+    const rows=value=>(Array.isArray(value)?value:[]).filter(row=>!emptyRow(row));
+    const rowNames=new Map();for(const state of [base,local,current])for(const row of state.lines||[])if(row.costLineId)rowNames.set(row.costLineId,row.nm||'원가 항목');
+    function identity(path){
+      if(path[0]==='costNegotiationLinesData'&&path[1]==='records'&&path[3]==='metadata')return ['lines',path[2],'negotiation',...path.slice(4)];
+      return path;
+    }
+    function label(path){
+      path=identity(path);
+      if(path[0]==='lines')return (rowNames.get(path[1])||'원가 항목')+(path.length>2?' · '+(names[path.at(-1)]||'세부 내용'):'');
+      if(path[0]==='costNegotiationLinesData')return (rowNames.get(path[2])||'보관된 원가 항목')+' · 협상 기록';
+      if(path[0]==='costNegotiationData')return ({gongim:'공임',siyage:'시야게'}[path[1]]||'원가')+' · '+(names[path.at(-1)]||'협상 기록');
+      return ({gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
+    }
+    function choice(b,l,r,path){
+      const id=JSON.stringify(identity(path));
+      if(!seen.has(id)){const c={id,label:label(path),server:r,draft:l,cost:costKeys.has(path[0])};seen.set(id,c);conflicts.push(c);}
+      return selections=>selections[id]==='draft'?l:r;
+    }
+    function merge(b,l,r,path){
+      const key=path.at(-1);
+      if(same(l,b,key)||same(l,r,key))return ()=>r;
+      if(same(r,b,key))return ()=>l;
+      if(object(l)&&object(r)&&(object(b)||b===undefined||b===null)){
+        const parts=Object.fromEntries([...new Set([...Object.keys(b||{}),...Object.keys(l),...Object.keys(r)])].map(k=>[k,merge(b?.[k],l[k],r[k],[...path,k])]));
+        return selections=>Object.fromEntries(Object.entries(parts).map(([k,resolve])=>[k,resolve(selections)]).filter(([,v])=>v!==undefined));
+      }
+      return choice(b,l,r,path);
+    }
+    function mergeRows(){
+      const b=rows(base.lines),l=rows(local.lines),r=rows(current.lines);
+      const blanks=(current.lines||[]).filter(emptyRow);
+      const finish=value=>[...value,...blanks];
+      if(same(l,b)||same(l,r))return ()=>current.lines;
+      if(same(r,b))return ()=>finish(l);
+      const identified=list=>list.every(row=>!!row.costLineId)&&new Set(list.map(row=>row.costLineId)).size===list.length;
+      // Old records without stable identity cannot be matched safely by name.
+      if(![b,l,r].every(identified)){const resolve=choice(b,l,r,['lines']);return s=>finish(resolve(s));}
+      const index=list=>new Map(list.map(row=>[row.costLineId,row])),bi=index(b),li=index(l),ri=index(r);
+      const ids=[...new Set([...ri.keys(),...li.keys(),...bi.keys()])];
+      const parts=new Map(ids.map(id=>[id,merge(bi.get(id),li.get(id),ri.get(id),['lines',id])]));
+      const surviving=new Set(b.filter(row=>li.has(row.costLineId)&&ri.has(row.costLineId)).map(row=>row.costLineId));
+      const order=list=>list.filter(row=>surviving.has(row.costLineId)).map(row=>row.costLineId);
+      let preferred=r;
+      if(!same(order(l),order(b))){
+        if(same(order(r),order(b))||same(order(l),order(r)))preferred=l;
+        else{
+          choice(order(b).map(id=>rowNames.get(id)),order(l).map(id=>rowNames.get(id)),order(r).map(id=>rowNames.get(id)),['lines','order']);
+          seen.get(JSON.stringify(['lines','order'])).label='원가 항목 순서';
+          return s=>{const first=s[JSON.stringify(['lines','order'])]==='draft'?l:r;return finish([...new Set([...first.map(x=>x.costLineId),...ids])].map(id=>parts.get(id)(s)).filter(Boolean));};
+        }
+      }
+      return s=>finish([...new Set([...preferred.map(x=>x.costLineId),...ids])].map(id=>parts.get(id)(s)).filter(Boolean));
+    }
+    const changed=record.changed.filter(key=>Object.hasOwn(current,key)&&!draftIgnored_.has(key)),parts={};
+    for(const key of changed)if(!costKeys.has(key)){
+      if(sameValue_(current[key]??null,base[key]??null)||sameValue_(current[key],local[key]))parts[key]=()=>local[key];
+      else parts[key]=choice(base[key],local[key],current[key],[key]);
+    }
+    for(const key of ['gongim','siyage'])if(changed.includes(key))parts[key]=merge(base[key],local[key],current[key],[key]);
+    const parse=raw=>raw?typeof raw==='string'?JSON.parse(raw):JSON.parse(JSON.stringify(raw)):{};
+    let originalMaps;
+    for(const key of ['costNegotiationData','costNegotiationLinesData'])if(changed.includes(key)){
+      try{
+        const b=parse(base[key]),l=parse(local[key]),r=parse(current[key]);
+        if(key==='costNegotiationLinesData'){
+          originalMaps=[base[key],local[key],current[key]].map(parse);
+          // Active-row bindings are derived from the final merged name/price/qty.
+          // Keep every orphan and unknown metadata field in the map.
+          const active=new Set([...rows(base.lines),...rows(local.lines),...rows(current.lines)].map(row=>row.costLineId).filter(Boolean));
+          for(const map of [b,l,r])for(const id of active)if(map.records?.[id])delete map.records[id].binding;
+        }
+        const resolve=merge(b,l,r,[key]);parts[key]=s=>JSON.stringify(resolve(s));
+      }catch(_){parts[key]=merge(base[key],local[key],current[key],[key]);}
+    }
+    if(changed.includes('lines'))parts.lines=mergeRows();
+    return {conflicts,resolve:selections=>{
+      const merged={...current};for(const [key,resolve] of Object.entries(parts))merged[key]=resolve(selections);
+      merged.lines=JSON.parse(JSON.stringify(merged.lines||[]));
+      if(parts.lines||parts.costNegotiationLinesData){
+        try{
+          const map=negotiation_.readMaterialMap(merged.costNegotiationLinesData);
+          // For rows with an authoritative record, merge metadata once and use
+          // that same result in both inline rows and the compatibility map.
+          for(const row of merged.lines||[])if(row.costLineId&&map.records[row.costLineId]){
+            const entry=map.records[row.costLineId];
+            if(parts.costNegotiationLinesData)row.negotiation=negotiation_.clone(entry.metadata);
+            else if(row.negotiation)entry.metadata=negotiation_.clone(row.negotiation);
+            entry.binding={nm:String(row.nm??''),unit:String(row.unit??''),qty:String(row.qty??'')};
+          }
+          if(originalMaps)for(const [id,entry] of Object.entries(map.records))if(!entry.binding){
+            const source=[originalMaps[2],originalMaps[1],originalMaps[0]].find(previous=>previous.records?.[id]?.binding);
+            if(source)entry.binding=source.records[id].binding;
+          }
+          if(merged.costNegotiationLinesData||Object.keys(map.records).length)merged.costNegotiationLinesData=JSON.stringify(map);
+        }catch(_){} // Invalid historical formats retain their explicit choice.
+      }
+      return merged;
+    }};
+  }
+  function draftBusinessText_(value,formatNumeric=true){
+    if(value===null||value===undefined||value==='')return '미입력';
+    if(Array.isArray(value))return value.map(v=>draftBusinessText_(v,formatNumeric)).join(' / ').slice(0,500);
+    if(typeof value==='object'){
+      if('nm' in value||'costLineId' in value){
+        const meta=value.negotiation||{};
+        return (value.nm||'이름 없는 항목')+' · 최초 '+draftBusinessText_(meta.original??value.unit)+' · 네고 '+draftBusinessText_(meta.negotiated)+' · 수량 '+draftBusinessText_(value.qty);
+      }
+      return '세부 내용이 변경되었습니다';
+    }
+    const n=formatNumeric?negotiation_.number(value):null;if(n!==null)return n.toLocaleString('ko-KR',{maximumFractionDigits:20});
+    return ({negotiated:'네고됨',no_discount:'할인 없음',unrecorded:'미기록',yes:'확인됨',no:'미확인',included:'포함',separate:'별도',excluded:'제외',exempt:'면세'}[value]||draftValueText_(value));
+  }
   function restoreDraft_(ctx){
     if(!currentDraft_(ctx)||!ctx.candidate)return;
     const record=ctx.candidate;
@@ -7172,24 +7308,26 @@
     if(ctx.serverMissing&&!record.newRecord){alert('원본 작지가 없어 복원할 수 없습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
     if(record.newRecord&&baseline){alert('같은 품번의 작지가 이미 저장되어 있습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
     const keys=record.changed.filter(key=>Object.hasOwn(current,key)&&!draftIgnored_.has(key));
-    const conflicts=record.newRecord?[]:keys.filter(key=>!sameValue_(current[key]??null,record.base[key]??null)&&!sameValue_(current[key],record.values[key]));
+    const plan=mobileDraftMode_()&&!record.newRecord?mobileDraftMerge_(record,current):null;
+    const conflicts=plan?plan.conflicts:record.newRecord?[]:keys.filter(key=>!sameValue_(current[key]??null,record.base[key]??null)&&!sameValue_(current[key],record.values[key]));
     const apply=choices=>{
       if(!currentDraft_(ctx)||loading)return;
       const now=collect();if(!sameValue_(current,now)){alert('작지 내용이 바뀌었습니다. 초안 복원을 다시 확인해 주세요.');return;}
-      const merged={...now};for(const key of keys)if(!conflicts.includes(key)||choices[key]==='draft')merged[key]=record.values[key];
+      const merged=plan?plan.resolve(choices):{...now};if(!plan)for(const key of keys)if(!conflicts.includes(key)||choices[key]==='draft')merged[key]=record.values[key];
       const previous=editorContentBaseline_;applyState(merged);editorContentBaseline_=previous;
       ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),record.id])];ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;
       captureDraft_();renderDraft_(ctx);saveSoon();
     };
     if(!conflicts.length){apply({});return;}
     const dialog=document.createElement('dialog');dialog.className='draft-conflict-dialog noprint';
-    const title=document.createElement('p');title.textContent='저장된 내용과 초안이 다릅니다. 사용할 내용을 선택해 주세요.';dialog.append(title);
+    const title=document.createElement('p');title.textContent=plan?'같은 칸에 서로 다른 수정이 있습니다. 사용할 값을 선택해 주세요.':'저장된 내용과 초안이 다릅니다. 사용할 내용을 선택해 주세요.';dialog.append(title);
     const labels={designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
-    const selectors={};conflicts.forEach((key,i)=>{
+    const selectors={};conflicts.forEach((conflict,i)=>{
+      const key=plan?conflict.id:conflict;
       const section=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
-      label.textContent=labels[key]||'변경 항목 '+(i+1);section.append(label);
+      label.textContent=plan?conflict.label:labels[key]||'변경 항목 '+(i+1);section.append(label);
       for(const [value,text] of [['server','저장된 내용'],['draft','기기 초안']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
-      for(const [label,value] of [['저장된 내용',current[key]],['기기 초안',record.values[key]]]){const p=document.createElement('p');p.textContent=label+': '+draftValueText_(value);section.append(p);}
+      for(const [label,value] of [['저장된 내용',plan?conflict.server:current[key]],['기기 초안',plan?conflict.draft:record.values[key]]]){const p=document.createElement('p');p.textContent=label+': '+(plan?draftBusinessText_(value,conflict.cost):draftValueText_(value));section.append(p);}
       label.append(select);selectors[key]=select;dialog.append(section);
     });
     const use=document.createElement('button');use.type='button';use.textContent='선택한 내용 복원';use.onclick=()=>{const choices=Object.fromEntries(Object.entries(selectors).map(([key,select])=>[key,select.value]));dialog.close();dialog.remove();apply(choices);};
@@ -7257,7 +7395,11 @@
       const remote=draftContext.remotePending;draftContext.remotePending=null;draftContext.candidate=localDraftRecord_(draftContext);draftContext.candidates=[draftContext.candidate,...draftContext.candidates.filter(r=>r.id!==draftContext.id)];draftContext.liveConflict=true;draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);
       rejectEditorSave_('동시 변경된 내용을 확인해 주세요.');if(mobileDraftMode_())restoreDraft_(draftContext);return false;
     }
-    if(draftBlocksSave_(draftContext)||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_))return rejectEditorSave_(draftContext?.awaitingServer?'서버 연결 확인 후 다시 저장해 주세요.':draftContext?.serverMissing?'원본 작업지시서를 확인해 주세요.':'변경된 내용을 먼저 확인해 주세요.');
+    if(draftBlocksSave_(draftContext)||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_)){
+      const result=rejectEditorSave_(draftContext?.awaitingServer?'서버 연결 확인 후 다시 저장해 주세요.':draftContext?.serverMissing?'원본 작업지시서를 확인해 주세요.':'변경된 내용을 먼저 확인해 주세요.');
+      if(mobileDraftMode_()&&draftContext?.liveConflict&&!draftContext.awaitingServer&&!draftContext.serverMissing&&!document.querySelector('.draft-conflict-dialog'))restoreDraft_(draftContext);
+      return result;
+    }
     const targetRef=woRef,targetCode=currentCode,st=collect();
     if(woRef!==targetRef || currentCode!==targetCode)return false;
     const state=editorSaveState_(),id=++state.serial,revision=state.revision;
