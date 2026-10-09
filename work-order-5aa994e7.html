@@ -1,3 +1,4 @@
+<!-- v151: mobile factory recovery cue in pale burgundy and sample aligned with the sheet content start (2026-10-09) -->
 <!-- v150: desktop/tablet sheet colors match mobile palette without changing document dimensions (2026-10-09) -->
 <!-- v149: clear sales-performance title and quiet recent-release scope beneath search (2026-10-09) -->
 <!-- v148: desktop editing panel outside the unchanged A4 sheet, shared modification records and mobile palette (2026-10-09) -->
@@ -15377,5 +15378,15 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   background:#FFFFFF!important;color:#30343B!important;border-color:#DEDCD6!important;box-shadow:none;
  }
 
+}
+</style>
+
+<style id="aisel-v151-mobile-sample-recovery">
+@media screen and (max-width:600px) {
+ /* The summary has a 1px border; the sheet has 2px plus a 12px content inset. */
+ html body #editorView #mobileMeetingSummary {padding-left:13px;}
+ html body #editorView #mobileMeetingSummary #sampleRecoverySeg button.active[data-value="factory"] {
+  background:#F7ECEE;color:#7A3048;border-color:#CCA0A9;
+ }
 }
 </style>
