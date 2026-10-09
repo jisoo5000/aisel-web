@@ -1,3 +1,4 @@
+<!-- v136: unified mobile editing focus, size guide beside title and equal table strokes (2026-10-09) -->
 <!-- v135: softer mobile list action text, slightly shorter tabs and compact header spacing (2026-10-09) -->
 <!-- v134: mobile quote cues, change-record controls and inline sample recovery (2026-10-09) -->
 <!-- v133: matching mobile list titles/buttons and compact equal sales columns (2026-10-09) -->
@@ -14920,5 +14921,47 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 @media screen and (max-width:600px) and (prefers-color-scheme:dark) {
  :root:not([data-theme="light"]) {--mobile-action-muted:#99A0AC;}
+}
+</style>
+
+<style id="aisel-v136-mobile-focus-size">
+/* One editing cue; screen placement keeps the original sheet and print DOM. */
+@media screen and (max-width:600px) {
+ :root {--aisel-edit-focus:#CCD8E9;}
+ html:root body :is(input,textarea,select):focus,
+ html:root body :is(button,a,[role="button"]):focus-visible {
+  outline:2px solid var(--aisel-edit-focus)!important;
+  outline-offset:1px!important;
+  box-shadow:none!important;
+ }
+ html:root body :is(input,textarea,select):focus {border-color:var(--aisel-edit-focus)!important;}
+ html:root body #editorView #sheet > .meta .designer > :is(#fabricSupplierField,#fabricNameField,#blend):focus {
+  border-color:var(--aisel-edit-focus)!important;
+ }
+ html:root body #editorView .sample-date-field:focus-within,
+ html:root body #galleryView .gallery-search-type:focus-within {
+  outline:2px solid var(--aisel-edit-focus)!important;
+  outline-offset:1px!important;
+ }
+ html:root body #editorView #productColors #colorSwatches .copygen-swatch-btn:focus-visible .color-dot {
+  outline:2px solid var(--aisel-edit-focus)!important;
+  outline-offset:1px!important;
+ }
+ html:root body #editorView #productColors #colorSwatches .copygen-add-color:focus-visible {
+  outline:2px solid var(--aisel-edit-focus)!important;
+ }
+ html:root body #salesView #salesSourceNote {display:none!important;}
+ html:root body #editorView #sheet .sizespec {
+  display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;align-items:baseline;
+ }
+ html:root body #editorView #sheet .sizespec > .sec-title {grid-column:1;grid-row:1;margin:0;}
+ html:root body #editorView #sheet .sizespec > .unit-note {
+  grid-column:2;grid-row:1;min-width:0;margin:0;
+  font-size:11px;font-weight:400;line-height:1.5;letter-spacing:0;
+  color:var(--form-muted);overflow-wrap:anywhere;
+ }
+ html:root body #editorView #sheet .sizespec > .ss-addrow {grid-column:1/-1;grid-row:2;min-width:0;margin-top:8px;}
+ html:root body #editorView #sheet .sizespec > .ss-table-wrap {grid-column:1/-1;grid-row:3;min-width:0;}
+ html:root body #editorView #sheet .sizespec :is(table,th,td) {border:1px solid var(--form-line)!important;}
 }
 </style>
