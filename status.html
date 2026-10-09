@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- AISEL 제품 진행 현황 v24 (2026-10-09): 모바일 상태 배경은 공통 웜그레이·차콜, 상태명 앞 장식점 제거; 기존 상태 동작/PC/인쇄 보존. -->
 <!-- AISEL 제품 진행 현황 v20 (2026-10-09): 공통 에이슬 화면 스타일; v19 동작 보존; 발주생산 도착 확인→PDP 생성 완료→판매중, 한국 시간 도착 확인일, 단계별 버튼 하나. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
@@ -90,6 +91,16 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 </style>
 <link rel="stylesheet" href="status-samples.css?v=status-recovery-20261009-v18" />
 <link rel="stylesheet" href="aisel-ui.css?v=20261009-v3" />
+<style id="aisel-v24-mobile-stage-labels">
+@media screen and (max-width:800px) {
+  .aisel-status #productsPanel .state {
+    background:var(--aisel-soft)!important;
+    color:var(--aisel-ink)!important;
+    gap:0;
+  }
+  .aisel-status #productsPanel .state::before {content:none;display:none;}
+}
+</style>
 </head>
 <body>
 
