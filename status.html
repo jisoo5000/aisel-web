@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v24 (2026-10-09): 모바일 상태 배경은 공통 웜그레이·차콜, 상태명 앞 장식점 제거; 기존 상태 동작/PC/인쇄 보존. -->
+<!-- AISEL 제품 진행 현황 v25 (2026-10-09): 원본 작지의 상태 필드만 실시간 확인하여 삭제된 제품의 카드·검색·집계를 제외. -->
 <!-- AISEL 제품 진행 현황 v20 (2026-10-09): 공통 에이슬 화면 스타일; v19 동작 보존; 발주생산 도착 확인→PDP 생성 완료→판매중, 한국 시간 도착 확인일, 단계별 버튼 하나. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
@@ -254,6 +254,15 @@ function rememberStatusUndo_(code,before,patch){
   showStatusToast_((before.pumMyeong || code) + ' · ' + stateOf(patch.status).label + '로 변경했습니다.',true);
 }
 function sameCatalogVersion_(entry,version){return String(entry.sourceUpdatedAt || '') === String(version || '');}
+function readLiveStatusEntry_(code){
+  return Promise.all([
+    firebase.database().ref('workorderStatusCatalog/' + code).once('value'),
+    firebase.database().ref('workorders/' + code + '/status').once('value')
+  ]).then(function(snapshots){
+    var entry = snapshots[0].val(), status = normalizeStatus_(snapshots[1].val());
+    return entry && SHARED.indexOf(status) !== -1 && status === normalizeStatus_(entry.status) ? entry : null;
+  });
+}
 function writeStatusPatch_(code, patch, btn, okText, before){
   patch = Object.assign({},patch);
   if(!patch.updatedAt) patch.updatedAt = Date.now();
@@ -285,8 +294,7 @@ function changeStatus_(code,name,btn,from,patch,label,notice){
   return confirmStatusChange_(name || code,from,patch.status,label,notice).then(function(accepted){
     if(!accepted) return false;
     if(btn) btn.disabled = true;
-    return firebase.database().ref('workorderStatusCatalog/' + code).once('value').then(function(snap){
-      var latest = snap.val();
+    return readLiveStatusEntry_(code).then(function(latest){
       if(!latest || latest.status !== from || !sameCatalogVersion_(latest,before.sourceUpdatedAt)){
         if(btn) btn.disabled = false;
         lastStatusUndo_ = null;showStatusToast_('다른 변경이 반영되었습니다. 현재 상태를 확인한 뒤 다시 눌러주세요.',false);return false;
@@ -312,8 +320,7 @@ function undoLatestChange_(){
   if(!record || undoInProgress_ || statusChangeBusy_) return Promise.resolve(false);
   undoInProgress_ = true;
   var button = document.getElementById('statusToastUndo');button.disabled = true;button.textContent = '확인 중...';
-  return firebase.database().ref('workorderStatusCatalog/' + record.code).once('value').then(function(snap){
-    var latest = snap.val();
+  return readLiveStatusEntry_(record.code).then(function(latest){
     if(lastStatusUndo_ !== record) return false;
     if(!latest || latest.status !== record.status || !sameCatalogVersion_(latest,record.version)){
       lastStatusUndo_ = null;showStatusToast_('이후에 변경된 내용이 있어 실행 취소할 수 없습니다. 현재 상태를 확인해 주세요.',false);return false;
@@ -667,21 +674,62 @@ searchEl.addEventListener("input",function(ev){
   query = next;window.history.replaceState(viewState_(0),"",viewUrl_());pendingScroll = 0;renderTabs();render();
 });
 
-/* 경량 목록 한 번의 초기 수신 이후 변경분을 계속 반영합니다. */
+/* 요약이 남아 있어도 원본이 삭제되면 표시하지 않습니다. 원본 전체/사진/원가는 읽지 않습니다. */
+var statusCatalog_ = {};
+var sourceStatusWatches_ = Object.create(null);
+var catalogReadFailed_ = false;
+function renderLiveCatalog_(){
+  all = {};
+  var pending = false, failed = false;
+  Object.keys(statusCatalog_).forEach(function(code){
+    var entry = statusCatalog_[code], watch = sourceStatusWatches_[code];
+    if(!watch || !watch.ready){pending = true;return;}
+    if(watch.failed){failed = true;return;}
+    var status = normalizeStatus_(watch.status);
+    if(SHARED.indexOf(status) !== -1) all[code] = Object.assign({},entry,{status:status});
+    else delete photoCache[code];
+  });
+  dataReady = !catalogMissing && !pending;
+  loadFailed = catalogReadFailed_ || failed;
+  gridEl.setAttribute("aria-busy",String(!dataReady));emptyEl.setAttribute("role","status");
+  var connection = document.getElementById("connection");
+  connection.className = "connection" + (loadFailed ? " error" : dataReady ? " ready" : "");
+  connection.textContent = loadFailed ? "연결 확인" : dataReady ? "불러오기 완료" : "작지 확인 중";
+  renderTabs();render();
+  if(failed) document.getElementById("desc").textContent = "일부 제품의 작지 상태를 확인하지 못했습니다. 연결을 확인한 뒤 새로고침해 주세요.";
+}
 firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
-  var catalog = snap.val();all = {};
+  var catalog = snap.val(), next = {};
   if(catalog && typeof catalog === "object") Object.keys(catalog).forEach(function(code){
     var entry = catalog[code];
-    if(entry) entry = Object.assign({},entry,{status:normalizeStatus_(entry.status)});
-    if(entry && entry.schemaVersion === 1 && SHARED.indexOf(entry.status) !== -1) all[code] = entry;
+    if(entry && entry.schemaVersion === 1 && SHARED.indexOf(normalizeStatus_(entry.status)) !== -1) next[code] = entry;
   });
-  catalogMissing = !catalog;dataReady = !catalogMissing;loadFailed = false;
-  gridEl.setAttribute("aria-busy",String(!dataReady));emptyEl.setAttribute("role","status");
-  var connection = document.getElementById("connection");connection.className = "connection" + (dataReady ? " ready" : "");
-  connection.textContent = dataReady ? "불러오기 완료" : "동기화 대기";
-  renderTabs();render();
+  statusCatalog_ = next;catalogMissing = !catalog;catalogReadFailed_ = false;
+  Object.keys(sourceStatusWatches_).forEach(function(code){
+    if(Object.prototype.hasOwnProperty.call(next,code)) return;
+    var watch = sourceStatusWatches_[code];
+    delete sourceStatusWatches_[code];watch.ref.off("value",watch.callback);
+    delete photoCache[code];
+  });
+  var added = [];
+  Object.keys(next).forEach(function(code){
+    if(sourceStatusWatches_[code]) return;
+    var watch = {ref:firebase.database().ref("workorders/" + code + "/status"),ready:false,failed:false,status:null};
+    sourceStatusWatches_[code] = watch;
+    watch.callback = function(source){
+      if(sourceStatusWatches_[code] !== watch) return;
+      watch.ready = true;watch.failed = false;watch.status = source.val();renderLiveCatalog_();
+    };
+    watch.error = function(err){
+      if(sourceStatusWatches_[code] !== watch) return;
+      watch.ready = true;watch.failed = true;delete photoCache[code];renderLiveCatalog_();console.error(err);
+    };
+    added.push(watch);
+  });
+  added.forEach(function(watch){watch.ref.on("value",watch.callback,watch.error);});
+  renderLiveCatalog_();
 },function(err){
-  loadFailed = true;gridEl.setAttribute("aria-busy","false");
+  catalogReadFailed_ = true;loadFailed = true;gridEl.setAttribute("aria-busy","false");
   var connection = document.getElementById("connection");connection.className = "connection error";connection.textContent = "연결 확인";
   emptyEl.setAttribute("role","alert");renderTabs();render();console.error(err);
 });
