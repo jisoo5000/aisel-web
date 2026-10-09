@@ -1,3 +1,4 @@
+<!-- v149: clear sales-performance title and quiet recent-release scope beneath search (2026-10-09) -->
 <!-- v148: desktop editing panel outside the unchanged A4 sheet, shared modification records and mobile palette (2026-10-09) -->
 <!-- v147: slightly soften rose negotiation-needed colors while retaining readable emphasis (2026-10-09) -->
 <!-- v146: rose negotiation-needed cue and mobile label, existing quote logic and filled prices preserved (2026-10-09) -->
@@ -3038,10 +3039,10 @@
 }
 </style>
 <header class="aisel-app-header noprint notranslate" id="appBrandHeader" lang="ko" translate="no" hidden>
-  <h1><span class="app-brand">AISEL</span><span class="app-page-title" id="appPageTitle">판매성과</span></h1>
+  <h1><span class="app-brand">AISEL</span><span class="app-page-title" id="appPageTitle">판매 성과</span></h1>
 </header>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
-  <button type="button" class="maintab active" data-main="sales">판매성과</button>
+  <button type="button" class="maintab active" data-main="sales">판매 성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
   <div class="mainbar-order-col" hidden>
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">발주</button>
@@ -3078,7 +3079,7 @@
 </div>
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no">
-  <div class="gallery-head"><h2>판매성과</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
+  <div class="gallery-head"><h2>판매 성과</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
   <div class="gallery-tabs" id="salesTabs" aria-label="판매 상태">
     <button type="button" class="gtab active" data-status="sale" aria-pressed="true">판매 중</button>
     <button type="button" class="gtab" data-status="prep" aria-pressed="false">판매 준비</button>
@@ -3092,6 +3093,7 @@
     </label>
     <select id="salesSort" aria-label="상품성과 정렬"><option value="quantity">판매순</option><option value="recent">최근 수정순</option></select>
   </div>
+  <p id="salesScopeNote" class="sales-scope-note noprint">최근 출시 상품 기준</p>
   <div class="sales-meta"><span id="salesPeriod">집계 기간 확인 중</span><span id="salesUpdated"></span><span id="salesRankScope" hidden>수량이 확인된 상품 기준 순위</span></div>
   <p id="salesSyncNotice" class="sales-notice" role="status" aria-live="polite">판매 자료를 확인하고 있습니다.</p>
   <div id="salesAuth" class="sales-auth"><button type="button" id="salesLoginBtn" class="sales-login">상품성과 로그인</button></div>
@@ -3099,7 +3101,7 @@
   <div id="salesCounts" class="sales-counts" role="status" aria-live="polite"></div>
   <p class="sales-scan-note">동기간 확인 상품과 비교 · 판매량은 순판매수량 · 반품률은 기간 주문의 완료 반품 ÷ 취소 제외 판매수량(관찰 중)</p>
   <div class="sales-column-head" aria-hidden="true"><span>상품</span><span>판매 비중</span><span>반품률</span></div>
-  <div id="salesTableBody" class="sales-list" aria-label="상품별 판매성과"></div>
+  <div id="salesTableBody" class="sales-list" aria-label="상품별 판매 성과"></div>
 </div>
 
 <div class="gallery notranslate" id="galleryView" style="display:none" lang="ko" translate="no">
@@ -8219,7 +8221,7 @@
     header.hidden = !list;
     if(list){
       document.body.dataset.aiselListView = list;
-      $("#appPageTitle").textContent = list === "sales" ? "판매성과" : "작업지시서";
+      $("#appPageTitle").textContent = list === "sales" ? "판매 성과" : "작업지시서";
     }else delete document.body.dataset.aiselListView;
     document.querySelectorAll("#mainBar > .maintab[data-main]").forEach(button=>
       button.setAttribute("aria-pressed",String(button.dataset.main === which)));
@@ -15315,5 +15317,13 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  #desktopWorkArea > #sheet {width:820px;}
  #desktopEditPanel {width:100%;margin:0;}
  #editorView > :is(.toolbar,.statusbar) {max-width:1224px;}
+}
+</style>
+
+<style id="aisel-v149-sales-scope-note">
+@media screen {
+ html body #salesView .sales-scope-note {
+  margin:0 0 8px;color:var(--aisel-muted);font-size:12px;font-weight:400;line-height:1.4;
+ }
 }
 </style>
