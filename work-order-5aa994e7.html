@@ -1,3 +1,4 @@
+<!-- v137: move existing owner login beneath the work-order area (2026-10-09) -->
 <!-- v136: unified mobile editing focus, size guide beside title and equal table strokes (2026-10-09) -->
 <!-- v135: softer mobile list action text, slightly shorter tabs and compact header spacing (2026-10-09) -->
 <!-- v134: mobile quote cues, change-record controls and inline sample recovery (2026-10-09) -->
@@ -14548,7 +14549,8 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  const bar=document.createElement('div');bar.className='owner-view-bar noprint';bar.id='ownerViewBar';
  const account=document.createElement('button');account.type='button';account.id='ownerViewLogin';account.textContent='대표자 로그인';
  const message=document.createElement('span');message.setAttribute('role','status');message.setAttribute('aria-live','polite');bar.append(account,message);
- document.getElementById('mainBar').after(bar);
+ // Keep the same login controls below the work-order area in the page flow.
+ document.getElementById('editorView').after(bar);
 
  let owner=false,busy=false;
  function verifiedOwner(user){return !!user&&user.emailVerified===true&&String(user.email||'').toLowerCase()==='sooana1214@gmail.com';}
