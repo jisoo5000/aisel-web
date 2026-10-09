@@ -1,3 +1,4 @@
+<!-- v152: iPad mobile composition in both orientations; desktop dimensions and print preserved (2026-10-09) -->
 <!-- v151: mobile factory recovery cue in pale burgundy and sample aligned with the sheet content start (2026-10-09) -->
 <!-- v150: desktop/tablet sheet colors match mobile palette without changing document dimensions (2026-10-09) -->
 <!-- v149: clear sales-performance title and quiet recent-release scope beneath search (2026-10-09) -->
@@ -34,6 +35,69 @@
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
 <meta charset="utf-8">
+<script id="aisel-ipad-layout-mode">
+/* iPad uses the existing 600px mobile composition in either orientation.
+   Physical viewport units remain native; print keeps its original width rules. */
+(function(root){
+ 'use strict';
+ const ipad=/\biPad\b/i.test(navigator.userAgent)||
+   (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const nativeMedia=query=>root.matchMedia(query);
+ const mobileWidth=600;
+ const widthRule=/\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)/gi;
+ function mobileQuery(query){
+  return query.replace(widthRule,(_,kind,value)=>{
+   const active=kind.toLowerCase()==='min'?mobileWidth>=Number(value):mobileWidth<=Number(value);
+   return active?'(min-width:0px)':'(max-width:0px)';
+  });
+ }
+ // Scoped to this app: native matchMedia is never replaced.
+ root.workOrderLayoutMedia_=query=>nativeMedia(ipad?mobileQuery(query):query);
+ if(!ipad)return;
+ document.documentElement.classList.add('aisel-ipad-mobile');
+ const processed=new WeakSet();
+ function screenQuery(query){
+  if(!/\(\s*(?:min|max)-width\s*:/.test(query))return query;
+  return query.split(',').flatMap(part=>{
+   const original=part.trim();
+   if(/^print\b/i.test(original))return [original];
+   if(/^screen\b/i.test(original))return [mobileQuery(original)];
+   // Unqualified legacy rules also apply to print: preserve that branch.
+   const condition=original.replace(/^all\s+and\s+/i,'');
+   return ['print and '+condition,'screen and '+mobileQuery(condition)];
+  }).join(', ');
+ }
+ function applyRules(rules){
+  for(const rule of rules){
+   if(rule.type===CSSRule.MEDIA_RULE&&!processed.has(rule)){
+    rule.media.mediaText=screenQuery(rule.media.mediaText);processed.add(rule);
+   }
+   if(rule.cssRules)applyRules(rule.cssRules);
+  }
+ }
+ function applySheet(sheet){
+  if(!sheet)return;
+  try{applyRules(sheet.cssRules);}catch(error){
+   // Cross-origin font stylesheets have no work-order layout rules.
+   if(error.name!=='SecurityError')throw error;
+  }
+ }
+ const observer=new MutationObserver(records=>{
+  for(const record of records)for(const node of record.addedNodes){
+   if(node.nodeType!==1)continue;
+   if(node.matches('style,link[rel="stylesheet"]'))applySheet(node.sheet);
+   node.querySelectorAll('style,link[rel="stylesheet"]').forEach(e=>applySheet(e.sheet));
+  }
+ });
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+ document.addEventListener('load',event=>{
+  if(event.target.matches?.('link[rel="stylesheet"]'))applySheet(event.target.sheet);
+ },true);
+ document.addEventListener('DOMContentLoaded',()=>{
+  Array.from(document.styleSheets).forEach(applySheet);
+ });
+})(window);
+</script>
 <script>window.AiselSheetSalesMode=true;</script>
 <meta name="google" content="notranslate">
 <!-- AISEL 작업지시서 v114 (2026-10-08)
@@ -4529,7 +4593,7 @@
     return actual?{name:actual,source:'actual'}:{name:metadata?.workerProxy||worker||'',source:'worker_proxy'};
   }
   function attachEditor(host, options){
-    const mobileQuoteMedia=root.matchMedia?.('screen and (max-width:600px)');
+    const mobileQuoteMedia=workOrderLayoutMedia_('screen and (max-width:600px)');
     const editor=document.createElement('div');editor.className='cost-pair noprint';
     const arrow=document.createElement('span');arrow.className='cost-pair-arrow';arrow.textContent='>';arrow.setAttribute('aria-hidden','true');
     const dialog=document.createElement('dialog');dialog.className='nego-dialog noprint';
@@ -7311,7 +7375,7 @@
       const shortLink = refRow.querySelector(".ref-short-link");
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
-        const mobileHeaderLink=window.matchMedia('(max-width:600px)').matches && !!refRow.closest('.editor-mobile-head');
+        const mobileHeaderLink=workOrderLayoutMedia_('(max-width:600px)').matches && !!refRow.closest('.editor-mobile-head');
         if(mobileHeaderLink){
           const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
           icon.setAttribute('class','ref-action-icon');icon.setAttribute('viewBox','0 0 24 24');
@@ -11262,7 +11326,7 @@
     mobileName.hidden=false;renderMobileHeader_();
   }
   function beginMobileNameEdit_(){
-    if(!window.matchMedia('(max-width:600px)').matches||window.matchMedia('print').matches)return;
+    if(!workOrderLayoutMedia_('(max-width:600px)').matches||window.matchMedia('print').matches)return;
     mobileName.hidden=true;mobileName.after(pumInput);pumInput.classList.add('mobile-title-input');pumInput.focus();
   }
   mobileName.addEventListener('click',beginMobileNameEdit_);
@@ -11284,7 +11348,7 @@
   document.body.appendChild(codeSettings);
   const codeSeason=document.getElementById('mobileCodeSeason'),codeCategory=document.getElementById('mobileCodeCategory');
   function openMobileCodeSettings_(){
-    if(!window.matchMedia('(max-width:600px)').matches)return;
+    if(!workOrderLayoutMedia_('(max-width:600px)').matches)return;
     codeSeason.innerHTML=document.getElementById('season').innerHTML;codeCategory.innerHTML=catSel.innerHTML;
     codeSeason.value=document.getElementById('season').value;codeCategory.value=catSel.value;
     const editable=codePending_||newOrderMode_;
@@ -11308,7 +11372,7 @@
     codeSettings.close();renderMobileHeader_();if(creating||changed)saveSoon();
   });
   for(const id of ['saveBtn','factorySaveBtn','printBtn'])document.getElementById(id).addEventListener('click',event=>{
-    if(codePending_&&window.matchMedia('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
+    if(codePending_&&workOrderLayoutMedia_('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
   },true);
   const codeView=document.getElementById('codeView');
   codeView.addEventListener('click',openMobileCodeSettings_);
@@ -11320,7 +11384,7 @@
   newAction.before(newHome);deleteAction.before(deleteHome);
   const headerReference=document.getElementById('refPanel'),referenceHome=document.createComment('desktop reference panel');
   headerReference.before(referenceHome);
-  const mobileLayout=window.matchMedia('(max-width:600px)');
+  const mobileLayout=workOrderLayoutMedia_('(max-width:600px)');
   const sampleHeading=document.querySelector('#metaAccordionHead > span:last-child');
   const desktopSampleHeading=sampleHeading.textContent;
   function updateSampleHeading_(){
@@ -12914,7 +12978,7 @@ function addColor(v){
   selectedColors = normalizeColorList_([...selectedColors, v]);
   renderSelectedColors();
   // Mobile selection finishes one choice; desktop retains its multi-choice panel.
-  if(window.matchMedia('(max-width:600px)').matches){
+  if(workOrderLayoutMedia_('(max-width:600px)').matches){
     const family = openBase;
     openBase = null;
     renderSwatches();
@@ -14965,7 +15029,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 <script id="aisel-v133-mobile-gallery-title">
 (function(){
  const heading=document.querySelector('#galleryView > .gallery-head h2');
- const original=heading.textContent,mobile=matchMedia('(max-width:600px)'),printing=matchMedia('print');
+ const original=heading.textContent,mobile=workOrderLayoutMedia_('(max-width:600px)'),printing=matchMedia('print');
  const sync=()=>{heading.textContent=mobile.matches&&!printing.matches?'작업지시서':original;};
  mobile.addEventListener('change',sync);printing.addEventListener('change',sync);
  window.addEventListener('beforeprint',()=>{heading.textContent=original;});
@@ -15123,7 +15187,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  const home=photo.querySelector('.tag');
  const groupHome=document.createComment('original photo actions');group.before(groupHome);
  const original={camera:camera.textContent,album:album.textContent,remove:remove.textContent,disabled:remove.disabled};
- const mobile=matchMedia('(max-width:600px)'),printing=matchMedia('print');
+ const mobile=workOrderLayoutMedia_('(max-width:600px)'),printing=matchMedia('print');
  let beforePrint=false;
  function sync(){
   const active=mobile.matches&&!printing.matches&&!beforePrint;
@@ -15388,5 +15452,11 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html body #editorView #mobileMeetingSummary #sampleRecoverySeg button.active[data-value="factory"] {
   background:#F7ECEE;color:#7A3048;border-color:#CCA0A9;
  }
+}
+</style>
+
+<style id="aisel-v152-ipad-reading-width">
+@media screen {
+ html.aisel-ipad-mobile body #editorView {max-width:820px;margin-left:auto;margin-right:auto;}
 }
 </style>
