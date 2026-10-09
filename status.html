@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v25 (2026-10-09): 원본 작지의 상태 필드만 실시간 확인하여 삭제된 제품의 카드·검색·집계를 제외. -->
+<!-- AISEL 제품 진행 현황 v26 (2026-10-09): 공통 돋보기 검색칸과 사무실 샘플의 정확한 품명·품번 검색. -->
 <!-- AISEL 제품 진행 현황 v20 (2026-10-09): 공통 에이슬 화면 스타일; v19 동작 보존; 발주생산 도착 확인→PDP 생성 완료→판매중, 한국 시간 도착 확인일, 단계별 버튼 하나. -->
 <title>AISEL 제품 진행 현황</title>
 <!-- 2026-08-27 추가: 사진이 오는 서버에 미리 연결해 둡니다.
@@ -90,7 +90,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 <link rel="stylesheet" href="status-samples.css?v=status-recovery-20261009-v18" />
-<link rel="stylesheet" href="aisel-ui.css?v=20261009-v3" />
+<link rel="stylesheet" href="aisel-ui.css?v=20261009-v4" />
 <style id="aisel-v24-mobile-stage-labels">
 @media screen and (max-width:800px) {
   .aisel-status #productsPanel .state {
@@ -124,7 +124,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
       <h2 class="section-heading"><span id="sectionTitle">발주생산</span><span class="result-count" id="resultCount" aria-live="polite"></span></h2>
       <p class="desc" id="desc">제품 정보를 불러오고 있습니다.</p>
     </div>
-    <label class="search-wrap">
+    <label class="search-wrap aisel-search-field">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
       <input class="search" id="search" type="search" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off" />
     </label>
@@ -136,8 +136,10 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   <section id="samplesPanel" class="samples-panel" aria-labelledby="samplesTitle" hidden>
     <h2 id="samplesTitle" class="sample-visually-hidden">샘플 관리</h2>
     <div class="sample-search-row" role="search" aria-label="샘플 검색">
-      <label class="sample-visually-hidden" for="sampleSearch">검색어</label>
-      <input id="sampleSearch" class="sample-search-input" type="search" placeholder="품명, 품목으로 검색" autocomplete="off" />
+      <label class="aisel-search-field">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        <input id="sampleSearch" class="sample-search-input" type="search" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off" />
+      </label>
     </div>
     <p id="sampleError" class="sample-error" role="alert" hidden></p>
     <p id="sampleSyncWarning" class="sample-sync-warning" role="status" hidden></p>
@@ -639,6 +641,7 @@ function navigate_(nextFilter,nextQuery,preserveInput){
   if(!preserveInput) searchEl.value = query;
   window.history.pushState(viewState_(0),"",viewUrl_());pendingScroll = 0;
   renderTabs();render();
+  if(workflowView === "samples" && window.AiselSamples) window.AiselSamples.onProductsChanged();
 }
 function restoreView_(state){
   var url = new URL(window.location.href);
@@ -736,7 +739,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
 </script>
 <script src="status-samples-flow.js?v=samples-office-20261004-v16-4"></script>
 <script src="status-samples-data.js?v=samples-office-20261004-v16-4"></script>
-<script src="status-samples.js?v=aisel-ui-v2-samples-20261009-v21"></script>
+<script src="status-samples.js?v=20261009-v26"></script>
 
 </body>
 </html>

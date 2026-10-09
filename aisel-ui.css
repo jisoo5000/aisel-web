@@ -1,6 +1,28 @@
-/* AISEL shared screen system v3 (2026-10-09).
+/* AISEL shared screen system v4 (2026-10-09).
    List/control roles only. Garment chips, semantic colors, editor and print
    retain their own contracts. A 44px control keeps the compact 11px label. */
+
+/* Same search field on product progress, samples and both work-order lists.
+   Screen-only rules preserve the editor and PDF/print contracts. */
+@media screen {
+  html body .aisel-search-field {
+    display:block;position:relative;flex:1 1 0;width:100%;min-width:0;margin:0;
+  }
+  html body .aisel-search-field .search-icon {
+    position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;color:var(--aisel-muted);pointer-events:none;
+  }
+  html body :is(.aisel-status,#galleryView,#salesView) .aisel-search-field input {
+    display:block;box-sizing:border-box;width:100%;min-width:0;height:44px;
+    padding:8px 12px 8px 37px;border:1px solid var(--aisel-line);
+    border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);
+    font-family:inherit;font-size:16px!important;font-weight:400;line-height:24px;
+    letter-spacing:0;text-align:left;
+  }
+  html body :is(.aisel-status,#galleryView,#salesView) .aisel-search-field input::placeholder {
+    color:var(--aisel-muted);opacity:1;
+  }
+}
 @media screen {
   :root {
     --aisel-bg:#FFFFFF;

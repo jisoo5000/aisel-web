@@ -1,3 +1,4 @@
+<!-- v139: shared magnifier fields and exact product-name/code search (2026-10-09) -->
 <!-- v138: mobile row gaps, right-aligned contacts and drawing actions beside title (2026-10-09) -->
 <!-- v137: move existing owner login beneath the work-order area (2026-10-09) -->
 <!-- v136: unified mobile editing focus, size guide beside title and equal table strokes (2026-10-09) -->
@@ -115,7 +116,7 @@
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
 <title>AISEL 작업지시서</title>
-<link rel="stylesheet" href="aisel-ui.css?v=20261009-v3">
+<link rel="stylesheet" href="aisel-ui.css?v=20261009-v4">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
@@ -3049,7 +3050,10 @@
   </div>
   <div class="gallery-tabs" id="salesGroupTabs" aria-label="분석 대상"><button type="button" class="gtab active" data-group="all" aria-pressed="true">전체</button><button type="button" class="gtab" data-group="new" aria-pressed="false">신상</button><button type="button" class="gtab" data-group="steady" aria-pressed="false">스테디셀러</button><button type="button" class="gtab" data-group="unclassified" aria-pressed="false">분류 확인</button></div>
   <div class="sales-toolbar">
-    <input id="salesSearchInput" type="search" placeholder="품명 또는 품번 검색" aria-label="품명 또는 품번 검색" autocomplete="off">
+    <label class="aisel-search-field">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <input id="salesSearchInput" type="search" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off">
+    </label>
     <select id="salesSort" aria-label="상품성과 정렬"><option value="quantity">판매순</option><option value="recent">최근 수정순</option></select>
   </div>
   <div class="sales-meta"><span id="salesPeriod">집계 기간 확인 중</span><span id="salesUpdated"></span><span id="salesRankScope" hidden>수량이 확인된 상품 기준 순위</span></div>
@@ -3081,7 +3085,10 @@
     </div>
   </div>
   <div class="gallery-search" id="gallerySearchRow">
-    <input type="search" id="gallerySearchInput" placeholder="품명, 품목으로 검색" aria-label="품명, 품목 또는 품번으로 검색">
+    <label class="aisel-search-field">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+      <input type="search" id="gallerySearchInput" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off">
+    </label>
   </div>
   <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
     <h3>삭제 복원</h3>
@@ -9877,6 +9884,12 @@
 
   // ---------- 갤러리 카드 목록 렌더링 ----------
   let allWorkOrders = {};
+  window.AiselWorkorderCodeForName = name=>{
+    const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
+    const exact=normalize(name);
+    const codes=Object.keys(allWorkOrders).filter(code=>exact && normalize(allWorkOrders[code].pumMyeong)===exact);
+    return codes.length===1?codes[0]:'';
+  };
   let galleryFilter = "sampling";
   let qoStatusFilterVal = "sampling";
   function galleryStatus_(st){
@@ -14160,7 +14173,11 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
   const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
   for(const label of ['순위','상품명','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;header.append(span);}host.append(header);
   const query=String(search||'').trim().toLocaleLowerCase('ko');
-  for(const item of snapshot.items.filter(x=>x.name.toLocaleLowerCase('ko').includes(query))){
+  for(const item of snapshot.items.filter(x=>{
+   const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
+   const needle=normalize(query);
+   return normalize(x.name).includes(needle) || normalize(root.AiselWorkorderCodeForName?.(x.name)).includes(needle);
+  })){
    const row=document.createElement('div');row.className='sheet-sales-grid';
    const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
    values.forEach((value,i)=>{
@@ -14193,7 +14210,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.k
   let snapshot=null,busy=false,lastRead=0;
   const show=()=>{if(snapshot)render(host,snapshot,search.value);};
   root.AiselSheetSalesSource={render:show};
-  search.placeholder='상품명 검색';search.setAttribute('aria-label','상품명 검색');
+  search.placeholder='품명 또는 품번으로 검색';search.setAttribute('aria-label','품명 또는 품번으로 검색');
   document.getElementById('salesAuth').hidden=true;
   document.getElementById('salesSourceNote').textContent='운영시트 신상성과 · 반품률은 시트 기준';
   const sort=document.getElementById('salesSort');sort.replaceChildren(new Option('판매순','quantity'));sort.disabled=true;

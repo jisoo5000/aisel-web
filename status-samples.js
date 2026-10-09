@@ -41,7 +41,17 @@
     var balance = info.counts.officeReceived - info.counts.returnSent;
     return balance > 0 ? {row:row,quantity:balance,review:false,notice:""} : null;
   }
-  function currentRows(){var needle = normalized(sampleFilters.query);return records.filter(function(item){return !needle || normalized(item.row.name).indexOf(needle) !== -1;});}
+  function currentRows(){
+    var needle = normalized(sampleFilters.query);
+    return records.filter(function(item){
+      if(!needle || normalized(item.row.name).indexOf(needle) !== -1) return true;
+      // Reuse the verified product catalog. Never infer a code from a partial
+      // or duplicate name, publish new sample fields, or fetch full orders.
+      var name = normalized(item.row.name);
+      var codes = Object.keys(all).filter(function(code){return name && normalized(all[code].pumMyeong) === name;});
+      return codes.length === 1 && normalized(codes[0]).indexOf(needle) !== -1;
+    });
+  }
   function cell(label,value,className){var result = node("span","sample-cell " + (className || ""));result.appendChild(node("span","sample-mobile-label",label));result.appendChild(node("span","",value));return result;}
   function recordElement(item){
     var row = item.row, record = node("article","sample-record" + (item.review ? " sample-office-review" : ""));record.dataset.recordId = row.id;
@@ -64,7 +74,7 @@
   }
   function render(){
     if(document.activeElement !== el.sampleSearch) el.sampleSearch.value = sampleFilters.query;
-    el.sampleSearch.placeholder = "품명, 품목으로 검색";
+    el.sampleSearch.placeholder = "품명 또는 품번으로 검색";
     var busy = state.status === "loading", message = localError || (state.status === "error" ? text(state.message) : "");
     el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
     el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";
@@ -102,6 +112,12 @@
   function change(key,value,replace){var next = {query:sampleFilters.query,field:sampleFilters.field};next[key] = value;navigateSamples_(next,!!replace);}
   el.sampleSearch.addEventListener("input",function(event){var next = text(event.target.value);if(next !== sampleFilters.query) change("query",next,!!sampleFilters.query && !!next);});
   el.sampleReset.addEventListener("click",function(){navigateSamples_({query:"",field:"name"},false);});
-  window.AiselSamples = {render:render,onShow:start,isReady:function(){return settled;}};
+  function onProductsChanged(){
+    if(!sampleFilters.query) return;
+    var shown = Array.prototype.map.call(el.sampleList.querySelectorAll(".sample-record"),function(row){return row.dataset.recordId;});
+    var next = currentRows().map(function(item){return String(item.row.id);});
+    if(JSON.stringify(shown) !== JSON.stringify(next)) render();
+  }
+  window.AiselSamples = {render:render,onProductsChanged:onProductsChanged,onShow:start,isReady:function(){return settled;}};
   render();restoreView_(window.history.state);
 })();
