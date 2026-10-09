@@ -1,3 +1,4 @@
+<!-- v143: AISEL list header above navigation with restrained underline tabs (2026-10-09) -->
 <!-- v142: centered link controls, lighter compact photo actions, aligned factory names, smaller sample buttons and owner-login bottom clearance (2026-10-09) -->
 <!-- v141: slightly wider yellow gaps, compact gray photo actions, balanced image spacing, closer owner login and factory left shift (2026-10-09) -->
 <!-- v140: mobile factory offset, wider contact editing and unified right-side photo actions; tighter sheet/login gaps (2026-10-09) -->
@@ -3007,6 +3008,33 @@
 </style>
 
 
+<style id="aisel-v143-list-brand-header">
+@media screen {
+  #appBrandHeader {max-width:820px;margin:16px auto 0;padding:0 16px;color:var(--aisel-ink);}
+  #appBrandHeader[hidden] {display:none!important;}
+  #appBrandHeader h1 {display:flex;align-items:center;gap:12px;margin:0;padding:0 0 12px;border-bottom:1.5px solid var(--aisel-ink);font-size:18px;font-weight:700;line-height:1.4;letter-spacing:0;}
+  #appBrandHeader .app-brand {font-size:24px;font-weight:700;letter-spacing:.3px;line-height:1;}
+  #appBrandHeader .app-page-title {min-width:0;padding-left:12px;border-left:1px solid var(--aisel-line);line-height:1.1;}
+  html body[data-aisel-list-view] #mainBar {margin:8px auto 6px;padding:0 16px;gap:4px;}
+  html body[data-aisel-list-view] #mainBar .maintab {min-height:44px;border:0;border-bottom:1.5px solid transparent;border-radius:0;background:var(--aisel-bg);color:var(--aisel-muted);font-weight:600;box-shadow:none;}
+  html body[data-aisel-list-view] #mainBar .maintab.active {border-bottom-color:var(--aisel-ink);background:var(--aisel-bg);color:var(--aisel-ink);font-weight:700;}
+  html body[data-aisel-list-view] #mainBar .maintab:hover {background:var(--aisel-soft);}
+  html body[data-aisel-list-view] :is(#galleryView,#salesView) {padding-top:0;padding-left:16px;padding-right:16px;}
+  html body[data-aisel-list-view] :is(#galleryView,#salesView) > .gallery-head > h2 {display:none;}
+  html body[data-aisel-list-view] #galleryView > .gallery-head {justify-content:flex-end;margin-bottom:8px;}
+  html body[data-aisel-list-view] #salesView > .gallery-head {margin-bottom:0;}
+  html body[data-aisel-list-view] :is(#galleryView,#salesView) :is(#galleryTabs,#salesTabs,#salesGroupTabs) .gtab {border:0;border-bottom:1.5px solid transparent;border-radius:0;background:var(--aisel-bg);color:var(--aisel-muted);box-shadow:none;}
+  html body[data-aisel-list-view] :is(#galleryView,#salesView) :is(#galleryTabs,#salesTabs,#salesGroupTabs) .gtab.active {border-bottom-color:var(--aisel-ink);background:var(--aisel-bg);color:var(--aisel-ink);}
+  html body[data-aisel-list-view] :is(#galleryView,#salesView) :is(#galleryTabs,#salesTabs,#salesGroupTabs) .gtab:hover {background:var(--aisel-soft);}
+}
+@media screen and (max-width:800px) {
+  #appBrandHeader h1 {font-size:16px;}
+  #appBrandHeader .app-brand {font-size:20px;}
+}
+</style>
+<header class="aisel-app-header noprint notranslate" id="appBrandHeader" lang="ko" translate="no" hidden>
+  <h1><span class="app-brand">AISEL</span><span class="app-page-title" id="appPageTitle">판매성과</span></h1>
+</header>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
@@ -8173,6 +8201,15 @@
   // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
   function setMainTabActive_(which){
     document.querySelectorAll(".maintab").forEach(b=> b.classList.toggle("active", b.dataset.main===which));
+    const list = isViewVisible_("salesView") ? "sales" : isViewVisible_("galleryView") ? "orders" : "";
+    const header = $("#appBrandHeader");
+    header.hidden = !list;
+    if(list){
+      document.body.dataset.aiselListView = list;
+      $("#appPageTitle").textContent = list === "sales" ? "판매성과" : "작업지시서";
+    }else delete document.body.dataset.aiselListView;
+    document.querySelectorAll("#mainBar > .maintab[data-main]").forEach(button=>
+      button.setAttribute("aria-pressed",String(button.dataset.main === which)));
   }
   function showSales(){
     $("#editorView").style.display = "none";
