@@ -1,3 +1,4 @@
+<!-- v133: matching mobile list titles/buttons and compact equal sales columns (2026-10-09) -->
 <!-- v132: mobile cost widths, borderless retail editing and consistent form typography (2026-10-09) -->
 <!-- v131: first-screen cost summary and single sample-recovery dialog (2026-10-09) -->
 <!-- v130: compact mobile list controls, single-line ratings and unified search (2026-10-09) -->
@@ -14857,5 +14858,39 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  if(!row)return;
  const unit=document.createElement('span');unit.className='mobile-retail-unit';unit.textContent='원';unit.setAttribute('aria-hidden','true');
  document.getElementById('targetThreshold').after(unit);
+})();
+</script>
+
+<style id="aisel-v133-mobile-list-consistency">
+@media screen and (max-width:600px) {
+ html body :is(#salesView,#galleryView) > .gallery-head h2 {
+  margin:0;color:var(--mobile-list-ink,#30343B);font-family:var(--kfont);font-size:18px;
+  font-weight:800;line-height:1.35;letter-spacing:0;
+ }
+ html body #galleryView #galleryTrashBtn,
+ html body #salesView #sheetSalesRefresh {
+  display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+  width:72px;height:28px;min-height:28px;padding:3px 8px;
+  font-family:var(--kfont);font-size:11px!important;font-weight:700;line-height:1.25;
+  color:var(--mobile-list-ink,#30343B);background:var(--sheet);border:1px solid #CBD3DF;border-radius:4px;
+ }
+ html body #salesView .sheet-sales-grid {grid-template-columns:24px minmax(0,1fr) repeat(4,42px);column-gap:3px;}
+ html body #salesView .sheet-sales-name {display:flex;flex-wrap:nowrap;align-items:center;min-width:0;gap:4px;}
+ html body #salesView .sheet-sales-name-label {flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ html body #salesView .sheet-sales-badge {flex:0 0 32px;width:32px;white-space:nowrap;}
+ :root[data-theme="dark"] {--mobile-list-ink:#E8EBF1;}
+}
+@media screen and (max-width:600px) and (prefers-color-scheme:dark) {
+ :root:not([data-theme="light"]) {--mobile-list-ink:#E8EBF1;}
+}
+</style>
+<script id="aisel-v133-mobile-gallery-title">
+(function(){
+ const heading=document.querySelector('#galleryView > .gallery-head h2');
+ const original=heading.textContent,mobile=matchMedia('(max-width:600px)'),printing=matchMedia('print');
+ const sync=()=>{heading.textContent=mobile.matches&&!printing.matches?'작업지시서':original;};
+ mobile.addEventListener('change',sync);printing.addEventListener('change',sync);
+ window.addEventListener('beforeprint',()=>{heading.textContent=original;});
+ window.addEventListener('afterprint',sync);sync();
 })();
 </script>
