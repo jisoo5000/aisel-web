@@ -1,3 +1,4 @@
+<!-- v141: slightly wider yellow gaps, compact gray photo actions, balanced image spacing, closer owner login and factory left shift (2026-10-09) -->
 <!-- v140: mobile factory offset, wider contact editing and unified right-side photo actions; tighter sheet/login gaps (2026-10-09) -->
 <!-- v139: shared magnifier fields and exact product-name/code search (2026-10-09) -->
 <!-- v138: mobile row gaps, right-aligned contacts and drawing actions beside title (2026-10-09) -->
@@ -15060,3 +15061,18 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  sync();
 })();
 </script>
+
+<style id="aisel-v141-mobile-spacing-photo-actions">
+/* Screen-only follow-up: retain the original image content box and event handlers. */
+@media screen and (max-width:600px) {
+ html body #editorView .editor-mobile-head {margin-top:4px;}
+ html body #editorView #mobileMeetingSummary {margin-bottom:4px;}
+ html body #mobileHeaderNames #mobileFactoryName {transform:translateX(-12px);}
+ html body #editorView {padding-bottom:12px;}
+ html body #editorView #sheet > .photos > #ph1 {padding-top:48px;padding-bottom:8px;}
+ html body #editorView #sheet #ph1 > .photo-src > button {
+  min-width:36px;padding:0 4px;background:#6C727C;color:#FFFFFF;border-color:#6C727C;
+ }
+ html body #editorView #sheet #ph1 > .photo-src > button:disabled {color:#FFFFFF;}
+}
+</style>
