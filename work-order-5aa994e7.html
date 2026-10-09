@@ -1,3 +1,4 @@
+<!-- v140: mobile factory offset, wider contact editing and unified right-side photo actions; tighter sheet/login gaps (2026-10-09) -->
 <!-- v139: shared magnifier fields and exact product-name/code search (2026-10-09) -->
 <!-- v138: mobile row gaps, right-aligned contacts and drawing actions beside title (2026-10-09) -->
 <!-- v137: move existing owner login beneath the work-order area (2026-10-09) -->
@@ -11297,7 +11298,8 @@
     const record={input,home,view,label:id==='designer'?'디자이너':'공장'};
     view.addEventListener('click',()=>{
       if(!mobileLayout.matches||namePrintMedia.matches)return;
-      finishHeaderNameEdits_();view.hidden=true;view.after(input);input.classList.add('mobile-name-editor');input.focus();
+      finishHeaderNameEdits_();view.hidden=true;view.after(input);input.classList.add('mobile-name-editor');
+      headerNames.closest('.title-row').classList.add('mobile-name-editing');input.focus();
     });
     input.addEventListener('input',renderHeaderNames_);
     input.addEventListener('blur',()=>finishHeaderNameEdit_(record));
@@ -11307,7 +11309,8 @@
   function finishHeaderNameEdit_(record){
     if(!record.input.classList.contains('mobile-name-editor'))return;
     if(document.activeElement===record.input)record.input.blur();
-    record.input.classList.remove('mobile-name-editor');record.home.after(record.input);record.view.hidden=false;renderHeaderNames_();
+    record.input.classList.remove('mobile-name-editor');record.home.after(record.input);record.view.hidden=false;
+    headerNames.closest('.title-row').classList.remove('mobile-name-editing');renderHeaderNames_();
   }
   function finishHeaderNameEdits_(){contactLayouts.forEach(finishHeaderNameEdit_);}
   function renderHeaderNames_(){contactLayouts.forEach(record=>{record.view.textContent=record.input.value.trim()||record.label;});}
@@ -15003,3 +15006,57 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html body #editorView #sheet #ph1 > .photo-src {left:calc(12px + 3em + 8px);top:10px;bottom:auto;font-size:16px;}
 }
 </style>
+
+<style id="aisel-v140-mobile-photo-contact-refinement">
+@media screen and (max-width:600px) {
+ html body #mobileHeaderNames #mobileFactoryName {transform:translateX(-6px);}
+ html body #editorView #sheet > .title-row.mobile-name-editing {grid-template-columns:minmax(0,1fr) auto;}
+ html body #editorView #sheet > .title-row.mobile-name-editing #mobileHeaderNames {grid-column:1/-1;grid-row:2;width:100%;padding:4px 0;}
+ html body #editorView #sheet > .title-row.mobile-name-editing :is(.date-box,.title-spacer) {grid-row:3;}
+ html body #editorView #sheet #mobileHeaderNames input.mobile-name-editor,
+ html body #editorView #sheet #mobileHeaderNames #factory.mobile-name-editor {
+  box-sizing:border-box;flex:1 1 0;width:100%!important;min-width:120px;min-height:44px;
+  padding:8px 10px;border:1px solid var(--aisel-line,#DEDCD6);border-radius:4px;
+  background:var(--aisel-bg,#FFFFFF);color:var(--aisel-ink,#30343B);font-size:16px!important;line-height:24px;
+ }
+ html body #editorView #mobileMeetingSummary {margin-bottom:2px;}
+ html body #ownerViewBar {margin-top:2px;}
+ html body #editorView #sheet #ph1 > .photo-src {left:auto;right:12px;top:8px;bottom:auto;align-items:center;gap:6px;}
+ html body #editorView #sheet #ph1 > .photo-src > button {
+  display:inline-flex;position:static;align-items:center;justify-content:center;box-sizing:border-box;
+  min-width:44px;height:32px;min-height:32px;padding:0 8px;white-space:nowrap;
+  font:600 12px/16px var(--kfont);letter-spacing:0;
+  background:var(--aisel-bg,#FFFFFF);color:var(--aisel-ink,#30343B);
+  border:1px solid var(--aisel-line,#DEDCD6);border-radius:4px;box-shadow:none;
+ }
+ html body #editorView #sheet #ph1 > .photo-src > button:disabled {color:var(--aisel-muted,#6C727C);opacity:.5;cursor:default;}
+ html body #editorView #sheet #ph1 > .photo-src > button:focus-visible {outline:2px solid var(--form-focus,#CCD8E9);outline-offset:1px;}
+}
+</style>
+<script id="aisel-v140-mobile-photo-actions">
+(function(){
+ const photo=document.getElementById('ph1'),group=photo.querySelector('.photo-src');
+ const remove=photo.querySelector('.clr'),camera=document.getElementById('ph1CamBtn'),album=document.getElementById('ph1AlbumBtn');
+ const home=photo.querySelector('.tag');
+ const original={camera:camera.textContent,album:album.textContent,remove:remove.textContent,disabled:remove.disabled};
+ const mobile=matchMedia('(max-width:600px)'),printing=matchMedia('print');
+ let beforePrint=false;
+ function sync(){
+  const active=mobile.matches&&!printing.matches&&!beforePrint;
+  if(active){
+   if(remove.parentElement!==group)group.append(remove);
+   camera.textContent='카메라';album.textContent='사진';remove.textContent='삭제';
+   remove.disabled=!photo.classList.contains('filled');
+  }else{
+   if(remove.parentElement===group)home.after(remove);
+   camera.textContent=original.camera;album.textContent=original.album;remove.textContent=original.remove;remove.disabled=original.disabled;
+  }
+ }
+ // Keep the existing file pickers, photo-delete listener, and original image record.
+ mobile.addEventListener('change',sync);printing.addEventListener('change',sync);
+ window.addEventListener('beforeprint',()=>{beforePrint=true;sync();});
+ window.addEventListener('afterprint',()=>{beforePrint=false;sync();});
+ new MutationObserver(sync).observe(photo,{attributes:true,attributeFilter:['class']});
+ sync();
+})();
+</script>
