@@ -1,3 +1,4 @@
+<!-- v132: mobile cost widths, borderless retail editing and consistent form typography (2026-10-09) -->
 <!-- v131: first-screen cost summary and single sample-recovery dialog (2026-10-09) -->
 <!-- v130: compact mobile list controls, single-line ratings and unified search (2026-10-09) -->
 <!-- v129: mobile drawing/cost/fabric/color order, compact gap and spaced header contacts (2026-10-09) -->
@@ -14786,3 +14787,75 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 @media print {#mobileMeetingSummary,#mobileSampleRecoveryDialog {display:none!important;}}
 </style>
+
+<style id="aisel-v132-mobile-form-theme">
+.mobile-retail-unit {display:none;}
+@media screen and (max-width:600px) {
+ #editorView {--form-bg:#fff;--form-soft:#F3F6FA;--form-line:#CBD3DF;--form-text:#30343B;--form-muted:#6C727C;--form-action:#2F3B52;}
+ #editorView #sheet .sheet-section-title {font-size:16px!important;font-weight:600;line-height:1.4;color:var(--form-text);}
+ #sheet #costCell .lines-scroll {max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;}
+ /* Keep both price fields legible; narrow screens scroll only this table. */
+ #sheet #costCell .cost-table {width:100%;min-width:346px;}
+ #sheet #costCell .cost-col-name {width:16%;}
+ #sheet #costCell .cost-col-unit {width:44%;}
+ #sheet #costCell .cost-col-qty {width:16%;}
+ #sheet #costCell .cost-col-amount {width:18%;}
+ #sheet #costCell .cost-col-delete {width:6%;}
+ #sheet #costCell .cost-table :is(th,td) {border:1px solid var(--form-line);color:var(--form-text);}
+ #sheet #costCell .cost-table th {font-size:14px;font-weight:600;background:var(--form-soft);}
+ #sheet #costCell .cost-pair {grid-template-columns:minmax(0,1fr) 5px minmax(0,1fr);gap:1px;padding:0 1px;height:36px;}
+ #sheet #costCell .cost-pair input {height:32px;padding:2px 1px;font-weight:500;line-height:24px;color:var(--form-text);background:var(--form-bg);border-color:var(--form-line);border-radius:4px;}
+ #sheet #costCell .cost-pair input::placeholder {font-size:10px;font-weight:400;letter-spacing:0;color:var(--form-muted);}
+ #sheet #costCell .cost-pair input.nego-price-empty {background:var(--pink,#f7e3e0);border-color:var(--pink-line,#e3b9b3);}
+ #sheet #costCell .cost-pair-arrow {color:var(--form-muted);}
+ #sheet #costCell .cost-table .qty {padding:5px 1px;font-weight:500;}
+ #sheet #costCell .cost-table .amt {padding:5px 2px;font-weight:500;white-space:nowrap;overflow-wrap:normal;}
+ #sheet #costCell .fixed-row .k {font-size:14px;font-weight:600;color:var(--form-text);}
+ #sheet #costCell .fixed-loss-value {font-size:16px;font-weight:500;color:var(--form-text);}
+ #sheet #costCell :is(.total-row,.owner-retail-row) {box-sizing:border-box;min-height:54px;padding:10px 12px;align-items:center;border:1px solid var(--form-line);border-radius:4px;background:var(--form-soft);color:var(--form-text);}
+ #sheet #costCell :is(.total-row .k,.owner-retail-row > label) {font-size:14px;font-weight:600;letter-spacing:0;color:var(--form-text);}
+ #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {font-size:22px!important;font-weight:700;line-height:1.3;color:var(--form-text);font-variant-numeric:tabular-nums;}
+ #sheet #costCell #totalView.overcost {color:#D6266F;}
+ #sheet #costCell .owner-retail-row {grid-template-columns:auto minmax(0,1fr) auto;gap:0;}
+ #sheet #costCell .owner-retail-row #targetThreshold {height:32px;margin:0;padding:0 0 0 8px;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;box-shadow:none;text-align:right;cursor:text;}
+ #sheet #costCell .owner-retail-row #targetThreshold:focus {border-bottom-color:var(--form-action);outline:0;box-shadow:none;}
+ #sheet #costCell .mobile-retail-unit {display:block;}
+ #sheet #costCell .owner-retail-tools {display:none;}
+ #sheet #costCell #addLine,#sheet .sizespec .ss-addrow .add {box-sizing:border-box;min-height:40px;padding:8px 6px;border:1px solid var(--form-line);border-radius:4px;background:var(--form-soft);color:var(--form-action);font-size:14px;font-weight:600;line-height:1.35;}
+ #sheet #costCell #addLine {display:block;width:100%;}
+ #sheet .sizespec .ss-addrow {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+ #sheet .sizespec .ss-addrow .add {justify-content:center;min-width:0;}
+ #sheet .sizespec :is(th,td),#sheet .sizespec th.colhead {border:1px solid var(--form-line)!important;}
+ #sheet .sizespec :is(th,th.colhead,td.part-cell) {background:var(--form-soft);color:var(--form-text);}
+ #sheet .sizespec th {font-size:14px;font-weight:600;}
+ #sheet .sizespec :is(th input,td input) {box-sizing:border-box;min-width:0;color:var(--form-text);font-weight:400;}
+ #sheet .sizespec :is(th.colhead input,td.part-cell input) {font-weight:500;}
+ #sheet > .meta .designer .k {font-size:14px;font-weight:600;color:var(--form-text);}
+ #sheet :is(#fabricSupplierField,#fabricNameField,#blend),#editorView #mobileSampleRecords :is(.mobile-change-text,.sample-date-field),#sheet #materials {box-sizing:border-box;border:1px solid var(--form-line);border-radius:4px;background:var(--form-bg);color:var(--form-text);font-weight:400;}
+ #sheet :is(#fabricSupplierField,#fabricNameField,#blend) {min-height:40px;padding:8px;}
+ #editorView #sheet > .meta .designer > :is(#fabricSupplierField,#fabricNameField,#blend) {border:1px solid var(--form-line)!important;background:var(--form-bg)!important;color:var(--form-text)!important;-webkit-text-fill-color:var(--form-text)!important;}
+ #sheet :is(#fabricSupplierField,#fabricNameField,#blend)::placeholder,#sheet #materials::placeholder {color:var(--form-muted);}
+ #editorView #sheet > .meta .designer > :is(#fabricSupplierField,#fabricNameField,#blend)::placeholder {color:var(--form-muted);-webkit-text-fill-color:var(--form-muted);}
+ #editorView #mobileSampleRecords .mobile-change-text,#sheet #materials {padding:10px;line-height:1.6;}
+ #editorView #mobileSampleRecords .mobile-change-heading {font-size:16px;font-weight:600;color:var(--form-text);}
+ #editorView #mobileSampleRecords .sample-date-label {font-size:16px;font-weight:400;color:var(--form-text);}
+ #editorView #mobileSampleRecords .mobile-change-add {border:1px solid var(--form-line);background:var(--form-soft);color:var(--form-action);}
+ #editorView #productColors .color-heading h2 {font-size:16px;font-weight:600;line-height:1.4;color:var(--form-text);}
+ #editorView #productColors .copygen-variant-panel {background:var(--form-soft);border-color:var(--form-line);}
+ #sheet #costCell #addLine:focus-visible,#sheet .sizespec .add:focus-visible {outline:2px solid var(--form-action);outline-offset:2px;}
+}
+@media screen and (max-width:600px) and (prefers-color-scheme:dark) {
+ :root:not([data-theme="light"]) #editorView {--form-bg:#171A20;--form-soft:#1D222B;--form-line:#444A55;--form-text:#E8EBF1;--form-muted:#99A0AC;--form-action:#E8EBF1;}
+}
+@media screen and (max-width:600px) {
+ :root[data-theme="dark"] #editorView {--form-bg:#171A20;--form-soft:#1D222B;--form-line:#444A55;--form-text:#E8EBF1;--form-muted:#99A0AC;--form-action:#E8EBF1;}
+}
+</style>
+<script id="aisel-v132-mobile-retail-unit">
+(function(){
+ const row=document.getElementById('ownerRetailRow');
+ if(!row)return;
+ const unit=document.createElement('span');unit.className='mobile-retail-unit';unit.textContent='원';unit.setAttribute('aria-hidden','true');
+ document.getElementById('targetThreshold').after(unit);
+})();
+</script>
