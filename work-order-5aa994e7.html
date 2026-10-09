@@ -46,9 +46,11 @@
  const mobileWidth=600;
  const widthRule=/\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)/gi;
  function mobileQuery(query){
-  return query.replace(widthRule,(_,kind,value)=>{
-   const active=kind.toLowerCase()==='min'?mobileWidth>=Number(value):mobileWidth<=Number(value);
-   return active?'(min-width:0px)':'(max-width:0px)';
+  return query.replace(widthRule,(original,kind,value)=>{
+   // Cap layout breakpoints at 600px, retaining narrower split-view rules.
+   if(kind.toLowerCase()==='max'&&Number(value)>=mobileWidth)return '(min-width:0px)';
+   if(kind.toLowerCase()==='min'&&Number(value)>mobileWidth)return '(max-width:0px)';
+   return original;
   });
  }
  // Scoped to this app: native matchMedia is never replaced.
