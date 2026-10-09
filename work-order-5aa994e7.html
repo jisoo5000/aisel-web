@@ -1,3 +1,4 @@
+<!-- v135: softer mobile list action text, slightly shorter tabs and compact header spacing (2026-10-09) -->
 <!-- v134: mobile quote cues, change-record controls and inline sample recovery (2026-10-09) -->
 <!-- v133: matching mobile list titles/buttons and compact equal sales columns (2026-10-09) -->
 <!-- v132: mobile cost widths, borderless retail editing and consistent form typography (2026-10-09) -->
@@ -14900,4 +14901,24 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  html body #editorView #mobileSampleRecords .mobile-change-heading .sample-date-label {font-size:14px;}
 }
 @media print {#mobileMeetingSummary {display:none!important;}}
+</style>
+
+<style id="aisel-v135-mobile-whitespace">
+/* Screen-only spacing; preserve action dimensions, drawing size and print layout. */
+@media screen and (max-width:600px) {
+ html body #galleryView #galleryTrashBtn,
+ html body #salesView #sheetSalesRefresh {color:var(--mobile-action-muted,#6C727C);}
+ html body #galleryView #galleryTabs .gtab {height:42px;min-height:42px;}
+ html body #editorView .editor-mobile-head {margin-top:2px;padding-top:8px;padding-bottom:8px;row-gap:2px;}
+ html body #editorView .toolbar {padding-top:4px;padding-bottom:2px;}
+ html body #editorView #statusBar {padding-top:2px;padding-bottom:2px;}
+ html body #editorView #mobileMeetingSummary {padding-top:2px;padding-bottom:6px;margin-bottom:6px;}
+ html body #editorView #metaAccordion {display:none!important;}
+ html body #editorView #sheet > .title-row {padding-top:6px;padding-bottom:6px;row-gap:4px;}
+ html body #mobileHeaderNames .mobile-contact-name {padding-left:6px;padding-right:6px;white-space:normal;overflow-wrap:anywhere;}
+ :root[data-theme="dark"] {--mobile-action-muted:#99A0AC;}
+}
+@media screen and (max-width:600px) and (prefers-color-scheme:dark) {
+ :root:not([data-theme="light"]) {--mobile-action-muted:#99A0AC;}
+}
 </style>
