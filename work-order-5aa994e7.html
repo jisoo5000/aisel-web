@@ -1,3 +1,4 @@
+<!-- v162: retain the full server baseline across patch saves and recovery; coalesce updates behind one conflict choice (2026-10-10) -->
 <!-- v161: registration order, manual modification date, unified name input focus and English fiber blend (2026-10-10) -->
 <!-- v160: protect new input from late own saves and deferred remote updates; persist change-date edits (2026-10-10) -->
 <!-- v159: add approved scarf category for legacy Jiae workorders (2026-10-10) -->
@@ -7300,6 +7301,8 @@
   }
   function restoreDraft_(ctx){
     if(!currentDraft_(ctx)||!ctx.candidate)return;
+    if(document.querySelector('.draft-conflict-dialog'))return;
+    ctx.choicePaused=false;
     const record=ctx.candidate;
     if(loading&&!ctx.serverReady){
       clearTimeout(openWatchdog_);applyState(record.values);
@@ -7318,8 +7321,9 @@
       if(!currentDraft_(ctx)||loading)return;
       const now=collect();if(!sameValue_(current,now)){alert('작지 내용이 바뀌었습니다. 초안 복원을 다시 확인해 주세요.');return;}
       const merged=plan?plan.resolve(choices):{...now};if(!plan)for(const key of keys)if(!conflicts.includes(key)||choices[key]==='draft')merged[key]=record.values[key];
-      const previous=editorContentBaseline_;applyState(merged);editorContentBaseline_=previous;
-      ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),record.id])];ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;
+      const previous=editorContentBaseline_,savedServer=lastSavedState_;
+      applyState(merged);lastSavedState_=savedServer;editorContentBaseline_=previous;
+      ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),record.id,...(record.sourceIds||[])])];ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;
       captureDraft_();renderDraft_(ctx);saveSoon();
     };
     if(!conflicts.length){apply({});return;}
@@ -7335,7 +7339,16 @@
       label.append(select);selectors[key]=select;dialog.append(section);
     });
     const use=document.createElement('button');use.type='button';use.textContent='선택한 내용 복원';use.onclick=()=>{const choices=Object.fromEntries(Object.entries(selectors).map(([key,select])=>[key,select.value]));dialog.close();dialog.remove();apply(choices);};
-    const cancel=document.createElement('button');cancel.type='button';cancel.textContent='취소';cancel.onclick=()=>{dialog.close();dialog.remove();};dialog.append(use,cancel);dialog.addEventListener('cancel',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+    const cancel=document.createElement('button');cancel.type='button';cancel.textContent='취소';cancel.onclick=()=>{pauseDraftChoice_(ctx);dialog.close();dialog.remove();};dialog.append(use,cancel);dialog.addEventListener('cancel',()=>{pauseDraftChoice_(ctx);dialog.remove();},{once:true});document.body.append(dialog);dialog.showModal();
+  }
+  function pauseDraftChoice_(ctx){
+    if(!currentDraft_(ctx))return;
+    ctx.choicePaused=true;clearTimeout(saveT);saveT=null;
+    // Preserve the unresolved choice separately from any later typing in this session.
+    if(ctx.candidate?.id===ctx.id){
+      ctx.id=ctx.id+'|after-choice|'+Date.now()+'|'+Math.random().toString(36).slice(2);
+    }
+    rejectEditorSave_('변경된 내용을 먼저 확인해 주세요.');
   }
   function exportDraft_(ctx){
     if(!currentDraft_(ctx))return;
@@ -7420,10 +7433,23 @@
     if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
     if(codeConflictNow_()){updateCodeConflictUI_();return false;}
     if(draftContext?.remotePending){
+      if(document.querySelector('.draft-conflict-dialog'))return false;
       // Keep writing/IME intact. Reconcile after leaving the input, or through
       // the explicit Save handler which already settles composition and blur.
       if(isTypingNow()){const state=editorSaveState_();state.queued=true;renderEditorSaveState_(state);return false;}
-      const remote=draftContext.remotePending;draftContext.remotePending=null;draftContext.candidate=localDraftRecord_(draftContext);draftContext.candidates=[draftContext.candidate,...draftContext.candidates.filter(r=>r.id!==draftContext.id)];draftContext.liveConflict=true;draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);
+      const remote=draftContext.remotePending;
+      let candidate=localDraftRecord_(draftContext);
+      if(draftContext.liveConflict&&draftContext.candidate){
+        const original=draftContext.candidate;
+        if(!draftContext.dirty)candidate=original;
+        else{
+          const values={...original.values},base={...original.base};
+          for(const key of candidate.changed){values[key]=candidate.values[key];base[key]=candidate.base[key];}
+          candidate={...candidate,values,base,changed:[...new Set([...original.changed,...candidate.changed])],sourceIds:[...new Set([original.id,...(original.sourceIds||[])])]};
+          const combined=candidate;draftQueue_(draftContext,()=>draftTransaction_('readwrite',store=>store.put(combined))).catch(()=>{});
+        }
+      }
+      draftContext.remotePending=null;draftContext.candidate=candidate;draftContext.candidates=[candidate,...draftContext.candidates.filter(r=>r.id!==candidate.id)];draftContext.liveConflict=true;draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);
       rejectEditorSave_('동시 변경된 내용을 확인해 주세요.');if(mobileDraftMode_())restoreDraft_(draftContext);return false;
     }
     if(draftBlocksSave_(draftContext)||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_)){
@@ -7455,7 +7481,8 @@
     lastSentJSON=JSON.stringify(st);lastSentUpdatedAt_=st.updatedAt;
     if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);renderEditorSaveState_(state);return Promise.resolve(true);}
     const keys=Object.keys(patch);state.pending.set(id,{keys,revision});renderEditorSaveState_(state);
-    state.sentSnapshots.push({id,at:st.updatedAt,signature:serverSnapshotSignature_({...lastSavedState_,...patch})});
+    const writtenServerState={...lastSavedState_,...patch};
+    state.sentSnapshots.push({id,at:st.updatedAt,signature:serverSnapshotSignature_(writtenServerState)});
     while(state.sentSnapshots.length>16&&!state.pending.has(state.sentSnapshots[0].id))state.sentSnapshots.shift();
     let originalWritten=false;
     const creating=newOrderMode_&&!editorContentBaseline_;
@@ -7468,7 +7495,7 @@
     }).then(async()=>{
       originalWritten=true;
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
-      if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=st;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
+      if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=writtenServerState;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
         for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";
         refreshModifiedDateInput_();}
       if(isCurrentSaveState_(state)&&state.latest===id){
@@ -8286,9 +8313,9 @@
       const json = JSON.stringify(st);
       if(json === lastSentJSON && !isFirst) return; // 내가 방금 보낸 내용이 그대로 돌아온 것뿐이라 다시 그릴 필요 없음
       remoteStateSerial_++;
-      if(!isFirst&&currentDraft_(activeDraft_)&&activeDraft_.dirty){
+      if(!isFirst&&currentDraft_(activeDraft_)&&(activeDraft_.dirty||(activeDraft_.liveConflict&&activeDraft_.candidate&&(activeDraft_.choicePaused||document.querySelector('.draft-conflict-dialog'))))){
         activeDraft_.remotePending=st;
-        if(!isTypingNow()&&!document.querySelector('.draft-conflict-dialog'))saveSoon();
+        if(!activeDraft_.choicePaused&&!isTypingNow()&&!document.querySelector('.draft-conflict-dialog'))saveSoon();
         return;
       }
       if(isTypingNow() && (!isFirst||activeDraft_?.liveConflict)){
@@ -8305,11 +8332,13 @@
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
   document.addEventListener("focusout", ()=>{
     const pending=pendingRemoteState,ctx=activeDraft_;
+    if(currentDraft_(ctx)&&ctx.choicePaused)return;
     if(!pending&&!(currentDraft_(ctx)&&ctx.remotePending))return;
     if(pending)pendingRemoteState=null;
     const ref=woRef,code=currentCode,owner=draftOwner_();
     setTimeout(()=>{
       if(ref!==woRef||code!==currentCode||owner!==draftOwner_())return;
+      if(currentDraft_(activeDraft_)&&activeDraft_.choicePaused){if(pending&&!pendingRemoteState)pendingRemoteState=pending;return;}
       if(pending&&(pending.ref!==woRef||pending.code!==currentCode||pending.owner!==draftOwner_()))return;
       if(pending&&pending.serial!==remoteStateSerial_){
         if(currentDraft_(activeDraft_)&&activeDraft_.remotePending&&!isTypingNow())save();
@@ -11637,6 +11666,7 @@
   }
   function saveSoon(){
     clearTimeout(saveT); saveT = null;
+    if(currentDraft_(activeDraft_)&&activeDraft_.choicePaused){captureDraft_();return;}
     if(typeof markEditorSavePending_ === "function") markEditorSavePending_();
     if(isEditorComposing_()) return;
     saveT = setTimeout(()=>{saveT=null;save();}, 600);
