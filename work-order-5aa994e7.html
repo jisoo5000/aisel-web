@@ -1,3 +1,4 @@
+<!-- v157: mobile draft notice removed without blocking saves; cost commas and revised heading/table gaps (2026-10-10) -->
 <!-- v156: mobile cost fields centered, symmetric 4px unit-price spacing and equal 12px section gaps (2026-10-09) -->
 <!-- v155: mobile color panel shares the sheet outline; approved typography and warm-gray visual standards (2026-10-09) -->
 <!-- v154: mobile uniform warm-gray lines and equal photo actions; explicit sheet return-request metric labels (2026-10-09) -->
@@ -4516,6 +4517,25 @@
     const result=Number(text); return Number.isFinite(result)?result:null;
   };
   const clone = value => JSON.parse(JSON.stringify(value || {}));
+  const mobileCostMedia=root.workOrderLayoutMedia_?.('screen and (max-width:600px)');
+  function readInput(input){
+    if(input.dataset.costDisplay!==undefined&&input.value===input.dataset.costDisplay)return input.dataset.costRaw;
+    return mobileCostMedia?.matches&&input.dataset.costRaw!==undefined?input.value.replace(/,/g,''):input.value;
+  }
+  function displayInput(input,value){
+    const raw=String(value??''),plain=raw.replace(/,/g,'');
+    const shown=mobileCostMedia?.matches&&/^\d+(?:\.\d*)?$/.test(plain)?plain.replace(/^(\d+)(.*)$/,(_,integer,fraction)=>integer.replace(/\B(?=(\d{3})+(?!\d))/g,',')+fraction):raw;
+    input.dataset.costRaw=raw;input.dataset.costDisplay=shown;input.value=shown;
+  }
+  if(root.document){
+    const selector='#costCell .cost-pair input,#costLines .qty';
+    // Keep the browser's caret/selection intact. Format after editing rather
+    // than replacing the value during focus or each keystroke.
+    root.document.addEventListener('focusout',event=>{
+      const input=event.target;if(mobileCostMedia?.matches&&input.matches?.(selector))displayInput(input,readInput(input));
+    });
+    mobileCostMedia?.addEventListener('change',()=>root.document.querySelectorAll('#costLines .qty').forEach(input=>displayInput(input,readInput(input))));
+  }
   function evaluate(legacy, metadata, quantity, fixed=false){
     const m=metadata||{}, original=number(m.original), negotiated=number(m.negotiated);
     const status=['negotiated','no_discount'].includes(m.status)?m.status:'unrecorded';
@@ -4623,7 +4643,7 @@
       else{control.type='text';if(type==='number')control.inputMode='decimal';}
       control.dataset.negoField=key;control.value=options.get()?.[key]??'';control.setAttribute('aria-label',label);
       control.addEventListener('input',()=>{
-        const next=clone(options.get());next[key]=control.value;
+        const next=clone(options.get());next[key]=(key==='original'||key==='negotiated')?readInput(control):control.value;
         // Editing the visible pair is explicit input. Merely opening a legacy record never writes metadata.
         if(key==='negotiated'){
           if(number(control.value)!==null){
@@ -4652,7 +4672,10 @@
         ' · 절감 '+money(result.saving)+' · '+(who.source==='actual'?'실제 협상자: ':'작지 담당자 기본 대리값: ')+(who.name||'미기록')+
         (result.included?' · '+(m.includedIn||'포함 항목 미기록')+'에 포함, 중복 합산 제외':'')+
         ' · 생산수량과 별도 · VAT 별도 금액은 세금 가산 전';
-      for(const key of Object.keys(controls))if(document.activeElement!==controls[key])controls[key].value=key==='original'?(m.original??options.legacy()??''):(m[key]??'');
+      for(const key of Object.keys(controls))if(document.activeElement!==controls[key]){
+        const value=key==='original'?(m.original??options.legacy()??''):(m[key]??'');
+        if(key==='original'||key==='negotiated')displayInput(controls[key],value);else controls[key].value=value;
+      }
       // Visual cue only: zero is a entered price; blank negotiation still uses the initial quote.
       const needsQuote=options.fixed||mobileQuoteMedia?.matches?number(controls.original.value)!==null:number(options.quantity())>0;
       controls.negotiated.placeholder=mobileQuoteMedia?.matches?'네고 필요':'네고 가격';
@@ -4662,7 +4685,7 @@
     mobileQuoteMedia?.addEventListener('change',refresh);
     return {refresh,openDetails:()=>{refresh();dialog.showModal();},remove:()=>{mobileQuoteMedia?.removeEventListener('change',refresh);dialog.remove();editor.remove();}};
   }
-  const api={FIXED_LOSS,isFixedLossLine,number,evaluate,sameLines,readMaterialMap,resolveMaterials,captureMaterials,assessment,negotiator,attachEditor,clone};
+  const api={FIXED_LOSS,isFixedLossLine,number,evaluate,sameLines,readMaterialMap,resolveMaterials,captureMaterials,assessment,negotiator,attachEditor,clone,readInput,displayInput};
   if(typeof module==='object'&&module.exports)module.exports=api;
   root.WorkOrderNegotiation=api;
 })(typeof window==='object'?window:globalThis);
@@ -5479,7 +5502,7 @@
     let total=0;linesWrap.querySelectorAll(".line").forEach(r=>total+=Number(r.dataset.amt||0));
     return total+(fixedCost_("gongim").amount||0)+(fixedCost_("siyage").amount||0)+negotiation_.FIXED_LOSS;
   }
-  function readCostRow_(r){const value={...r.legacyCostRecord_,nm:r.querySelector(".nm").value,unit:r.querySelector(".unit").value,qty:r.querySelector(".qty").value};if(r.negotiation_)value.negotiation=negotiation_.clone(r.negotiation_);return value;}
+  function readCostRow_(r){const value={...r.legacyCostRecord_,nm:r.querySelector(".nm").value,unit:r.querySelector(".unit").value,qty:negotiation_.readInput(r.querySelector(".qty"))};if(r.negotiation_)value.negotiation=negotiation_.clone(r.negotiation_);return value;}
   function materialMap_(){return $("#costNegotiationLinesData").value;}
   function materialId_(){return "cost-"+(window.crypto?.randomUUID?.()||Date.now().toString(36)+"-"+Math.random().toString(36).slice(2));}
   function captureMaterialMap_(){
@@ -5519,6 +5542,7 @@
       <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면 1" aria-label="완제품 1장당 소요량"></td>
       <td><span class="amt">0</span></td><td class="noprint"><button class="del" title="삭제">✕</button></td>`;
     row.querySelector(".nm").value=name;row.querySelector(".unit").value=unit;row.querySelector(".qty").value=qty;
+    negotiation_.displayInput(row.querySelector('.qty'),qty);
     row.negotiationEditor_=negotiation_.attachEditor(row.querySelector(".nego-material"),{
       title:()=>row.querySelector(".nm").value||"자재",legacy:()=>row.querySelector(".unit").value,quantity:()=>row.querySelector(".qty").value,
       worker:()=>$("#designer").value,get:()=>row.negotiation_,set:value=>{row.negotiation_=value;captureMaterialMap_();},change:()=>{lineAmt(row);calc();autoPrice_();save();}
@@ -7038,6 +7062,8 @@
     });
   }
   function currentDraft_(ctx){return !!ctx&&activeDraft_===ctx&&ctx.code===currentCode&&ctx.owner===draftOwner_();}
+  function mobileDraftMode_(){return workOrderLayoutMedia_('screen and (max-width:600px)').matches;}
+  function draftBlocksSave_(ctx){return !!ctx?.candidate&&(!mobileDraftMode_()||ctx.liveConflict);}
   function draftPanel_(){
     let box=document.getElementById('localDraftStatus');if(box)return box;
     box=document.createElement('div');box.id='localDraftStatus';box.className='noprint';box.hidden=true;
@@ -7056,6 +7082,7 @@
   function renderDraft_(ctx=activeDraft_){
     if(ctx&&ctx!==activeDraft_)return;
     const box=draftPanel_();if(!currentDraft_(ctx)){box.hidden=true;return;}
+    if(mobileDraftMode_()){box.hidden=true;return;}
     let text='';
     if(ctx.candidate)text='최근 기기 초안이 있습니다';
     else if(ctx.dirty&&ctx.local==='failed')text='기기 저장 실패 · 초안을 내보내 주세요';
@@ -7081,6 +7108,11 @@
       }).catch(()=>{ctx.loaded=true;ctx.local='failed';renderDraft_(ctx);});
     }
     if(ctx.dirty&&ctx.record&&!ctx.candidate){ctx.candidate=ctx.record;ctx.candidates=[ctx.record,...ctx.candidates.filter(r=>r.id!==ctx.record.id)];}
+    if(mobileDraftMode_()&&ctx.dirty&&ctx.record){
+      const archived={...ctx.record,id:ctx.id+'|archive|'+Date.now()+'|'+Math.random().toString(36).slice(2)};
+      draftQueue_(ctx,()=>draftTransaction_('readwrite',store=>store.put(archived))).catch(()=>{});
+      ctx.candidates=[archived,...ctx.candidates.filter(r=>r.id!==ctx.id)];ctx.candidate=archived;ctx.dirty=false;ctx.data=null;ctx.record=null;ctx.liveConflict=false;
+    }
     ctx.serverReady=false;activeDraft_=ctx;renderDraft_(ctx);return ctx;
   }
   function localDraftRecord_(ctx){
@@ -7146,7 +7178,7 @@
       const now=collect();if(!sameValue_(current,now)){alert('작지 내용이 바뀌었습니다. 초안 복원을 다시 확인해 주세요.');return;}
       const merged={...now};for(const key of keys)if(!conflicts.includes(key)||choices[key]==='draft')merged[key]=record.values[key];
       const previous=editorContentBaseline_;applyState(merged);editorContentBaseline_=previous;
-      ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),...ctx.candidates.map(r=>r.id)])];ctx.candidate=null;ctx.candidates=[];
+      ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),record.id])];ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;
       captureDraft_();renderDraft_(ctx);saveSoon();
     };
     if(!conflicts.length){apply({});return;}
@@ -7193,12 +7225,12 @@
     const button=$("#saveBtn");if(!button || codeConflictNow_())return;
     let phase="idle",label="저장";
     if(state.queued || state.result==="pending" || (state.result!==false && (state.pending.size || state.manual))){phase="saving";label="저장 중…";}
-    else if(state.result===false){phase="error";label="저장 실패 · 재시도";}
+    else if(state.result===false){phase="error";label=state.blockReason?"저장 안됨":"저장 실패 · 재시도";}
     else if(state.confirmed){phase=state.sheetError?"sheet-error":"saved";label=state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
     button.dataset.saveState=phase;button.textContent=label;button.disabled=state.manual;
     button.style.opacity="1";
     renderDraft_();
-    button.title=state.sheetError?"앱 저장 완료 · 구글시트 전송 실패. 눌러 다시 전송합니다.":phase==="error"?"작업지시서 저장에 실패했습니다. 눌러 다시 저장합니다.":"";
+    button.title=state.blockReason|| (state.sheetError?"앱 저장 완료 · 구글시트 전송 실패. 눌러 다시 전송합니다.":phase==="error"?"작업지시서 저장에 실패했습니다. 눌러 다시 저장합니다.":"");
   }
   function resetEditorSaveFeedback_(confirmed){
     editorSaveFeedback_=null;const state=editorSaveState_();state.confirmed=!!confirmed;
@@ -7213,6 +7245,7 @@
   }
   const pendingSaveWrites_ = new Set();
   let initialCreationWrite_=null,initialCreationRef_=null;
+  function rejectEditorSave_(reason){const state=editorSaveState_();state.queued=false;state.result=false;state.confirmed=false;state.blockReason=reason;renderEditorSaveState_(state);return false;}
   function save(){
     if(loading || !woRef || statusChanging_)return false;
     const draftContext=captureDraft_();
@@ -7221,13 +7254,14 @@
     if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
     if(codeConflictNow_()){updateCodeConflictUI_();return false;}
     if(draftContext?.remotePending){
-      const remote=draftContext.remotePending;draftContext.remotePending=null;draftContext.candidate=localDraftRecord_(draftContext);draftContext.candidates=[draftContext.candidate,...draftContext.candidates.filter(r=>r.id!==draftContext.id)];draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);return false;
+      const remote=draftContext.remotePending;draftContext.remotePending=null;draftContext.candidate=localDraftRecord_(draftContext);draftContext.candidates=[draftContext.candidate,...draftContext.candidates.filter(r=>r.id!==draftContext.id)];draftContext.liveConflict=true;draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);
+      rejectEditorSave_('동시 변경된 내용을 확인해 주세요.');if(mobileDraftMode_())restoreDraft_(draftContext);return false;
     }
-    if(draftContext?.candidate||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_)){renderDraft_(draftContext);return false;}
+    if(draftBlocksSave_(draftContext)||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_))return rejectEditorSave_(draftContext?.awaitingServer?'서버 연결 확인 후 다시 저장해 주세요.':draftContext?.serverMissing?'원본 작업지시서를 확인해 주세요.':'변경된 내용을 먼저 확인해 주세요.');
     const targetRef=woRef,targetCode=currentCode,st=collect();
     if(woRef!==targetRef || currentCode!==targetCode)return false;
     const state=editorSaveState_(),id=++state.serial,revision=state.revision;
-    state.latest=id;state.queued=false;state.result="pending";
+    state.latest=id;state.queued=false;state.result="pending";state.blockReason='';
     if(newOrderMode_ && !autoCreatedCode_)autoCreatedCode_=targetCode;
     // Compare with the normalized screen after loading, so defaults and read-only viewing
     // cannot turn old workorders into newly modified records.
@@ -7250,7 +7284,7 @@
     let originalWritten=false;
     const creating=newOrderMode_&&!editorContentBaseline_;
     const writePromise=Promise.resolve().then(async()=>{
-      if(draftContext){if(!draftContext.loaded)await draftContext.ready;if(draftContext.candidate||draftContext.awaitingServer||draftContext.owner!==draftOwner_())throw new Error('초안과 계정을 먼저 확인해 주세요.');}
+      if(draftContext){if(!draftContext.loaded)await draftContext.ready;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
       if(creating){
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
@@ -7298,7 +7332,7 @@
       if(!isCurrentSaveState_(state))return;
       clearTimeout(saveT);saveT=null;
       originalSaved=await save()===true;
-      if(!originalSaved || !isCurrentSaveState_(state))return;
+      if(!originalSaved || !isCurrentSaveState_(state)){if(isCurrentSaveState_(state)&&state.result!=='pending'&&!state.queued)rejectEditorSave_(state.blockReason||'저장 조건을 확인한 뒤 다시 저장해 주세요.');return;}
       // External transfers start only after this record's original write succeeded.
       if(window.saveFabricMaster_)Promise.resolve(window.saveFabricMaster_({
         supplier:$("#fabricSupplier").value,name:$("#fabricName").value,price:$("#fabricPrice").value,
@@ -8039,7 +8073,7 @@
         const ctx=activeDraft_;
         if(currentDraft_(ctx)){
           ctx.serverReady=true;ctx.serverMissing=!st;
-          if(ctx.awaitingServer){captureDraft_();ctx.awaitingServer=false;ctx.candidate=ctx.record;ctx.candidates=[ctx.record,...ctx.candidates.filter(r=>r.id!==ctx.record.id)].filter(Boolean);ctx.dirty=false;ctx.data=null;}
+          if(ctx.awaitingServer){captureDraft_();ctx.awaitingServer=false;ctx.candidate=ctx.record;ctx.liveConflict=true;ctx.candidates=[ctx.record,...ctx.candidates.filter(r=>r.id!==ctx.record.id)].filter(Boolean);ctx.dirty=false;ctx.data=null;}
         }
         clearTimeout(openWatchdog_);
         resetEditorSaveFeedback_(!!st);
@@ -8075,7 +8109,7 @@
         return;
       }
       queueLegacySampleStatuses_({[code]:st});
-      applyState(st);renderDraft_();
+      applyState(st);renderDraft_();if(mobileDraftMode_()&&activeDraft_?.liveConflict&&activeDraft_.candidate)restoreDraft_(activeDraft_);
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
       if(isFirst) syncIndexFromFull_(code, st);
     };
@@ -15851,5 +15885,13 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   box-sizing:border-box;height:32px;margin:0;padding:2px 1px;line-height:24px;text-align:center;
  }
  html:root body #editorView #sheet #costCell .cost-pair-arrow {text-align:center;align-self:center;}
+}
+</style>
+
+<style id="aisel-v157-mobile-cost-gaps">
+@media screen and (max-width:600px) {
+ html:root body #editorView #localDraftStatus {display:none!important;}
+ html:root body #editorView #sheet #costCell > .sec-title {margin-bottom:12px!important;}
+ html:root body #editorView #sheet #costCell .cost-table {margin-bottom:8px;}
 }
 </style>
