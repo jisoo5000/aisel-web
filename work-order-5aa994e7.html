@@ -1,3 +1,4 @@
+<!-- v155: mobile color panel shares the sheet outline; approved typography and warm-gray visual standards (2026-10-09) -->
 <!-- v154: mobile uniform warm-gray lines and equal photo actions; explicit sheet return-request metric labels (2026-10-09) -->
 <!-- v153: durable device drafts and coalesced sheet synchronization (2026-10-09) -->
 <!-- v152: iPad mobile composition in both orientations; desktop dimensions and print preserved (2026-10-09) -->
@@ -15732,5 +15733,101 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   font-size:12px;font-weight:500;line-height:1.2;white-space:nowrap;
  }
  html body #salesView .sheet-sales-head > span:last-child {white-space:normal;line-height:1.2;}
+}
+</style>
+
+<style id="aisel-v155-mobile-visual-standards">
+/* Mobile screen contract only. iPad reuses this composition; print and desktop
+   keep their existing styles, DOM, field values and event handlers. */
+@media screen and (max-width:600px) {
+ html:root body #editorView #sheet {border:1px solid var(--aisel-line);box-shadow:none;}
+ html:root body #editorView #sheet :is(.title-row,#ph1,.photos-right,.meta > .cell,#mobileSampleRecords) {
+  border-bottom:1px solid var(--aisel-line);
+ }
+ html:root body #editorView #sheet #productColors {
+  border:0;border-bottom:1px solid var(--aisel-line);
+  border-radius:0;box-shadow:none;background:var(--aisel-bg);
+ }
+ html:root body #editorView #sheet #productColors > .copygen-card {
+  border:0;border-radius:0;box-shadow:none;background:transparent;
+ }
+ html:root body #editorView #sheet > .detail2,
+ html:root body #editorView #sheet > .detail2 > .sizespec {border-top:0;}
+ html:root body #editorView #sheet > .detail2 > .cell.mat {
+  border-top:0;border-bottom:1px solid var(--aisel-line);
+ }
+ html:root body #editorView #mobileSampleRecords .mobile-change-card + .mobile-change-card {
+  border-top:1px solid var(--aisel-line);
+ }
+ html:root body #editorView :is(.editor-mobile-head,.toolbar,#statusBar,#mobileMeetingSummary) {
+  border-color:var(--aisel-line);border-width:1px;
+ }
+ html:root body #editorView :is(#fabricSupplierField,#fabricNameField,#blend,#materials,.mobile-change-text,.sample-date-field) {
+  border-color:var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);
+ }
+ html:root body #editorView #sheet :is(.cost-table,.sizespec table,.cost-table th,.cost-table td,.sizespec th,.sizespec td) {
+  border:1px solid var(--aisel-line)!important;
+ }
+ html:root body #editorView #sheet :is(.cost-table th,.sizespec th,.sizespec td.part-cell,.total-row,.owner-retail-row) {
+  background:var(--aisel-soft);color:var(--aisel-ink);
+ }
+ html:root body #editorView :is(#mobileProductName,#sheet h1,#sheet .sheet-section-title,#productColors .color-heading h2),
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading > span:first-child,
+ html:root body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {
+  font-size:16px;font-weight:600;line-height:1.4;letter-spacing:0;color:var(--aisel-ink);
+ }
+ html:root body #appBrandHeader .app-page-title,
+ html:root body :is(#galleryView,#salesView) .gallery-head h2 {
+  font-size:16px;font-weight:600;line-height:1.4;color:var(--aisel-ink);
+ }
+ html:root body #editorView :is(#materials,.mobile-change-text) {
+  font-size:16px;font-weight:400;line-height:1.6;
+ }
+ html:root body #editorView :is(#fabricSupplierField,#fabricNameField,#blend),
+ html:root body #editorView #sheet :is(.cost-pair input,.sizespec th input,.sizespec td input) {
+  font-size:16px!important;font-weight:400;line-height:1.5;
+ }
+ html:root body #editorView #sheet :is(.designer .k,.cost-table th,.sizespec th,.fixed-row .k,.total-row .k,.owner-retail-row > label) {
+  font-size:14px;font-weight:600;line-height:1.4;color:var(--aisel-ink);
+ }
+ html:root body #editorView :is(.copygen-sub,.ref-link-row > label) {
+  font-size:14px;font-weight:400;line-height:1.5;color:var(--aisel-ink);
+ }
+ html:root body #editorView :is(#mobileProductCode,.date-row,.date-row input),
+ html:root body #editorView #mobileSampleRecoveryDate:not(.overdue),
+ html:root body #mobileHeaderNames .mobile-contact-name::before,
+ html:root body #editorView #sheet .unit-note {
+  font-size:12px;font-weight:400;line-height:1.5;color:var(--aisel-muted);
+ }
+ html:root body #editorView #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {
+  font-size:22px!important;font-weight:700;line-height:1.3;color:var(--aisel-ink);
+ }
+ html:root body #editorView #sheet #costCell #totalView.overcost {color:#D6266F;}
+ html:root body #editorView :is(.toolbar .btn,#statusBar .status-btn,#sampleRecoverySeg button),
+ html:root body #mainBar .maintab {
+  font-size:12px;font-weight:500;line-height:1.4;
+ }
+ html:root body #editorView :is(#statusBar .status-btn.active,#sampleRecoverySeg button.active),
+ html:root body #mainBar .maintab.active {font-weight:600;}
+ html:root body :is(#galleryView,#salesView) :is(.gtab,#galleryTrashBtn,#galleryExportSheetBtn,.sheet-sales-refresh) {
+  font-size:12px!important;font-weight:500;line-height:1.4;
+ }
+ html:root body :is(#galleryView,#salesView) .gtab.active {font-weight:600;}
+ html:root body #editorView .editor-mobile-head #refPanel :is(.ref-short-link,.ref-icon-btn,#refAddBtn),
+ html:root body #editorView #sheet #ph1 > .photo-src > button,
+ html:root body #editorView #mobileSampleRecords :is(.mobile-change-delete,.mobile-change-add) {
+  display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
+  border-color:var(--aisel-line);border-width:1px;border-radius:4px;
+  background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;
+ }
+ html:root body #editorView .editor-mobile-head #refPanel .ref-short-link,
+ html:root body #editorView #sheet #ph1 > .photo-src > button {
+  font-size:12px;font-weight:500;line-height:1.4;
+ }
+ html:root body #editorView #printBtn {font-size:12px;font-weight:500!important;line-height:1.4;}
+ html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button {font-size:12px;font-weight:500;line-height:1.4;}
+ html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button.active {font-weight:600;}
+ html:root body #editorView #sheet .sizespec > .unit-note {font-size:12px;font-weight:400;line-height:1.5;}
+ html:root body #editorView :is(.ref-action-icon,.mobile-change-delete .ref-action-icon) {stroke-width:1.8;}
 }
 </style>
