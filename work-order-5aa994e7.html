@@ -1,3 +1,4 @@
+<!-- v153: durable device drafts and coalesced sheet synchronization (2026-10-09) -->
 <!-- v152: iPad mobile composition in both orientations; desktop dimensions and print preserved (2026-10-09) -->
 <!-- v151: mobile factory recovery cue in pale burgundy and sample aligned with the sheet content start (2026-10-09) -->
 <!-- v150: desktop/tablet sheet colors match mobile palette without changing document dimensions (2026-10-09) -->
@@ -4682,7 +4683,8 @@
   };
   firebase.initializeApp(firebaseConfig);
 
-  /* ================= 로그인 게이트 (2026-08-13 추가, 13-4) =================
+  /* ================= 로그인 게이트 (2026-08-13 추가, 13-4) ==========</style>
+
      지금은 주소를 아는 사람은 누구나 앱을 열 수 있습니다.
      아래 두 줄만 고치면 구글 로그인을 요구하고 허용 명단에 있는 사람만 들어옵니다.
 
@@ -6990,6 +6992,190 @@
   let priceSource_ = "";
   let priceException_ = null;
   var pricingRulesReady_ = true;
+  // v153: local recovery is independent of Firebase's in-memory pending writes.
+  const draftSession_ = (window.crypto?.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).slice(2));
+  const draftContexts_ = new Map();
+  let activeDraft_ = null, draftDatabase_ = null, draftOpen_ = null;
+  const draftIgnored_ = new Set(['updatedAt','createdAt','myy','mmm','mdd']);
+  function draftOwner_(){
+    try{
+      const primary=firebase.app().auth().currentUser;
+      const owner=(firebase.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');
+      return (primary?.uid||'local-browser')+':'+(owner?.uid||'designer');
+    }catch(_){return 'local-browser:designer';}
+  }
+  function draftSnapshot_(value){
+    const result=JSON.parse(JSON.stringify(value||{}));
+    if(document.getElementById('ownerRetailRow')?.hidden!==false){
+      for(const key of ['targetThreshold','priceConfirmed','priceSource','priceException'])delete result[key];
+    }
+    return result;
+  }
+  function openDraftDatabase_(){
+    if(draftDatabase_)return Promise.resolve(draftDatabase_);
+    if(draftOpen_)return draftOpen_;
+    draftOpen_=new Promise((resolve,reject)=>{
+      if(!window.indexedDB){reject(new Error('기기 저장을 사용할 수 없습니다'));return;}
+      const timer=setTimeout(()=>reject(new Error('기기 저장을 확인하지 못했습니다')),2500);
+      const req=indexedDB.open('aisel-workorder-drafts',1);
+      req.onupgradeneeded=()=>{const store=req.result.createObjectStore('drafts',{keyPath:'id'});store.createIndex('group','group');};
+      req.onerror=()=>{clearTimeout(timer);reject(req.error||new Error('기기 저장 실패'));};
+      req.onsuccess=()=>{clearTimeout(timer);draftDatabase_=req.result;draftDatabase_.onversionchange=()=>{draftDatabase_.close();draftDatabase_=null;draftOpen_=null;};resolve(draftDatabase_);};
+    }).catch(error=>{draftOpen_=null;throw error;});
+    return draftOpen_;
+  }
+  async function draftTransaction_(mode,operation){
+    const db=await openDraftDatabase_();
+    return new Promise((resolve,reject)=>{
+      let result;
+      const tx=db.transaction('drafts',mode),store=tx.objectStore('drafts');
+      const timer=setTimeout(()=>{try{tx.abort();}catch(_){}reject(new Error('기기 저장을 확인하지 못했습니다'));},4000);
+      tx.oncomplete=()=>{clearTimeout(timer);resolve(result);};tx.onerror=tx.onabort=()=>{clearTimeout(timer);reject(tx.error||new Error('기기 저장 실패'));};
+      try{const req=operation(store);if(req)req.onsuccess=()=>{result=req.result;};}catch(error){try{tx.abort();}catch(_){}reject(error);}
+    });
+  }
+  function currentDraft_(ctx){return !!ctx&&activeDraft_===ctx&&ctx.code===currentCode&&ctx.owner===draftOwner_();}
+  function draftPanel_(){
+    let box=document.getElementById('localDraftStatus');if(box)return box;
+    box=document.createElement('div');box.id='localDraftStatus';box.className='noprint';box.hidden=true;
+    const note=document.createElement('span');note.className='local-draft-note';note.setAttribute('role','status');note.setAttribute('aria-live','polite');box.append(note);
+    for(const [action,label] of [['restore','초안 복원'],['export','초안 내보내기'],['discard','초안 버리기']]){
+      const button=document.createElement('button');button.type='button';button.dataset.draftAction=action;button.textContent=label;box.append(button);
+    }
+    document.querySelector('#editorView .toolbar').after(box);
+    box.addEventListener('click',event=>{const action=event.target.closest('[data-draft-action]')?.dataset.draftAction;if(!action)return;const ctx=activeDraft_;if(!currentDraft_(ctx))return;
+      if(action==='export')exportDraft_(ctx);
+      else if(action==='restore')restoreDraft_(ctx);
+      else if(action==='discard'&&ctx.candidate&&confirm('보관된 기기 초안을 버릴까요? 서버에 저장된 작지는 그대로 유지됩니다.'))discardDraftCandidates_(ctx);
+    });return box;
+  }
+  let lastLocalDraftSig_=null;
+  function renderDraft_(ctx=activeDraft_){
+    if(ctx&&ctx!==activeDraft_)return;
+    const box=draftPanel_();if(!currentDraft_(ctx)){box.hidden=true;return;}
+    let text='';
+    if(ctx.candidate)text='최근 기기 초안이 있습니다';
+    else if(ctx.dirty&&ctx.local==='failed')text='기기 저장 실패 · 초안을 내보내 주세요';
+    else if(ctx.dirty&&(ctx.delayed||ctx.awaitingServer||navigator.onLine===false||editorSaveFeedback_?.result===false)){
+      text=ctx.local==='saved'?'기기에 저장됨 · 서버 저장 대기':'기기에 저장 중…';
+    }
+    const sig=JSON.stringify([ctx.group,text,!!ctx.candidate,ctx.local]);
+    if(sig===lastLocalDraftSig_)return;lastLocalDraftSig_=sig;
+    box.hidden=!text;box.dataset.draftState=ctx.candidate?'recovery':ctx.local;
+    const note=box.querySelector('.local-draft-note');if(note.textContent!==text)note.textContent=text;
+    for(const button of box.querySelectorAll('button'))button.hidden=button.dataset.draftAction==='restore'||button.dataset.draftAction==='discard'?!ctx.candidate:!ctx.candidate&&ctx.local!=='failed';
+  }
+  function draftQueue_(ctx,task){
+    ctx.chain=(ctx.chain||Promise.resolve()).catch(()=>{}).then(task);return ctx.chain;
+  }
+  function beginDraft_(code){
+    const owner=draftOwner_(),group=owner+'|'+code;
+    let ctx=draftContexts_.get(group);
+    if(!ctx){ctx={code,owner,group,id:group+'|'+draftSession_,revision:0,dirty:false,local:'idle',candidate:null,candidates:[],base:null,data:null,record:null};draftContexts_.set(group,ctx);
+      ctx.ready=draftTransaction_('readonly',store=>store.index('group').getAll(group)).then(records=>{
+        ctx.candidates=(records||[]).filter(r=>r.id!==ctx.id&&r.schema===1).sort((a,b)=>b.savedAt-a.savedAt);
+        ctx.loaded=true;ctx.candidate=ctx.candidates[0]||null;renderDraft_(ctx);
+      }).catch(()=>{ctx.loaded=true;ctx.local='failed';renderDraft_(ctx);});
+    }
+    if(ctx.dirty&&ctx.record&&!ctx.candidate){ctx.candidate=ctx.record;ctx.candidates=[ctx.record,...ctx.candidates.filter(r=>r.id!==ctx.record.id)];}
+    ctx.serverReady=false;activeDraft_=ctx;renderDraft_(ctx);return ctx;
+  }
+  function localDraftRecord_(ctx){
+    const data=draftSnapshot_(ctx.data),base=ctx.base===null?null:draftSnapshot_(ctx.base);
+    const changed=Object.keys(buildPatch_(base,data)).filter(key=>!draftIgnored_.has(key));
+    const previous={};for(const key of changed)previous[key]=base?.[key]??null;
+    return {schema:1,id:ctx.id,group:ctx.group,code:ctx.code,owner:ctx.owner,revision:ctx.revision,savedAt:Date.now(),newRecord:base===null,changed,base:previous,values:data};
+  }
+  function persistDraft_(ctx){
+    if(!ctx.dirty||!ctx.data)return Promise.resolve();
+    const record=localDraftRecord_(ctx);ctx.record=record;ctx.local='pending';renderDraft_(ctx);
+    return draftQueue_(ctx,async()=>{
+      await ctx.ready;
+      try{
+        await draftTransaction_('readwrite',store=>store.put(record));
+        if(ctx.dirty&&ctx.revision===record.revision){ctx.local='saved';renderDraft_(ctx);}
+      }catch(_){if(ctx.dirty&&ctx.revision===record.revision){ctx.local='failed';renderDraft_(ctx);}}
+    });
+  }
+  function captureDraft_(){
+    if(loading||!woRef||!currentCode||currentCode===justDeletedCode_)return null;
+    const ctx=currentDraft_(activeDraft_)?activeDraft_:beginDraft_(currentCode),data=collect();
+    const base=ctx.dirty?ctx.base:editorContentBaseline_;
+    const changed=Object.keys(buildPatch_(base,draftSnapshot_(data))).filter(key=>!draftIgnored_.has(key));
+    if(!changed.length&&!ctx.dirty)return ctx;
+    if(ctx.data){const a=draftSnapshot_(ctx.data),b=draftSnapshot_(data);for(const key of draftIgnored_){delete a[key];delete b[key];}if(sameValue_(a,b))return ctx;}
+    if(!ctx.dirty){ctx.base=base===null?null:JSON.parse(JSON.stringify(base));ctx.delayed=false;clearTimeout(ctx.pendingTimer);ctx.pendingTimer=setTimeout(()=>{if(ctx.dirty){ctx.delayed=true;renderDraft_(ctx);}},3000);}
+    ctx.data=JSON.parse(JSON.stringify(data));ctx.dirty=true;ctx.revision++;
+    persistDraft_(ctx);return ctx;
+  }
+  function acknowledgeDraft_(ctx,sent){
+    if(!ctx||!ctx.dirty||ctx.owner!==draftOwner_())return;
+    const difference=Object.keys(buildPatch_(draftSnapshot_(sent),draftSnapshot_(ctx.data))).filter(key=>!draftIgnored_.has(key));
+    if(difference.length){ctx.base=JSON.parse(JSON.stringify(sent));ctx.revision++;persistDraft_(ctx);return;}
+    if(ctx.candidate?.id===ctx.id){ctx.candidate=null;ctx.candidates=ctx.candidates.filter(r=>r.id!==ctx.id);}
+    const revision=ctx.revision,restored=ctx.restoredIds||[];ctx.dirty=false;ctx.data=null;ctx.record=null;ctx.local='idle';ctx.restoredIds=[];ctx.delayed=false;clearTimeout(ctx.pendingTimer);renderDraft_(ctx);
+    draftQueue_(ctx,async()=>{if(ctx.revision!==revision||ctx.dirty)return;await draftTransaction_('readwrite',store=>{store.delete(ctx.id);for(const id of restored)store.delete(id);});}).catch(()=>{});
+  }
+  function draftValueText_(value){
+    if(value===null||value===undefined||value==='')return '비어 있음';
+    if(typeof value==='string')return value.startsWith('data:image/')?'사진':value.slice(0,500);
+    if(Array.isArray(value))return value.map(draftValueText_).join(' / ').slice(0,500);
+    if(typeof value==='object')return Object.values(value).map(draftValueText_).join(' · ').slice(0,500);
+    return String(value);
+  }
+  function restoreDraft_(ctx){
+    if(!currentDraft_(ctx)||!ctx.candidate)return;
+    const record=ctx.candidate;
+    if(loading&&!ctx.serverReady){
+      clearTimeout(openWatchdog_);applyState(record.values);
+      editorContentBaseline_=record.newRecord?null:{...record.values,...record.base};
+      ctx.base=editorContentBaseline_;ctx.dirty=false;ctx.data=null;ctx.awaitingServer=true;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),...ctx.candidates.map(r=>r.id)])];ctx.candidate=null;ctx.candidates=[];loading=false;
+      captureDraft_();renderDraft_(ctx);return;
+    }
+    if(loading)return;
+    const current=collect(),baseline=editorContentBaseline_;
+    if(ctx.serverMissing&&!record.newRecord){alert('원본 작지가 없어 복원할 수 없습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
+    if(record.newRecord&&baseline){alert('같은 품번의 작지가 이미 저장되어 있습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
+    const keys=record.changed.filter(key=>Object.hasOwn(current,key)&&!draftIgnored_.has(key));
+    const conflicts=record.newRecord?[]:keys.filter(key=>!sameValue_(current[key]??null,record.base[key]??null)&&!sameValue_(current[key],record.values[key]));
+    const apply=choices=>{
+      if(!currentDraft_(ctx)||loading)return;
+      const now=collect();if(!sameValue_(current,now)){alert('작지 내용이 바뀌었습니다. 초안 복원을 다시 확인해 주세요.');return;}
+      const merged={...now};for(const key of keys)if(!conflicts.includes(key)||choices[key]==='draft')merged[key]=record.values[key];
+      const previous=editorContentBaseline_;applyState(merged);editorContentBaseline_=previous;
+      ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),...ctx.candidates.map(r=>r.id)])];ctx.candidate=null;ctx.candidates=[];
+      captureDraft_();renderDraft_(ctx);saveSoon();
+    };
+    if(!conflicts.length){apply({});return;}
+    const dialog=document.createElement('dialog');dialog.className='draft-conflict-dialog noprint';
+    const title=document.createElement('p');title.textContent='저장된 내용과 초안이 다릅니다. 사용할 내용을 선택해 주세요.';dialog.append(title);
+    const labels={designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
+    const selectors={};conflicts.forEach((key,i)=>{
+      const section=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
+      label.textContent=labels[key]||'변경 항목 '+(i+1);section.append(label);
+      for(const [value,text] of [['server','저장된 내용'],['draft','기기 초안']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
+      for(const [label,value] of [['저장된 내용',current[key]],['기기 초안',record.values[key]]]){const p=document.createElement('p');p.textContent=label+': '+draftValueText_(value);section.append(p);}
+      label.append(select);selectors[key]=select;dialog.append(section);
+    });
+    const use=document.createElement('button');use.type='button';use.textContent='선택한 내용 복원';use.onclick=()=>{const choices=Object.fromEntries(Object.entries(selectors).map(([key,select])=>[key,select.value]));dialog.close();dialog.remove();apply(choices);};
+    const cancel=document.createElement('button');cancel.type='button';cancel.textContent='취소';cancel.onclick=()=>{dialog.close();dialog.remove();};dialog.append(use,cancel);dialog.addEventListener('cancel',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+  }
+  function exportDraft_(ctx){
+    if(!currentDraft_(ctx))return;
+    const working=ctx.dirty?localDraftRecord_(ctx):null,records=[...ctx.candidates,...(working?[working]:[])];if(!records.length)return;
+    const content=JSON.stringify({format:'aisel-workorder-drafts',version:1,exportedAt:new Date().toISOString(),workorder:ctx.code,drafts:records},null,2);
+    const url=URL.createObjectURL(new Blob([content],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=ctx.code+'-초안-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }
+  async function discardDraftCandidates_(ctx){
+    const records=ctx.candidates.slice();
+    try{await draftTransaction_('readwrite',store=>{for(const r of records)store.delete(r.id);});if(!currentDraft_(ctx))return;ctx.candidates=[];ctx.candidate=null;renderDraft_(ctx);if(ctx.dirty)saveSoon();}
+    catch(_){alert('초안을 지우지 못했습니다. 다시 시도해 주세요.');}
+  }
+  function draftReadFailed_(){const ctx=activeDraft_;if(currentDraft_(ctx)&&ctx.dirty){ctx.awaitingServer=true;renderDraft_(ctx);}}
+  openDraftDatabase_().catch(()=>{});
+  window.addEventListener('aisel-owner-auth-change',()=>{if(currentCode&&activeDraft_?.owner!==draftOwner_()){activeDraft_=null;beginDraft_(currentCode);}});
+  window.addEventListener('beforeunload',event=>{captureDraft_();const ctx=activeDraft_;if(ctx?.dirty&&ctx.local!=='saved'){event.preventDefault();event.returnValue='';}});
+
   // Save feedback belongs to this exact record connection and edit revision.
   let editorSaveFeedback_ = null;
   function editorSaveState_(){
@@ -7008,6 +7194,7 @@
     else if(state.confirmed){phase=state.sheetError?"sheet-error":"saved";label=state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
     button.dataset.saveState=phase;button.textContent=label;button.disabled=state.manual;
     button.style.opacity="1";
+    renderDraft_();
     button.title=state.sheetError?"앱 저장 완료 · 구글시트 전송 실패. 눌러 다시 전송합니다.":phase==="error"?"작업지시서 저장에 실패했습니다. 눌러 다시 저장합니다.":"";
   }
   function resetEditorSaveFeedback_(confirmed){
@@ -7015,7 +7202,9 @@
     renderEditorSaveState_(state,true);
   }
   function markEditorSavePending_(){
-    if(loading || !woRef || statusChanging_ || codeConflictNow_() || currentCode===justDeletedCode_)return;
+    if(loading || !woRef || currentCode===justDeletedCode_)return;
+    captureDraft_();
+    if(statusChanging_ || codeConflictNow_())return;
     const state=editorSaveState_();state.revision++;state.queued=true;
     renderEditorSaveState_(state);
   }
@@ -7023,10 +7212,15 @@
   let initialCreationWrite_=null,initialCreationRef_=null;
   function save(){
     if(loading || !woRef || statusChanging_)return false;
+    const draftContext=captureDraft_();
     if(newOrderMode_ && initialCreationWrite_&&initialCreationRef_===woRef)return initialCreationWrite_;
     if(typeof isEditorComposing_==="function" && isEditorComposing_()){saveSoon();return false;}
     if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
     if(codeConflictNow_()){updateCodeConflictUI_();return false;}
+    if(draftContext?.remotePending){
+      const remote=draftContext.remotePending;draftContext.remotePending=null;draftContext.candidate=localDraftRecord_(draftContext);draftContext.candidates=[draftContext.candidate,...draftContext.candidates.filter(r=>r.id!==draftContext.id)];draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);return false;
+    }
+    if(draftContext?.candidate||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_)){renderDraft_(draftContext);return false;}
     const targetRef=woRef,targetCode=currentCode,st=collect();
     if(woRef!==targetRef || currentCode!==targetCode)return false;
     const state=editorSaveState_(),id=++state.serial,revision=state.revision;
@@ -7048,11 +7242,12 @@
       if(!lastSavedState_?.createdAt)patch.createdAt=st.createdAt;
     }
     lastSentJSON=JSON.stringify(st);lastSentUpdatedAt_=st.updatedAt;
-    if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;renderEditorSaveState_(state);return Promise.resolve(true);}
+    if(Object.keys(patch).length===0 && !state.indexFailed){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);renderEditorSaveState_(state);return Promise.resolve(true);}
     const keys=Object.keys(patch);state.pending.set(id,{keys,revision});renderEditorSaveState_(state);
     let originalWritten=false;
     const creating=newOrderMode_&&!editorContentBaseline_;
     const writePromise=Promise.resolve().then(async()=>{
+      if(draftContext){if(!draftContext.loaded)await draftContext.ready;if(draftContext.candidate||draftContext.awaitingServer||draftContext.owner!==draftOwner_())throw new Error('초안과 계정을 먼저 확인해 주세요.');}
       if(creating){
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
@@ -7065,9 +7260,9 @@
       if(state.latest===id){
         if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
         state.indexFailed=false;
-        try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode)).catch(()=>{});}catch(e){}
+        try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
       }
-      if(state.latest===id){state.result=true;state.confirmed=true;}
+      if(state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);}
       return true;
     }).catch(()=>{
       if(originalWritten && state.latest===id)state.indexFailed=true;
@@ -7446,7 +7641,8 @@
     renderCoordiBacklinks_();
   }
 
-  /* ============ 코디에 내 제품 골라 넣기 (2026-08-25 추가) ============
+  /* ============ 코디에 내 제품 골라 넣기 (2026-08-25 추가) =====</style>
+
      외부 주소를 붙여넣는 방식은 두 가지가 안 됩니다.
        1. 브라우저는 다른 사이트(카페24 포함) 사진을 대신 가져오지 못해 썸네일이 안 뜹니다
        2. 상품을 내리거나 옮기면 주소가 죽습니다
@@ -7791,6 +7987,7 @@
   // 2026-08-25 추가: 화면을 떠날 때 예약된 자동저장을 취소하고 연결을 끊습니다.
   // 이 세 줄이 없어서 "작지가 사라짐 · 품명이 다른 이름으로 바뀜" 사고가 났습니다.
   function detachWoRefNow_(reason){
+    captureDraft_();activeDraft_=null;renderDraft_();
     try{ clearTimeout(saveT); }catch(e){}
     if(woRef && woListener) woRef.off("value", woListener);
     woRef = null; woListener = null; currentCode = null;
@@ -7802,6 +7999,7 @@
   }
   function attachWoRef(code){
     if(!code || code === currentCode) return;
+    captureDraft_();
     // 저장 전 새 작지라면, 품번이 바뀔 때 앞서 자동으로 만들어진 줄을 정리합니다
     if(newOrderMode_) cleanupAutoCreated_(code);
     if(woRef && woListener) woRef.off("value", woListener);
@@ -7820,6 +8018,7 @@
     priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
+    beginDraft_(code);
     if(mobileUnifiedReady_)renderMobileSampleDate_();
     sampleChangeBaseline_=null; sampleChangeBaselineCode_=null;
     if(typeof appRoute_!=="undefined" && appRoute_.view==="editor" && !restoringRoute_){
@@ -7834,6 +8033,11 @@
       const isFirst = firstSnapshot;
       firstSnapshot = false;
       if(isFirst){
+        const ctx=activeDraft_;
+        if(currentDraft_(ctx)){
+          ctx.serverReady=true;ctx.serverMissing=!st;
+          if(ctx.awaitingServer){captureDraft_();ctx.awaitingServer=false;ctx.candidate=ctx.record;ctx.candidates=[ctx.record,...ctx.candidates.filter(r=>r.id!==ctx.record.id)].filter(Boolean);ctx.dirty=false;ctx.data=null;}
+        }
         clearTimeout(openWatchdog_);
         resetEditorSaveFeedback_(!!st);
       }
@@ -7862,16 +8066,17 @@
       if(!isFirst && st.updatedAt && st.updatedAt === lastSentUpdatedAt_){ lastSavedState_ = st; return; }
       const json = JSON.stringify(st);
       if(json === lastSentJSON && !isFirst) return; // 내가 방금 보낸 내용이 그대로 돌아온 것뿐이라 다시 그릴 필요 없음
+      if(!isFirst&&currentDraft_(activeDraft_)&&activeDraft_.dirty){activeDraft_.remotePending=st;return;}
       if(isTypingNow() && !isFirst){
         pendingRemoteState = st; // 지금 어딘가 칸에 입력 중이면 화면을 다시 그리지 않고 잠깐 보류
         return;
       }
       queueLegacySampleStatuses_({[code]:st});
-      applyState(st);
+      applyState(st);renderDraft_();
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
       if(isFirst) syncIndexFromFull_(code, st);
     };
-    woRef.on("value", woListener);
+    woRef.on("value", woListener,draftReadFailed_);
   }
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
   document.addEventListener("focusout", ()=>{
@@ -11190,6 +11395,7 @@
   // 2026-09-20 추가: 탭을 닫거나 폰에서 홈으로 나가면 600ms 타이머가 그냥 죽어서 마지막 입력이 사라졌습니다.
   // 화면이 가려지는 순간 예약된 자동저장을 바로 내보냅니다. 예약된 게 없으면 아무것도 안 합니다.
   function flushPendingSave_(){
+    captureDraft_();
     if(isEditorComposing_()) return;
     if(!saveT) return;
     clearTimeout(saveT); saveT = null;
@@ -11641,7 +11847,8 @@ let wordsShared_ = {};   // 파이어베이스에서 읽은 것
 // 클로드 API 배달원(구글 앱스 스크립트) 주소. CopygenRelay.gs 배포 후 여기에 붙여넣기
 const COPYGEN_RELAY_URL = "https://script.google.com/macros/s/AKfycbxHGBHi3878TPQEJAngnbaTYVPNAc1cQuT95DsqPazIKI6dUh7rCGwrg6q2iXOpnOKvZw/exec";
 
-/* ================= 작업지시서 저장소 (품명 중복 체크의 기준 데이터) =================
+/* ================= 작업지시서 저장소 (품명 중복 체크의 기준 데이터) ==========</style>
+
    이 목록은 이제 컴퓨터 하나에만 저장되지 않고 지금 열려있는 작지(품번) 안에 같이 저장됩니다.
    작지 편집화면 스크립트(다른 <script> 블록)에서 window.getPdpRows_/setPdpRows_/triggerWorkOrderSave_ 로 연결됩니다. */
 let rows = [];
@@ -11789,7 +11996,8 @@ window.setNameParts_ = (v) => {
   if(typeof updatePreview === "function") updatePreview();
 };
 
-/* ================= 셀링포인트 (2026-08-13 추가) =================
+/* ================= 셀링포인트 (2026-08-13 추가) ==========</style>
+
    편안함 / 날씬 / 반전 디테일 세 영역. 원단·디테일·핏(★)보다 상위 개념이라 ★★로 구분.
    선택값은 작지에 st.sellingPoints 로 함께 저장되어 나중에 성적표 분석에 쓰임.
    단어는 전부 붙여쓰기로 통일 (띄어쓰기가 섞이면 같은 태그가 두 개로 갈라져 집계가 어긋남). */
@@ -11966,7 +12174,8 @@ function setupSpAdd(groupKey){
 Object.keys(SP_UI).forEach(setupSpAdd);
 
 // 작지 편집화면 스크립트에서 읽고 쓰는 통로 (pdpRows 와 같은 방식)
-/* ================= 고친 기록 저장 (2026-08-13 추가, 13-5) =================
+/* ================= 고친 기록 저장 (2026-08-13 추가, 13-5) ==========</style>
+
    AI가 만든 이름과 문장을 지수님이 어떻게 고치시는지 원본과 함께 남깁니다.
    이 기록이 쌓이면 어떤 방향으로 고치시는지 패턴이 보이고, 그것을 규칙에 반영해
    점점 손댈 일이 줄어듭니다. 지금은 저장만 하고 분석은 나중에 합니다. */
@@ -12323,7 +12532,8 @@ function syncKeywordsFromFabric(){
   ta.value = current.join(", ");
 }
 
-/* ================= 사진 판독 (2026-08-13 추가) =================
+/* ================= 사진 판독 (2026-08-13 추가) ==========</style>
+
    작지에 사진(도식화·레퍼런스·실물)을 넣으면 자동으로 읽어서
    셀링포인트 · 아이템명 · 고유명을 채웁니다. 판독 결과는 바로 선택된 상태로 들어가고,
    틀린 것만 지수님이 빼시면 됩니다.
@@ -12430,7 +12640,8 @@ ${spGroups.twist.join(", ")}
 - 정말로 slim이나 twist가 하나도 없는 옷이라면 빈 배열로 두되, 그 이유를 note에 분명히 적습니다.`;
 }
 
-/* ================= 셀링포인트 사용 현황 (2026-08-13 추가, 13-10) =================
+/* ================= 셀링포인트 사용 현황 (2026-08-13 추가, 13-10) ==========</style>
+
    기타로 직접 입력한 단어가 자주 쓰이면 정식 버튼으로 올려야 합니다.
    매번 손으로 치면 오타로 같은 태그가 두 개로 갈라지기 때문입니다.
    아래 버튼을 누르면 지금까지 만든 작지 전체에서 셀링포인트 사용 횟수를 세어 보여줍니다. */
@@ -13407,7 +13618,8 @@ function refreshCopygenOutputState_(){
     lastGenerated = "";
   }
 }
-/* ================= 자동 갱신 (2026-08-13 추가) =================
+/* ================= 자동 갱신 (2026-08-13 추가) ==========</style>
+
    셀링포인트·원단·품명·컬러가 바뀌면 상세설명을 자동으로 다시 씁니다.
    다만 지수님이 결과창을 직접 고치셨다면 그 문장을 함부로 덮어쓰지 않고
    "재료가 바뀌었습니다 · 다시 쓰기" 바만 띄웁니다.
@@ -14062,9 +14274,11 @@ async function perform(code){
  const snap=await db.ref("workorders").child(code).once("value"),v=snap.val();
  if(!signedIn(ctx))return false;
  if(!v){await rows.child(code).remove();return;}
+ const source=v.p1Thumb||v.p1||"";
+ const uploaded=!!(ctx.uid&&source&&!cachedPreview(v,source));
  const image=await thumbnail(code,v,ctx);
  // Re-read after asynchronous photo upload so a newer save is never replaced with the older snapshot.
- const latest=(await db.ref("workorders").child(code).once("value")).val();
+ const latest=uploaded?(await db.ref("workorders").child(code).once("value")).val():v;
  if(!signedIn(ctx))return false;
  if(!latest){await rows.child(code).remove();return;}
  const src=latest.p1Thumb||latest.p1||"";
@@ -14079,11 +14293,22 @@ async function perform(code){
  document.getElementById("sheetBridgeStatus")?.remove();
  return true;
 }
-function sync(code){
+function sync(code,revision){
  if(!code)return Promise.resolve();
- const prev=running.get(code)||Promise.resolve();
- const next=prev.catch(()=>{}).then(()=>perform(code)).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);return false;}).finally(()=>{if(running.get(code)===next)running.delete(code);});
- running.set(code,next);return next;
+ const hint=revision===undefined||revision===null?null:String(revision);
+ const existing=running.get(code);
+ if(existing){
+  if(existing.started&&(hint===null||hint!==existing.hint))existing.again=true;
+  if(hint!==null)existing.hint=hint;
+  return existing.promise;
+ }
+ const job={started:false,again:false,hint,promise:null};
+ job.promise=Promise.resolve().then(async()=>{
+  let result;
+  do{job.again=false;job.started=true;result=await perform(code);}while(job.again);
+  return result;
+ }).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);return false;}).finally(()=>{if(running.get(code)===job)running.delete(code);});
+ running.set(code,job);return job.promise;
 }
 api.sync=sync;
 async function reconcile(){
@@ -14092,7 +14317,7 @@ async function reconcile(){
  const all=(await db.ref("workorderIndex").once("value")).val()||{};
  const existing=(await rows.once("value")).val()||{};
  const codes=Object.keys(all);
- for(let i=0;i<codes.length;i+=3)await Promise.all(codes.slice(i,i+3).map(sync));
+ for(let i=0;i<codes.length;i+=3)await Promise.all(codes.slice(i,i+3).map(code=>sync(code,all[code]?.updatedAt)));
  const cleanup={};Object.keys(existing).filter(k=>!all[k]).forEach(k=>cleanup[k]=null);
  if(signedIn(ctx)&&Object.keys(cleanup).length)await rows.update(cleanup);
 }
@@ -14107,9 +14332,9 @@ function onAuthChange(){
  });
 }
 sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
-defaultApp.database().ref("workorderIndex").on("child_added",snap=>sync(snap.key));
-defaultApp.database().ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
-defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
+defaultApp.database().ref("workorderIndex").on("child_added",snap=>sync(snap.key,snap.val()?.updatedAt));
+defaultApp.database().ref("workorderIndex").on("child_changed",snap=>sync(snap.key,snap.val()?.updatedAt));
+defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.key,snap.val()?.updatedAt));
 })(typeof globalThis!=="undefined"?globalThis:this);
 
 </script>
@@ -14740,6 +14965,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
   if(!owner)tools.open=false;
   account.textContent=owner?'대표자 보기 · 로그아웃':'대표자 로그인';
   account.setAttribute('aria-expanded',String(owner));updateCalculation();
+  window.dispatchEvent(new CustomEvent('aisel-owner-auth-change'));
  }
  applyOwner(null);
  new MutationObserver(updateCalculation).observe(document.getElementById('totalView'),{childList:true,characterData:true,subtree:true});
@@ -15461,4 +15687,14 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 @media screen {
  html.aisel-ipad-mobile body #editorView {max-width:820px;margin-left:auto;margin-right:auto;}
 }
+</style>
+
+<style id="aisel-v153-draft-status">
+#localDraftStatus[hidden],#localDraftStatus button[hidden]{display:none!important}
+#localDraftStatus{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:6px 12px;font-size:12px;color:var(--muted);background:var(--bg)}
+#localDraftStatus button{padding:3px 7px;font-size:12px;min-height:28px;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:4px}
+#localDraftStatus[data-draft-state="failed"] .local-draft-note{color:#8b344d}
+.draft-conflict-dialog{max-width:min(520px,calc(100vw - 32px));max-height:75vh;overflow:auto;padding:18px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#30343b}
+.draft-conflict-dialog>div{padding:8px 0;border-top:1px solid #ddd}.draft-conflict-dialog p{overflow-wrap:anywhere;white-space:pre-wrap}.draft-conflict-dialog label{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.draft-conflict-dialog button{margin:6px 8px 0 0}
+@media print{#localDraftStatus,.draft-conflict-dialog{display:none!important}}
 </style>
