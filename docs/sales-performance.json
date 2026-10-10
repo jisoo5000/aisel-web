@@ -2050,7 +2050,7 @@
       "excerpt": "작업지시서앱 판매성과가 또 안되더라구"
     },
     "decision_status": "authorized_error_repair; metric definition follows existing source sheet",
-    "status": "partial",
+    "status": "verified",
     "version": "sales-header-recovery-20261010",
     "rootCause": "2026-10-10 source H5 renamed to 판매 대비 반품 접수율(잠정); deployed v7 adapter rejects unknown header",
     "sourceHeader": "판매 대비\n반품 접수율(잠정)",
@@ -2124,7 +2124,10 @@
         "repository": "jisoo5000/aisel-claude-skills",
         "topic_id": "b-04",
         "sheet_row": 29,
-        "status": "pending"
+        "status": "github_remote_and_sheet_readback_verified",
+        "source_commit": "a9bb46fbce3fd2d6c1c6e49ffabf0c49ff07fddb",
+        "sheet_verified_on": "2026-10-10",
+        "preserved": "existing notes, links, formatting, all neighboring cells"
       }
     ],
     "drive_backups": [
@@ -2144,9 +2147,18 @@
         "status": "both_files_sha256_match_canonical"
       }
     ],
-    "pending": [
-      "source commit",
-      "catalog/sheet readback"
+    "pending": [],
+    "source_commits": [
+      {
+        "repository": "jisoo5000/aisel-web",
+        "commit": "2efd03c3f72158a7b7801480244558b1431b29d2",
+        "status": "remote_head_verified"
+      },
+      {
+        "repository": "jisoo5000/aisel-tools",
+        "commit": "b16fbd1e1f36190a33c83ab9efabe1e271044534",
+        "status": "remote_head_verified"
+      }
     ]
   }
 }
