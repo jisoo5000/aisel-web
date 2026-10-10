@@ -25,3 +25,8 @@ test('does not reinterpret maturity gaps as zero and rejects unverified metrics'
  const result=parse(input);assert.equal(result.items.find(item=>item.name==='예시 A').returns,null);assert.equal(result.items.find(item=>item.name==='예시 B').returns,0);
  input[4][7]='최종 반품 완료율';assert.throws(()=>parse(input),/머리글/);
 });
+test('accepts provisional sales-cohort returns, never the nearby mature sample column',()=>{
+ const input=structuredClone(rows);input[4][7]='판매 대비\n반품 접수율(잠정)';input[4].push('사유','피드백','기한 종료 표본 반품률');input[5].push('비공개 사유','비공개 평가','99.0%');input[5][7]='0.0%';input[6][7]='—';
+ const result=parse(input);assert.equal(result.returnMetric.key,'sales-cohort-return-request-rate-provisional');assert.equal(result.returnMetric.shortLabel,'반품 접수%');assert.equal(result.items.find(item=>item.name==='예시 A').returns,0);assert.equal(result.items.find(item=>item.name==='예시 B').returns,null);assert.ok(!JSON.stringify(result).includes('비공개'));assert.deepEqual(Object.keys(result.items[0]).sort(),['designer','factory','name','rank','returns','share']);
+ input[4].push('반품률');assert.throws(()=>parse(input),/반품 지표 열/);
+});

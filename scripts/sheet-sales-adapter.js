@@ -3,6 +3,7 @@
   const text=value=>value==null?'':String(value).trim();
   const headerKey=value=>text(value).replace(/\s+/g,'');
   const returnHeaders=[
+    {header:'판매대비반품접수율(잠정)',key:'sales-cohort-return-request-rate-provisional',label:'판매 대비 반품 접수율(잠정)',shortLabel:'반품 접수%',note:'같은 최근 30일 판매수량 대비 반품 접수 수량의 잠정 비율입니다. 교환은 제외하며 추가 반품으로 바뀔 수 있습니다. 출고 대비 비율이나 기한 종료 표본, 최종 반품 완료율과 구분해 주세요.'},
     {header:'추정수령기준반품신청률',key:'estimated-receipt-return-request-rate',label:'추정 수령 기준 반품 신청률',shortLabel:'반품 신청%',note:'발송 다음 날 수령을 가정한 반품 신청률입니다. 관찰 기한이 지난 출고분 기준이며, 실제 수령일이나 최종 반품 완료율을 뜻하지 않습니다.'},
     {header:'반품률',key:'legacy-sheet-return-rate',label:'운영시트 반품률',shortLabel:'반품%',note:'운영시트에 표시된 반품률입니다.'}
   ];
