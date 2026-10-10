@@ -165,58 +165,106 @@ async function thumbnail(code,v,ctx){
   }finally{original.off("value",keepSnapshot);}
  }catch(err){console.warn("Sheet thumbnail deferred",code,err.code||err.message);return "";}
 }
-async function perform(code){
- const ctx=connection();if(!ctx)return false;
- const {db,rows,meta}=ctx;
- const snap=await db.ref("workorders").child(code).once("value"),v=snap.val();
+// A successful row and its source receipt are published in one atomic update.
+// Comparing this small metadata avoids downloading photo-bearing originals on startup.
+const SYNC_VERSION=1;
+function stable(value){
+ if(Array.isArray(value))return value.map(stable);
+ if(value&&typeof value==="object")return Object.fromEntries(Object.keys(value).sort().map(k=>[k,stable(value[k])]));
+ return value;
+}
+function fingerprint(value){const text=typeof value==="string"?value:JSON.stringify(stable(value));return text.length+"-"+signature(text);}
+function currentReceipt(ctx,index,row,receipt,hint){
+ return !!(index&&typeof row==="string"&&receipt&&receipt.version===SYNC_VERSION&&
+  receipt.indexSignature===fingerprint(index)&&receipt.rowSignature===fingerprint(row)&&
+  (hint==null||receipt.sourceUpdatedAt===String(hint))&&(!ctx.uid||!receipt.previewPending));
+}
+async function publish(ctx,code,row,receipt,existing,previous){
  if(!signedIn(ctx))return false;
- if(!v){await rows.child(code).remove();return;}
- const image=await thumbnail(code,v,ctx);
- // Re-read after asynchronous photo upload so a newer save is never replaced with the older snapshot.
- const latest=(await db.ref("workorders").child(code).once("value")).val();
- if(!signedIn(ctx))return false;
- if(!latest){await rows.child(code).remove();return;}
- const src=latest.p1Thumb||latest.p1||"";
- const photo=cachedPreview(latest,src)||
-  (previewSourceKey(latest)===previewSourceKey(v)?image:"");
- const row=build(code,latest,photo),existing=(await rows.child(code).once("value")).val();
- if(!signedIn(ctx))return false;
- if(existing!==row){
-  await rows.child(code).set(row);
-  await meta.update({version:2,fields:36,updatedAt:firebase.database.ServerValue.TIMESTAMP});
+ const patch={};
+ if(existing!==row)patch["workorderSheetRows/"+code]=row;
+ if(JSON.stringify(previous)!==JSON.stringify(receipt))patch["workorderSheetMeta/sources/"+code]=receipt;
+ if(Object.keys(patch).length){
+  patch["workorderSheetMeta/version"]=2;patch["workorderSheetMeta/fields"]=36;
+  patch["workorderSheetMeta/updatedAt"]=firebase.database.ServerValue.TIMESTAMP;
+  await ctx.db.ref().update(patch);
  }
- document.getElementById("sheetBridgeStatus")?.remove();
  return true;
 }
-function sync(code){
+async function perform(code,hint,force){
+ const ctx=connection(),{db,rows,meta}=ctx,indexRef=db.ref("workorderIndex").child(code);
+ const [indexSnap,rowSnap,receiptSnap]=await Promise.all([indexRef.once("value"),rows.child(code).once("value"),meta.child("sources").child(code).once("value")]);
+ const index=indexSnap.val(),existing=rowSnap.val(),previous=receiptSnap.val();
+ if(!signedIn(ctx))return false;
+ // Explicit sync without a revision remains a repair path for imports/legacy writers.
+ if(!force&&currentReceipt(ctx,index,existing,previous,hint))return true;
+ if(!index&&!force)return publish(ctx,code,null,null,existing,previous);
+ const v=(await db.ref("workorders").child(code).once("value")).val();
+ if(!signedIn(ctx))return false;
+ if(!v)return publish(ctx,code,null,null,existing,previous);
+ const source=v.p1Thumb||v.p1||"",uploaded=!!(ctx.uid&&source&&!cachedPreview(v,source));
+ const image=await thumbnail(code,v,ctx);
+ // Preserve the latest saved data and guarded preview transaction after an upload.
+ const latest=uploaded?(await db.ref("workorders").child(code).once("value")).val():v;
+ if(!signedIn(ctx))return false;
+ if(!latest)return publish(ctx,code,null,null,existing,previous);
+ const latestIndex=(await indexRef.once("value")).val();
+ // Never acknowledge a changed index using an older original snapshot.
+ if(fingerprint(latestIndex)!==fingerprint(index))return "retry";
+ const src=latest.p1Thumb||latest.p1||"",photo=cachedPreview(latest,src)||
+  (previewSourceKey(latest)===previewSourceKey(v)?image:"");
+ const row=build(code,latest,photo),receipt={version:SYNC_VERSION,indexSignature:fingerprint(latestIndex),
+  sourceUpdatedAt:String(latest.updatedAt||0),rowSignature:fingerprint(row),previewPending:!!(src&&!cachedPreview(latest,src))};
+ const result=await publish(ctx,code,row,receipt,existing,previous);
+ if(result)document.getElementById("sheetBridgeStatus")?.remove();
+ return result;
+}
+function sync(code,revision,options={}){
  if(!code)return Promise.resolve();
- const prev=running.get(code)||Promise.resolve();
- const next=prev.catch(()=>{}).then(()=>perform(code)).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);return false;}).finally(()=>{if(running.get(code)===next)running.delete(code);});
- running.set(code,next);return next;
+ const hint=revision==null?null:String(revision),force=!options.incremental&&hint===null;
+ const key=options.indexSignature||hint,existing=running.get(code);
+ if(existing){
+  if(existing.started&&(force||key!==existing.key))existing.again=true;
+  existing.force=existing.force||force;existing.hint=hint;existing.key=key;
+  return existing.promise;
+ }
+ const job={started:false,again:false,hint,key,force,promise:null};
+ job.promise=Promise.resolve().then(async()=>{
+  let result;
+  do{
+   job.again=false;job.started=true;const forceNow=job.force;job.force=false;
+   result=await perform(code,job.hint,forceNow);
+   if(result==="retry")job.again=true;
+  }while(job.again);
+  return result;
+ }).catch(err=>{show("시트 연동 데이터 저장 실패 · 작지 원본은 저장되어 있습니다. 다시 저장하면 재시도합니다.");console.error(err);return false;}).finally(()=>{if(running.get(code)===job)running.delete(code);});
+ running.set(code,job);return job.promise;
 }
 api.sync=sync;
 async function reconcile(){
- const ctx=connection();if(!ctx)return;
- const {db,rows}=ctx;
- const all=(await db.ref("workorderIndex").once("value")).val()||{};
- const existing=(await rows.once("value")).val()||{};
- const codes=Object.keys(all);
- for(let i=0;i<codes.length;i+=3)await Promise.all(codes.slice(i,i+3).map(sync));
- const cleanup={};Object.keys(existing).filter(k=>!all[k]).forEach(k=>cleanup[k]=null);
- if(signedIn(ctx)&&Object.keys(cleanup).length)await rows.update(cleanup);
+ const ctx=connection(),{db,rows,meta}=ctx;
+ const [indexSnap,rowSnap,receiptSnap]=await Promise.all([db.ref("workorderIndex").once("value"),rows.once("value"),meta.child("sources").once("value")]);
+ if(!signedIn(ctx))return;
+ const all=indexSnap.val()||{},existing=rowSnap.val()||{},receipts=receiptSnap.val()||{};
+ const codes=Object.keys(all).filter(code=>!currentReceipt(ctx,all[code],existing[code],receipts[code],all[code]?.updatedAt));
+ for(let i=0;i<codes.length;i+=3)await Promise.all(codes.slice(i,i+3).map(code=>sync(code,all[code]?.updatedAt,{incremental:true,indexSignature:fingerprint(all[code])})));
+ // Recheck each orphan's current index so a concurrent restore is preserved.
+ const orphans=[...new Set([...Object.keys(existing),...Object.keys(receipts)])].filter(code=>!all[code]);
+ for(let i=0;i<orphans.length;i+=3)await Promise.all(orphans.slice(i,i+3).map(code=>sync(code,undefined,{incremental:true,indexSignature:"removed"})));
 }
-let reconciledApp=null;
+let reconciledApp=null,reconciledUid;
 function onAuthChange(){
- const app=authenticatedApp()||defaultApp;
- if(reconciledApp===app)return;
- reconciledApp=app;
+ const app=authenticatedApp()||defaultApp,uid=app.auth().currentUser?.uid||null;
+ if(reconciledApp===app&&reconciledUid===uid)return;
+ reconciledApp=app;reconciledUid=uid;
  return reconcile().catch(err=>{
-  if(reconciledApp===app)reconciledApp=null;
+  if(reconciledApp===app&&reconciledUid===uid)reconciledApp=null;
   show("시트 초기 연동 실패 · 작지를 다시 열면 재시도합니다.");console.error(err);
  });
 }
 sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
-defaultApp.database().ref("workorderIndex").on("child_added",snap=>sync(snap.key));
-defaultApp.database().ref("workorderIndex").on("child_changed",snap=>sync(snap.key));
-defaultApp.database().ref("workorderIndex").on("child_removed",snap=>sync(snap.key));
+function onIndexChange(snap){return sync(snap.key,snap.val()?.updatedAt,{incremental:true,indexSignature:snap.val()==null?"removed":fingerprint(snap.val())});}
+defaultApp.database().ref("workorderIndex").on("child_added",onIndexChange);
+defaultApp.database().ref("workorderIndex").on("child_changed",onIndexChange);
+defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
 })(typeof globalThis!=="undefined"?globalThis:this);
