@@ -5,7 +5,12 @@
 .dm-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .dm-toolbar{display:flex;justify-content:flex-end;margin:0 0 4px}
 .dm-toolbar summary{font-size:12px;color:#6c727c;cursor:pointer}
-.dm-toolbar details[open]{width:100%}
+#dmTools{position:fixed;inset:0;box-sizing:border-box;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 64px);background:#fff;color:#30343b}
+#dmTools>button{margin:4px 2px}
+#dmToolsClose{display:block;margin-left:auto!important}
+#dmTools input[type=url],#dmTools input[type=email]{max-width:100%;min-width:0;box-sizing:border-box}
+#dmTools .dm-collect input[type=url]{width:100%}
+#dmTools .dm-collect label{width:100%}
 .dm-collect{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
 .dm-collect label{font-size:12px}
 .dm-collect input[type=url],#dmSearch,.dm-dialog select{box-sizing:border-box;padding:10px 12px;background:#fff;border:1px solid #dedcd6;border-radius:4px;font-size:16px;min-height:44px}
@@ -43,12 +48,12 @@
 .dm-assignee label{font-weight:600}
 .dm-assignee select{border:0;background:transparent;font-size:14px;min-height:44px;max-width:70%}
 .dm-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
-.dm-photo{display:block;flex:0 0 100%;min-width:0;scroll-snap-align:start}
-.dm-photo img{display:block;width:100%;height:min(70vh,560px);object-fit:contain;background:#f5f4f1;border:1px solid #dedcd6;border-radius:4px;box-sizing:border-box}
+#designMeetingView .dm-photo{display:block;flex:0 0 100%;min-width:0;scroll-snap-align:start;padding:0;border:0;background:transparent}
+.dm-photo img{display:block;width:100%;height:clamp(220px,40vh,340px);height:clamp(220px,40svh,340px);object-fit:contain;background:#f5f4f1;border:1px solid #dedcd6;border-radius:4px;box-sizing:border-box}
 #dmAddPhotos{margin-top:6px;min-height:32px!important}
 .dm-section-title{font-size:16px;font-weight:600;margin:16px 0 8px}
 .dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #dedcd6;border-radius:4px;overflow:hidden;font-size:14px;table-layout:fixed}
-.dm-evidence th,.dm-evidence td{padding:12px;text-align:left;vertical-align:top;border-bottom:1px solid #dedcd6;overflow-wrap:anywhere}
+.dm-evidence th,.dm-evidence td{height:48px;padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid #dedcd6;overflow-wrap:anywhere}
 .dm-evidence th{width:64px;font-weight:600;border-right:1px solid #dedcd6}
 .dm-evidence tr:last-child>*{border-bottom:0}
 .dm-additional{font-size:14px;line-height:1.5;margin:16px 0;overflow-wrap:anywhere}

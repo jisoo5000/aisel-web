@@ -1,4 +1,4 @@
-<!-- v169: changed-only sheet sync, preserving mobile design meeting v168 (2026-10-11) -->
+<!-- v170: mobile design meeting photo replacement and compact detail (2026-10-11) -->
 <!-- v166: design meeting candidate collection, versioned review queue and explicit workorder conversion (2026-10-11) -->
 <!-- v165: sort and label workorder cards by left document creation date descending (2026-10-10) -->
 <!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
@@ -3134,8 +3134,8 @@
 </div>
 
 <section id="designMeetingView" class="noprint notranslate" lang="ko" translate="no" hidden>
-  <div class="dm-toolbar"><h2 class="dm-sr-only">디자인회의</h2><details id="dmTools"><summary>관리</summary><button id="dmCamera" type="button">사진 찍기</button><button id="dmAdopt" type="button">기존 레퍼런스 연결</button><button id="dmRefresh" type="button">새로고침</button><div class="dm-collect"><label><input type="checkbox" id="dmGroup"> 여러 사진을 한 후보로 묶기</label><input type="url" id="dmNewLink" aria-label="새 후보 상품 링크" placeholder="상품 링크"><button id="dmAddLink" type="button">링크 등록</button></div></details></div>
-  <input id="dmFileInput" type="file" accept="image/*" multiple hidden><input id="dmCameraInput" type="file" accept="image/*" capture="environment" hidden>
+  <div class="dm-toolbar"><h2 class="dm-sr-only">디자인회의</h2><button id="dmToolsToggle" type="button">관리</button><dialog id="dmTools" class="dm-dialog"><button id="dmToolsClose" type="button">닫기</button><button id="dmCamera" type="button">사진 찍기</button><button id="dmAdopt" type="button">기존 레퍼런스 연결</button><button id="dmRefresh" type="button">새로고침</button><div class="dm-collect"><label><input type="checkbox" id="dmGroup"> 여러 사진을 한 후보로 묶기</label><input type="url" id="dmNewLink" aria-label="새 후보 상품 링크" placeholder="상품 링크"><button id="dmAddLink" type="button">링크 등록</button></div></dialog></div>
+  <input id="dmReplaceInput" type="file" accept="image/*" hidden><input id="dmFileInput" type="file" accept="image/*" multiple hidden><input id="dmCameraInput" type="file" accept="image/*" capture="environment" hidden>
   <div id="dmStatus" role="status"></div><div id="dmPending"></div>
   <div id="dmList"><div class="dm-filters" id="dmFilters"><button type="button" data-filter="planned" class="active">예정</button><button type="button" data-filter="drop">드롭</button><button type="button" data-filter="all">전체</button></div>
   <input id="dmSearch" type="search" aria-label="제품명 검색" placeholder="제품명 검색"><p id="dmCount" class="dm-sr-only"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><button id="dmConvert" class="dm-convert" type="button" disabled>작업지시서</button></div>
@@ -16324,7 +16324,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=168">
+<link rel="stylesheet" href="design-meeting.css?v=170">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16342,5 +16342,5 @@ window.AiselDesignMeetingAdapter={
  open(code){showEditor();newOrderMode_=false;attachWoRef(code);}
 };
 </script>
-<script src="design-meeting-core.js?v=168"></script>
-<script src="design-meeting.js?v=168"></script>
+<script src="design-meeting-core.js?v=170"></script>
+<script src="design-meeting.js?v=170"></script>

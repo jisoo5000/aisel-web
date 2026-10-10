@@ -4,6 +4,14 @@
   const states={idle:'미요청',queued:'검토 대기',running:'검토 중',done:'결과 있음',blocked:'확인 필요',error:'재시도 필요',stale:'재검토 필요'};
   function httpUrl(value){try{const u=new URL(value);return ['http:','https:'].includes(u.protocol)?u.href:'';}catch(e){return '';}}
   function photos(c){return Array.isArray(c.photos)?c.photos:(c.photo?[{original:c.photo,thumb:c.photo,legacy:true}]:[]);}
+  function replacePhoto(c,key,next,now=Date.now()){
+    const list=photos(c),index=list.findIndex(p=>(p.hash||p.original)===key);
+    if(index<0){if(list.some(p=>(p.hash||p.original)===(next.hash||next.original))&&(c.photoHistory||[]).some(p=>(p.hash||p.original)===key))return c;throw Error('다른 기기에서 사진이 변경됐습니다. 현재 사진을 다시 선택해주세요.');}
+    const old=list[index];if((old.hash||old.original)===(next.hash||next.original))return c;
+    const changed=list.map((p,i)=>i===index?next:p).filter((p,i,a)=>a.findIndex(x=>(x.hash||x.original)===(p.hash||p.original))===i);
+    const history=[...(c.photoHistory||[])];if(!history.some(p=>(p.hash||p.original)===key))history.push({...old,replacedAt:now});
+    return edit(c,{photos:changed,photo:changed[0]?.original||'',photoHistory:history},now);
+  }
   function signature(c){return JSON.stringify({fields:material.map(k=>String(c[k]||'')),links:Array.isArray(c.links)?c.links:[],photos:photos(c).map(p=>p.hash||p.original).sort()});}
   function evidence(result){try{const value=typeof result?.evidence==='string'?JSON.parse(result.evidence):result?.evidence;return value&&typeof value==='object'&&!Array.isArray(value)?value:{};}catch(e){return {};}}
   function reviewSummary(result){
@@ -28,6 +36,6 @@
     return c.reviewState||'idle';
   }
   function rowKey(id,version){if(!/^[-\w]{8,100}$/.test(id)||!Number.isInteger(Number(version))||Number(version)<1)throw Error('후보 연결 정보를 확인해주세요.');return id+':'+version;}
-  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel};
+  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel,replacePhoto};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.AiselDesignMeetingCore=api;
 })(typeof window==='object'?window:globalThis);
