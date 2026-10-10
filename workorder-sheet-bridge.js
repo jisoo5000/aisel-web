@@ -177,7 +177,7 @@ function fingerprint(value){const text=typeof value==="string"?value:JSON.string
 function currentReceipt(ctx,index,row,receipt,hint){
  return !!(index&&typeof row==="string"&&receipt&&receipt.version===SYNC_VERSION&&
   receipt.indexSignature===fingerprint(index)&&receipt.rowSignature===fingerprint(row)&&
-  (hint==null||receipt.sourceUpdatedAt===String(hint))&&(!ctx.uid||!receipt.previewPending));
+  (hint==null||receipt.sourceUpdatedAt===String(hint)||String(index.updatedAt)===String(hint))&&(!ctx.uid||!receipt.previewPending));
 }
 async function publish(ctx,code,row,receipt,existing,previous){
  if(!signedIn(ctx))return false;
