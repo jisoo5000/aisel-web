@@ -1,4 +1,4 @@
-<!-- v170: mobile design meeting photo replacement and compact detail (2026-10-11) -->
+<!-- v171: mobile design meeting photo replacement and compact detail (2026-10-11) -->
 <!-- v166: design meeting candidate collection, versioned review queue and explicit workorder conversion (2026-10-11) -->
 <!-- v165: sort and label workorder cards by left document creation date descending (2026-10-10) -->
 <!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
@@ -3138,16 +3138,16 @@
   <input id="dmReplaceInput" type="file" accept="image/*" hidden><input id="dmFileInput" type="file" accept="image/*" multiple hidden><input id="dmCameraInput" type="file" accept="image/*" capture="environment" hidden>
   <div id="dmStatus" role="status"></div><div id="dmPending"></div>
   <div id="dmList"><div class="dm-filters" id="dmFilters"><button type="button" data-filter="planned" class="active">예정</button><button type="button" data-filter="drop">드롭</button><button type="button" data-filter="all">전체</button></div>
-  <input id="dmSearch" type="search" aria-label="제품명 검색" placeholder="제품명 검색"><p id="dmCount" class="dm-sr-only"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><button id="dmConvert" class="dm-convert" type="button" disabled>작업지시서</button></div>
+  <label class="aisel-search-field dm-search"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="dmSearch" type="search" aria-label="제품명 검색" placeholder="제품명 검색"></label><p id="dmCount" class="dm-sr-only"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><button id="dmConvert" class="dm-convert" type="button" disabled>작업지시서</button></div>
   <aside id="dmDetail" class="dm-detail" aria-label="후보 상세" hidden>
-    <div class="dm-detail-header"><h3 id="dmDetailTitle" contenteditable="true" role="textbox" aria-label="제품명" spellcheck="false">후보 상세</h3><div id="dmLinks" class="dm-links"></div></div>
+    <div class="dm-detail-header"><h3 id="dmDetailTitle" contenteditable="true" role="textbox" aria-label="제품명" spellcheck="false">후보 상세</h3><div class="dm-assignee"><label for="dmDesigner">담당자</label><select id="dmDesigner" aria-label="담당자"><option value="">미지정</option></select></div><div id="dmLinks" class="dm-links"></div></div>
     <div id="dmDates" class="dm-dates"></div>
-    <div class="dm-assignee"><label for="dmDesigner">담당자</label><select id="dmDesigner" aria-label="담당자"><option value="">미지정</option></select></div>
-    <div id="dmPhotos" class="dm-photos"></div><button id="dmAddPhotos" type="button">사진</button>
+    
+    <div class="dm-detail-body"><div id="dmPhotos" class="dm-photos"></div><button id="dmAddPhotos" type="button">사진</button>
     <div hidden id="dmLegacyFields"><input data-dm-field="title"><input data-dm-field="link"><textarea data-dm-field="memo"></textarea><textarea data-dm-field="development"></textarea><select data-dm-field="decision"><option value="unselected">미선택</option><option value="selected">선택</option><option value="progress">진행</option><option value="excluded">드롭</option><option value="held">보류</option></select><textarea data-dm-field="decisionReason"></textarea><input data-dm-field="meetingDate"><textarea data-dm-field="meetingMemo"></textarea></div>
     <h3 class="dm-section-title">판단 근거</h3><div id="dmReview"></div><p id="dmReviewState" class="dm-review-status"></p>
     <small id="dmDetailSaveState" role="status"></small><button id="dmSaveDetail" type="button" hidden>다시 저장</button><button id="dmRequest" type="button" hidden>검토 요청</button>
-    <div class="dm-detail-actions"><button type="button" id="dmDrop">드롭</button><button type="button" id="dmWorkorder">작업지시서</button></div><button id="dmOpenWorkorder" hidden type="button">작업지시서</button><button id="dmCloseDetail" hidden type="button">닫기</button>
+    </div><div class="dm-detail-actions"><button type="button" id="dmDrop">드롭</button><button type="button" id="dmWorkorder">작업지시서</button></div><button id="dmOpenWorkorder" hidden type="button">작업지시서</button><button id="dmCloseDetail" hidden type="button">닫기</button>
   </aside>
 </section>
 <dialog id="dmAdoptDialog" class="dm-dialog"><h3>기존 레퍼런스 연결</h3><p>선택한 카드와 사진 주소를 그대로 사용합니다. 과거 승인·메모·원가는 유지합니다.</p><div id="dmAdoptList"></div><button id="dmAdoptConfirm" type="button">선택한 레퍼런스 연결</button><button id="dmAdoptCancel" type="button">닫기</button></dialog>
@@ -16324,7 +16324,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=170">
+<link rel="stylesheet" href="design-meeting.css?v=171">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16342,5 +16342,16 @@ window.AiselDesignMeetingAdapter={
  open(code){showEditor();newOrderMode_=false;attachWoRef(code);}
 };
 </script>
-<script src="design-meeting-core.js?v=170"></script>
-<script src="design-meeting.js?v=170"></script>
+<script src="design-meeting-core.js?v=171"></script>
+<script src="design-meeting.js?v=171"></script>
+
+<style id="aisel-v171-white-surfaces">
+@media screen {
+ html:root body {background:#fff;color:#30343b;--aisel-ink:#30343b;--aisel-muted:#6c727c;--aisel-bg:#fff;--aisel-soft:#fff;--aisel-line:#d9dce1;--field:#fff;--sheet:#fff;}
+ html:root body :is(#editorView,#galleryView,#designMeetingView,#desktopEditPanel) {--aisel-bg:#fff;--aisel-soft:#fff;--field:#fff;--sheet:#fff;--aisel-line:#d9dce1;--form-bg:#fff;--form-soft:#fff;--form-line:#d9dce1;--form-text:#30343b;--form-muted:#6c727c;--form-action:#30343b;background-color:#fff;}
+ html:root body :is(#editorView,#desktopEditPanel) :is(.sp-summary-line,.sample-date-field,.mobile-change-text,.mobile-change-add,.mobile-change-delete,.copygen-btn-secondary,.ref-icon-btn) {background-color:#fff;border-color:#d9dce1;color:#30343b;}
+ html:root body #desktopEditPanel #sampleRecoverySeg button:not(.active) {background:#fff;border-color:#d9dce1;color:#30343b;}
+ html:root body :is(#editorView,#galleryView,#designMeetingView) button:not(.active):not(:disabled):focus-visible {outline:2px solid #30343b;outline-offset:2px;}
+ html:root body :is(#editorView,#desktopEditPanel) :is(.copygen-btn-secondary,.mobile-change-add,.mobile-change-delete,.ref-icon-btn):hover {background-color:#f3f4f6;}
+}
+</style>

@@ -87,3 +87,36 @@ body.dark #designMeetingView button,body.dark #designMeetingView select,body.dar
 }
 @media print{#designMeetingView,.dm-dialog{display:none!important}
 }
+
+/* v171 compact detail: actions own a row; long content scrolls above them. */
+@media screen {
+ #designMeetingView {background:#fff;--aisel-bg:#fff;--aisel-ink:#30343b;--aisel-muted:#6c727c;--aisel-line:#d9dce1;--aisel-radius:4px;}
+ #designMeetingView .dm-search {margin:12px 0 16px;}
+ #designMeetingView #dmSearch {margin:0;}
+ #designMeetingView .dm-detail {display:flex;flex-direction:column;height:var(--dm-height,calc(100dvh - 142px));min-height:240px;padding:4px 0 0;}
+ .dm-detail-header {flex-wrap:nowrap;align-items:center;gap:8px;flex-shrink:0;}
+ #dmDetailTitle {min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;}
+ #dmDetailTitle:focus {white-space:normal;max-height:72px;overflow:auto;}
+ .dm-assignee {flex:0 1 auto;min-width:0;border:0;margin:0;gap:3px;min-height:32px;font-size:12px;white-space:nowrap;}
+ .dm-assignee select {min-width:44px;max-width:68px;min-height:32px;font-size:12px;padding:0;}
+ .dm-links {flex:0 0 auto;max-width:84px;flex-wrap:nowrap;gap:2px;}
+ .dm-link-row {gap:2px;}
+ #designMeetingView .dm-links .dm-icon {display:none;}
+ #designMeetingView .dm-link-add {font-size:20px;padding:0 4px;min-width:24px;}
+ .dm-links .dm-link-row:not(:first-child) {display:none;}
+ .dm-dates {margin:1px 0 6px;font-size:11px;line-height:16px;flex-shrink:0;}
+ .dm-detail-body {flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:4px;}
+ .dm-photo img {height:var(--dm-photo-height,260px);background:#fff;}
+ .dm-open img,.dm-no-photo {background:#fff;}
+ .dm-section-title {font-size:14px;margin:8px 0 5px;}
+ .dm-evidence {font-size:13px;}
+ .dm-evidence th,.dm-evidence td {box-sizing:border-box;height:40px;padding:9px 10px;line-height:20px;}
+ .dm-evidence th {width:62px;}
+ .dm-additional {font-size:12px;line-height:18px;margin:6px 0;}
+ .dm-review-status {margin:4px 0;}
+ .dm-detail-actions {flex-shrink:0;margin:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #d9dce1;gap:8px;}
+ .dm-detail-actions button {min-height:44px!important;}
+ #designMeetingView:has(#dmDetail:not([hidden])) {padding-bottom:0;}
+ #designMeetingView button:not(#dmWorkorder):not(.dm-convert):hover {background:#f3f4f6;}
+ #designMeetingView button:focus-visible {outline:2px solid #30343b;outline-offset:2px;}
+}

@@ -12,14 +12,14 @@
     position:absolute;left:12px;top:50%;transform:translateY(-50%);
     width:16px;height:16px;color:var(--aisel-muted);pointer-events:none;
   }
-  html body :is(.aisel-status,#galleryView,#salesView) .aisel-search-field input {
+  html body :is(.aisel-status,#galleryView,#salesView,#designMeetingView) .aisel-search-field input {
     display:block;box-sizing:border-box;width:100%;min-width:0;height:44px;
     padding:8px 12px 8px 37px;border:1px solid var(--aisel-line);
     border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);
     font-family:inherit;font-size:16px!important;font-weight:400;line-height:24px;
     letter-spacing:0;text-align:left;
   }
-  html body :is(.aisel-status,#galleryView,#salesView) .aisel-search-field input::placeholder {
+  html body :is(.aisel-status,#galleryView,#salesView,#designMeetingView) .aisel-search-field input::placeholder {
     color:var(--aisel-muted);opacity:1;
   }
 }
@@ -247,4 +247,11 @@
   html body #editorView #sheet #costCell :is(.cost-table th,.total-row,.owner-retail-row) {background:var(--aisel-soft);color:var(--aisel-ink);}
   html body #editorView #sheet > .title-row .mod-label {color:var(--aisel-muted);}
   html body #editorView #sheet > .title-row .date-row {font-size:12px;font-weight:400;color:var(--aisel-muted);}
+}
+
+/* v171: workorder and meeting use the same link control. */
+@media screen {
+ html:root body :is(#editorView #refPanel .ref-link-row > .ref-short-link,#designMeetingView #dmLinks .dm-link-open) {display:inline-flex;align-items:center;justify-content:center;gap:4px;box-sizing:border-box;width:auto;min-width:52px;max-width:100%;height:32px;min-height:32px;padding:0 8px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-family:inherit;font-size:12px;font-weight:500;line-height:1.4;text-decoration:none;white-space:nowrap;box-shadow:none;}
+ html:root body :is(#editorView #refPanel .ref-link-row > .ref-short-link,#designMeetingView #dmLinks .dm-link-open):hover {background:#F3F4F6;}
+ html:root body :is(#editorView #refPanel .ref-link-row > .ref-short-link,#designMeetingView #dmLinks .dm-link-open) svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 }
