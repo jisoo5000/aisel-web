@@ -1,3 +1,4 @@
+<!-- v167: formal workorder wording, participant registration and designer photo bridge (2026-10-11) -->
 <!-- v166: design meeting candidate collection, versioned review queue and explicit workorder conversion (2026-10-11) -->
 <!-- v165: sort and label workorder cards by left document creation date descending (2026-10-10) -->
 <!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
@@ -3138,19 +3139,19 @@
   <input id="dmFileInput" type="file" accept="image/*" multiple hidden><input id="dmCameraInput" type="file" accept="image/*" capture="environment" hidden>
   <p class="dm-hint">검토 요청한 후보를 매일 23시 클라우드에서 검토합니다. 다음 날 09시까지 준비가 목표이며, 미완료 후보는 보존합니다.</p>
   <div id="dmStatus" role="status"></div><div id="dmPending"></div><input id="dmSearch" type="search" aria-label="후보 검색" placeholder="후보 검색">
-  <div class="dm-filters" id="dmFilters"><button type="button" data-filter="all" class="active">전체</button><button type="button" data-filter="pending">미검토</button><button type="button" data-filter="done">결과 있음</button><button type="button" data-filter="selected">선택</button><button type="button" data-filter="linked">작지 연결</button></div>
-  <p id="dmCount"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><button id="dmConvert" class="dm-convert" type="button" disabled>선택 0개 작지로 보내기</button>
+  <div class="dm-filters" id="dmFilters"><button type="button" data-filter="all" class="active">전체</button><button type="button" data-filter="unselected">미선택</button><button type="button" data-filter="selected">회의 후보</button><button type="button" data-filter="progress">진행</button><button type="button" data-filter="drop">드롭</button><button type="button" data-filter="pending">미검토</button><button type="button" data-filter="done">결과 있음</button><button type="button" data-filter="linked">작업지시서 연결</button></div>
+  <p id="dmCount"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><button id="dmConvert" class="dm-convert" type="button" disabled>선택 0개 작업지시서로 보내기</button>
   <aside id="dmDetail" class="dm-detail" aria-label="후보 상세" hidden>
     <div class="dm-detail-header"><h3 id="dmDetailTitle">후보 상세</h3><button type="button" id="dmCloseDetail">닫기</button></div>
     <div id="dmPhotos" class="dm-photos"></div><p class="dm-hint">사진을 누르면 판독용 원본을 확대할 수 있습니다.</p><button id="dmAddPhotos" type="button">이 후보에 사진 추가</button>
     <label>제목<input data-dm-field="title"></label><label>상품 링크<input type="url" data-dm-field="link"></label><label>대표자 메모<textarea data-dm-field="memo"></textarea></label><label>개발 방향<textarea data-dm-field="development"></textarea></label>
     <h3>AI 검토 · <span id="dmReviewState">미요청</span></h3><div id="dmReview"></div>
-    <h3>대표자 결정</h3><label>결정<select data-dm-field="decision"><option value="unselected">미선택</option><option value="selected">선택</option><option value="held">보류</option><option value="excluded">제외</option></select></label><label>선택·보류 이유<textarea data-dm-field="decisionReason"></textarea></label><label>회의일<input type="date" data-dm-field="meetingDate"></label><label>회의 메모<textarea data-dm-field="meetingMemo"></textarea></label>
-    <small id="dmDetailSaveState"></small><div class="dm-detail-actions"><button type="button" id="dmSaveDetail">저장</button><button type="button" id="dmRequest">검토 요청</button><button type="button" id="dmOpenWorkorder" hidden>작지 열기</button></div>
+    <h3>대표자 결정</h3><label>결정<select data-dm-field="decision"><option value="unselected">미선택</option><option value="selected">회의 후보</option><option value="progress">진행</option><option value="excluded">드롭</option><option value="held" hidden>보류 (이전 기록)</option></select></label><label>결정 이유 (선택 입력)<textarea data-dm-field="decisionReason"></textarea></label><label>회의일<input type="date" data-dm-field="meetingDate"></label><label>회의 메모<textarea data-dm-field="meetingMemo"></textarea></label>
+    <small id="dmDetailSaveState"></small><div class="dm-detail-actions"><button type="button" id="dmSaveDetail">저장</button><button type="button" id="dmRequest">검토 요청</button><button type="button" id="dmOpenWorkorder" hidden>작업지시서 열기</button></div>
   </aside>
 </section>
 <dialog id="dmAdoptDialog" class="dm-dialog"><h3>기존 레퍼런스 연결</h3><p>선택한 카드와 사진 주소를 그대로 사용합니다. 과거 승인·메모·원가는 유지합니다.</p><div id="dmAdoptList"></div><button id="dmAdoptConfirm" type="button">선택한 레퍼런스 연결</button><button id="dmAdoptCancel" type="button">닫기</button></dialog>
-<dialog id="dmConversionDialog" class="dm-dialog"><h3>선택 후보 작지 전환</h3><p>필요한 시즌·카테고리를 선택해주세요. 저장이 확인된 후보만 작지에 연결합니다.</p><div id="dmConversionList"></div><p id="dmConversionStatus" role="status"></p><button id="dmConversionConfirm" type="button">작지로 보내기</button><button id="dmConversionCancel" type="button">닫기</button></dialog>
+<dialog id="dmConversionDialog" class="dm-dialog"><h3>선택 후보 작업지시서 전환</h3><p>필요한 시즌·카테고리를 선택해주세요. 저장이 확인된 후보만 작업지시서에 연결합니다.</p><div id="dmConversionList"></div><p id="dmConversionStatus" role="status"></p><button id="dmConversionConfirm" type="button">작업지시서로 보내기</button><button id="dmConversionCancel" type="button">닫기</button></dialog>
 <div class="gallery" id="sampleMgmtView" style="display:none">
   <div class="gallery-head">
     <h2>🧵 샘플관리</h2>
@@ -16288,7 +16289,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=166">
+<link rel="stylesheet" href="design-meeting.css?v=167">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16305,5 +16306,5 @@ window.AiselDesignMeetingAdapter={
  open(code){showEditor();newOrderMode_=false;attachWoRef(code);}
 };
 </script>
-<script src="design-meeting-core.js?v=166"></script>
-<script src="design-meeting.js?v=166"></script>
+<script src="design-meeting-core.js?v=167"></script>
+<script src="design-meeting.js?v=167"></script>
