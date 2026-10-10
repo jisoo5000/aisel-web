@@ -1,3 +1,4 @@
+<!-- v163: use field-level cost recovery and readable choices at every screen width (2026-10-10) -->
 <!-- v162: retain the full server baseline across patch saves and recovery; coalesce updates behind one conflict choice (2026-10-10) -->
 <!-- v161: registration order, manual modification date, unified name input focus and English fiber blend (2026-10-10) -->
 <!-- v160: protect new input from late own saves and deferred remote updates; persist change-date edits (2026-10-10) -->
@@ -7315,7 +7316,9 @@
     if(ctx.serverMissing&&!record.newRecord){alert('원본 작지가 없어 복원할 수 없습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
     if(record.newRecord&&baseline){alert('같은 품번의 작지가 이미 저장되어 있습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
     const keys=record.changed.filter(key=>Object.hasOwn(current,key)&&!draftIgnored_.has(key));
-    const plan=mobileDraftMode_()&&!record.newRecord?mobileDraftMerge_(record,current):null;
+    // Recovery safety must not depend on the CSS viewport. Mobile Safari's
+    // desktop-site mode and wide screens need the same row/cell comparison.
+    const plan=!record.newRecord?mobileDraftMerge_(record,current):null;
     const conflicts=plan?plan.conflicts:record.newRecord?[]:keys.filter(key=>!sameValue_(current[key]??null,record.base[key]??null)&&!sameValue_(current[key],record.values[key]));
     const apply=choices=>{
       if(!currentDraft_(ctx)||loading)return;
@@ -7335,7 +7338,7 @@
       const section=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
       label.textContent=plan?conflict.label:labels[key]||'변경 항목 '+(i+1);section.append(label);
       for(const [value,text] of [['server','저장된 내용'],['draft','기기 초안']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
-      for(const [label,value] of [['저장된 내용',plan?conflict.server:current[key]],['기기 초안',plan?conflict.draft:record.values[key]]]){const p=document.createElement('p');p.textContent=label+': '+(plan?draftBusinessText_(value,conflict.cost):draftValueText_(value));section.append(p);}
+      for(const [label,value] of [['저장된 내용',plan?conflict.server:current[key]],['기기 초안',plan?conflict.draft:record.values[key]]]){const p=document.createElement('p');p.textContent=label+': '+draftBusinessText_(value,plan?conflict.cost:false);section.append(p);}
       label.append(select);selectors[key]=select;dialog.append(section);
     });
     const use=document.createElement('button');use.type='button';use.textContent='선택한 내용 복원';use.onclick=()=>{const choices=Object.fromEntries(Object.entries(selectors).map(([key,select])=>[key,select.value]));dialog.close();dialog.remove();apply(choices);};
