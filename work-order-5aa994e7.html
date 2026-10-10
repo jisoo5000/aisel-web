@@ -1,3 +1,4 @@
+<!-- v166: design meeting candidate collection, versioned review queue and explicit workorder conversion (2026-10-11) -->
 <!-- v165: sort and label workorder cards by left document creation date descending (2026-10-10) -->
 <!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
 <!-- v163: use field-level cost recovery and readable choices at every screen width (2026-10-10) -->
@@ -3125,11 +3126,31 @@
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
   <button type="button" class="maintab active" data-main="sales">판매 성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
+  <button type="button" class="maintab" id="dmMainTab" data-main="designmeeting">디자인회의 준비</button>
   <div class="mainbar-order-col" hidden>
     <button type="button" class="maintab mainbar-order" id="quickOrderBtnMain" data-main="quickorder">발주</button>
   </div>
 </div>
 
+<section id="designMeetingView" class="noprint notranslate" lang="ko" translate="no" hidden>
+  <div class="dm-toolbar"><h2>디자인회의 준비</h2><button id="dmGallery" type="button">사진 추가</button><button id="dmCamera" type="button">사진 찍기</button><button id="dmAdopt" type="button">기존 레퍼런스 연결</button><button id="dmRefresh" type="button">결과 새로고침</button></div>
+  <div class="dm-collect"><span>사진을 끌어놓거나 Ctrl+V로 붙여넣기</span><label><input type="checkbox" id="dmGroup"> 여러 사진을 한 후보로 묶기</label><input type="url" id="dmNewLink" aria-label="새 후보 상품 링크" placeholder="상품 링크만 등록해도 됩니다"><button id="dmAddLink" type="button">링크 등록</button></div>
+  <input id="dmFileInput" type="file" accept="image/*" multiple hidden><input id="dmCameraInput" type="file" accept="image/*" capture="environment" hidden>
+  <p class="dm-hint">검토 요청한 후보를 매일 23시 클라우드에서 검토합니다. 다음 날 09시까지 준비가 목표이며, 미완료 후보는 보존합니다.</p>
+  <div id="dmStatus" role="status"></div><div id="dmPending"></div><input id="dmSearch" type="search" aria-label="후보 검색" placeholder="후보 검색">
+  <div class="dm-filters" id="dmFilters"><button type="button" data-filter="all" class="active">전체</button><button type="button" data-filter="pending">미검토</button><button type="button" data-filter="done">결과 있음</button><button type="button" data-filter="selected">선택</button><button type="button" data-filter="linked">작지 연결</button></div>
+  <p id="dmCount"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><button id="dmConvert" class="dm-convert" type="button" disabled>선택 0개 작지로 보내기</button>
+  <aside id="dmDetail" class="dm-detail" aria-label="후보 상세" hidden>
+    <div class="dm-detail-header"><h3 id="dmDetailTitle">후보 상세</h3><button type="button" id="dmCloseDetail">닫기</button></div>
+    <div id="dmPhotos" class="dm-photos"></div><p class="dm-hint">사진을 누르면 판독용 원본을 확대할 수 있습니다.</p><button id="dmAddPhotos" type="button">이 후보에 사진 추가</button>
+    <label>제목<input data-dm-field="title"></label><label>상품 링크<input type="url" data-dm-field="link"></label><label>대표자 메모<textarea data-dm-field="memo"></textarea></label><label>개발 방향<textarea data-dm-field="development"></textarea></label>
+    <h3>AI 검토 · <span id="dmReviewState">미요청</span></h3><div id="dmReview"></div>
+    <h3>대표자 결정</h3><label>결정<select data-dm-field="decision"><option value="unselected">미선택</option><option value="selected">선택</option><option value="held">보류</option><option value="excluded">제외</option></select></label><label>선택·보류 이유<textarea data-dm-field="decisionReason"></textarea></label><label>회의일<input type="date" data-dm-field="meetingDate"></label><label>회의 메모<textarea data-dm-field="meetingMemo"></textarea></label>
+    <small id="dmDetailSaveState"></small><div class="dm-detail-actions"><button type="button" id="dmSaveDetail">저장</button><button type="button" id="dmRequest">검토 요청</button><button type="button" id="dmOpenWorkorder" hidden>작지 열기</button></div>
+  </aside>
+</section>
+<dialog id="dmAdoptDialog" class="dm-dialog"><h3>기존 레퍼런스 연결</h3><p>선택한 카드와 사진 주소를 그대로 사용합니다. 과거 승인·메모·원가는 유지합니다.</p><div id="dmAdoptList"></div><button id="dmAdoptConfirm" type="button">선택한 레퍼런스 연결</button><button id="dmAdoptCancel" type="button">닫기</button></dialog>
+<dialog id="dmConversionDialog" class="dm-dialog"><h3>선택 후보 작지 전환</h3><p>필요한 시즌·카테고리를 선택해주세요. 저장이 확인된 후보만 작지에 연결합니다.</p><div id="dmConversionList"></div><p id="dmConversionStatus" role="status"></p><button id="dmConversionConfirm" type="button">작지로 보내기</button><button id="dmConversionCancel" type="button">닫기</button></dialog>
 <div class="gallery" id="sampleMgmtView" style="display:none">
   <div class="gallery-head">
     <h2>🧵 샘플관리</h2>
@@ -8860,6 +8881,7 @@
 
   // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
   function setMainTabActive_(which){
+    const meetingView=document.getElementById('designMeetingView');if(meetingView&&which!=='designmeeting')meetingView.hidden=true;
     document.querySelectorAll(".maintab").forEach(b=> b.classList.toggle("active", b.dataset.main===which));
     const list = isViewVisible_("salesView") ? "sales" : isViewVisible_("galleryView") ? "orders" : "";
     const header = $("#appBrandHeader");
@@ -10438,6 +10460,7 @@
 
   document.querySelectorAll(".maintab[data-main]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
+      if(btn.dataset.main === "designmeeting") return;
       if(btn.dataset.main === "sales") showSales();
       else if(btn.dataset.main === "moodboard") showMoodboard();
       else if(btn.dataset.main === "quickorder") showQuickOrder();
@@ -16264,3 +16287,23 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  :root:not([data-theme="light"]) #editorView #sheet .header-date-control input[type="date"] {color-scheme:dark;}
 }
 </style>
+
+<link rel="stylesheet" href="design-meeting.css?v=166">
+<script>
+window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
+window.AiselDesignMeetingAdapter={
+ async leave(){if(woRef){clearTimeout(saveT);await save();detachWoRefNow_("디자인회의 준비");}},
+ blank(season,category){
+   startNewWorkOrder();document.getElementById('season').value=season;catSel.value=String(category);
+   const st=collect();detachWoRefNow_("후보 전환 템플릿");
+   st.lines=(st.lines||[]).map(l=>({...l,unit:'',qty:'',negotiation:null}));
+   st.gongim='';st.siyage='';st.fabricPrice='';st.targetThreshold='';st.priceConfirmed=false;st.priceSource='';
+   st.designer='';st.phone='';st.factory='';st.factoryPhone='';st.blend='';st.materials='';
+   return st;
+ },
+ restore(){['editorView','galleryView','salesView','moodboardView','quickOrderView','sampleMgmtView'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});document.getElementById('designMeetingView').hidden=false;setMainTabActive_('designmeeting');},
+ open(code){showEditor();newOrderMode_=false;attachWoRef(code);}
+};
+</script>
+<script src="design-meeting-core.js?v=166"></script>
+<script src="design-meeting.js?v=166"></script>
