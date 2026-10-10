@@ -1,3 +1,4 @@
+<!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
 <!-- v163: use field-level cost recovery and readable choices at every screen width (2026-10-10) -->
 <!-- v162: retain the full server baseline across patch saves and recovery; coalesce updates behind one conflict choice (2026-10-10) -->
 <!-- v161: registration order, manual modification date, unified name input focus and English fiber blend (2026-10-10) -->
@@ -7199,7 +7200,7 @@
       if(path[0]==='lines')return (rowNames.get(path[1])||'원가 항목')+(path.length>2?' · '+(names[path.at(-1)]||'세부 내용'):'');
       if(path[0]==='costNegotiationLinesData')return (rowNames.get(path[2])||'보관된 원가 항목')+' · 협상 기록';
       if(path[0]==='costNegotiationData')return ({gongim:'공임',siyage:'시야게'}[path[1]]||'원가')+' · '+(names[path.at(-1)]||'협상 기록');
-      return ({gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
+      return ({gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',documentCreatedDate:'작업지시서 작성일',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
     }
     function choice(b,l,r,path){
       const id=JSON.stringify(identity(path));
@@ -7242,7 +7243,15 @@
       return s=>finish([...new Set([...preferred.map(x=>x.costLineId),...ids])].map(id=>parts.get(id)(s)).filter(Boolean));
     }
     const changed=record.changed.filter(key=>Object.hasOwn(current,key)&&!draftIgnored_.has(key)),parts={};
-    for(const key of changed)if(!costKeys.has(key)){
+    const creationKeys=['yy','mm','dd'];
+    if(changed.some(key=>creationKeys.includes(key))){
+      const text=state=>creationKeys.map((key,i)=>String(state[key]??'').padStart(i?2:4,'0')).join('-');
+      const b=text(base),l=text(local),r=text(current);
+      const resolve=l===b||l===r?()=>current:r===b?()=>local:(()=>{const choose=choice(b,l,r,['documentCreatedDate']);return selections=>choose(selections)===l?local:current;})();
+      // A calendar chooses one whole date; never combine its year with another editor's month/day.
+      for(const key of creationKeys)parts[key]=selections=>resolve(selections)[key];
+    }
+    for(const key of changed)if(!costKeys.has(key)&&!creationKeys.includes(key)){
       if(sameValue_(current[key]??null,base[key]??null)||sameValue_(current[key],local[key]))parts[key]=()=>local[key];
       else parts[key]=choice(base[key],local[key],current[key],[key]);
     }
@@ -8766,22 +8775,51 @@
   }
   function datePartsFromInput_(value){const [y,m,d]=value.split('-').map(Number);return {myy:String(y),mmm:String(m),mdd:String(d)};}
   function refreshModifiedDateInput_(){
-    const input=document.getElementById('manualModifiedDate');if(!input||document.activeElement===input)return;
-    const displayed=['myy','mmm','mdd'].map(id=>document.getElementById(id).value);
-    const value=manualModifiedDate_||validDateInput_(displayed.map((v,i)=>String(v).padStart(i?2:4,'0')).join('-'));
-    if(input.value!==value)input.value=value;
+    for(const [id,fields,override] of [['manualCreatedDate',['yy','mm','dd'],''],['manualModifiedDate',['myy','mmm','mdd'],manualModifiedDate_]]){
+      const input=document.getElementById(id);if(!input)continue;
+      const displayed=fields.map(key=>document.getElementById(key).value);
+      const value=override||validDateInput_(displayed.map((v,i)=>String(v).padStart(i?2:4,'0')).join('-'));
+      if(document.activeElement!==input&&input.value!==value)input.value=value;
+      refreshHeaderDateLabel_(input);
+    }
   }
+  function refreshHeaderDateLabel_(input){
+    const value=validDateInput_(input.value),label=document.getElementById(input.id+'Label');if(!label)return;
+    const text=value?value.split('-').map(Number).join('. '):'날짜 선택';
+    if(label.textContent!==text)label.textContent=text;
+  }
+  function headerDateControl_(input){
+    const control=document.createElement('span');control.className='header-date-control';
+    const label=document.createElement('span');label.id=input.id+'Label';label.className='header-date-value';label.setAttribute('aria-hidden','true');
+    control.append(label,input);
+    input.addEventListener('click',()=>{try{input.showPicker?.();}catch(_){} });
+    return control;
+  }
+  const createdDateDisplay=document.querySelector('#sheet .date-box > .date-row');
+  const createdDateEditor=document.createElement('div');createdDateEditor.className='manual-created-date-row noprint';
+  const createdDateInput=document.createElement('input');createdDateInput.type='date';createdDateInput.id='manualCreatedDate';createdDateInput.setAttribute('aria-label','작업지시서 작성일');
+  createdDateEditor.append(headerDateControl_(createdDateInput));createdDateDisplay.after(createdDateEditor);
+  const commitCreatedDate=()=>{
+    if(loading||createdDateInput.validity.badInput)return;
+    const value=validDateInput_(createdDateInput.value);
+    if(!value){refreshModifiedDateInput_();return;}
+    const parts=value.split('-').map(Number);['yy','mm','dd'].forEach((id,i)=>document.getElementById(id).value=String(parts[i]));
+    refreshHeaderDateLabel_(createdDateInput);saveSoon();
+  };
+  createdDateInput.addEventListener('input',commitCreatedDate);createdDateInput.addEventListener('change',commitCreatedDate);
+  createdDateInput.addEventListener('blur',refreshModifiedDateInput_);
   const modifiedDateDisplay=document.querySelector('#sheet .title-spacer > .date-row');
   const modifiedDateEditor=document.createElement('div');modifiedDateEditor.className='manual-modified-date-row noprint';
   const modifiedDateLabel=document.createElement('label');modifiedDateLabel.htmlFor='manualModifiedDate';modifiedDateLabel.textContent='수정';modifiedDateLabel.className='mod-label';
   const modifiedDateInput=document.createElement('input');modifiedDateInput.type='date';modifiedDateInput.id='manualModifiedDate';modifiedDateInput.setAttribute('aria-label','작업지시서 수정일');
-  modifiedDateEditor.append(modifiedDateLabel,modifiedDateInput);modifiedDateDisplay.after(modifiedDateEditor);
+  modifiedDateEditor.append(modifiedDateLabel,headerDateControl_(modifiedDateInput));modifiedDateDisplay.after(modifiedDateEditor);
   const commitModifiedDate=()=>{
     if(loading||modifiedDateInput.validity.badInput)return;
     const value=modifiedDateInput.value;if(value&&!validDateInput_(value))return;
-    manualModifiedDate_=value;saveSoon();
+    manualModifiedDate_=value;refreshHeaderDateLabel_(modifiedDateInput);saveSoon();
   };
   modifiedDateInput.addEventListener('input',commitModifiedDate);modifiedDateInput.addEventListener('change',commitModifiedDate);
+  modifiedDateInput.addEventListener('blur',refreshModifiedDateInput_);
 
   // Only complete known fiber expressions are rewritten. Product names and notes remain exact.
   function englishBlend_(value){
@@ -8800,11 +8838,23 @@
   }
   function normalizePendingBlend_(){
     const input=document.getElementById('blend');
-    if(!blendNormalizePending_||!mobileDraftMode_()||isEditorComposing_()||document.activeElement===input)return false;
+    if(!blendNormalizePending_||!mobileBlendInputMode_()||isEditorComposing_()||document.activeElement===input)return false;
     blendNormalizePending_=false;const converted=englishBlend_(input.value);if(converted===input.value)return false;
     input.value=converted;return true;
   }
-  document.getElementById('blend').addEventListener('input',()=>{if(!loading&&mobileDraftMode_())blendNormalizePending_=true;});
+  function mobileBlendInputMode_(){return mobileDraftMode_()||/iPhone|iPad|Android/i.test(navigator.userAgent);}
+  let blendFocusUntouched_=false;
+  document.getElementById('blend').addEventListener('focus',()=>{
+    if(loading||!mobileBlendInputMode_()||isEditorComposing_())return;
+    blendFocusUntouched_=true;blendNormalizePending_=true;
+  });
+  document.getElementById('blend').addEventListener('click',()=>{
+    if(!blendFocusUntouched_||loading||!mobileBlendInputMode_()||isEditorComposing_())return;
+    blendFocusUntouched_=false;
+    const input=document.getElementById('blend'),converted=englishBlend_(input.value);
+    if(converted!==input.value){input.value=converted;saveSoon();}
+  });
+  document.getElementById('blend').addEventListener('input',()=>{blendFocusUntouched_=false;if(!loading&&mobileBlendInputMode_())blendNormalizePending_=true;});
   document.getElementById('blend').addEventListener('blur',()=>{if(normalizePendingBlend_())saveSoon();});
 
   // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
@@ -16183,11 +16233,14 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 </style>
 
 <style id="aisel-v161-mobile-date-name-inputs">
-.manual-modified-date-row {display:none;}
+.manual-modified-date-row,.manual-created-date-row {display:none;}
 @media screen and (max-width:600px) {
- html body #editorView #sheet .title-spacer > .date-row {display:none;}
+ html body #editorView #sheet :is(.date-box,.title-spacer) > .date-row {display:none;}
+ html body #editorView #sheet .manual-created-date-row {display:flex;align-items:center;min-width:0;}
  html body #editorView #sheet .manual-modified-date-row {display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:0;}
- html body #editorView #sheet #manualModifiedDate {box-sizing:border-box;width:140px;min-width:0;height:32px;padding:2px 4px;border:1px solid var(--form-line);border-radius:4px;background:var(--form-bg);color:var(--form-text);font:400 16px/24px var(--kfont);text-align:center;color-scheme:light;}
+ html body #editorView #sheet .header-date-control {position:relative;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:0;height:32px;padding:0 2px;border:0;background:transparent;font:400 16px/24px var(--kfont);color:var(--aisel-ink);white-space:nowrap;}
+ html body #editorView #sheet .header-date-control input[type="date"] {position:absolute;inset:0;box-sizing:border-box;width:100%;min-width:0;height:100%;margin:0;padding:0;opacity:0;border:0;border-radius:0;background:transparent;font:400 16px/24px var(--kfont);cursor:pointer;color-scheme:light;}
+ html body #editorView #sheet .header-date-control:focus-within .header-date-value {text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--aisel-edit-focus);}
  html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor {
   border:1px solid var(--form-line)!important;border-radius:4px;background:var(--form-bg)!important;
   color:var(--form-text)!important;-webkit-text-fill-color:var(--form-text)!important;
@@ -16195,9 +16248,9 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
  }
  html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor:focus {border-color:var(--aisel-edit-focus)!important;}
  html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor::placeholder {color:var(--form-muted);-webkit-text-fill-color:var(--form-muted);}
- :root[data-theme="dark"] #editorView #sheet #manualModifiedDate {color-scheme:dark;}
+ :root[data-theme="dark"] #editorView #sheet .header-date-control input[type="date"] {color-scheme:dark;}
 }
 @media screen and (max-width:600px) and (prefers-color-scheme:dark) {
- :root:not([data-theme="light"]) #editorView #sheet #manualModifiedDate {color-scheme:dark;}
+ :root:not([data-theme="light"]) #editorView #sheet .header-date-control input[type="date"] {color-scheme:dark;}
 }
 </style>
