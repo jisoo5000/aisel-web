@@ -1,3 +1,4 @@
+<!-- v165: sort and label workorder cards by left document creation date descending (2026-10-10) -->
 <!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
 <!-- v163: use field-level cost recovery and readable choices at every screen width (2026-10-10) -->
 <!-- v162: retain the full server baseline across patch saves and recovery; coalesce updates behind one conflict choice (2026-10-10) -->
@@ -10654,12 +10655,17 @@
     alert(`${okCount}/${list.length}개를 구글시트로 보냈습니다. (제조원가·원가상세는 화면을 열어 저장/인쇄해야 정확히 반영됩니다)`);
   });
 
-  // v161: registration order is stable across edits. Keep known legacy creation dates.
+  // v165: the left document date takes priority over import/registration time.
+  // Fall back only when that date is missing/invalid; edits never set the order.
   function sortKeyForOrder_(st){
-    const created=Number(st.createdAt);
-    if(Number.isFinite(created)&&created>0&&Number.isFinite(new Date(created).getTime()))return created;
     if(st.yy && st.mm && st.dd){
       const date=[st.yy,st.mm,st.dd].map((v,i)=>String(v).padStart(i?2:4,'0')).join('-');
+      if(validDateInput_(date))return Date.parse(date+'T00:00:00+09:00');
+    }
+    const created=Number(st.createdAt);
+    if(Number.isFinite(created)&&created>0&&Number.isFinite(new Date(created).getTime())){
+      const parts=modificationDateParts_(created);
+      const date=[parts.myy,parts.mmm,parts.mdd].map((v,i)=>String(v).padStart(i?2:4,'0')).join('-');
       if(validDateInput_(date))return Date.parse(date+'T00:00:00+09:00');
     }
     return 0;
@@ -10667,7 +10673,8 @@
   function compareRegisteredOrders_(a,b){
     const first=sortKeyForOrder_(a[1]),second=sortKeyForOrder_(b[1]);
     if(!first||!second)return first?-1:second?1:a[0].localeCompare(b[0],'en');
-    return second-first||a[0].localeCompare(b[0],'en');
+    const created=st=>{const at=Number(st.createdAt);return Number.isFinite(at)&&at>0&&Number.isFinite(new Date(at).getTime())?at:0;};
+    return second-first||created(b[1])-created(a[1])||a[0].localeCompare(b[0],'en');
   }
 
   function renderGallery(){
@@ -10698,7 +10705,7 @@
         const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
         const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
         // 2026-08-13 수정: 카드 아래 표시를 품번에서 날짜로 변경.
-        // v161: 목록 정렬과 같은 등록일을 표시하며 수정일로 대체하지 않습니다.
+        // v165: 왼쪽 작성일과 같은 날짜를 카드에 표시합니다.
         let dateLabel = "";
         const registeredAt=sortKeyForOrder_(st);
         if(registeredAt){const d=modificationDateParts_(registeredAt);dateLabel=`${d.myy}.${d.mmm}.${d.mdd}`;}
