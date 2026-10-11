@@ -1,4 +1,4 @@
-/* Workorder v176: compact screen controls on the shared AISEL canvas.
+/* Workorder v178 · AISEL App Core 1.0.0: compact screen controls on the shared AISEL canvas.
    Never change the A4 DOM, print fonts, table widths or pagination here. */
 @media screen {
  html:root body :is(#editorView,#galleryView,#salesView) {
@@ -12,14 +12,14 @@
   font-size:var(--aisel-body);line-height:22px;
  }
  html:root body :is(#editorView,#galleryView,#salesView) :is(button,input,textarea,select) {font-family:var(--aisel-font)!important;}
- html:root body :is(#galleryView,#salesView) {width:100%;padding-left:16px;padding-right:16px;}
- html:root body #editorView {width:100%;padding-left:0;padding-right:0;}
+ html:root body :is(#galleryView,#salesView) {width:100%;padding-left:4px;padding-right:4px;}
+ html:root body #editorView {width:100%;padding-left:4px;padding-right:4px;}
  html:root body #editorView :is(#desktopWorkArea,#desktopEditPanel,#backToListBtn) {display:none!important;}
 
  /* Lists keep the same two columns, including desktop and landscape screens. */
  html:root body #galleryView .gallery-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
  html:root body #galleryView .gcard {min-width:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);box-shadow:none;background:var(--aisel-bg);}
- html:root body #galleryView .gcard-thumb {height:auto;aspect-ratio:3/4;width:100%;background:var(--aisel-bg);}
+ html:root body #galleryView .gcard-thumb {height:160px;aspect-ratio:auto;width:100%;background:var(--aisel-bg);}
  html:root body #galleryView .gcard-thumb img {width:100%;height:100%;object-fit:contain;}
  html:root body #galleryView .gcard-title {padding:8px;font-size:13px;line-height:18px;font-weight:600;color:var(--aisel-ink);overflow-wrap:anywhere;}
  html:root body #galleryView #galleryGrid .gcard-name {font-size:13px!important;line-height:18px!important;font-weight:600!important;}
@@ -27,38 +27,38 @@
  html:root body #galleryView #galleryGrid .gcard-code-row {display:flex;flex-wrap:wrap;gap:4px;min-width:0;white-space:normal;overflow:visible;}
  html:root body #galleryView #galleryGrid .gcard-code-value {flex:0 1 auto;max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
  html:root body #galleryView .gcard-colors {display:flex;flex-wrap:wrap;gap:4px;}
- html:root body #galleryView #galleryGrid .gcard-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px!important;min-height:22px!important;padding:2px 5px!important;border:0!important;border-radius:4px;font-size:12px!important;line-height:18px!important;font-weight:500;}
+ html:root body #galleryView #galleryGrid .gcard-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px!important;min-height:22px!important;padding:2px 5px!important;border:0!important;border-radius:var(--aisel-radius);font-size:12px!important;line-height:18px!important;font-weight:500;}
  html:root body #galleryView .gcard-color-mobile-extra {display:inline-flex!important;}
  html:root body #galleryView .gcard-color-more {display:none!important;}
- html:root body #galleryView .gcard.newcard {border-style:solid;min-height:228px;}
+ html:root body #galleryView .gcard.newcard {border-style:solid;min-height:160px;align-self:stretch;}
  html:root body #galleryView .gcard.newcard .gcard-title {font-size:13px;line-height:20px;font-weight:600;}
  html:root body #galleryView #galleryTabs {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;overflow:visible;}
- html:root body #galleryView #galleryTabs .gtab {width:100%;min-width:0;height:32px;min-height:32px;padding:0;border:0;border-bottom:1px solid transparent;border-radius:0;font-size:12px!important;line-height:20px;font-weight:600;white-space:nowrap;}
+ html:root body #galleryView #galleryTabs .gtab {width:100%;min-width:0;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0;border:0;border-bottom:1px solid transparent;border-radius:0;font-size:12px!important;line-height:20px;font-weight:600;white-space:nowrap;}
  html:root body :is(#galleryView,#salesView) :is(#galleryTrashBtn,#galleryExportSheetBtn,#sheetSalesRefresh,.sheet-sales-refresh) {
   display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
-  width:80px;min-width:80px;height:32px;min-height:32px;padding:0 8px;
-  border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);
+  width:80px;min-width:80px;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 8px;
+  border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);
   font-size:13px!important;font-weight:600;line-height:20px;white-space:nowrap;box-shadow:none;
  }
  html:root body :is(#galleryView,#salesView) :is(input[type="search"],#gallerySearchInput,#salesSearchInput) {height:36px;min-height:36px;font-size:16px!important;font-weight:400;line-height:24px;}
  html:root body #galleryView #galleryCounts {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;width:100%;min-width:0;margin:0;font-size:12px;line-height:18px;font-weight:400;text-align:center;}
  html:root body #galleryView .gallery-toolbar {width:100%;margin:4px 0 0;}
  html:root body #galleryView #galleryTabs .gtab.active {background:var(--aisel-soft);color:var(--aisel-ink);border-bottom:1px solid var(--aisel-ink);}
- html:root body #galleryView #galleryGrid .gcard-sample-pickup {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:1px 5px;border:0;border-radius:4px;background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);font-size:12px;font-weight:500;line-height:18px;white-space:nowrap;}
+ html:root body #galleryView #galleryGrid .gcard-sample-pickup {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:1px 5px;border:0;border-radius:var(--aisel-radius);background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);font-size:12px;font-weight:500;line-height:18px;white-space:nowrap;}
 
  /* Reuse the existing mobile header, controls and field handlers on every screen. */
- html:root body #editorView .editor-mobile-head {border-radius:4px 4px 0 0;padding:8px 12px;gap:4px 8px;}
+ html:root body #editorView .editor-mobile-head {border-radius:var(--aisel-radius) 4px 0 0;padding:8px 12px;gap:4px 8px;}
  html:root body #editorView .editor-mobile-head #mobileProductName {font-size:16px;font-weight:600;line-height:24px!important;}
  html:root body #editorView #mobileProductCode {font-size:12px;font-weight:400;line-height:18px;}
  html:root body #editorView .toolbar {padding:4px 12px;overflow:visible;}
- html:root body #editorView .toolbar > .tb-row {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:32px;gap:4px;height:auto;min-height:32px;max-height:none;max-width:100%;padding:0;overflow:visible;}
- html:root body #editorView .toolbar > .tb-row > .btn {grid-column:auto!important;grid-row:1!important;order:0!important;width:100%;min-width:0;max-height:32px;padding:0 2px;font-size:12px!important;line-height:15px;white-space:normal;}
+ html:root body #editorView .toolbar > .tb-row {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:var(--aisel-control-height);gap:4px;height:auto;min-height:var(--aisel-control-height);max-height:none;max-width:100%;padding:0;overflow:visible;}
+ html:root body #editorView .toolbar > .tb-row > .btn {grid-column:auto!important;grid-row:1!important;order:0!important;width:100%;min-width:0;max-height:var(--aisel-control-height);padding:0 2px;font-size:12px!important;line-height:15px;white-space:normal;}
  html:root body #editorView #statusBar {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px 12px;overflow:visible;}
  html:root body #editorView #statusBar .status-btn {width:100%;min-width:0;padding:0 2px!important;font-size:12px!important;}
  html:root body #editorView :is(.toolbar .btn,#statusBar .status-btn,#sampleRecoverySeg button,#printBtn),
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button {
   display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
-  height:32px;min-height:32px;padding:0 6px;border:1px solid var(--aisel-line);border-radius:4px;
+  height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 6px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);
   background:var(--aisel-bg);color:var(--aisel-ink);font-size:12px!important;font-weight:600!important;line-height:20px;box-shadow:none;white-space:nowrap;
  }
  html:root body #editorView :is(#statusBar .status-btn.active,#sampleRecoverySeg button.active) {background:var(--aisel-soft);border-color:var(--aisel-line);border-bottom-color:var(--aisel-ink);color:var(--aisel-ink);}
@@ -66,13 +66,13 @@
  html:root body #editorView #sampleRecoverySeg button[data-value="factory"].active {background:var(--aisel-factory-bg);border-color:var(--aisel-factory-ink);color:var(--aisel-factory-ink);}
  html:root body #editorView #mobileMeetingSummary {padding:8px 12px;gap:8px;}
  html:root body #editorView #sampleRecoverySeg {display:grid;grid-template-columns:repeat(2,48px);gap:4px;}
- html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button {width:48px;min-width:48px;height:26px;min-height:26px;padding:0 4px;font-size:12px!important;font-weight:500!important;}
+ html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button {width:48px;min-width:48px;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 4px;font-size:12px!important;font-weight:500!important;}
  html:root body #editorView #mobileSampleStatus {min-width:0;flex-wrap:wrap;gap:4px;}
  html:root body #editorView #mobileSampleStatus > span:first-child {font-size:16px;font-weight:600;line-height:24px;}
  html:root body #editorView #mobileSampleRecoveryDate {font-size:12px;font-weight:400;line-height:18px;white-space:normal;}
  html:root body #editorView .editor-mobile-head #refPanel {max-width:100%;grid-template-columns:minmax(56px,max-content) auto 30px;gap:4px;}
  html:root body #editorView .editor-mobile-head #refPanel .ref-actions {gap:4px;}
- html:root body #editorView .editor-mobile-head #refPanel :is(.ref-short-link,.ref-icon-btn,#refAddBtn) {box-sizing:border-box;min-height:30px;height:30px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);}
+ html:root body #editorView .editor-mobile-head #refPanel :is(.ref-short-link,.ref-icon-btn,#refAddBtn) {box-sizing:border-box;min-height:28px;height:28px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);}
  html:root body #editorView .editor-mobile-head #refPanel .ref-short-link {padding:0 6px;min-width:56px;font-size:13px;font-weight:600;line-height:20px;}
  html:root body #editorView .editor-mobile-head #refPanel :is(.ref-icon-btn,#refAddBtn) {width:30px;min-width:30px;flex-basis:30px;padding:0;}
  html:root body #editorView :is(.ref-action-icon,.mobile-change-delete .ref-action-icon) {width:16px;height:16px;stroke-width:1.5;}
@@ -89,19 +89,19 @@
  html:root body #editorView #sheet :is(.date-box,.title-spacer,.manual-created-date-row,.manual-modified-date-row) {min-width:0;}
  html:root body #editorView #sheet .header-date-control {height:30px;min-height:30px;padding:0 2px;border:0!important;border-radius:0;background:transparent!important;font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
  html:root body #editorView #sheet .header-date-control input[type="date"] {height:100%;min-height:30px;border:0!important;border-radius:0;background:transparent!important;font-size:16px!important;}
- html:root body #editorView #mobileHeaderNames .mobile-contact-name {min-height:32px;height:auto;font-size:14px;font-weight:400;line-height:22px;background:transparent;border:0;}
+ html:root body #editorView #mobileHeaderNames .mobile-contact-name {min-height:var(--aisel-control-height);height:auto;font-size:14px;font-weight:400;line-height:22px;background:transparent;border:0;}
  html:root body #editorView #mobileHeaderNames .mobile-contact-name::before {font-size:12px;line-height:18px;font-weight:400;color:var(--aisel-muted);}
  html:root body #editorView #sheet :is(.designer .k,.cost-table th,.sizespec th,.fixed-row .k,.total-row .k,.owner-retail-row > label) {font-size:14px!important;font-weight:600;line-height:20px;}
  html:root body #editorView #sheet :is(#fabricSupplierField,#fabricNameField,#blend),
  html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor,
  html:root body #editorView #sheet #mobileHeaderNames #factory.mobile-name-editor {
-  box-sizing:border-box;height:36px;min-height:36px;padding:5px 8px;border:1px solid var(--aisel-line)!important;border-radius:4px;background:var(--aisel-bg)!important;
+  box-sizing:border-box;height:36px;min-height:36px;padding:5px 8px;border:1px solid var(--aisel-line)!important;border-radius:var(--aisel-radius);background:var(--aisel-bg)!important;
   color:var(--aisel-ink)!important;-webkit-text-fill-color:var(--aisel-ink)!important;font-size:16px!important;font-weight:400;line-height:24px;
  }
- html:root body #editorView #sheet :is(#materials,.mobile-change-text) {box-sizing:border-box;padding:8px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:16px!important;font-weight:400;line-height:26px;}
+ html:root body #editorView #sheet :is(#materials,.mobile-change-text) {box-sizing:border-box;padding:8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);font-size:16px!important;font-weight:400;line-height:26px;}
  html:root body #editorView #sheet :is(.unit-note,.tip) {font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
  html:root body #editorView #sheet #ph1 > .photo-src {display:grid;grid-template-columns:repeat(3,52px);gap:4px;right:12px;top:8px;}
- html:root body #editorView #sheet #ph1 > .photo-src > button {box-sizing:border-box;width:52px;min-width:52px;height:30px;min-height:30px;padding:0 4px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;}
+ html:root body #editorView #sheet #ph1 > .photo-src > button {box-sizing:border-box;width:52px;min-width:52px;height:28px;min-height:28px;padding:0 4px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;}
  html:root body #editorView #sheet > .photos > #ph1 {height:302px;padding-top:44px;}
 
  /* Cost values remain centered, totals right aligned, with narrow table overflow local. */
@@ -113,20 +113,20 @@
  html:root body #editorView #sheet #costCell .cost-col-delete {width:32px;}
  html:root body #editorView #sheet #costCell .cost-table :is(th,td).noprint {width:32px!important;padding:0;}
  html:root body #editorView #sheet #costCell .cost-table .del,
- html:root body #editorView #sheet .sizespec :is(.ss-col-del,.row-del) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:30px;min-width:30px;height:30px;min-height:30px;padding:0;border:0;border-radius:0;background:transparent;color:var(--aisel-muted);font-size:16px;line-height:16px;}
+ html:root body #editorView #sheet .sizespec :is(.ss-col-del,.row-del) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:28px;min-width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:0;background:transparent;color:var(--aisel-muted);font-size:16px;line-height:16px;}
  html:root body #editorView #sheet #costCell .cost-table :is(th,td) {border:1px solid var(--aisel-line)!important;background:var(--aisel-bg);}
  html:root body #editorView #sheet #costCell .cost-pair,
  html:root body #editorView #sheet #costCell .cost-table .cost-pair {height:40px;min-height:40px;padding:2px;gap:4px;}
  html:root body #editorView #sheet #costCell :is(.cost-pair input,.cost-table input,.cost-table .qty) {box-sizing:border-box;height:36px;min-height:36px;padding:5px 2px;font-size:16px!important;font-weight:400;line-height:24px;text-align:center;}
- html:root body #editorView #sheet #costCell .cost-pair input {border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);}
+ html:root body #editorView #sheet #costCell .cost-pair input {border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);}
  html:root body #editorView #sheet #costCell .cost-pair input::placeholder {font-size:12px;font-weight:400;letter-spacing:0;color:var(--aisel-muted);}
  html:root body #editorView #sheet #costCell .cost-pair input.nego-price-empty {background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);}
  html:root body #editorView #sheet #costCell .cost-table .amt {font-size:16px;font-weight:400;line-height:24px;text-align:center;}
- html:root body #editorView #sheet #costCell :is(.total-row,.owner-retail-row) {border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);}
+ html:root body #editorView #sheet #costCell :is(.total-row,.owner-retail-row) {border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);}
  html:root body #editorView #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {font-size:22px!important;font-weight:700;line-height:28px;text-align:right;}
  html:root body #editorView #sheet #costCell #targetThreshold {min-height:36px;height:36px;}
  html:root body #editorView #sheet #costCell #addLine,
- html:root body #editorView #sheet .sizespec .ss-addrow .add {box-sizing:border-box;height:32px;min-height:32px;padding:0 6px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;white-space:nowrap;}
+ html:root body #editorView #sheet .sizespec .ss-addrow .add {box-sizing:border-box;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 6px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;white-space:nowrap;}
  html:root body #editorView #sheet .sizespec .ss-addrow {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;overflow:visible;}
  html:root body #editorView #sheet .sizespec :is(table,th,td) {border:1px solid var(--aisel-line)!important;background:var(--aisel-bg);}
  html:root body #editorView #sheet .sizespec th.colhead {min-width:108px;width:108px;padding:0 30px 0 0;}
@@ -136,7 +136,7 @@
  html:root body #editorView #sheet .sizespec :is(th input,td input) {box-sizing:border-box;min-height:36px;height:36px;font-size:16px!important;font-weight:400;line-height:24px;}
  html:root body #editorView #mobileSampleRecords .mobile-change-heading {grid-template-columns:minmax(0,1fr) 108px 30px 30px;gap:4px;}
  html:root body #editorView #mobileSampleRecords .mobile-change-heading > span:first-child {white-space:normal;}
- html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.sample-date-field,.mobile-change-add,.mobile-change-delete) {box-sizing:border-box;height:30px;min-height:30px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);}
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.sample-date-field,.mobile-change-add,.mobile-change-delete) {box-sizing:border-box;height:30px;min-height:30px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);}
  html:root body #editorView #mobileSampleRecords .mobile-change-heading .sample-date-field {width:108px;padding:0 4px;}
  html:root body #editorView #mobileSampleRecords .sample-date-label {font-size:16px;font-weight:400;line-height:24px;}
  html:root body #editorView #mobileSampleRecords :is(.mobile-change-add,.mobile-change-delete) {width:30px;min-width:30px;display:inline-flex;align-items:center;justify-content:center;padding:0;}
@@ -149,21 +149,8 @@
  html:root body #editorView #productColors #colorSwatches .color-dot {box-sizing:border-box;flex:0 0 24px;width:24px;height:24px;border:1px solid var(--aisel-line);border-radius:50%;}
  html:root body #editorView #productColors #colorSwatches .copygen-selected-base .color-dot {outline:1px solid var(--aisel-ink);outline-offset:1px;}
  html:root body #editorView #productColors #selectedColors {display:flex;flex-wrap:wrap;gap:4px;}
- html:root body #editorView #productColors #selectedColors .copygen-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:1px 5px;border:0;border-radius:4px;font-size:12px;font-weight:500;line-height:18px;}
+ html:root body #editorView #productColors #selectedColors .copygen-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:1px 5px;border:0;border-radius:var(--aisel-radius);font-size:12px;font-weight:500;line-height:18px;}
  html:root body #editorView #productColors #selectedColors .copygen-color-chip > button {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;min-width:18px;height:18px;min-height:18px;padding:0;border:0;background:transparent;color:inherit;font-size:16px;line-height:20px;}
-
- /* Sales keeps all source metrics and existing ordering; only typography changes. */
- html:root body #salesView #salesTableBody {width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;}
- html:root body #salesView .sheet-sales-grid {min-width:358px;grid-template-columns:34px minmax(116px,1fr) 44px 44px 50px 50px;column-gap:4px;font-size:13px;line-height:20px;border-bottom:1px solid var(--aisel-line);color:var(--aisel-ink);}
- html:root body #salesView .sheet-sales-grid > span:is(:first-child,:nth-child(5),:nth-child(6)) {padding:0;white-space:nowrap;overflow:visible;text-overflow:clip;}
- html:root body #salesView .sheet-sales-head {font-size:12px;line-height:18px;color:var(--aisel-muted);}
- html:root body #salesView .sheet-sales-head > span {white-space:normal;}
- html:root body #salesView .sheet-sales-name {height:auto;min-height:36px;padding:6px 0;border:0;border-radius:0;box-shadow:none;background:var(--aisel-bg);color:var(--aisel-ink);text-align:left;font-size:13px;font-weight:600;line-height:18px;}
- html:root body #salesView .sheet-sales-name-label {white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
- html:root body #salesView .sheet-sales-badge {flex:0 0 28px;width:28px;height:22px;border:0;border-radius:4px;font-size:12px;line-height:18px;font-weight:500;}
- html:root body #salesView :is(#salesScopeNote,#salesUpdated,.sheet-sales-meta-info) {font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
- html:root body #salesView .sheet-sales-warning {color:var(--aisel-error);}
- html:root body #salesView .sheet-sales-caution {color:var(--aisel-factory-ink);}
 
  html:root body :is(#editorView,#galleryView,#salesView) :is(button,a,[role="button"],input,textarea,select):focus-visible {
   outline:2px solid var(--aisel-focus)!important;outline-offset:2px!important;box-shadow:none!important;
@@ -171,10 +158,29 @@
  html:root body #editorView :is(input,textarea,select):focus {background:var(--aisel-bg)!important;}
  html:root body #editorView #sheet :is(input,textarea,select):focus {border-color:var(--aisel-line)!important;}
  html:root body #editorView :is(button,.ref-short-link):not(.active):not(:disabled):hover {background:var(--aisel-bg);border-color:var(--aisel-muted);}
- html:root body #scrollFabWrap {display:flex!important;position:fixed;left:auto;right:max(8px,calc((100vw - 390px)/2 - 38px),env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:500;flex-direction:column;gap:4px;width:30px;margin:0;padding:0;}
+ html:root body #scrollFabWrap {display:flex!important;position:fixed;left:auto;right:max(4px,calc((100vw - 390px)/2 + 4px),env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:500;flex-direction:column;gap:4px;width:28px;margin:0;padding:0;pointer-events:none;}
  html:root body #scrollFabWrap .scroll-label {display:none;}
- html:root body #scrollFabWrap .scroll-fab {display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;font:600 13px/20px var(--aisel-font);}
+ html:root body #scrollFabWrap .scroll-fab {pointer-events:auto;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:28px;height:28px;min-width:28px;min-height:28px;padding:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;font:600 13px/20px var(--aisel-font);}
  html:root body #scrollFabWrap .scroll-fab svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
  html:root body :is(#editorView,#galleryView,#salesView) * {scrollbar-width:none;}
  html:root body :is(#editorView,#galleryView,#salesView) *::-webkit-scrollbar {display:none;width:0;height:0;}
+
+ /* One compact gallery rhythm; the live count summary remains available without a second row. */
+ html:root body #galleryView {padding-top:0;}
+ html:root body #galleryView > .gallery-head {display:none;}
+ html:root body #galleryView .gallery-tabs-row {margin:0 0 8px;}
+ html:root body #galleryView #galleryTabs {margin:0;}
+ html:root body #galleryView #galleryTabs .gtab {display:flex;align-items:center;justify-content:center;gap:4px;padding:0 2px;height:28px;min-height:28px;font-size:11px!important;line-height:16px;}
+ html:root body #galleryView #galleryTabs .gtab-label {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+ html:root body #galleryView #galleryTabs .gtab-count {flex:none;font-variant-numeric:tabular-nums;white-space:nowrap;}
+ html:root body #galleryView .gallery-toolbar {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+ html:root body #galleryView #gallerySearchRow {display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 8px;}
+ html:root body #galleryView #gallerySearchRow > label[hidden] {display:none!important;}
+ html:root body #galleryView #galleryTrashBtn {flex:0 0 auto;width:auto;min-width:64px;max-width:112px;height:28px;min-height:28px;padding:0 6px;margin:0;font-size:11px!important;overflow:hidden;text-overflow:ellipsis;}
+ html:root body #galleryView #galleryGrid .gcard-info {display:grid;grid-template-rows:none;align-content:start;gap:4px;padding:8px;}
+ html:root body #galleryView #galleryGrid .gcard-name {font-size:12px!important;line-height:18px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;}
+ html:root body #galleryView #galleryGrid :is(.gcard-code-row,.gcard-date,.gcard-soft) {font-size:11px;line-height:16px;}
+ html:root body #galleryView .gcard.newcard .gcard-title {font-size:12px;line-height:18px;}
+ html:root body #editorView #mobileSampleRecords :is(.mobile-change-add,.mobile-change-delete) {height:28px;min-height:28px;width:28px;min-width:28px;}
+ html:root body :is(#galleryView,#salesView,#editorView) {padding-bottom:80px;}
 }

@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- AISEL 제품 진행 현황 v30 (2026-10-12): 앱 코어 1.0.0, 버튼28·본문382·카드160, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v29 (2026-10-11): 과한 버튼/간격 축소, 상태필터 한 줄, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v28 (2026-10-11): 화면390px·2열·공통 글꼴/버튼/흰 배경; 기존 데이터·동작 보존. -->
 <!-- AISEL 제품 진행 현황 v27 (2026-10-11): 통합앱 임베드, 권한별 작지 연결, 목록 복귀 상태 보존. -->
@@ -97,14 +98,13 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:6px;gap:2px}.tab{gap:4px;padding:7px 2px;font-size:14px}.tab-count{font-size:10px}.toolbar{margin-bottom:16px}.search-wrap{margin:0 0 12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=176" />
-<link rel="stylesheet" href="aisel-ui.css?v=176" />
+<link rel="stylesheet" href="aisel-ui.css?v=178" />
+<link rel="stylesheet" href="status-samples.css?v=178" />
 
 <style id="aisel-status-embedded-style">
 @media screen {
-  html.aisel-status-embedded .aisel-status.wrap{padding-top:var(--aisel-space-2)}
+  html.aisel-status-embedded .aisel-status.wrap{padding-top:0}
   html.aisel-status-embedded .page-header{display:none}
-  html.aisel-status-embedded .workorder-open{margin-top:8px;width:100%;cursor:pointer}
 }
 </style>
 </head>
@@ -358,7 +358,7 @@ function renderTabs(){
     button.type = "button";
     button.className = "tab" + (filter === tab.key ? " on" : "");
     button.setAttribute("aria-pressed",String(filter === tab.key));
-    var label = document.createElement("span");label.textContent = tab.label;
+    var label = document.createElement("span");label.className = "tab-label";label.textContent = tab.label;
     var count = document.createElement("span");count.className = "tab-count";
     count.textContent = dataReady ? countOf(tab.key) : "–";
     button.appendChild(label);button.appendChild(count);
@@ -522,7 +522,7 @@ function render(){
     var state = stateOf(entry.status);
     var badge = document.createElement("span");badge.className = "state";
     badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = entry.status === "pdp" ? "PDP · 생성 대기" : state.label;badge.setAttribute("aria-label","현재 상태: " + badge.textContent);body.appendChild(badge);
-    var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";body.appendChild(name);
+    var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";name.title = name.textContent;body.appendChild(name);
     var code = document.createElement("div");code.className = "code";code.textContent = row.code;body.appendChild(code);
     appendField_(body,"factory","공장",entry.factory);
     appendField_(body,"blend","혼용률",entry.blend);

@@ -11,7 +11,8 @@
 .sheet-sales-dialog h3{font-size:16px}.sheet-sales-dialog p{font-size:13px}.sheet-sales-dialog button{padding:8px 16px}
 .sheet-sales-grid span:nth-child(n+3){text-align:center}
 .sheet-sales-head{font-size:11px;color:#7b8594;min-height:30px}
-.sheet-sales-warning{color:#dc173b;font-weight:700}
+.sheet-sales-caution{color:#986575;font-weight:700}
+.sheet-sales-warning{color:#A63F57;font-weight:700}
 .sheet-sales-refresh{font:inherit;color:#637089;border:1px solid #dce2eb;background:white;border-radius:3px;padding:3px 6px;cursor:pointer}
 #salesView .sales-column-head,#salesView #salesAuth{display:none!important}
 #salesView .sales-toolbar,#salesView .sales-meta{display:grid;grid-template-columns:minmax(0,1fr) 88px;gap:8px;align-items:center;min-width:0}
@@ -24,3 +25,59 @@
 #salesView .sheet-sales-refresh:focus-visible{outline:2px solid #2f3b52;outline-offset:2px}
 #salesView .sheet-sales-refresh:disabled{opacity:.6;cursor:wait}
 @media(max-width:600px){#salesView{padding-left:16px;padding-right:16px}.sheet-sales-grid{grid-template-columns:24px minmax(0,1fr) repeat(4,44px);gap:4px;font-size:11px;min-height:44px}.sheet-sales-head{font-size:9px;min-height:28px}}
+
+/* AISEL APP Core 1.0.0: screen layout only; the print contract stays unchanged. */
+@media screen {
+ html:root body #salesView #salesTableBody .sheet-sales-grid {
+  display:grid!important;grid-template-columns:minmax(0,1fr) 24px 44px 34px 40px 44px!important;
+  column-gap:4px!important;row-gap:0!important;align-items:center;
+  box-sizing:border-box;width:100%;min-width:0!important;height:36px!important;min-height:36px!important;
+  padding:0!important;border-bottom:1px solid #E3E5E7;color:#34383C;font-size:12px!important;line-height:18px;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-head {
+  height:30px!important;min-height:30px!important;color:#6C727C;font-size:11px!important;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :is(span,button),
+ html:root body #salesView #salesTableBody .sheet-sales-name-label {
+  box-sizing:border-box;min-width:0;max-width:100%;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-name {
+  display:flex!important;align-items:center;justify-content:flex-start;width:100%;min-width:0!important;
+  height:28px!important;min-height:28px!important;max-height:28px!important;padding:0!important;margin:0;
+  border:0!important;border-radius:0;background:none!important;box-shadow:none!important;
+  color:#34383C;font-family:inherit;font-size:12px!important;font-weight:600;line-height:18px!important;text-align:left;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-name-label {display:block;flex:1 1 auto;text-align:left;}
+ html:root body #salesView #salesTableBody .sheet-sales-rating {display:flex;align-items:center;justify-content:center;width:24px;}
+ html:root body #salesView #salesTableBody .sheet-sales-badge {
+  flex:0 0 24px!important;width:24px!important;min-width:0!important;height:22px;padding-left:0!important;padding-right:0!important;
+  border:0;border-radius:3px;font-size:12px;line-height:18px;font-weight:500;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(1) {text-align:left;}
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(3),
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(4) {text-align:center;}
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(5),
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(6) {text-align:right;font-variant-numeric:proportional-nums;}
+ html:root body #salesView #salesTableBody .sheet-sales-head > span {font-size:11px!important;line-height:16px!important;}
+ html:root body #salesView #salesTableBody .sheet-sales-warning {color:#A63F57;font-weight:700;}
+ html:root body #salesView #salesTableBody .sheet-sales-caution {color:#986575;font-weight:700;}
+ html:root body #salesView .sales-toolbar {display:block;margin:0 0 8px!important;}
+ html:root body #salesView .sales-meta {
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:8px;row-gap:0;
+  align-items:center;margin:0 0 8px!important;padding:0!important;font-size:11px;line-height:16px;
+ }
+ html:root body #salesView .sheet-sales-meta-info {
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:4px!important;min-width:0;
+ }
+ html:root body #salesView :is(#salesScopeNote,#salesUpdated) {
+  margin:0!important;padding:0;font-size:11px!important;line-height:16px!important;color:#6C727C;
+ }
+ html:root body #salesView .sheet-sales-refresh {
+  box-sizing:border-box;width:auto!important;min-width:64px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
+  margin:0;padding:0 8px!important;align-self:center;border:1px solid #E3E5E7;border-radius:3px;
+  color:#34383C;background:#FFFFFF;box-shadow:none;font-size:12px!important;line-height:18px!important;
+ }
+ html:root body #salesView #salesTableBody {margin-top:0!important;}
+ html:root body .sheet-sales-dialog {border-color:#E3E5E7;border-radius:3px;background:#FFFFFF;color:#34383C;box-shadow:none;}
+ html:root body .sheet-sales-dialog button {box-sizing:border-box;height:28px;min-height:28px;padding:0 8px;}
+}

@@ -1,8 +1,8 @@
-/* v176: compact shared screen shell. A4 rules and print font mappings remain separate. */
+/* v178: AISEL App Core 1.0.0 shared screen shell. A4 rules and print font mappings remain separate. */
 @media screen {
  html:root body {box-sizing:border-box;width:100%;max-width:390px;min-width:0;margin:0 auto;background:#fff;}
- html:root body #mainBar {display:flex;gap:2px;width:100%;margin:0;padding:0 4px;box-sizing:border-box;overflow:visible;border:0;}
- html:root body #mainBar>.maintab {box-sizing:border-box;flex:1 1 0;min-width:0;height:32px;min-height:32px;max-height:32px;padding:0;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:12px;line-height:18px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;border:1px solid var(--aisel-line,#dedede);border-radius:4px;background:#fff;color:var(--aisel-ink,#34383c);}
+ html:root body #mainBar {display:flex;gap:4px;width:100%;margin:0 0 8px;padding:0 4px;box-sizing:border-box;overflow:visible;border:0;}
+ html:root body #mainBar>.maintab {box-sizing:border-box;flex:1 1 0;min-width:0;height:var(--aisel-control-height,28px);min-height:var(--aisel-control-height,28px);max-height:var(--aisel-control-height,28px);padding:0;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:12px;line-height:18px;font-weight:600;letter-spacing:-.25px;white-space:nowrap;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);background:#fff;color:var(--aisel-ink,#34383c);}
  html:root body #mainBar>.maintab.active {background:var(--aisel-ink,#34383c);color:#fff;border-color:var(--aisel-ink,#34383c);font-weight:600;}
  html:root body #mainBar>.maintab:not(.active):hover {background:#fff;border-color:var(--aisel-muted,#6c727c);}
  html:root body #mainBar>.maintab:focus-visible {outline:2px solid var(--aisel-ink,#34383c);outline-offset:2px;}
@@ -12,24 +12,24 @@
  #unifiedNotice {font-size:12px;line-height:18px;color:#a63f57;padding:8px 16px;margin:0;}
  #unifiedNotice:empty {display:none;}
  html:root body #editorView #backToListBtn {display:none!important;}
- html:root body #salesView {padding-top:12px;}
+ html:root body #salesView {padding-top:4px;}
  html:root body #designMeetingView {box-sizing:border-box;max-width:390px;width:100%;margin-left:auto;margin-right:auto;}
- html:root body #appBrandHeader {box-sizing:border-box;display:flex!important;align-items:center;gap:8px;width:100%;max-width:390px;min-height:48px;margin:0;padding:8px 16px;border:0;}
+ html:root body #appBrandHeader {box-sizing:border-box;display:flex!important;align-items:center;gap:8px;width:100%;max-width:390px;min-height:44px;margin:0;padding:8px 4px;border:0;}
  html:root body #appBrandHeader h1 {display:flex;flex:1;min-width:0;align-items:center;gap:8px;margin:0;padding:0;border:0;}
- html:root body #appBrandHeader .app-brand {flex:none;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:20px;font-weight:700;line-height:28px;letter-spacing:0;color:var(--aisel-ink,#34383c);}
- html:root body #appBrandHeader #appPageTitle {flex:1;min-width:0;padding:0 0 0 8px;border-left:1px solid var(--aisel-line,#dedede);font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:18px;font-weight:600;line-height:26px;letter-spacing:0;color:var(--aisel-ink,#34383c);}
- html:root body #aiselSessionButton {box-sizing:border-box;flex:0 0 72px;width:72px;height:32px;min-height:32px;padding:0 8px;border:1px solid var(--aisel-ink,#34383c);border-radius:4px;background:var(--aisel-ink,#34383c);color:#fff;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:12px;font-weight:600;line-height:18px;white-space:nowrap;}
+ html:root body #appBrandHeader .app-brand {flex:none;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:18px;font-weight:700;line-height:24px;letter-spacing:0;color:var(--aisel-ink,#34383c);}
+ html:root body #appBrandHeader #appPageTitle {flex:1;min-width:0;padding:0 0 0 8px;border-left:1px solid var(--aisel-line,#E3E5E7);font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:16px;font-weight:600;line-height:24px;letter-spacing:0;color:var(--aisel-ink,#34383c);}
+ html:root body #aiselSessionButton {box-sizing:border-box;flex:0 0 72px;width:72px;height:var(--aisel-control-height,28px);min-height:var(--aisel-control-height,28px);padding:0 8px;border:1px solid var(--aisel-ink,#34383c);border-radius:var(--aisel-radius,3px);background:var(--aisel-ink,#34383c);color:#fff;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:12px;font-weight:600;line-height:18px;white-space:nowrap;}
  html:root body[data-aisel-common-session] :is(#ownerViewBar,#dmSession,#dmLogin,#rcLogin,#salesAuth) {display:none!important;}
- html:root body #aiselAccountDialog {box-sizing:border-box;width:min(358px,calc(100vw - 32px));max-width:358px;padding:16px;border:1px solid var(--aisel-line,#dedede);border-radius:4px;background:#fff;color:var(--aisel-ink,#34383c);font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);box-shadow:none;}
+ html:root body #aiselAccountDialog {box-sizing:border-box;width:min(358px,calc(100vw - 32px));max-width:358px;padding:16px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);background:#fff;color:var(--aisel-ink,#34383c);font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);box-shadow:none;}
  html:root body #aiselAccountDialog::backdrop {background:rgba(52,56,60,.25);}
  html:root body #aiselAccountDialog .account-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
  html:root body #aiselAccountDialog h2 {margin:0;font-size:16px;font-weight:600;line-height:24px;}
  html:root body #aiselAccountDialog p {margin:0 0 12px;overflow-wrap:anywhere;font-size:14px;line-height:22px;}
  html:root body #aiselAccountDialog .account-actions {display:flex;gap:8px;}
- html:root body #aiselAccountDialog button {box-sizing:border-box;height:32px;min-height:32px;padding:0 8px;border:1px solid var(--aisel-line,#dedede);border-radius:4px;background:#fff;color:var(--aisel-ink,#34383c);font-family:inherit;font-size:12px;font-weight:600;line-height:18px;}
+ html:root body #aiselAccountDialog button {box-sizing:border-box;height:var(--aisel-control-height,28px);min-height:var(--aisel-control-height,28px);padding:0 8px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);background:#fff;color:var(--aisel-ink,#34383c);font-family:inherit;font-size:12px;font-weight:600;line-height:18px;}
  html:root body #aiselAccountDialog .account-actions button {flex:1;min-width:0;}
  html:root body #aiselAccountDialog #aiselAccountGoogle {background:var(--aisel-ink,#34383c);color:#fff;border-color:var(--aisel-ink,#34383c);}
- html:root body #aiselAccountDialog #aiselAccountClose {flex:0 0 30px;width:30px;height:30px;min-height:30px;padding:0;font-size:20px;}
+ html:root body #aiselAccountDialog #aiselAccountClose {flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0;font-size:20px;}
  html:root body #aiselAccountDialog button:disabled {color:#9ba1aa;background:#fff;border-color:#e4e7eb;}
  html:root body :is(#aiselSessionButton,#aiselAccountDialog button):focus-visible {outline:2px solid var(--aisel-ink,#34383c);outline-offset:2px;}
 }

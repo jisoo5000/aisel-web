@@ -210,7 +210,7 @@
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
 <title>AISEL 작업지시서</title>
-<link rel="stylesheet" href="aisel-ui.css?v=176">
+<link rel="stylesheet" href="aisel-ui.css?v=178">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
@@ -3210,7 +3210,6 @@
 <div class="gallery notranslate" id="galleryView" style="display:none" lang="ko" translate="no">
   <div class="gallery-head">
     <h2>📋 작업지시서</h2>
-    <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제 복원</button>
   </div>
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
@@ -3230,6 +3229,7 @@
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
       <input type="search" id="gallerySearchInput" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off">
     </label>
+    <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제 복원</button>
   </div>
   <section id="workOrderTrashPanel" class="noprint" hidden aria-label="삭제한 작업지시서">
     <h3>삭제 복원</h3>
@@ -10645,6 +10645,16 @@
     const labels = [["sampling", "샘플중"], ["order", "발주생산"], ["pdp", "PDP"],
       ["sale", "판매"], ["drop", "드롭"], ["all", "전체"]];
     const compact = box.id === "galleryCounts";
+    if(compact){
+      labels.forEach(([status,label])=>{
+        const button = $("#galleryTabs").querySelector('[data-status="'+status+'"]');
+        if(!button) return;
+        const count = counts[status] || 0;
+        const content = '<span class="gtab-label">'+label+'</span><span class="gtab-count">'+count+'</span>';
+        if(button.innerHTML !== content) button.innerHTML = content;
+        button.setAttribute('aria-label',label+' '+count+'개');
+      });
+    }
     const html = labels.map(([status, label])=>
       `<span class="${activeFilter === status ? "active" : ""}" aria-label="${label} ${counts[status] || 0}개">${compact ? "" : label + " "}${counts[status] || 0}개</span>`
     ).join("");
@@ -11620,7 +11630,7 @@
   }
   function toggleTrash_(open){
     trashOpen_=open;$("#workOrderTrashPanel").hidden=!open;
-    $("#galleryGrid").hidden=open;$("#gallerySearchRow").hidden=open;
+    $("#galleryGrid").hidden=open;$("#gallerySearchRow").querySelector("label").hidden=open;
     $("#galleryTrashBtn").setAttribute("aria-expanded",String(open));
     if(open) listenTrash_();renderTrash_();
   }
@@ -15034,9 +15044,65 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
 #salesView .sheet-sales-refresh:disabled{opacity:.6;cursor:wait}
 @media(max-width:600px){#salesView{padding-left:16px;padding-right:16px}.sheet-sales-grid{grid-template-columns:24px minmax(0,1fr) repeat(4,44px);gap:4px;font-size:11px;min-height:44px}.sheet-sales-head{font-size:9px;min-height:28px}}
 
+/* AISEL APP Core 1.0.0: screen layout only; the print contract stays unchanged. */
+@media screen {
+ html:root body #salesView #salesTableBody .sheet-sales-grid {
+  display:grid!important;grid-template-columns:minmax(0,1fr) 24px 44px 34px 40px 44px!important;
+  column-gap:4px!important;row-gap:0!important;align-items:center;
+  box-sizing:border-box;width:100%;min-width:0!important;height:36px!important;min-height:36px!important;
+  padding:0!important;border-bottom:1px solid #E3E5E7;color:#34383C;font-size:12px!important;line-height:18px;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-head {
+  height:30px!important;min-height:30px!important;color:#6C727C;font-size:11px!important;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :is(span,button),
+ html:root body #salesView #salesTableBody .sheet-sales-name-label {
+  box-sizing:border-box;min-width:0;max-width:100%;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-name {
+  display:flex!important;align-items:center;justify-content:flex-start;width:100%;min-width:0!important;
+  height:28px!important;min-height:28px!important;max-height:28px!important;padding:0!important;margin:0;
+  border:0!important;border-radius:0;background:none!important;box-shadow:none!important;
+  color:#34383C;font-family:inherit;font-size:12px!important;font-weight:600;line-height:18px!important;text-align:left;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-name-label {display:block;flex:1 1 auto;text-align:left;}
+ html:root body #salesView #salesTableBody .sheet-sales-rating {display:flex;align-items:center;justify-content:center;width:24px;}
+ html:root body #salesView #salesTableBody .sheet-sales-badge {
+  flex:0 0 24px!important;width:24px!important;min-width:0!important;height:22px;padding-left:0!important;padding-right:0!important;
+  border:0;border-radius:3px;font-size:12px;line-height:18px;font-weight:500;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(1) {text-align:left;}
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(3),
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(4) {text-align:center;}
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(5),
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(6) {text-align:right;font-variant-numeric:proportional-nums;}
+ html:root body #salesView #salesTableBody .sheet-sales-head > span {font-size:11px!important;line-height:16px!important;}
+ html:root body #salesView #salesTableBody .sheet-sales-warning {color:#A63F57;font-weight:700;}
+ html:root body #salesView #salesTableBody .sheet-sales-caution {color:#986575;font-weight:700;}
+ html:root body #salesView .sales-toolbar {display:block;margin:0 0 8px!important;}
+ html:root body #salesView .sales-meta {
+  display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:8px;row-gap:0;
+  align-items:center;margin:0 0 8px!important;padding:0!important;font-size:11px;line-height:16px;
+ }
+ html:root body #salesView .sheet-sales-meta-info {
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:4px!important;min-width:0;
+ }
+ html:root body #salesView :is(#salesScopeNote,#salesUpdated) {
+  margin:0!important;padding:0;font-size:11px!important;line-height:16px!important;color:#6C727C;
+ }
+ html:root body #salesView .sheet-sales-refresh {
+  box-sizing:border-box;width:auto!important;min-width:64px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
+  margin:0;padding:0 8px!important;align-self:center;border:1px solid #E3E5E7;border-radius:3px;
+  color:#34383C;background:#FFFFFF;box-shadow:none;font-size:12px!important;line-height:18px!important;
+ }
+ html:root body #salesView #salesTableBody {margin-top:0!important;}
+ html:root body .sheet-sales-dialog {border-color:#E3E5E7;border-radius:3px;background:#FFFFFF;color:#34383C;box-shadow:none;}
+ html:root body .sheet-sales-dialog button {box-sizing:border-box;height:28px;min-height:28px;padding:0 8px;}
+}
+
 </style>
 <script id="aisel-sheet-sales-view-script">
-/* v174: bounded read-only sales cache; return-rate semantics follow explicit metadata. */
+/* v178: compact six-column sales view; bounded read-only cache and metric semantics preserved. */
 (function(root){
  'use strict';
  function performance(item){
@@ -15064,7 +15130,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   const metric=returnMetric(snapshot);
   host.replaceChildren();
   const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
-  for(const label of ['순위','상품명','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;header.append(span);}host.append(header);
+  for(const label of ['상품명','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
   const query=String(search||'').trim().toLocaleLowerCase('ko');
   for(const item of snapshot.items.filter(x=>{
    const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
@@ -15074,13 +15140,20 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
    const row=document.createElement('div');row.className='sheet-sales-grid';
    const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
    values.forEach((value,i)=>{
+    if(i===0)return; // Keep the source rank for details; the list keeps the source order without a rank column.
     const cell=document.createElement(i===1?'button':'span');cell.textContent=value;cell.title=value;
     if(i===1){
      cell.type='button';cell.className='sheet-sales-name';cell.replaceChildren();
      const name=document.createElement('span');name.className='sheet-sales-name-label';name.textContent=value;cell.append(name);
      const rating=performance(item);
-     if(rating){const badge=document.createElement('span');badge.className='sheet-sales-badge sheet-sales-badge-'+rating.key;badge.textContent=rating.label;badge.title=(snapshot.periodLabel||'운영시트 집계 기간')+' · 매장 전체 판매비중·'+metric.label+' 기준';cell.append(badge);cell.setAttribute('aria-label',value+' · 성과 '+rating.label);}
+     cell.setAttribute('aria-label',rating?value+' · 성과 '+rating.label:value);
      cell.addEventListener('click',()=>details(values,metric));
+     row.append(cell);
+     const ratingCell=document.createElement('span');ratingCell.className='sheet-sales-rating';
+     if(rating){const badge=document.createElement('span');badge.className='sheet-sales-badge sheet-sales-badge-'+rating.key;badge.textContent=rating.label;badge.title=(snapshot.periodLabel||'운영시트 집계 기간')+' · 매장 전체 판매비중·'+metric.label+' 기준';ratingCell.append(badge);}
+     else ratingCell.setAttribute('aria-hidden','true');
+     row.append(ratingCell);
+     return;
     }
     if(i===5){cell.title=value+' · '+metric.label;if(item.returns>=20)cell.className='sheet-sales-warning';else if(item.returns>=15)cell.className='sheet-sales-caution';}
     row.append(cell);
@@ -15111,7 +15184,9 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   const updated=document.getElementById('salesUpdated');
   const meta=updated.parentElement,info=document.createElement('div');info.className='sheet-sales-meta-info';
   const period=document.getElementById('salesPeriod');period.textContent='';period.hidden=true;
-  meta.prepend(info);info.append(period,updated);
+  meta.prepend(info);
+  const scope=document.getElementById('salesScopeNote');if(scope)info.append(scope);
+  info.append(period,updated);
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';refresh.id='sheetSalesRefresh';meta.append(refresh);
   search.addEventListener('input',show);
   function compact(value){
@@ -16444,7 +16519,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=177">
+<link rel="stylesheet" href="design-meeting.css?v=178">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16476,8 +16551,8 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=177">
-<link rel="stylesheet" href="unified-app.css?v=176">
+<link rel="stylesheet" href="reference-collection.css?v=178">
+<link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
  async leave(){if(!await settleEditorSave_())return false;return true;},
@@ -16490,5 +16565,5 @@ window.AiselUnifiedAdapter={
 };
 </script>
 <script src="reference-collection.js?v=177"></script>
-<script src="unified-app.js?v=177"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=176" media="screen">
+<script src="unified-app.js?v=178"></script>
+<link rel="stylesheet" href="workorder-screen.css?v=178" media="screen">
