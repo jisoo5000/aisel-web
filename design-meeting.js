@@ -5,7 +5,7 @@
  const BRIDGE=window.AISEL_DESIGN_MEETING_BRIDGE||'';
  const OWNER='sooana1214@gmail.com';
  let cards={},results=[],active=null,filter='planned',limit=40,lastSig='',listening=false,busy=false,detailDirty=false,role=null,authEpoch=0;
- const pending=new Map(),dirtyFields=new Set();let savePromise=null;
+ const pending=new Map(),dirtyFields=new Set();let savePromise=null,deleteFlight=null,deletePreview=null,undoDeletion=null;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const safe=v=>esc(C.httpUrl(v));
  const uid=()=> 'dm_'+crypto.randomUUID().replace(/-/g,'');
@@ -30,7 +30,7 @@
      const route={...history.state,list:galleryState};history.replaceState(route,'',routeUrl());lastRoute=route;
    }
  }
- async function canLeave(){if(!active&&!pane.hidden)updateListRoute();return saveDetail();}
+ async function canLeave(){if(deleteFlight)await deleteFlight;if(!active&&!pane.hidden)updateListRoute();return saveDetail();}
  function restoreList(value=galleryState){
    if(value){filter=value.filter||'planned';limit=Math.max(40,Number(value.limit)||40);$dm('#dmSearch').value=value.query||'';galleryState={...value};}
    $dm('#dmFilters').querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter===filter));
@@ -50,20 +50,36 @@
  const detailControls=$dm('.dm-detail-controls');
  detailControls.classList.add('dm-detail-meta');
  detailControls.replaceChildren($dm('#dmDates'),$dm('.dm-assignee'),$dm('#dmLinks'));
+ // Keep candidate creation beside search; a full-height empty card wastes the
+ // first thumbnail slot and hides the existing camera/link collection options.
+ const searchRow=document.createElement('div');searchRow.className='dm-search-row';
+ const searchField=$dm('.dm-search');searchField.before(searchRow);searchRow.append(searchField);
+ const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.textContent='+ 회의 추가';addMeeting.onclick=()=>$dm('#dmTools').showModal();searchRow.append(addMeeting);
+ const galleryButton=document.createElement('button');galleryButton.type='button';galleryButton.id='dmGallery';galleryButton.textContent='사진 선택';galleryButton.onclick=()=>{$dm('#dmTools').close();$dm('#dmFileInput').dataset.target='';$dm('#dmFileInput').click();};$dm('#dmToolsClose').after(galleryButton);
+ const deleteButton=document.createElement('button');deleteButton.id='dmDelete';deleteButton.type='button';deleteButton.textContent='삭제';deleteButton.hidden=true;deleteButton.onclick=askDelete;$dm('.dm-heading').append(deleteButton);
+ const deleteDialog=document.createElement('dialog');deleteDialog.id='dmDeleteDialog';deleteDialog.className='dm-dialog';deleteDialog.innerHTML='<h3>이 항목을 삭제할까요?</h3><p id="dmDeleteDescription"></p><p id="dmDeleteError" class="dm-error" role="status"></p><div class="dm-delete-actions"><button type="button" id="dmDeleteCancel">취소</button><button type="button" id="dmDeleteConfirm">삭제</button></div>';pane.append(deleteDialog);
+ const deleteNotice=document.createElement('div');deleteNotice.id='dmDeleteNotice';deleteNotice.hidden=true;deleteNotice.setAttribute('role','status');deleteNotice.innerHTML='<span>디자인회의 항목을 삭제했습니다.</span><button type="button" id="dmUndoDelete">되돌리기</button>';$dm('#dmStatus').after(deleteNotice);
+ $dm('#dmDeleteCancel').onclick=()=>{if(!deleteFlight)deleteDialog.close();};
+ deleteDialog.addEventListener('cancel',event=>{if(deleteFlight)event.preventDefault();});
+ $dm('#dmDeleteConfirm').onclick=()=>runDeletion(false);$dm('#dmUndoDelete').onclick=()=>runDeletion(true);
  const login=document.createElement('button');login.type='button';login.textContent='디자인회의 로그인';login.id='dmLogin';pane.querySelector('#dmSession').append(login);
  const members=document.createElement('details');members.id='dmMembers';members.hidden=true;members.innerHTML='<summary>참여자 관리</summary><p>Google 로그인 이메일을 등록하면 사진 등록·검토 요청·결과 확인을 사용할 수 있습니다. 등록·중지 시 메시지는 보내지 않습니다.</p><label>참여자 Google 이메일 <input type="email" id="dmMemberEmail" autocomplete="off"></label><button type="button" id="dmMemberAdd">참여자 등록</button><div id="dmMemberList"></div>';pane.querySelector('#dmTools').append(members);
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();return (firebase.apps||[]).map(a=>{try{return a.auth().currentUser;}catch(e){return null;}}).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()===OWNER)||(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')?.auth().currentUser;}
  function authStamp(){return {uid:memberUser()?.uid||null,generation:window.AiselAuth?.generation,epoch:authEpoch};}
  function assertAuth(stamp){const current=authStamp();if(stamp.uid!==current.uid||stamp.generation!==current.generation||stamp.epoch!==current.epoch)throw Object.assign(Error('로그인 상태가 변경되었습니다. 다시 확인해주세요.'),{code:'auth_changed'});}
  function applyEditingState(){
-   const editable=role==='owner'||role==='designer';
-   pane.querySelectorAll('#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmNewLink,#dmLinks button,.dm-photo,#dmPending button').forEach(el=>el.disabled=!editable);
+   const editable=(role==='owner'||role==='designer')&&!isDeleted(current(active))&&!deleteFlight;
+   pane.querySelectorAll('#dmAddMeeting,#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmNewLink,#dmLinks button:not([data-dm-readonly]),.dm-photo,#dmPending button').forEach(el=>el.disabled=!editable);
    $dm('#dmDetailTitle').contentEditable=String(editable);
    for(const el of $dm('#dmDetail').querySelectorAll('[data-dm-field]'))el.disabled=!editable||(['decision','decisionReason'].includes(el.dataset.dmField)&&role!=='owner');
+   deleteButton.hidden=role!=='owner';deleteButton.disabled=!!deleteFlight||isDeleted(current(active));
+   $dm('#dmDeleteConfirm').disabled=!!deleteFlight||role!=='owner';$dm('#dmDeleteCancel').disabled=!!deleteFlight;$dm('#dmUndoDelete').disabled=!!deleteFlight||role!=='owner';
+   deleteNotice.hidden=!undoDeletion||role!=='owner';
+   if(isDeleted(current(active))){$dm('#dmDrop').disabled=true;$dm('#dmWorkorder').disabled=true;$dm('#dmRequest').disabled=true;}else{$dm('#dmDrop').disabled=!!deleteFlight;$dm('#dmWorkorder').disabled=!!deleteFlight;$dm('#dmRequest').disabled=busy||!!deleteFlight;}
  }
  function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role||!!window.AiselAuth;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();applyEditingState();}
  async function access(){const stamp=authStamp(),data=await bridge('access',[]);assertAuth(stamp);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role,uid:stamp.uid,generation:stamp.generation}}));return data;}
- function resetAuth(){authEpoch++;role=null;results=[];resultChecks.clear();resultFlights.clear();applyRole();}
+ function resetAuth(){authEpoch++;role=null;results=[];deletePreview=null;undoDeletion=null;deleteDialog.close();resultChecks.clear();resultFlights.clear();applyRole();}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
  members.addEventListener('toggle',async()=>{if(members.open)try{showMembers((await bridge('members',[])).members);}catch(e){message(e.message,true);}});
  $dm('#dmMemberAdd').onclick=async()=>{try{const data=await bridge('setMember',[],{email:$dm('#dmMemberEmail').value,active:true});showMembers(data.members);$dm('#dmMemberEmail').value='';message('참여자를 등록했습니다. 해당 계정으로 Google 로그인하면 사용할 수 있습니다.');}catch(e){message(e.message,true);}};
@@ -81,10 +97,58 @@
  window.addEventListener('aisel-session-change',resetAuth);
  function message(text,error=false){$dm('#dmStatus').textContent=text;$dm('#dmStatus').classList.toggle('dm-error',error);if(active)requestAnimationFrame(fitDetail);}
  function current(id){return cards[id];}
+ function isDeleted(c){return !!c?.designMeetingDeletedAt;}
+ function deletionError(){return Error('삭제된 디자인회의입니다. 복원한 뒤 다시 시도해주세요.');}
+ async function askDelete(){
+   if(!active||deleteFlight||!await saveDetail())return;
+   const id=active;
+   try{
+     await access();if(role!=='owner')throw Error('디자인회의 삭제는 대표자만 사용할 수 있습니다.');
+     if(active!==id||pane.hidden)return;const c=current(id);if(!c||isDeleted(c))throw deletionError();
+     if(pending.has(id)||c.conversion?.state==='running')throw Error('사진 저장 또는 작업지시서 전환이 끝난 뒤 삭제해주세요.');
+     deletePreview={id,updatedAt:c.updatedAt||0,inputVersion:c.inputVersion||1,signature:C.signature(c),stamp:authStamp()};
+     $dm('#dmDeleteDescription').textContent='‘'+(c.title||'사진 후보')+'’을 디자인회의 목록에서 삭제합니다. 사진과 기존 작업지시서는 보존되며 삭제 후 되돌릴 수 있습니다.';
+     $dm('#dmDeleteError').textContent='';deleteDialog.showModal();
+   }catch(e){message(e.message,true);}
+ }
+ async function runDeletion(restore){
+   if(deleteFlight)return;
+   const requested=restore?undoDeletion:deletePreview;if(!requested)return;
+   const task=(async()=>{
+     try{
+       await access();if(role!=='owner')throw Error('디자인회의 삭제와 복원은 대표자만 사용할 수 있습니다.');
+       const stamp=authStamp();if(!restore)assertAuth(requested.stamp);
+       const now=Date.now(),id=requested.id;
+       const out=await ROOT.child(id).transaction(c=>{
+         assertAuth(stamp);
+         if(!c||c.designMeeting!==true)return;
+         if(restore){
+           if(!isDeleted(c)||c.designMeetingDeletedAt!==requested.deletedAt||c.designMeetingDeletedBy!==requested.deletedBy)return;
+           const next={...c,updatedAt:now};delete next.designMeetingDeletedAt;delete next.designMeetingDeletedBy;return next;
+         }
+         if(isDeleted(c)||pending.has(id)||c.conversion?.state==='running')return;
+         if((c.updatedAt||0)!==requested.updatedAt||(c.inputVersion||1)!==requested.inputVersion||C.signature(c)!==requested.signature)return;
+         return {...c,designMeetingDeletedAt:now,designMeetingDeletedBy:stamp.uid,updatedAt:now};
+       },undefined,false);
+       assertAuth(stamp);
+       if(!out.committed)throw Error(restore?'삭제 상태가 변경되어 복원하지 않았습니다. 현재 항목을 다시 확인해주세요.':'다른 기기에서 항목이 변경되었거나 저장 중입니다. 현재 내용을 확인한 뒤 다시 삭제해주세요.');
+       const saved=out.snapshot.val();cards[id]={...saved,id};lastSig='';
+       if(restore){undoDeletion=null;deleteNotice.hidden=true;render();if(active===id)repaintActive();message('디자인회의 항목을 복원했습니다.');}
+       else{
+         undoDeletion={id,deletedAt:saved.designMeetingDeletedAt,deletedBy:saved.designMeetingDeletedBy};deletePreview=null;deleteDialog.close();
+         if(active===id&&!pane.hidden){restoreList();putRoute('list',null,{replace:true});}
+         render();message('');deleteNotice.hidden=false;
+       }
+     }catch(e){if(!restore&&deleteDialog.open)$dm('#dmDeleteError').textContent=e.message;else message(e.message,true);}
+   })();
+   deleteFlight=task;applyEditingState();
+   try{await task;}finally{deleteFlight=null;applyEditingState();}
+ }
  function state(c){return C.status(c,results);}
  function confirmedResult(c){return results.find(r=>r.id===c.id&&Number(r.version)===(Number(c.inputVersion)||1)&&r.state==='done'&&r.receipt&&r.reviewedAt);}
  async function mutate(id,patch,material=false){
-   const out=await ROOT.child(id).transaction(c=>c?material?C.edit(c,patch):{...c,...patch,updatedAt:Date.now()}:undefined,undefined,false);
+   const out=await ROOT.child(id).transaction(c=>c&&!isDeleted(c)?material?C.edit(c,patch):{...c,...patch,updatedAt:Date.now()}:undefined,undefined,false);
+   if(isDeleted(out.snapshot.val()))throw deletionError();
    if(!out.committed)throw Error('후보 저장을 확인하지 못했습니다. 입력을 유지했습니다.');
    cards[id]=out.snapshot.val();return cards[id];
  }
@@ -101,6 +165,7 @@
    try{
      await access();
      const existing=(await ROOT.child(item.id).once('value')).val();
+     if(isDeleted(existing))throw deletionError();
      const uploaded=existing?C.photos(existing):[];
      const photos=item.replaceKey?[]:[...uploaded];
      for(let n=0;n<item.files.length;n++){
@@ -116,6 +181,7 @@
        photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:file.size,thumbBytes:thumb.blob.size});
      }
      const out=await ROOT.child(item.id).transaction(c=>{
+       if(isDeleted(c))return;
        if(c&&item.replaceKey)return C.replacePhoto(c,item.replaceKey,photos[0]);
        if(!c&&item.replaceKey)return;
        if(c){const merged=[...C.photos(c)];photos.forEach(p=>{if(!merged.some(x=>(x.hash||x.original)===(p.hash||p.original)))merged.push(p);});return C.edit(c,{photos:merged,photo:merged[0]?.original||''});}
@@ -137,7 +203,7 @@
    if(pane.hidden)return;
    if(pane.contains(document.activeElement)&&document.activeElement.matches('input:not([type=checkbox]):not([type=search]),textarea,select,[contenteditable=true]'))return;
    const q=$dm('#dmSearch').value.toLowerCase();
-   const all=Object.values(cards).filter(c=>c.designMeeting===true);
+   const all=Object.values(cards).filter(c=>c.designMeeting===true&&!isDeleted(c));
    const shown=all.filter(c=>{
      if(filter==='planned'&&(c.decision==='excluded'||c.convertedCode))return false;
      if(filter==='drop'&&c.decision!=='excluded')return false;
@@ -153,8 +219,7 @@
    $dm('#dmMore').hidden=shown.length<=limit&&!hasOlder;$dm('#dmMore').textContent=shown.length>limit?'더 보기':'이전 후보 더 보기';
    const sig=JSON.stringify([shown.slice(0,limit),results,filter,q,role]);if(sig===lastSig)return;lastSig=sig;
    const grid=$dm('#dmGrid');
-   let add=$dm('#dmGallery');if(!add){add=document.createElement('button');add.type='button';add.id='dmGallery';add.className='dm-add-card';add.textContent='+ 사진 추가';add.onclick=()=>{$dm('#dmFileInput').dataset.target='';$dm('#dmFileInput').click();};grid.append(add);}
-   const keep=new Set(shown.slice(0,limit).map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();let previous=add;
+   const keep=new Set(shown.slice(0,limit).map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();let previous=null;
    for(const c of shown.slice(0,limit)){
      const result=confirmedResult(c),photo=C.photos(c)[0];let card=[...grid.children].find(n=>n.dataset.id===c.id);if(!card){card=document.createElement('article');card.className='dm-card';card.dataset.id=c.id;
      card.innerHTML=`<button class="dm-open" type="button">${photo?.thumb?`<img loading="lazy" decoding="async" src="${safe(photo.thumb)}" alt="후보 사진">`:'<span class="dm-no-photo">사진 없음</span>'}<div class="dm-card-info"><strong>${esc(c.title||'사진 후보')}</strong><div class="dm-colors"></div><time>${esc(C.dateLabel(c.createdAt))}</time></div></button>`;
@@ -165,7 +230,7 @@
      card.querySelector('strong').textContent=c.title||'사진 후보';card.querySelector('time').textContent=C.dateLabel(c.createdAt);
      const colors=card.querySelector('.dm-colors');colors.replaceChildren();renderColors(colors,c,result);
      card.querySelector('.dm-open').onclick=()=>open(c.id);
-     if(previous.nextElementSibling!==card)previous.after(card);previous=card;
+     if(previous){if(previous.nextElementSibling!==card)previous.after(card);}else if(grid.firstElementChild!==card)grid.prepend(card);previous=card;
    }
    applyEditingState();
  }
@@ -175,6 +240,7 @@
    let c=current(id);
    if(!c)try{const value=(await ROOT.child(id).once('value')).val();assertAuth(stamp);if(!stillVisible())return false;if(value?.designMeeting)c=cards[id]={...value,id};}catch(e){if(stillVisible()&&e.code!=='auth_changed')message(e.message,true);return false;}
    if(!c){message('이 후보를 찾을 수 없습니다.',true);return false;}
+   if(isDeleted(c)){message('삭제된 디자인회의입니다.',true);return false;}
    if(!active){galleryState=options.list||listSnapshot();if(!options.list)updateListRoute();}
    if(options.history!==false){
      let route=history.state;
@@ -200,12 +266,9 @@
      // Same-width browser toolbar or keyboard changes resize the scroll area, not the photo.
      const key=active+':'+Math.round(detail.clientWidth);
      if(photoSizingKey!==key){
-       const body=$dm('.dm-detail-body'),photos=$dm('#dmPhotos');
-       const nonPhoto=[...body.children].filter(n=>n!==photos&&!n.hidden).reduce((sum,n)=>{const st=getComputedStyle(n);return sum+n.getBoundingClientRect().height+(parseFloat(st.marginTop)||0)+(parseFloat(st.marginBottom)||0);},0);
-       // Fit the normal evidence and status above the footer;
-       // genuinely long evidence remains scrollable.
-       const minimum=nonPhoto>body.clientHeight?120:48;
-       detail.style.setProperty('--dm-photo-height',Math.max(minimum,Math.min(300,Math.floor(body.clientHeight-nonPhoto-8)))+'px');
+       // The approved mobile composition uses a compact, stable photo height.
+       // Long evidence scrolls in the existing body without resizing the photo.
+       detail.style.setProperty('--dm-photo-height','160px');
        photoSizingKey=key;
      }
    });
@@ -213,17 +276,25 @@
  window.addEventListener('resize',fitDetail);window.visualViewport?.addEventListener('resize',fitDetail);
  function renderColors(box,c,result){const source=c.selectedColors||C.evidence(result).colors||[];const raw=Array.isArray(source)?source:[];const names=window.colorNames_?window.colorNames_(raw):raw.filter(x=>typeof x==='string');for(const name of names){const chip=document.createElement('span');chip.className='gcard-color-chip';chip.textContent=name;const info=window.colorHex_?.(name);if(info&&/^#[0-9a-f]{3,8}$/i.test(info.hex)){chip.style.backgroundColor=info.hex;if(/^#[0-9a-f]{3,8}$/i.test(info.text))chip.style.color=info.text;}box.append(chip);}}
  function renderDesigner(c){const select=$dm('#dmDesigner');const names=[...new Set([...(window.AiselDesignMeetingAdapter.designers?.()||[]),c.designer].filter(Boolean))];const signature=JSON.stringify([names,c.designer||'']);if(select.dataset.signature===signature)return;select.dataset.signature=signature;select.replaceChildren(new Option('미지정',''));for(const name of names)select.add(new Option(name,name));select.value=c.designer||'';}
- function renderLinks(c){const box=$dm('#dmLinks');const links=Array.isArray(c.links)?c.links:(c.link?[c.link]:[]);const signature=JSON.stringify([c.id,links]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();links.forEach((url,index)=>{const row=document.createElement('div');row.className='dm-link-row';row.innerHTML='<a class="dm-link-open" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>링크</span></a><button class="dm-icon" type="button" aria-label="링크 수정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button><button class="dm-icon" type="button" aria-label="링크 삭제"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>';row.querySelector('a').href=C.httpUrl(url);const buttons=row.querySelectorAll('button');buttons[0].onclick=()=>editLink(index);buttons[1].onclick=()=>editLink(index,true);box.append(row);});if(!links.length){const empty=document.createElement('button');empty.type='button';empty.className='dm-link-open';empty.innerHTML="<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2\"/></svg><span>링크</span>";empty.onclick=()=>editLink();box.append(empty);}const add=document.createElement('button');add.type='button';add.className='dm-link-add';add.textContent='+';add.setAttribute('aria-label','링크 추가');add.onclick=()=>editLink();box.append(add);}
+ function renderLinks(c){
+   const box=$dm('#dmLinks'),links=Array.isArray(c.links)?c.links:(c.link?[c.link]:[]);
+   const signature=JSON.stringify([c.id,links,role]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();
+   const button=document.createElement('button');button.type='button';button.className='dm-link-open';button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>링크</span>';
+   if(links.length){button.dataset.dmReadonly='true';button.title='상품 링크 '+links.length+'개';button.onclick=manageLinks;}else{button.onclick=()=>editLink();}
+   box.append(button);
+   const add=document.createElement('button');add.type='button';add.className='dm-link-add';add.textContent='+';add.setAttribute('aria-label','링크 추가');add.onclick=()=>editLink();box.append(add);applyEditingState();
+ }
+
  function manageLinks(){
    const c=current(active),links=Array.isArray(c.links)?c.links:(c.link?[c.link]:[]);
    let dlg=$dm('#dmLinkDialog');if(!dlg){dlg=document.createElement('dialog');dlg.id='dmLinkDialog';dlg.className='dm-dialog';pane.append(dlg);}dlg.replaceChildren();
    const title=document.createElement('h3');title.textContent='상품 링크';dlg.append(title);
-   links.forEach((url,index)=>{const row=document.createElement('p'),a=document.createElement('a');a.href=C.httpUrl(url);a.target='_blank';a.rel='noopener';a.textContent='링크 '+(index+1);row.append(a);for(const [text,remove] of [['수정',false],['삭제',true]]){const b=document.createElement('button');b.textContent=text;b.onclick=async()=>{dlg.close();await editLink(index,remove);};row.append(b);}dlg.append(row);});
-   const add=document.createElement('button');add.textContent='링크 추가';add.onclick=()=>{dlg.close();editLink();};const close=document.createElement('button');close.textContent='닫기';close.onclick=()=>dlg.close();dlg.append(add,close);dlg.showModal();
+   links.forEach((url,index)=>{const row=document.createElement('p'),a=document.createElement('a');a.href=C.httpUrl(url);a.target='_blank';a.rel='noopener';a.textContent='링크 '+(index+1);row.append(a);for(const [text,remove] of [['수정',false],['삭제',true]]){const b=document.createElement('button');b.textContent=text;b.disabled=role!=='owner'&&role!=='designer';b.onclick=async()=>{dlg.close();await editLink(index,remove);};row.append(b);}dlg.append(row);});
+   const add=document.createElement('button');add.textContent='링크 추가';add.disabled=role!=='owner'&&role!=='designer';add.onclick=()=>{dlg.close();editLink();};const close=document.createElement('button');close.textContent='닫기';close.onclick=()=>dlg.close();dlg.append(add,close);dlg.showModal();
  }
  async function editLink(index,remove=false){if(!active||!await saveDetail())return;const c=current(active),links=Array.isArray(c.links)?[...c.links]:(c.link?[c.link]:[]);if(remove){links.splice(index,1);}else{const value=window.prompt('상품 링크',index===undefined?'':links[index]);if(value===null)return;if(!C.httpUrl(value)){message('http 또는 https 상품 링크를 입력해주세요.',true);return;}if(index===undefined)links.unshift(C.httpUrl(value));else links[index]=C.httpUrl(value);}try{await access();await mutate(c.id,{links,link:links[0]||''},true);$dm('[data-dm-field="link"]').value=links[0]||'';renderLinks(current(c.id));renderReview(current(c.id));await enqueueCandidate(c.id);}catch(e){message(e.message,true);}}
  function renderDetailPhotos(c){const box=$dm('#dmPhotos');const photos=C.photos(c),signature=JSON.stringify([c.id,photos.map(p=>[p.hash,p.original,p.thumb])]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();$dm('#dmAddPhotos').hidden=photos.length>0;photos.forEach((p,i)=>{const button=document.createElement('button');button.type='button';button.className='dm-photo';button.dataset.photoKey=p.hash||p.original;button.setAttribute('aria-label','참고 사진 '+(i+1)+' 변경');button.onclick=()=>{const input=$dm('#dmReplaceInput');input.dataset.target=c.id;input.dataset.key=p.hash||p.original;input.click();};const img=document.createElement('img');img.loading='eager';img.decoding='async';img.src=C.httpUrl(p.original||p.thumb);img.alt='참고 사진 '+(i+1);button.append(img);box.append(button);});}
- function renderReview(c){if(!c)return;const result=confirmedResult(c),status=state(c),box=$dm('#dmReview');const signature=JSON.stringify([c.id,c.createdAt,c.decision,c.inputVersion,c.convertedCode,result,status,results.find(r=>r.id===c.id&&Number(r.version)===Number(c.inputVersion))]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();$dm('#dmDates').textContent=['등록 '+(C.dateLabel(c.createdAt)||'—'),result?'검토 '+C.dateLabel(result.reviewedAt):''].filter(Boolean).join(' · ');$dm('#dmDrop').textContent=c.decision==='excluded'?'복원':'드롭';$dm('#dmWorkorder').textContent='작업지시서';
+ function renderReview(c){if(!c)return;const result=confirmedResult(c),status=state(c),box=$dm('#dmReview');const signature=JSON.stringify([c.id,c.createdAt,c.decision,c.inputVersion,c.convertedCode,result,status,results.find(r=>r.id===c.id&&Number(r.version)===Number(c.inputVersion))]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();$dm('#dmDates').textContent=C.dateLabel(c.createdAt)||'—';$dm('#dmDates').title=['등록 '+(C.dateLabel(c.createdAt)||'—'),result?'검토 '+C.dateLabel(result.reviewedAt):''].filter(Boolean).join(' · ');$dm('#dmDrop').textContent=c.decision==='excluded'?'복원':'드롭';$dm('#dmWorkorder').textContent='작업지시서';
    {const summary=result?C.reviewSummary(result):{demand:'—',supply:'—',differentiation:'—',additional:''},table=document.createElement('table');table.className='dm-evidence';for(const [label,key] of [['수요','demand'],['공급','supply'],['차별성','differentiation']]){const tr=table.insertRow();const th=document.createElement('th');th.scope='row';th.textContent=label;const td=document.createElement('td');td.textContent=summary[key];tr.append(th,td);}box.append(table);if(summary.additional){const p=document.createElement('p');p.className='dm-additional';const strong=document.createElement('strong');strong.textContent='추가 고려사항';p.append(strong,document.createTextNode(summary.additional));box.append(p);}}
    $dm('#dmReviewState').textContent=result?'':(C.states[status]||'확인 필요');const row=results.find(r=>r.id===c.id&&Number(r.version)===Number(c.inputVersion));if(row?.error)$dm('#dmReviewState').textContent=row.error;$dm('#dmRequest').hidden=!!result||['running','queued'].includes(status);$dm('#dmOpenWorkorder').hidden=true;requestAnimationFrame(fitDetail);
  }
@@ -244,9 +315,11 @@
    const user=memberUser();if(!user?.emailVerified)throw Error('디자인회의 로그인 후 사용해주세요.');return user.getIdToken();
  }
  async function bridge(action,ids,extra={}){
+   if(action==='enqueue'&&ids.some(id=>isDeleted(current(id))))throw deletionError();
    if(!BRIDGE)throw Error('시트 연결 배포 대기입니다. 후보와 사진은 앱에 보존됩니다.');
    await window.AiselAuth?.ready?.({allowGuardRequest:true});
    const stamp=authStamp(),token=await memberToken();assertAuth(stamp);
+   if(action==='enqueue'&&ids.some(id=>isDeleted(current(id))))throw deletionError();
    const response=await fetch(BRIDGE,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...extra,action,ids,token}),redirect:'follow'});
    if(!response.ok)throw Error('시트 응답 확인 실패');const data=await response.json();assertAuth(stamp);if(!data.ok)throw Object.assign(Error(data.error||'시트 저장 확인 실패'),{code:data.code});
    if(Array.isArray(data.results)&&data.results.length){const keys=new Set(data.results.map(r=>C.rowKey(r.id,r.version)));results=results.filter(r=>!keys.has(C.rowKey(r.id,r.version))).concat(data.results);}
@@ -260,7 +333,7 @@
  async function refresh(force=false,onlyIds=null){
    if(pane.hidden||!memberUser())return;
    const visible=onlyIds||(active?[active]:[...$dm('#dmGrid').querySelectorAll('.dm-card')].map(n=>n.dataset.id));
-   const need=visible.filter(id=>cards[id]?.reviewRequestedVersion&&(force||Date.now()-(resultChecks.get(C.rowKey(id,cards[id].inputVersion))||0)>60000));
+   const need=visible.filter(id=>!isDeleted(cards[id])&&cards[id]?.reviewRequestedVersion&&(force||Date.now()-(resultChecks.get(C.rowKey(id,cards[id].inputVersion))||0)>60000));
    const waits=[];for(let n=0;n<need.length;n+=40){
      const group=need.slice(n,n+40),keys=group.map(id=>C.rowKey(id,cards[id].inputVersion)),key=keys.slice().sort().join('|');
      if(resultFlights.has(key)){waits.push(resultFlights.get(key));continue;}
@@ -271,16 +344,16 @@
    await access();
    const dlg=$dm('#dmAdoptDialog'),list=$dm('#dmAdoptList');list.replaceChildren();
    const snapshot=await ROOT.once('value');
-   for(const [id,c] of Object.entries(snapshot.val()||{})){if(c.designMeeting)continue;const row=document.createElement('label');const input=document.createElement('input');input.type='checkbox';input.value=id;row.append(input,document.createTextNode(c.memo||c.link||new Date(c.createdAt||0).toLocaleDateString('ko-KR')));list.append(row);}
+   for(const [id,c] of Object.entries(snapshot.val()||{})){if(c.designMeeting||isDeleted(c))continue;const row=document.createElement('label');const input=document.createElement('input');input.type='checkbox';input.value=id;row.append(input,document.createTextNode(c.memo||c.link||new Date(c.createdAt||0).toLocaleDateString('ko-KR')));list.append(row);}
    dlg.showModal();
  }
  async function adoptSelected(){const ids=[...$dm('#dmAdoptList').querySelectorAll('input:checked')].map(e=>e.value);
    await access();
-   for(const id of ids){const out=await ROOT.child(id).transaction(c=>c?{...c,id,designMeeting:true,sourceRefId:c.sourceRefId||id,inputVersion:c.inputVersion||1,reviewState:c.reviewState||'idle',decision:c.decision||'unselected'}:undefined,undefined,false);if(!out.committed)throw Error('레퍼런스 연결 저장을 확인하지 못했습니다.');cards[id]=out.snapshot.val();}
+   for(const id of ids){const out=await ROOT.child(id).transaction(c=>c&&!isDeleted(c)?{...c,id,designMeeting:true,sourceRefId:c.sourceRefId||id,inputVersion:c.inputVersion||1,reviewState:c.reviewState||'idle',decision:c.decision||'unselected'}:undefined,undefined,false);if(!out.committed)throw Error('레퍼런스 연결 저장을 확인하지 못했습니다.');cards[id]=out.snapshot.val();}
    $dm('#dmAdoptDialog').close();render();message(ids.length+'개 레퍼런스를 같은 사진 주소로 연결했습니다.');
  }
  async function conversionDialog(ids=null){if(busy)return;if(detailDirty&&!await saveDetail())return;
-   const chosen=Object.values(cards).filter(c=>c.designMeeting&&['selected','progress'].includes(c.decision)&&!c.convertedCode&&(!Array.isArray(ids)||ids.includes(c.id)));if(!chosen.length)return;
+   const chosen=Object.values(cards).filter(c=>c.designMeeting&&!isDeleted(c)&&['selected','progress'].includes(c.decision)&&!c.convertedCode&&(!Array.isArray(ids)||ids.includes(c.id)));if(!chosen.length)return;
    const dlg=$dm('#dmConversionDialog'),list=$dm('#dmConversionList');list.replaceChildren();
    for(const c of chosen){const row=document.createElement('div');row.dataset.id=c.id;row.className='dm-conversion-row';row.innerHTML=`<strong>${esc(c.title||'사진 후보')}</strong><label>시즌<select class="dm-season"><option value="">선택</option>${document.getElementById('season').innerHTML}</select></label><label>카테고리<select class="dm-category"><option value="">선택</option>${catSel.innerHTML}</select></label>`;row.querySelector('.dm-season').value='';row.querySelector('.dm-category').value='';list.append(row);}
    dlg.showModal();
@@ -289,11 +362,11 @@
    await access();if(role!=='owner')throw Error('작업지시서 전환은 대표자만 사용할 수 있습니다.');
    const token=uid(),now=Date.now();
    const reserved=await ROOT.child(id).transaction(c=>{
-     if(!c||!['selected','progress'].includes(c.decision)||c.convertedCode)return;
+     if(!c||isDeleted(c)||!['selected','progress'].includes(c.decision)||c.convertedCode)return;
      if(c.conversion?.leaseUntil>now&&c.conversion?.owner!==token)return;
      return {...c,conversion:{...c.conversion,state:'running',owner:token,leaseUntil:now+120000}};
    },undefined,false);
-   if(!reserved.committed){const c=(await ROOT.child(id).once('value')).val();if(c?.convertedCode)return c.convertedCode;throw Error('다른 기기에서 전환 중이거나 선택이 해제됐습니다.');}
+   if(!reserved.committed){const c=(await ROOT.child(id).once('value')).val();if(isDeleted(c))throw deletionError();if(c?.convertedCode)return c.convertedCode;throw Error('다른 기기에서 전환 중이거나 선택이 해제됐습니다.');}
    let c=reserved.snapshot.val(),code=c.conversion?.code;
    try{
      // The reservation remains on the candidate after any partial failure. Retries always recover that workorder first.
@@ -305,7 +378,7 @@
          const max=Math.max(0,...Object.keys(index).filter(k=>k.startsWith(prefix)).map(k=>Number(k.slice(prefix.length))||0));
          const next=await firebase.database().ref('designMeetingCodeCounters/'+season+'_'+CATS[Number(category)].code).transaction(v=>Math.max(Number(v)||0,max)+1,undefined,false);
          code=prefix+String(next.snapshot.val()).padStart(3,'0');
-         const assigned=await ROOT.child(id).transaction(value=>value?.conversion?.owner===token?{...value,conversion:{...value.conversion,code:value.conversion.code||code,state:'running',leaseUntil:Date.now()+120000}}:undefined,undefined,false);
+         const assigned=await ROOT.child(id).transaction(value=>!isDeleted(value)&&value?.conversion?.owner===token?{...value,conversion:{...value.conversion,code:value.conversion.code||code,state:'running',leaseUntil:Date.now()+120000}}:undefined,undefined,false);
          if(!assigned.committed)throw Error('다른 기기에서 이어서 전환 중입니다. 연결 결과를 새로 확인해주세요.');
          c=assigned.snapshot.val();code=c.conversion.code;
        }
@@ -322,9 +395,9 @@
      if(!code||!st)throw Error('품번 예약 실패');
      const check=(await woRoot.child(code).once('value')).val();if(check?.designMeetingCandidateId!==id)throw Error('작업지시서 저장 확인 실패');
      if(await writeIndexIfChanged_(code,check)===false)throw Error('작업지시서는 저장됐습니다. 목록 연결을 다시 시도해주세요.');
-     const final=await ROOT.child(id).transaction(value=>value?.conversion?.code===code?{...value,convertedCode:code,conversion:{...value.conversion,state:'done',leaseUntil:0,confirmedAt:Date.now()}}:undefined,undefined,false);
+     const final=await ROOT.child(id).transaction(value=>!isDeleted(value)&&value?.conversion?.code===code?{...value,convertedCode:code,conversion:{...value.conversion,state:'done',leaseUntil:0,confirmedAt:Date.now()}}:undefined,undefined,false);
      if(!final.committed)throw Error('작업지시서 연결 저장 확인 실패');cards[id]=final.snapshot.val();return code;
-   }catch(e){await ROOT.child(id).transaction(value=>value?.conversion?.owner===token?{...value,conversion:{...value.conversion,state:'error',leaseUntil:0,error:e.message}}:undefined,undefined,false).catch(()=>{});throw e;}
+   }catch(e){await ROOT.child(id).transaction(value=>!isDeleted(value)&&value?.conversion?.owner===token?{...value,conversion:{...value.conversion,state:'error',leaseUntil:0,error:e.message}}:undefined,undefined,false).catch(()=>{});throw e;}
  }
  async function convertSelected(){const rows=[...$dm('#dmConversionList').children];if(rows.some(r=>!r.querySelector('.dm-season').value||r.querySelector('.dm-category').value==='')){$dm('#dmConversionStatus').textContent='각 후보의 시즌·카테고리를 선택해주세요.';return;}
    busy=true;$dm('#dmConversionConfirm').disabled=true;let ok=0;const errors=[];
@@ -337,7 +410,13 @@
  const PAGE=40;let latestQuery=null,latestCallback=null,olderCursor=null,hasOlder=false,loadingOlder=false,latestIds=new Set(),olderIds=new Set(),activeRef=null,activeCallback=null,activeWatchId=null,draftsLoaded=false;
  function entries(snap){return Object.entries(snap.val()||{}).map(([id,c])=>({...c,id})).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)||(a.id<b.id?-1:a.id>b.id?1:0));}
  function accept(values){for(const c of values){if(c.designMeeting===true)cards[c.id]=c;else delete cards[c.id];}}
- function repaintActive(){if(!active||detailDirty||!cards[active])return;const c=cards[active];if(!pane.contains(document.activeElement)||!document.activeElement.matches('input,textarea,select,[contenteditable=true]')){renderDetailPhotos(c);renderLinks(c);renderDesigner(c);$dm('#dmDetailTitle').textContent=c.title||'후보 상세';}renderReview(c);}
+ function repaintActive(){if(!active||!cards[active])return;const c=cards[active];
+   if(isDeleted(c)){
+     undoDeletion={id:active,deletedAt:c.designMeetingDeletedAt,deletedBy:c.designMeetingDeletedBy};applyEditingState();
+     if(detailDirty){message('다른 화면에서 삭제된 항목입니다. 입력한 내용은 화면에 유지했습니다. 복원한 뒤 저장해주세요.',true);return;}
+     if(!pane.hidden){restoreList();putRoute('list',null,{replace:true});message('');}return;
+   }
+   if(detailDirty)return;if(!pane.contains(document.activeElement)||!document.activeElement.matches('input,textarea,select,[contenteditable=true]')){renderDetailPhotos(c);renderLinks(c);renderDesigner(c);$dm('#dmDetailTitle').textContent=c.title||'후보 상세';}renderReview(c);}
  function stopActive(){if(activeRef)activeRef.off('value',activeCallback);activeRef=null;activeCallback=null;activeWatchId=null;}
  function watchActive(){const id=active&&!pane.hidden&&!document.hidden&&!latestIds.has(active)?active:null;if(id===activeWatchId)return;stopActive();if(!id)return;activeWatchId=id;activeRef=ROOT.child(id);activeCallback=snap=>{const c=snap.val();if(c){cards[id]={...c,id};repaintActive();}else message('이 후보를 찾을 수 없습니다.',true);};activeRef.on('value',activeCallback,e=>message(e.message,true));}
  function stopListening(){if(latestQuery)latestQuery.off('value',latestCallback);latestQuery=null;latestCallback=null;listening=false;stopActive();}
@@ -404,7 +483,7 @@
 
  $dm('#dmToolsClose').onclick=()=>$dm('#dmTools').close();
  $dm('#dmReplaceInput').onchange=e=>{receive(e.target.files,e.target.dataset.target,e.target.dataset.key);e.target.value='';};
- $dm('#dmCamera').onclick=()=>{$dm('#dmCameraInput').click();};
+ $dm('#dmCamera').onclick=()=>{$dm('#dmTools').close();$dm('#dmCameraInput').click();};
  $dm('#dmFileInput').onchange=e=>{receive(e.target.files,e.target.dataset.target||null);e.target.value='';};
  $dm('#dmCameraInput').onchange=e=>{receive(e.target.files);e.target.value='';};
  $dm('#dmAddPhotos').onclick=()=>{$dm('#dmFileInput').dataset.target=active;$dm('#dmFileInput').click();};

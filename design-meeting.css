@@ -1,10 +1,10 @@
-/* v176: compact controls; shared screen tokens, one mobile composition at every viewport width. */
+/* Approved collection composition: compact 28px controls, two-column list, preserved screen-only scope. */
 @media screen {
- #designMeetingView{box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width);margin:0 auto;padding:0 var(--aisel-page-gutter) 24px;background:var(--aisel-bg);color:var(--aisel-ink);font:400 var(--aisel-body)/22px var(--aisel-font)}
+ #designMeetingView{--aisel-control-height:28px;--aisel-icon-control-size:28px;--aisel-input-height:32px;--aisel-page-gutter:12px;--aisel-line:#e3e5e7;--aisel-soft:#f6f7f8;--aisel-muted:#7a8085;--aisel-button-size:12px;--aisel-button-line:18px;--aisel-card-title-size:12px;--aisel-card-title-line:18px;box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width);margin:0 auto;padding:0 var(--aisel-page-gutter) 24px;background:var(--aisel-bg);color:var(--aisel-ink);font:400 var(--aisel-body)/22px var(--aisel-font)}
  #designMeetingView *,#designMeetingView *::before,#designMeetingView *::after{box-sizing:border-box}
  #designMeetingView[hidden],#designMeetingView [hidden]{display:none!important}
  #designMeetingView button,#designMeetingView select,#designMeetingView input,.dm-dialog button,.dm-dialog select{font-family:var(--aisel-font);color:var(--aisel-ink)}
- #designMeetingView button,.dm-dialog button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--aisel-control-height);padding:4px 8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);cursor:pointer;box-shadow:none}
+ #designMeetingView button,.dm-dialog button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--aisel-control-height);padding:0 6px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);cursor:pointer;box-shadow:none}
  #designMeetingView button:disabled,.dm-dialog button:disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
  #designMeetingView button:not(:disabled):hover,.dm-dialog button:not(:disabled):hover{border-color:var(--aisel-muted)}
  #designMeetingView :is(button,input,select):focus-visible,.dm-dialog :is(button,select):focus-visible{outline:2px solid var(--aisel-focus);outline-offset:2px}
@@ -19,20 +19,20 @@
  .dm-collect{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
  .dm-collect label{font-size:var(--aisel-body);line-height:20px;font-weight:600}
  .dm-collect input[type=url],#dmTools input[type=email],#dmSearch,.dm-dialog select{box-sizing:border-box;height:var(--aisel-input-height);min-height:var(--aisel-input-height);padding:4px 10px;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);font-size:var(--aisel-input);font-weight:400;line-height:24px}
- #designMeetingView .dm-search{margin:8px 0 12px}
+ #designMeetingView .dm-search{margin:0;min-width:0;flex:1}
  #designMeetingView #dmSearch{width:100%;margin:0}
- .dm-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
- #designMeetingView .dm-filters button{width:100%;min-width:0;height:var(--aisel-control-height);white-space:nowrap}
- #designMeetingView .dm-filters button.active{background:var(--aisel-soft);border-color:var(--aisel-muted);color:var(--aisel-ink)}
+ .dm-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin-top:0;margin-bottom:8px;border-bottom:1px solid var(--aisel-line)}
+ #designMeetingView .dm-filters button{width:100%;min-width:0;height:28px;min-height:28px;white-space:nowrap;border:0;border-bottom:1px solid transparent;border-radius:0;font-weight:400}
+ #designMeetingView .dm-filters button.active{background:var(--aisel-soft);border-bottom-color:var(--aisel-ink);color:var(--aisel-ink);font-weight:600}
  .dm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
  .dm-card,#designMeetingView .dm-add-card{position:relative;min-width:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;background:var(--aisel-bg)}
  #designMeetingView .dm-add-card{align-self:stretch;min-height:0}
  .dm-grid:has(>.dm-add-card:only-child)>.dm-add-card{aspect-ratio:3/5}
  #designMeetingView .dm-open{display:block;width:100%;min-width:0;padding:0;border:0;border-radius:0;background:var(--aisel-bg);text-align:left}
- .dm-open img,.dm-no-photo{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:contain;background:var(--aisel-bg)}
+ .dm-open img,.dm-no-photo{display:block;width:100%;height:184px;aspect-ratio:auto;object-fit:contain;background:var(--aisel-soft)}
  .dm-no-photo{display:flex;align-items:center;justify-content:center;color:var(--aisel-muted);font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line)}
  .dm-card-info{padding:8px;min-width:0}
- .dm-card-info strong{display:block;font-size:var(--aisel-card-title-size);line-height:var(--aisel-card-title-line);font-weight:600;overflow-wrap:anywhere}
+ .dm-card-info strong{display:block;font-size:var(--aisel-card-title-size);line-height:var(--aisel-card-title-line);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .dm-card-info time{display:block;font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line);font-weight:400;color:var(--aisel-muted);margin-top:4px}
  .dm-colors{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
  .dm-colors:empty{display:none}
@@ -40,35 +40,35 @@
  #designMeetingView .dm-convert{width:100%;margin:12px 0}
  #designMeetingView .dm-detail{position:relative;display:flex;flex-direction:column;width:100%;height:var(--dm-height,calc(100dvh - 142px));min-height:240px;padding:8px 0 0}
  .dm-detail-header{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:4px;flex-shrink:0;margin-bottom:8px}
- .dm-heading{min-width:0}
- #dmDetailTitle{min-width:0;max-width:100%;margin:0;font-size:var(--aisel-section);font-weight:600;line-height:24px;white-space:normal;overflow-wrap:anywhere;max-height:72px;overflow:auto}
+ .dm-heading{display:flex;align-items:center;gap:4px;min-width:0}
+ #dmDetailTitle{flex:1;min-width:0;max-width:100%;margin:0;font-size:14px;font-weight:600;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  #dmDetailTitle:focus{outline:2px solid var(--aisel-focus);outline-offset:2px}
- #designMeetingView .dm-detail-meta{display:grid;grid-template-columns:minmax(78px,1fr) max-content minmax(72px,116px);align-items:center;gap:8px;width:100%;min-width:0}
- .dm-dates{min-width:0;margin:0;font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);color:var(--aisel-muted);white-space:nowrap;overflow-x:auto;scrollbar-width:none}
- .dm-assignee{display:flex;align-items:center;gap:4px;min-width:max-content;margin:0;border:0;min-height:var(--aisel-control-height);white-space:nowrap}
- .dm-assignee label{font-size:var(--aisel-body);line-height:20px;font-weight:600}
- #designMeetingView #dmDesigner{flex:0 0 72px;width:72px;min-width:72px;max-width:72px;height:var(--aisel-input-height);min-height:var(--aisel-input-height);padding:0;border:0;background:var(--aisel-bg);font-size:var(--aisel-input);font-weight:400;line-height:24px}
- .dm-links{display:flex;align-items:center;min-width:0;max-width:100%;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+ #designMeetingView .dm-detail-meta{display:grid;grid-template-columns:92px minmax(0,1fr) 88px;align-items:center;gap:4px;width:100%;min-width:0}
+ .dm-dates{display:flex;align-items:center;justify-content:center;height:28px;border:1px solid var(--aisel-line);border-radius:3px;min-width:0;margin:0;font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);color:var(--aisel-muted);white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+ .dm-assignee{display:flex;align-items:center;justify-content:center;gap:4px;min-width:0;margin:0;border:1px solid var(--aisel-line);border-radius:3px;height:28px;min-height:28px;white-space:nowrap;padding:0 4px}
+ .dm-assignee label{font-size:11px;line-height:18px;font-weight:400;color:var(--aisel-muted);flex:none}
+ #designMeetingView #dmDesigner{flex:0 1 68px;width:68px;min-width:0;max-width:68px;height:26px;min-height:26px;padding:0;border:0;background:var(--aisel-bg);font-size:var(--aisel-input);font-weight:400;line-height:24px}
+ .dm-links{display:grid;grid-template-columns:56px 28px;align-items:center;min-width:0;max-width:100%;gap:4px;overflow:visible}
  .dm-link-row{display:flex;align-items:center;flex:0 0 auto;gap:8px}
  .dm-links svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:0 0 16px}
- html:root body #designMeetingView #dmLinks .dm-link-open{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;gap:4px;min-width:64px;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:4px 8px;color:var(--aisel-ink);background:var(--aisel-bg);text-decoration:none;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);white-space:nowrap}
+ html:root body #designMeetingView #dmLinks .dm-link-open{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;gap:4px;min-width:64px;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 6px;color:var(--aisel-ink);background:var(--aisel-bg);text-decoration:none;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);white-space:nowrap}
  #designMeetingView :is(.dm-icon,.dm-link-add){display:inline-flex;align-items:center;justify-content:center;flex:0 0 var(--aisel-icon-control-size);width:var(--aisel-icon-control-size);height:var(--aisel-icon-control-size);min-height:var(--aisel-icon-control-size);padding:0}
  #designMeetingView .dm-link-add{font-size:20px}
  .dm-detail-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:4px}
  .dm-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
  #designMeetingView .dm-photo{display:block;flex:0 0 100%;min-width:0;scroll-snap-align:start;padding:0;border:0;background:var(--aisel-bg)}
- .dm-photo img{display:block;width:100%;height:var(--dm-photo-height,260px);object-fit:contain;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius)}
+ .dm-photo img{display:block;width:100%;height:var(--dm-photo-height,160px);object-fit:contain;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius)}
  #dmAddPhotos{margin-top:8px}
- .dm-section-title{font-size:var(--aisel-section);font-weight:600;line-height:24px;margin:12px 0 8px}
- .dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;font-size:var(--aisel-body);line-height:22px;table-layout:fixed}
- .dm-evidence th,.dm-evidence td{height:40px;padding:8px 10px;text-align:left;vertical-align:top;border-bottom:1px solid var(--aisel-line);overflow-wrap:anywhere}
- .dm-evidence th{width:76px;font-weight:600;border-right:1px solid var(--aisel-line)}
+ .dm-section-title{font-size:13px;font-weight:600;line-height:20px;margin:12px 0 4px}
+ .dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;font-size:12px;line-height:18px;table-layout:fixed}
+ .dm-evidence th,.dm-evidence td{height:32px;padding:7px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--aisel-line);overflow-wrap:anywhere}
+ .dm-evidence th{width:52px;font-weight:600;border-right:1px solid var(--aisel-line)}
  .dm-evidence tr:last-child>*{border-bottom:0}
  .dm-additional{font-size:var(--aisel-body);font-weight:400;line-height:22px;margin:8px 0;overflow-wrap:anywhere}
  .dm-additional strong{margin-right:12px}
  .dm-review-status{font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line);margin:4px 0}
  .dm-review-status:empty,#dmStatus:empty,#dmDetailSaveState:empty{display:none}
- .dm-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex-shrink:0;gap:8px;margin:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--aisel-line);background:var(--aisel-bg)}
+ .dm-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex-shrink:0;gap:4px;margin:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--aisel-line);background:var(--aisel-bg)}
  .dm-detail-actions button{width:100%;min-width:0;height:var(--aisel-control-height)}
  #dmDetailSaveState,#dmStatus{font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);overflow-wrap:anywhere}
  .dm-error{color:#a63f57!important}
@@ -86,5 +86,21 @@
  .dm-dates::-webkit-scrollbar,.dm-links::-webkit-scrollbar{display:none}
  .dm-session{display:flex;justify-content:flex-end;margin-top:12px}
  .dm-session:has(>button[hidden]){display:none}
+ .dm-search-row{display:flex;align-items:center;gap:4px;margin:0 0 12px;min-width:0}
+ #designMeetingView #dmAddMeeting{width:82px;flex:0 0 82px;height:28px;min-height:28px;padding:0 4px;font-size:12px;font-weight:500}
+ html:root body #designMeetingView .dm-search-row #dmSearch{height:32px;min-height:32px;padding-top:4px;padding-bottom:4px;font-size:16px!important;line-height:22px}
+ #designMeetingView #dmDelete{height:28px;min-height:28px;flex:0 0 42px;width:42px;padding:0 4px;font-size:12px;font-weight:500;border-color:#dfced4;color:#875566}
+ #designMeetingView #dmDelete:disabled{color:#9ba1aa;border-color:var(--aisel-line)}
+ #dmDeleteNotice{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0 12px;padding:8px;border:1px solid var(--aisel-line);border-radius:3px;font-size:12px;line-height:18px;color:var(--aisel-muted)}
+ #dmDeleteNotice button{height:28px;min-height:28px;flex:none}
+ #dmDeleteDialog h3{font-size:14px;font-weight:600;line-height:20px;margin:0 0 8px}
+ #dmDeleteDialog p{font-size:12px;line-height:20px;margin:0 0 12px}
+ #dmDeleteError:empty{display:none}
+ .dm-delete-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+ #designMeetingView .dm-delete-actions button{height:28px;min-height:28px}
+ #designMeetingView #dmDeleteConfirm{color:#875566;border-color:#dfced4;background:#fcf8f9}
+ #dmLinkDialog p{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+ #dmLinkDialog p>a{flex:1;min-width:100px;color:var(--aisel-ink)}
+
 }
 @media print{#designMeetingView,.dm-dialog{display:none!important}}

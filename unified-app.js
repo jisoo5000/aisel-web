@@ -90,7 +90,7 @@
   if(bridgeReady!==true){
    const response=await fetch(window.AISEL_DESIGN_MEETING_BRIDGE,{signal:AbortSignal.timeout(12000)});
    const state=await response.json();bridgeReady=state.referenceReady===true;
-   if(!bridgeReady)throw Object.assign(Error('레퍼런스 저장 연결을 준비하고 있습니다. 연결이 완료되면 등록할 수 있습니다.'),{code:'connection_pending'});
+   if(!bridgeReady)throw Object.assign(Error('레퍼런스 저장 서버 업데이트가 필요합니다. 관리자에게 연결을 요청해주세요.'),{code:'connection_pending'});
   }
   const result=await DM.bridge(action,[],payload);
   if(session&&(generation!==session.generation||uid!==(session.currentUser()?.uid||null)))throw Object.assign(Error('로그인 계정이 변경되었습니다. 다시 확인해주세요.'),{code:'session_changed'});

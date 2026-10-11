@@ -1,3 +1,4 @@
+<!-- v177: reference content/product views and recoverable design-meeting deletion; existing A4 and workorder data preserved (2026-10-11) -->
 <!-- v176: compact screen controls and nested viewport navigation; A4 and saved data behavior preserved (2026-10-11) -->
 <!-- v175: shared 390px screen UI; existing A4 print and saved data behavior preserved (2026-10-11) -->
 <!-- v174: approved menu/header scope, compact read-only sales cache and preserved A4 print (2026-10-11) -->
@@ -9685,7 +9686,7 @@
     refRoot.on("value", refValueCallback_);
   }
   function refValueCallback_(snapshot){
-      allRefCards = snapshot.val() || {};
+      allRefCards = Object.fromEntries(Object.entries(snapshot.val() || {}).filter(([,r])=>r && !r.designMeetingDeletedAt));
       if(isTypingNow()){
         pendingRefRender_ = true; // 지금 어딘가(계산기·링크·메모 등) 입력 중이면 화면을 다시 안 그리고 미뤄둠
         return;
@@ -16443,7 +16444,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=176">
+<link rel="stylesheet" href="design-meeting.css?v=177">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16462,7 +16463,7 @@ window.AiselDesignMeetingAdapter={
 };
 </script>
 <script src="design-meeting-core.js?v=171"></script>
-<script src="design-meeting.js?v=176"></script>
+<script src="design-meeting.js?v=177"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16475,7 +16476,7 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=176">
+<link rel="stylesheet" href="reference-collection.css?v=177">
 <link rel="stylesheet" href="unified-app.css?v=176">
 <script>
 window.AiselUnifiedAdapter={
@@ -16488,6 +16489,6 @@ window.AiselUnifiedAdapter={
  isOwner(){if(window.AiselAuth){const u=window.AiselAuth.currentUser();return !!(u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');}return (firebase.apps||[]).some(app=>{try{const u=app.auth().currentUser;return u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com';}catch(_){return false;}});}
 };
 </script>
-<script src="reference-collection.js?v=176"></script>
-<script src="unified-app.js?v=176"></script>
+<script src="reference-collection.js?v=177"></script>
+<script src="unified-app.js?v=177"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=176" media="screen">
