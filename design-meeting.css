@@ -123,3 +123,16 @@ body.dark #designMeetingView button,body.dark #designMeetingView select,body.dar
  #designMeetingView button:not(#dmWorkorder):not(.dm-convert):hover {background:#f3f4f6;}
  #designMeetingView button:focus-visible {outline:2px solid #30343b;outline-offset:2px;}
 }
+
+/* v174: title first, then date / assignee / links on one metadata row. */
+@media screen {
+ #designMeetingView .dm-detail-header {grid-template-columns:minmax(0,1fr);gap:4px;margin-bottom:8px;}
+ #designMeetingView .dm-detail-meta {display:grid;grid-template-columns:minmax(78px,1fr) max-content minmax(72px,160px);align-items:center;gap:8px;width:100%;min-width:0;}
+ #designMeetingView .dm-detail-meta .dm-dates {min-width:0;margin:0;white-space:nowrap;overflow-x:auto;scrollbar-width:thin;}
+ #designMeetingView .dm-detail-meta .dm-assignee {min-width:max-content;max-width:none;}
+ #designMeetingView .dm-detail-meta #dmDesigner {flex:0 0 68px;width:68px;min-width:68px;max-width:68px;}
+ #designMeetingView .dm-detail-meta .dm-links {min-width:0;max-width:100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;}
+ #designMeetingView .dm-detail-meta .dm-link-row {flex:0 0 auto;}
+ #designMeetingView .dm-detail-meta .dm-link-add {flex:0 0 auto;}
+ #designMeetingView #dmCloseDetail {display:none!important;}
+}

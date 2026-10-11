@@ -44,12 +44,17 @@
    if(active&&ownRoute(route)&&route.session===navSession&&Number.isInteger(route.parentStep)&&route.parentStep<route.step){history.go(route.parentStep-route.step);return true;}
    restoreList();putRoute('list',null,{replace:true});return true;
  }
- const backButton=$dm('#dmCloseDetail');backButton.hidden=false;backButton.textContent='‹ 뒤로';backButton.setAttribute('aria-label','디자인회의 목록으로 돌아가기');$dm('#dmDetail').prepend(backButton);
+ // Browser/phone Back owns navigation; the retained internal control stays hidden.
+ const backButton=$dm('#dmCloseDetail');backButton.hidden=true;
+ // Reuse the existing fields so only the header layout changes.
+ const detailControls=$dm('.dm-detail-controls');
+ detailControls.classList.add('dm-detail-meta');
+ detailControls.replaceChildren($dm('#dmDates'),$dm('.dm-assignee'),$dm('#dmLinks'));
  const login=document.createElement('button');login.type='button';login.textContent='디자인회의 로그인';login.id='dmLogin';pane.querySelector('#dmSession').append(login);
  const members=document.createElement('details');members.id='dmMembers';members.hidden=true;members.innerHTML='<summary>참여자 관리</summary><p>Google 로그인 이메일을 등록하면 사진 등록·검토 요청·결과 확인을 사용할 수 있습니다. 등록·중지 시 메시지는 보내지 않습니다.</p><label>참여자 Google 이메일 <input type="email" id="dmMemberEmail" autocomplete="off"></label><button type="button" id="dmMemberAdd">참여자 등록</button><div id="dmMemberList"></div>';pane.querySelector('#dmTools').append(members);
  function memberUser(){return (firebase.apps||[]).map(a=>{try{return a.auth().currentUser;}catch(e){return null;}}).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()===OWNER)||(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')?.auth().currentUser;}
  function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();}
- async function access(){const data=await bridge('access',[]);role=data.role;applyRole();return data;}
+ async function access(){const data=await bridge('access',[]);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role}}));return data;}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
  members.addEventListener('toggle',async()=>{if(members.open)try{showMembers((await bridge('members',[])).members);}catch(e){message(e.message,true);}});
  $dm('#dmMemberAdd').onclick=async()=>{try{const data=await bridge('setMember',[],{email:$dm('#dmMemberEmail').value,active:true});showMembers(data.members);$dm('#dmMemberEmail').value='';message('참여자를 등록했습니다. 해당 계정으로 Google 로그인하면 사용할 수 있습니다.');}catch(e){message(e.message,true);}};
@@ -184,8 +189,8 @@
      if(photoSizingKey!==key){
        const body=$dm('.dm-detail-body'),photos=$dm('#dmPhotos');
        const nonPhoto=[...body.children].filter(n=>n!==photos&&!n.hidden).reduce((sum,n)=>{const st=getComputedStyle(n);return sum+n.getBoundingClientRect().height+(parseFloat(st.marginTop)||0)+(parseFloat(st.marginBottom)||0);},0);
-       // The back row also needs space on short phones. Fit the normal evidence
-       // and status above the footer; genuinely long evidence remains scrollable.
+       // Fit the normal evidence and status above the footer;
+       // genuinely long evidence remains scrollable.
        const minimum=nonPhoto>body.clientHeight?120:48;
        detail.style.setProperty('--dm-photo-height',Math.max(minimum,Math.min(300,Math.floor(body.clientHeight-nonPhoto-8)))+'px');
        photoSizingKey=key;

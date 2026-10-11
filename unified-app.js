@@ -1,38 +1,49 @@
-/* v173: shared navigation. Each collection retains its own bounded list state. */
+/* v174: five shared menus; preserve each collection's bounded list state. */
 (function(){
  'use strict';
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
  if(!A||!DM||!RC)return;
  const main=document.getElementById('mainBar'),$=id=>document.getElementById(id);
  let current='',busy=false,frame=null,productState=null,returnToProducts=false,bridgeReady=null,knownRole=null;
+ const directEntry=!!location.hash||!!new URLSearchParams(location.search).get('code');
+ let landingOpen=!directEntry;
  let lastLocation={state:history.state,url:location.href},replayingPop=false;
  // Track the last committed location, including each collection's own detail routes.
  for(const method of ['pushState','replaceState']){const original=history[method];history[method]=function(...args){const value=original.apply(this,args);lastLocation={state:history.state,url:location.href};return value;};}
  const pane=document.createElement('section');pane.id='productProgressView';pane.className='noprint';pane.hidden=true;
- const sub=document.createElement('nav');sub.id='productSubnav';sub.className='noprint';sub.setAttribute('aria-label','제품 진행');sub.hidden=true;
- sub.innerHTML='<button type="button" data-product-view="products" aria-pressed="true">진행 현황</button><button type="button" data-product-view="orders" aria-pressed="false">작업지시서</button>';
  const notice=document.createElement('p');notice.id='unifiedNotice';notice.className='noprint';notice.setAttribute('role','status');
- main.after(sub,notice,pane);
- const oldOrders=main.querySelector('[data-main="orders"]');oldOrders.dataset.main='products';oldOrders.textContent='제품 진행';main.prepend(oldOrders);
- const refs=document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';oldOrders.after(refs);
- const sales=main.querySelector('[data-main="sales"]');main.append(sales);
+ main.after(notice,pane);
+ const orders=main.querySelector('[data-main="orders"]');orders.textContent='작업지시서';
+ const products=document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='제품진행';
+ const refs=document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
+ const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
+ main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),orders);
  function info(s=''){notice.textContent=s;}
  function role(){return A.isOwner()?'owner':knownRole||DM.getRole();}
  function allowedWorkorder(){return ['owner','designer'].includes(role());}
  function allowedView(view){return !((['md','logistics'].includes(role())&&['orders','editor','designmeeting'].includes(view))||(role()==='logistics'&&view==='references'));}
  function applyRole(){
   const limited=['md','logistics'].includes(role());
-  sub.querySelector('[data-product-view="orders"]').hidden=limited;
+  orders.hidden=limited;
   const meeting=main.querySelector('[data-main="designmeeting"]');if(meeting)meeting.hidden=limited;
   refs.hidden=role()==='logistics';post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
  }
+ // A tiny account-scoped preference selects a landing page only. It never grants access.
+ const landingKey='aisel.unified.landing.v1',validRoles=['owner','designer','md','logistics'];
+ function memberUser(){try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
+ function rememberRole(value){const user=memberUser();if(!user?.emailVerified||!user.uid||!validRoles.includes(value))return;try{localStorage.setItem(landingKey,JSON.stringify({uid:user.uid,role:value,checkedAt:Date.now()}));}catch(_){} }
+ function landingRole(){const verified=role();if(validRoles.includes(verified))return verified;const user=memberUser();if(!user?.emailVerified||!user.uid)return null;try{const hint=JSON.parse(localStorage.getItem(landingKey));const age=Date.now()-hint?.checkedAt;if(hint?.uid===user.uid&&age>=0&&age<86400000&&validRoles.includes(hint.role))return hint.role;}catch(_){}return null;}
+ function landingView(){const value=landingRole();return value==='logistics'?'products':value==='designer'?'orders':'sales';}
+ function restoreLanding(){if(!landingOpen||busy||!landingRole())return;landingOpen=false;const target=landingView();if(current!==target)show(target,{replace:true});}
+ for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,()=>{landingOpen=false;},{capture:true,once:true});
+ window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
  function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
  function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=173';pane.append(frame);}
  function select(view){
-  current=view;const products=['products','orders','editor'].includes(view);sub.hidden=!products;
-  for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(products?'products':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
-  for(const b of sub.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.productView===(view==='products'?'products':'orders')));
+  current=view;
+  for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
+  const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(view!=='products')unmount();pane.hidden=view!=='products';
   if(view!=='references')$('referenceCollectionView').hidden=true;
   if(view!=='designmeeting')$('designMeetingView').hidden=true;
@@ -57,7 +68,7 @@
    A.hide();select(view);
    if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='제품 진행 현황';document.body.dataset.aiselListView='products';}
    else if(view==='orders')await A.orders();
-   else if(view==='sales')await A.sales();
+   else if(view==='sales'){await A.sales();window.AiselSheetSalesSource?.refreshIfStale?.();}
    else if(view==='editor'){A.open(code);returnToProducts=true;}
    select(view);
    if(writeHistory)route(view,replace,code);
@@ -72,15 +83,14 @@
    if(!bridgeReady)throw Object.assign(Error('레퍼런스 저장 연결을 준비하고 있습니다. 연결이 완료되면 등록할 수 있습니다.'),{code:'connection_pending'});
   }
   const result=await DM.bridge(action,[],payload);
-  if(action==='refAccess'&&['owner','designer','md','logistics'].includes(result?.role)){knownRole=result.role;applyRole();}
+  if(action==='refAccess'&&validRoles.includes(result?.role)){knownRole=result.role;rememberRole(knownRole);applyRole();}
   return result;
  }
  RC.configure({bridge:referenceBridge,login:()=>DM.login({scope:'reference'}),beforeShow:async()=>{
-  if(!await guard('references'))return false;A.hide();select('references');$('appBrandHeader').hidden=true;return true;
+  if(!await guard('references'))return false;A.hide();select('references');$('appBrandHeader').hidden=false;$('appPageTitle').textContent='레퍼런스';document.body.dataset.aiselListView='references';return true;
  }});
  // Capture before the existing tab handlers so only one navigation runs.
- main.addEventListener('click',e=>{const b=e.target.closest('.maintab[data-main]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();show(b.dataset.main);},true);
- sub.addEventListener('click',e=>{const b=e.target.closest('[data-product-view]');if(b)show(b.dataset.productView);});
+ main.addEventListener('click',e=>{const b=e.target.closest('.maintab[data-main]');if(!b)return;landingOpen=false;e.preventDefault();e.stopImmediatePropagation();show(b.dataset.main);},true);
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame?.contentWindow)return;
   const data=e.data||{};
@@ -90,7 +100,7 @@
    productState=data.state||productState;show('editor',{code:data.code});
   }
  });
- window.addEventListener('aisel-owner-auth-change',()=>{knownRole=null;applyRole();});
+ window.addEventListener('aisel-owner-auth-change',()=>{knownRole=null;applyRole();restoreLanding();});
  window.addEventListener('aisel-view-change',e=>{if(e.detail?.view)select(e.detail.view);});
  window.addEventListener('aisel-legacy-view-change',e=>{
   if(busy)return;queueMicrotask(()=>{if(busy)return;select(e.detail.view==='orders'?(A.editorVisible()?'editor':'orders'):e.detail.view);});
@@ -107,6 +117,7 @@
  // Capture cross-module browser navigation before legacy/detail listeners can hide unsaved input.
  window.AiselUnifiedNavigationPreflight=async e=>{
   if(replayingPop)return;
+  landingOpen=false;
   const target=historyTarget(e.state,location.hash);if(!target)return;
   const previous=lastLocation,next={state:e.state,url:location.href};
   if(!allowedView(target.view)){e.stopImmediatePropagation();restoreLocation(previous);info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return;}
@@ -141,5 +152,12 @@
  else if(/^#design-meeting/.test(hash)){} // DM owns its direct detail route.
  else if(new URLSearchParams(location.search).get('code'))select('editor');
  else if(/^#workorder=/.test(hash))show('editor',{history:false,code:decodeURIComponent(hash.slice(11))});
- else show(hash==='#sales'?'sales':hash==='#workorders'?'orders':'products',{replace:true});
+ else show(hash==='#sales'?'sales':hash==='#workorders'?'orders':hash==='#products'?'products':landingView(),{replace:true}).then(restoreLanding);
+ // Reuse existing Firebase auth restoration; do not perform another role lookup.
+ // The member app is normally lazy. Restore it only when this device has a recent landing hint.
+ try{
+  const hint=JSON.parse(localStorage.getItem(landingKey)),age=Date.now()-hint?.checkedAt;
+  if(landingOpen&&hint?.uid&&validRoles.includes(hint.role)&&age>=0&&age<86400000&&window.firebase&&!(firebase.apps||[]).some(app=>app.name==='aiselDesignMeeting'))firebase.initializeApp(firebase.app().options,'aiselDesignMeeting');
+ }catch(_){}
+ for(const app of window.firebase?.apps||[]){try{app.auth().onAuthStateChanged(()=>queueMicrotask(restoreLanding));}catch(_){} }
 })();
