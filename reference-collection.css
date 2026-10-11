@@ -1,0 +1,53 @@
+/* The same mobile column is used on desktop. All selectors are outside #sheet. */
+#referenceCollectionView{box-sizing:border-box;width:100%;max-width:480px;margin:0 auto;padding:12px 16px calc(76px + env(safe-area-inset-bottom));color:#30343b;background:#fff;font:14px/1.5 Pretendard,-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif}
+#referenceCollectionView *,#referenceCollectionView *::before,#referenceCollectionView *::after{box-sizing:border-box}
+#referenceCollectionView[hidden],#referenceCollectionView [hidden]{display:none!important}
+#referenceCollectionView button,#referenceCollectionView input,#referenceCollectionView textarea,#referenceCollectionView select{font-family:inherit;color:inherit}
+#referenceCollectionView button{min-height:44px;padding:8px 12px;border:1px solid #dedcd6;border-radius:4px;background:#fff;cursor:pointer;font-size:14px;line-height:1.4}
+#referenceCollectionView button:disabled{opacity:.5;cursor:default}
+#referenceCollectionView button:focus-visible,#referenceCollectionView input:focus-visible,#referenceCollectionView textarea:focus-visible,#referenceCollectionView select:focus-visible{outline:2px solid #30343b;outline-offset:2px}
+#referenceCollectionView .rc-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px}
+#referenceCollectionView h1{font-size:18px;font-weight:600;margin:0}
+#referenceCollectionView .rc-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-bottom:1px solid #dedcd6}
+#referenceCollectionView .rc-filters button{border:0;border-radius:0;color:#6c727c}
+#referenceCollectionView .rc-filters button[aria-pressed=true]{box-shadow:inset 0 -2px #30343b;color:#30343b;font-weight:600}
+#referenceCollectionView input:not([type=checkbox]):not([type=file]),#referenceCollectionView select,#referenceCollectionView textarea{width:100%;max-width:100%;min-width:0;min-height:44px;border:1px solid #dedcd6;border-radius:4px;background:#fff;padding:10px 12px;font-size:16px;line-height:1.5;appearance:none}
+#referenceCollectionView input[type=date]{display:block;-webkit-appearance:none;padding:10px 8px;min-width:0}
+#referenceCollectionView input[type=date]::-webkit-date-and-time-value{text-align:left}
+#referenceCollectionView select{appearance:auto}
+#referenceCollectionView textarea{resize:vertical;min-height:150px}
+#referenceCollectionView .rc-search{display:block;margin:12px 0}
+#referenceCollectionView .rc-list-tools{display:flex;justify-content:flex-end;gap:8px;margin:0 0 12px}
+#referenceCollectionView #rcCreate,#referenceCollectionView #rcSave{background:#30343b;color:#fff;border-color:#30343b}
+#referenceCollectionView .rc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#referenceCollectionView .rc-card{display:block;min-width:0;padding:0;overflow:hidden;text-align:left}
+#referenceCollectionView .rc-card img,#referenceCollectionView .rc-no-photo{display:block;width:100%;aspect-ratio:3/4;object-fit:contain;background:#f5f4f1}
+#referenceCollectionView .rc-no-photo{display:flex;align-items:center;justify-content:center;color:#6c727c;font-size:12px}
+#referenceCollectionView .rc-card-info{display:block;padding:8px}
+#referenceCollectionView .rc-card strong{display:block;font-size:14px;font-weight:600;overflow-wrap:anywhere}
+#referenceCollectionView .rc-category,#referenceCollectionView .rc-card time{display:block;color:#6c727c;font-size:12px}
+#referenceCollectionView .rc-card time{margin-top:4px}
+#referenceCollectionView #rcMore{display:block;margin:16px auto 0;width:100%}
+#referenceCollectionView #rcStatus{font-size:12px;margin:0 0 12px;color:#6c727c;overflow-wrap:anywhere}
+#referenceCollectionView #rcStatus:empty{display:none}
+#referenceCollectionView #rcStatus.rc-error{color:#86495b}
+#referenceCollectionView .rc-detail-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+#referenceCollectionView #rcAuthor{font-size:12px;color:#6c727c;overflow-wrap:anywhere}
+#referenceCollectionView .rc-field{display:block;min-width:0;margin:0 0 12px}
+#referenceCollectionView .rc-field>span{display:block;font-size:14px;font-weight:600;margin-bottom:6px}
+#referenceCollectionView .rc-metadata{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+#referenceCollectionView .rc-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
+#referenceCollectionView .rc-photos figure{position:relative;flex:0 0 100%;min-width:0;margin:0;scroll-snap-align:start}
+#referenceCollectionView .rc-photos img{display:block;width:100%;height:340px;object-fit:contain;background:#f5f4f1;border:1px solid #dedcd6;border-radius:4px}
+#referenceCollectionView .rc-photos figure button{position:absolute;right:8px;top:8px;background:#fff}
+#referenceCollectionView .rc-photo-empty{width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;color:#6c727c;background:#f5f4f1;border:1px solid #dedcd6;border-radius:4px;margin:0}
+#referenceCollectionView #rcAddPhotos{margin:8px 0 16px}
+#referenceCollectionView .rc-notes{margin-top:16px}
+#referenceCollectionView #rcSourceOpen{display:inline-block;color:#30343b;margin-bottom:12px;min-height:44px;padding-top:10px;overflow-wrap:anywhere}
+#referenceCollectionView .rc-detail-actions{border-top:1px solid #dedcd6;padding-top:12px;margin-top:4px}
+#referenceCollectionView #rcSave{width:100%}
+#referenceCollectionView #rcArchiveWrap{display:flex;align-items:center;gap:8px;min-height:44px;font-size:12px;margin-top:8px}
+#referenceCollectionView #rcArchive{width:18px;height:18px;accent-color:#30343b}
+#referenceCollectionView .rc-resume{width:100%;margin-bottom:8px;text-align:left;background:#f5f4f1}
+#referenceCollectionView .rc-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+@media print{#referenceCollectionView{display:none!important}}

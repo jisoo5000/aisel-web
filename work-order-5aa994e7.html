@@ -1,4 +1,4 @@
-<!-- v172: meeting reference layout, stable photos and scoped subscriptions (2026-10-11) -->
+<!-- v173: unified mobile app, reference collection and preserved A4 print (2026-10-11) -->
 <!-- v166: design meeting candidate collection, versioned review queue and explicit workorder conversion (2026-10-11) -->
 <!-- v165: sort and label workorder cards by left document creation date descending (2026-10-10) -->
 <!-- v164: borderless mobile creation/modification calendars and tap-to-convert saved blend (2026-10-10) -->
@@ -49,28 +49,25 @@
 <!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
+<script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <script id="aisel-ipad-layout-mode">
-/* iPad uses the existing 600px mobile composition in either orientation.
-   Physical viewport units remain native; print keeps its original width rules. */
+/* All screens share the 480px mobile composition. Native print rules are preserved. */
 (function(root){
  'use strict';
- const ipad=/\biPad\b/i.test(navigator.userAgent)||
-   (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  const nativeMedia=query=>root.matchMedia(query);
- const mobileWidth=600;
+ const mobileWidth=480;
  const widthRule=/\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)/gi;
  function mobileQuery(query){
   return query.replace(widthRule,(original,kind,value)=>{
-   // Cap layout breakpoints at 600px, retaining narrower split-view rules.
+   // Cap screen layout breakpoints at 480px; retain narrower phone rules.
    if(kind.toLowerCase()==='max'&&Number(value)>=mobileWidth)return '(min-width:0px)';
    if(kind.toLowerCase()==='min'&&Number(value)>mobileWidth)return '(max-width:0px)';
    return original;
   });
  }
  // Scoped to this app: native matchMedia is never replaced.
- root.workOrderLayoutMedia_=query=>nativeMedia(ipad?mobileQuery(query):query);
- if(!ipad)return;
+ root.workOrderLayoutMedia_=query=>nativeMedia(mobileQuery(query));
  document.documentElement.classList.add('aisel-ipad-mobile');
  const processed=new WeakSet();
  function screenQuery(query){
@@ -8881,6 +8878,7 @@
 
   // ---------- 판매현황 ↔ 작업지시서 목록 ↔ 편집 화면 전환 ----------
   function setMainTabActive_(which){
+    window.dispatchEvent(new CustomEvent("aisel-legacy-view-change",{detail:{view:which}}));
     const meetingView=document.getElementById('designMeetingView');if(meetingView&&which!=='designmeeting')meetingView.hidden=true;
     document.querySelectorAll(".maintab").forEach(b=> b.classList.toggle("active", b.dataset.main===which));
     const list = which === "designmeeting" ? "designmeeting" : isViewVisible_("salesView") ? "sales" : isViewVisible_("galleryView") ? "orders" : "";
@@ -16340,7 +16338,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
  designers(){return Object.keys(designerListCache_||{});},
- async leave(){if(woRef){clearTimeout(saveT);await save();detachWoRefNow_("디자인회의 준비");}},
+ async leave(){if(!await settleEditorSave_())return false;if(woRef)detachWoRefNow_("디자인회의 준비");return true;},
  blank(season,category){
    startNewWorkOrder();document.getElementById('season').value=season;catSel.value=String(category);
    const st=collect();detachWoRefNow_("후보 전환 템플릿");
@@ -16354,7 +16352,7 @@ window.AiselDesignMeetingAdapter={
 };
 </script>
 <script src="design-meeting-core.js?v=171"></script>
-<script src="design-meeting.js?v=172"></script>
+<script src="design-meeting.js?v=173"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16366,3 +16364,19 @@ window.AiselDesignMeetingAdapter={
  html:root body :is(#editorView,#desktopEditPanel) :is(.copygen-btn-secondary,.mobile-change-add,.mobile-change-delete,.ref-icon-btn):hover {background-color:#f3f4f6;}
 }
 </style>
+
+<link rel="stylesheet" href="reference-collection.css?v=173">
+<link rel="stylesheet" href="unified-app.css?v=173">
+<script>
+window.AiselUnifiedAdapter={
+ async leave(){if(!await settleEditorSave_())return false;return true;},
+ hide(){if(woRef)detachWoRefNow_("통합 메뉴 이동");['editorView','galleryView','salesView','moodboardView','quickOrderView','sampleMgmtView'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});},
+ async orders(){restoringRoute_=true;try{await showGallery();}finally{restoringRoute_=false;}},
+ async sales(){restoringRoute_=true;try{await showSales();}finally{restoringRoute_=false;}},
+ open(code){restoringRoute_=true;try{showEditor();newOrderMode_=false;attachWoRef(code);}finally{restoringRoute_=false;}},
+ editorVisible(){return isViewVisible_("editorView");},
+ isOwner(){return (firebase.apps||[]).some(app=>{try{const u=app.auth().currentUser;return u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com';}catch(_){return false;}});}
+};
+</script>
+<script src="reference-collection.js?v=173"></script>
+<script src="unified-app.js?v=173"></script>
