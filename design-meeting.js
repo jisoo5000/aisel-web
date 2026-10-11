@@ -13,7 +13,7 @@
  // Keep navigation metadata separate from the workorder router's `aisel` state.
  // The gallery's loaded windows stay in memory while a candidate is open.
  const navSession=crypto.randomUUID();
- let galleryState=null,lastRoute=null,navStep=0,navigationBusy=false,skipPop=false;
+ let galleryState=null,lastRoute=null,navStep=0,navigationBusy=false,skipPop=false,showEpoch=0;
  function listSnapshot(){return {filter,query:$dm('#dmSearch').value,limit,scroll:Math.max(0,window.scrollY||0)};}
  function snapshot(){return {view:active?'detail':'list',activeId:active,list:active?(galleryState||listSnapshot()):listSnapshot(),loadedCount:Object.keys(cards).length};}
  function routeUrl(id){const url=new URL(location.href);url.hash=id?'design-meeting='+encodeURIComponent(id):'design-meeting';return url.href;}
@@ -55,7 +55,13 @@
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();return (firebase.apps||[]).map(a=>{try{return a.auth().currentUser;}catch(e){return null;}}).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()===OWNER)||(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')?.auth().currentUser;}
  function authStamp(){return {uid:memberUser()?.uid||null,generation:window.AiselAuth?.generation,epoch:authEpoch};}
  function assertAuth(stamp){const current=authStamp();if(stamp.uid!==current.uid||stamp.generation!==current.generation||stamp.epoch!==current.epoch)throw Object.assign(Error('로그인 상태가 변경되었습니다. 다시 확인해주세요.'),{code:'auth_changed'});}
- function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role||!!window.AiselAuth;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();}
+ function applyEditingState(){
+   const editable=role==='owner'||role==='designer';
+   pane.querySelectorAll('#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmNewLink,#dmLinks button,.dm-photo,#dmPending button').forEach(el=>el.disabled=!editable);
+   $dm('#dmDetailTitle').contentEditable=String(editable);
+   for(const el of $dm('#dmDetail').querySelectorAll('[data-dm-field]'))el.disabled=!editable||(['decision','decisionReason'].includes(el.dataset.dmField)&&role!=='owner');
+ }
+ function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role||!!window.AiselAuth;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();applyEditingState();}
  async function access(){const stamp=authStamp(),data=await bridge('access',[]);assertAuth(stamp);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role,uid:stamp.uid,generation:stamp.generation}}));return data;}
  function resetAuth(){authEpoch++;role=null;results=[];resultChecks.clear();resultFlights.clear();applyRole();}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
@@ -161,11 +167,13 @@
      card.querySelector('.dm-open').onclick=()=>open(c.id);
      if(previous.nextElementSibling!==card)previous.after(card);previous=card;
    }
+   applyEditingState();
  }
  async function open(id,options={}){
-   if(!id||!await saveDetail())return false;
+   const epoch=showEpoch,stamp=authStamp(),stillVisible=()=>epoch===showEpoch&&!pane.hidden;
+   if(!id||!await saveDetail()||!stillVisible())return false;
    let c=current(id);
-   if(!c)try{const value=(await ROOT.child(id).once('value')).val();if(value?.designMeeting)c=cards[id]={...value,id};}catch(e){message(e.message,true);return false;}
+   if(!c)try{const value=(await ROOT.child(id).once('value')).val();assertAuth(stamp);if(!stillVisible())return false;if(value?.designMeeting)c=cards[id]={...value,id};}catch(e){if(stillVisible()&&e.code!=='auth_changed')message(e.message,true);return false;}
    if(!c){message('이 후보를 찾을 수 없습니다.',true);return false;}
    if(!active){galleryState=options.list||listSnapshot();if(!options.list)updateListRoute();}
    if(options.history!==false){
@@ -177,7 +185,7 @@
    active=id;$dm('#dmTools').close();message('');detailDirty=false;dirtyFields.clear();$dm('#dmList').hidden=true;$dm('.dm-toolbar').hidden=true;
    const detail=$dm('#dmDetail');detail.hidden=false;window.scrollTo(0,0);$dm('.dm-detail-body').scrollTop=0;$dm('#dmDetailTitle').textContent=c.title||'후보 상세';
    for(const k of ['title','link','memo','development','meetingDate','decision','decisionReason','meetingMemo'])$dm('[data-dm-field="'+k+'"]').value=c[k]||(['decision'].includes(k)?'unselected':'');
-   $dm('#dmDetailSaveState').textContent='';$dm('#dmSaveDetail').hidden=true;renderLinks(c);renderDesigner(c);renderDetailPhotos(c);renderReview(c);watchActive();requestAnimationFrame(fitDetail);refresh(false,[id]);return true;
+   $dm('#dmDetailSaveState').textContent='';$dm('#dmSaveDetail').hidden=true;renderLinks(c);renderDesigner(c);renderDetailPhotos(c);renderReview(c);applyEditingState();watchActive();requestAnimationFrame(fitDetail);refresh(false,[id]);return true;
  }
  let layoutFrame=0,photoSizingKey='';
  function fitDetail(){
@@ -358,8 +366,16 @@
    if(options.history!==false){galleryState=galleryState||listSnapshot();putRoute('list',null,{replace:ownRoute(history.state)&&history.state.view==='list'});}
    window.dispatchEvent(new CustomEvent('aisel-view-change',{detail:{view:'designmeeting'}}));
    if(!draftsLoaded){draftsLoaded=true;try{for(const item of await local('all')){item.error='이전에 전송하지 못한 사진 · 다시 시도해주세요.';pending.set(item.id,item);}renderPending();}catch(e){}}
-   render();await refresh();
-   if(memberUser())try{await access();}catch(e){if(e.code!=='auth_changed'){role=null;applyRole();message(e.message,true);}}else applyRole();
+   render();const epoch=++showEpoch;
+   const hydrate=async()=>{
+     await refresh();
+     if(epoch!==showEpoch||pane.hidden)return;
+     if(memberUser())try{await access();}catch(e){if(epoch===showEpoch&&!pane.hidden&&e.code!=='auth_changed'){role=null;applyRole();message(e.message,true);}}else applyRole();
+   };
+   // Top-level menu clicks show the cached list immediately. Server checks do
+   // not own the shell's navigation lock; saves and explicit routes still do.
+   if(options.background)hydrate().catch(e=>{if(epoch===showEpoch&&!pane.hidden)message(e.message,true);});
+   else await hydrate();
    return true;
  }
  function undoPop(previous,target){
@@ -414,5 +430,6 @@
  $dm('#dmDetailTitle').oninput=e=>{dirtyFields.add('title');detailDirty=true;$dm('[data-dm-field="title"]').value=e.target.textContent.trim();};$dm('#dmDetailTitle').onblur=saveDetail;
  $dm('#dmDrop').onclick=async()=>{if(!active||!await saveDetail())return;try{await access();if(role!=='owner')throw Error('대표자만 변경할 수 있습니다.');await mutate(active,{decision:current(active).decision==='excluded'?'unselected':'excluded'});renderReview(current(active));lastSig='';render();}catch(e){message(e.message,true);}};
  $dm('#dmWorkorder').onclick=async()=>{if(!active||!await saveDetail())return;try{await access();if(role!=='owner')throw Error('대표자만 사용할 수 있습니다.');const c=current(active);if(c.convertedCode){window.AiselDesignMeetingAdapter.open(c.convertedCode);return;}await mutate(active,{decision:'selected'});await conversionDialog([active]);}catch(e){message(e.message,true);}};
+ applyEditingState();
  window.AiselDesignMeeting={show,open,back,canLeave,snapshot,login:signIn,verifyAccess:access,resetAuth,getRole:()=>role,mutate,receive,convertOne,refresh,bridge,core:C};
 })();

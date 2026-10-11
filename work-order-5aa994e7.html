@@ -1,3 +1,4 @@
+<!-- v176: compact screen controls and nested viewport navigation; A4 and saved data behavior preserved (2026-10-11) -->
 <!-- v175: shared 390px screen UI; existing A4 print and saved data behavior preserved (2026-10-11) -->
 <!-- v174: approved menu/header scope, compact read-only sales cache and preserved A4 print (2026-10-11) -->
 <!-- v173: unified mobile app, reference collection and preserved A4 print (2026-10-11) -->
@@ -208,7 +209,7 @@
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
 <title>AISEL 작업지시서</title>
-<link rel="stylesheet" href="aisel-ui.css?v=175">
+<link rel="stylesheet" href="aisel-ui.css?v=176">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
@@ -4201,8 +4202,8 @@
 
 
 <div class="scroll-fab-wrap noprint" id="scrollFabWrap">
-  <button type="button" class="scroll-fab" id="scrollTopBtn" title="맨 위로">▲<span class="scroll-label">맨 위로</span></button>
-  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="맨 아래로">▼<span class="scroll-label">맨 아래로</span></button>
+  <button type="button" class="scroll-fab" id="scrollTopBtn" title="한 화면 위로" aria-label="한 화면 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="한 화면 아래로" aria-label="한 화면 아래로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
 </div>
 
 <script id="aisel-product-performance">
@@ -10642,8 +10643,9 @@
     });
     const labels = [["sampling", "샘플중"], ["order", "발주생산"], ["pdp", "PDP"],
       ["sale", "판매"], ["drop", "드롭"], ["all", "전체"]];
+    const compact = box.id === "galleryCounts";
     const html = labels.map(([status, label])=>
-      `<span class="${activeFilter === status ? "active" : ""}">${label} ${counts[status] || 0}개</span>`
+      `<span class="${activeFilter === status ? "active" : ""}" aria-label="${label} ${counts[status] || 0}개">${compact ? "" : label + " "}${counts[status] || 0}개</span>`
     ).join("");
     if(box.innerHTML !== html) box.innerHTML = html;
   }
@@ -14389,17 +14391,66 @@ $("fabricSaveBtn").addEventListener("click", async () => {
   const topBtn = document.getElementById("scrollTopBtn");
   const bottomBtn = document.getElementById("scrollBottomBtn");
   if(!topBtn || !bottomBtn) return;
-  const scrolling=()=>document.scrollingElement || document.documentElement;
+  const boundFrames=new WeakSet(),boundWindows=new WeakSet();
+  const rootFor=doc=>doc.scrollingElement || doc.documentElement;
+  const visible=element=>!!element?.getClientRects().length;
+  let scheduled=false;
+  function schedule(){
+    if(scheduled)return;scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;updateFabState();});
+  }
+  function watchFrame(frame){
+    if(!boundFrames.has(frame)){boundFrames.add(frame);frame.addEventListener('load',schedule);}
+    try{
+      const win=frame.contentWindow,doc=frame.contentDocument;
+      if(!win||!doc?.body)return;
+      if(!boundWindows.has(doc)){
+        boundWindows.add(doc);
+        win.addEventListener('scroll',schedule,{passive:true,capture:true});
+        doc.addEventListener('keydown',pageKey);
+        if(typeof ResizeObserver!=='undefined')new ResizeObserver(schedule).observe(doc.body);
+      }
+    }catch(_){}
+  }
+  function scrolling(){
+    const detail=document.querySelector('#designMeetingView .dm-detail-body');
+    if(visible(detail))return detail;
+    const frame=document.getElementById('productProgressFrame');
+    if(visible(frame)){
+      watchFrame(frame);
+      try{if(frame.contentDocument?.body)return rootFor(frame.contentDocument);}catch(_){}
+    }
+    return rootFor(document);
+  }
+  function viewport(target){
+    const doc=target.ownerDocument;
+    return target===rootFor(doc)?doc.defaultView.innerHeight:target.clientHeight;
+  }
+  function maxScroll(target){return Math.max(0,target.scrollHeight-viewport(target));}
   function updateFabState(){
-    const root=scrolling(),y=root.scrollTop,maxY=Math.max(0,root.scrollHeight-root.clientHeight);
+    const root=scrolling(),y=root.scrollTop,maxY=maxScroll(root);
     topBtn.disabled=y<=4;bottomBtn.disabled=maxY-y<=4;
   }
-  topBtn.addEventListener("click",()=>{updateFabState();window.scrollTo({top:0,behavior:"smooth"});});
-  bottomBtn.addEventListener("click",()=>{updateFabState();window.scrollTo({top:scrolling().scrollHeight,behavior:"smooth"});});
-  window.addEventListener("scroll",updateFabState,{passive:true});
-  window.addEventListener("resize",updateFabState);
-  if(typeof ResizeObserver!=="undefined")new ResizeObserver(updateFabState).observe(document.body);
-  else new MutationObserver(updateFabState).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["open","style","hidden"]});
+  function move(direction){
+    const root=scrolling(),step=Math.max(120,viewport(root)-80);
+    const top=Math.max(0,Math.min(maxScroll(root),root.scrollTop+direction*step));
+    root.scrollTo({top,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+    schedule();
+  }
+  function pageKey(event){
+    if(!['PageUp','PageDown'].includes(event.key)||event.defaultPrevented||event.isComposing||event.altKey||event.ctrlKey||event.metaKey)return;
+    if(event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))return;
+    if(document.querySelector('dialog[open]')||event.target?.ownerDocument?.querySelector('dialog[open]'))return;
+    const root=scrolling();if(maxScroll(root)<=0)return;
+    event.preventDefault();move(event.key==='PageDown'?1:-1);
+  }
+  topBtn.addEventListener('click',()=>move(-1));
+  bottomBtn.addEventListener('click',()=>move(1));
+  document.addEventListener('keydown',pageKey);
+  window.addEventListener('scroll',schedule,{passive:true,capture:true});
+  window.addEventListener('resize',schedule);
+  if(typeof ResizeObserver!=='undefined')new ResizeObserver(schedule).observe(document.body);
+  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','style','hidden','class']});
   updateFabState();
 })();
 
@@ -16392,7 +16443,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=175">
+<link rel="stylesheet" href="design-meeting.css?v=176">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16411,21 +16462,21 @@ window.AiselDesignMeetingAdapter={
 };
 </script>
 <script src="design-meeting-core.js?v=171"></script>
-<script src="design-meeting.js?v=175"></script>
+<script src="design-meeting.js?v=176"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
- html:root body {background:#fff;color:#30343b;--aisel-ink:#30343b;--aisel-muted:#6c727c;--aisel-bg:#fff;--aisel-soft:#fff;--aisel-line:#d9dce1;--field:#fff;--sheet:#fff;}
- html:root body :is(#editorView,#galleryView,#designMeetingView,#desktopEditPanel) {--aisel-bg:#fff;--aisel-soft:#fff;--field:#fff;--sheet:#fff;--aisel-line:#d9dce1;--form-bg:#fff;--form-soft:#fff;--form-line:#d9dce1;--form-text:#30343b;--form-muted:#6c727c;--form-action:#30343b;background-color:#fff;}
- html:root body :is(#editorView,#desktopEditPanel) :is(.sp-summary-line,.sample-date-field,.mobile-change-text,.mobile-change-add,.mobile-change-delete,.copygen-btn-secondary,.ref-icon-btn) {background-color:#fff;border-color:#d9dce1;color:#30343b;}
- html:root body #desktopEditPanel #sampleRecoverySeg button:not(.active) {background:#fff;border-color:#d9dce1;color:#30343b;}
- html:root body :is(#editorView,#galleryView,#designMeetingView) button:not(.active):not(:disabled):focus-visible {outline:2px solid #30343b;outline-offset:2px;}
+ html:root body {background:#fff;color:#34383C;--aisel-ink:#34383C;--aisel-muted:#6c727c;--aisel-bg:#fff;--aisel-soft:#F6F6F6;--aisel-line:#DEDEDE;--field:#fff;--sheet:#fff;}
+ html:root body :is(#editorView,#galleryView,#designMeetingView,#desktopEditPanel) {--aisel-bg:#fff;--aisel-soft:#F6F6F6;--field:#fff;--sheet:#fff;--aisel-line:#DEDEDE;--form-bg:#fff;--form-soft:#fff;--form-line:#DEDEDE;--form-text:#34383C;--form-muted:#6c727c;--form-action:#34383C;background-color:#fff;}
+ html:root body :is(#editorView,#desktopEditPanel) :is(.sp-summary-line,.sample-date-field,.mobile-change-text,.mobile-change-add,.mobile-change-delete,.copygen-btn-secondary,.ref-icon-btn) {background-color:#fff;border-color:#DEDEDE;color:#34383C;}
+ html:root body #desktopEditPanel #sampleRecoverySeg button:not(.active) {background:#fff;border-color:#DEDEDE;color:#34383C;}
+ html:root body :is(#editorView,#galleryView,#designMeetingView) button:not(.active):not(:disabled):focus-visible {outline:2px solid #34383C;outline-offset:2px;}
  html:root body :is(#editorView,#desktopEditPanel) :is(.copygen-btn-secondary,.mobile-change-add,.mobile-change-delete,.ref-icon-btn):hover {background-color:#f3f4f6;}
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=175">
-<link rel="stylesheet" href="unified-app.css?v=175">
+<link rel="stylesheet" href="reference-collection.css?v=176">
+<link rel="stylesheet" href="unified-app.css?v=176">
 <script>
 window.AiselUnifiedAdapter={
  async leave(){if(!await settleEditorSave_())return false;return true;},
@@ -16437,6 +16488,6 @@ window.AiselUnifiedAdapter={
  isOwner(){if(window.AiselAuth){const u=window.AiselAuth.currentUser();return !!(u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');}return (firebase.apps||[]).some(app=>{try{const u=app.auth().currentUser;return u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com';}catch(_){return false;}});}
 };
 </script>
-<script src="reference-collection.js?v=175"></script>
-<script src="unified-app.js?v=175"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=175.1" media="screen">
+<script src="reference-collection.js?v=176"></script>
+<script src="unified-app.js?v=176"></script>
+<link rel="stylesheet" href="workorder-screen.css?v=176" media="screen">

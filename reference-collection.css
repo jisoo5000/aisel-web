@@ -1,54 +1,54 @@
-/* v175: shared screen tokens; two columns and the same mobile width on desktop. */
+/* v176: compact controls; shared screen tokens; two columns and the same mobile width on desktop. */
 @media screen {
- #referenceCollectionView{box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width);margin:0 auto;padding:0 var(--aisel-page-gutter) calc(76px + env(safe-area-inset-bottom));color:var(--aisel-ink);background:var(--aisel-bg);font:400 var(--aisel-body)/22px var(--aisel-font)}
+ #referenceCollectionView{box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width);margin:0 auto;padding:0 var(--aisel-page-gutter) calc(24px + env(safe-area-inset-bottom));color:var(--aisel-ink);background:var(--aisel-bg);font:400 var(--aisel-body)/22px var(--aisel-font)}
  #referenceCollectionView *,#referenceCollectionView *::before,#referenceCollectionView *::after{box-sizing:border-box}
  #referenceCollectionView[hidden],#referenceCollectionView [hidden]{display:none!important}
  #referenceCollectionView :is(button,input,textarea,select){font-family:var(--aisel-font);color:var(--aisel-ink)}
- #referenceCollectionView button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--aisel-control-height);padding:8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);cursor:pointer;font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);box-shadow:none}
+ #referenceCollectionView button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--aisel-control-height);padding:4px 8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);cursor:pointer;font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);box-shadow:none}
  #referenceCollectionView button:disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
  #referenceCollectionView button:not(:disabled):hover{border-color:var(--aisel-muted)}
  #referenceCollectionView :is(button,input,textarea,select):focus-visible{outline:2px solid var(--aisel-focus);outline-offset:2px}
- #referenceCollectionView .rc-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+ #referenceCollectionView .rc-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
  #referenceCollectionView .rc-filters button{width:100%;min-width:0;height:var(--aisel-control-height);white-space:nowrap}
- #referenceCollectionView .rc-filters button[aria-pressed=true]{background:var(--aisel-ink);border-color:var(--aisel-ink);color:var(--aisel-bg)}
- #referenceCollectionView input:not([type=checkbox]):not([type=file]),#referenceCollectionView select,#referenceCollectionView textarea{width:100%;max-width:100%;min-width:0;height:var(--aisel-control-height);min-height:var(--aisel-control-height);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);padding:8px 12px;font-size:var(--aisel-input);font-weight:400;line-height:24px;appearance:none}
+ #referenceCollectionView .rc-filters button[aria-pressed=true]{background:var(--aisel-soft);border-color:var(--aisel-muted);color:var(--aisel-ink)}
+ #referenceCollectionView input:not([type=checkbox]):not([type=file]),#referenceCollectionView select,#referenceCollectionView textarea{width:100%;max-width:100%;min-width:0;height:var(--aisel-input-height);min-height:var(--aisel-input-height);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);padding:4px 10px;font-size:var(--aisel-input);font-weight:400;line-height:24px;appearance:none}
  #referenceCollectionView input::placeholder,#referenceCollectionView textarea::placeholder{color:var(--aisel-muted);opacity:1}
  #referenceCollectionView input[type=date]{display:block;-webkit-appearance:none;padding-inline:8px;text-align:center}
  #referenceCollectionView input[type=date]::-webkit-date-and-time-value{text-align:center}
  #referenceCollectionView select{appearance:auto}
  #referenceCollectionView textarea{resize:vertical;min-height:150px;height:auto;line-height:26px}
- #referenceCollectionView .rc-search{display:block;margin:12px 0 16px}
+ #referenceCollectionView .rc-search{display:block;margin:8px 0 12px}
  #referenceCollectionView #rcSearch{margin:0}
- #referenceCollectionView .rc-notice-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+ #referenceCollectionView .rc-notice-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}
  #referenceCollectionView .rc-notice-actions button{flex:1 1 128px}
  #referenceCollectionView .rc-notice-actions:not(:has(>button:not([hidden]))){display:none}
- #referenceCollectionView .rc-list-tools{display:flex;justify-content:flex-end;gap:8px;margin:0 0 12px}
+ #referenceCollectionView .rc-list-tools{display:flex;justify-content:flex-end;gap:8px;margin:0 0 8px}
  #referenceCollectionView .rc-list-tools:not(:has(>button:not([hidden]))){display:none}
  #referenceCollectionView .rc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
  #referenceCollectionView .rc-card{display:block;min-width:0;padding:0;overflow:hidden;text-align:left;align-self:stretch}
  #referenceCollectionView .rc-card img,#referenceCollectionView .rc-no-photo{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:contain;background:var(--aisel-bg)}
  #referenceCollectionView .rc-no-photo{display:flex;align-items:center;justify-content:center;color:var(--aisel-muted);font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line)}
- #referenceCollectionView .rc-card-info{display:block;padding:12px;min-width:0}
+ #referenceCollectionView .rc-card-info{display:block;padding:8px;min-width:0}
  #referenceCollectionView .rc-card strong{display:block;font-size:var(--aisel-card-title-size);font-weight:600;line-height:var(--aisel-card-title-line);overflow-wrap:anywhere}
  #referenceCollectionView .rc-category,#referenceCollectionView .rc-card time{display:block;color:var(--aisel-muted);font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line)}
  #referenceCollectionView .rc-card time{margin-top:4px}
- #referenceCollectionView #rcMore{display:flex;margin:16px auto 0;width:100%;height:var(--aisel-control-height)}
+ #referenceCollectionView #rcMore{display:flex;margin:12px auto 0;width:100%;height:var(--aisel-control-height)}
  #referenceCollectionView #rcStatus{font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);margin:0 0 12px;color:var(--aisel-muted);overflow-wrap:anywhere}
  #referenceCollectionView #rcStatus:empty{display:none}
  #referenceCollectionView #rcStatus.rc-error{color:#a63f57}
  #referenceCollectionView .rc-detail-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:12px 0}
  #referenceCollectionView .rc-detail-nav:has(>#rcAuthor:empty){display:none}
  #referenceCollectionView #rcAuthor{font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);color:var(--aisel-muted);overflow-wrap:anywhere}
- #referenceCollectionView .rc-field{display:block;min-width:0;margin:0 0 12px}
- #referenceCollectionView .rc-field>span{display:block;font-size:var(--aisel-body);font-weight:600;line-height:20px;margin-bottom:8px}
+ #referenceCollectionView .rc-field{display:block;min-width:0;margin:0 0 8px}
+ #referenceCollectionView .rc-field>span{display:block;font-size:var(--aisel-body);font-weight:600;line-height:20px;margin-bottom:4px}
  #referenceCollectionView .rc-metadata{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  #referenceCollectionView .rc-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
  #referenceCollectionView .rc-photos figure{position:relative;flex:0 0 100%;min-width:0;margin:0;scroll-snap-align:start}
  #referenceCollectionView .rc-photos img{display:block;width:100%;height:340px;object-fit:contain;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius)}
  #referenceCollectionView .rc-photos figure button{position:absolute;right:8px;top:8px;min-width:64px;height:var(--aisel-control-height);background:var(--aisel-bg)}
  #referenceCollectionView .rc-photo-empty{width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;color:var(--aisel-muted);background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);margin:0}
- #referenceCollectionView #rcAddPhotos{margin:8px 0 16px}
- #referenceCollectionView .rc-notes{margin-top:24px}
+ #referenceCollectionView #rcAddPhotos{margin:8px 0 12px}
+ #referenceCollectionView .rc-notes{margin-top:12px}
  #referenceCollectionView #rcSourceOpen{display:inline-flex;align-items:center;color:var(--aisel-ink);margin-bottom:12px;min-height:var(--aisel-control-height);font-size:var(--aisel-body);font-weight:400;line-height:22px;overflow-wrap:anywhere}
  #referenceCollectionView .rc-detail-actions{border-top:1px solid var(--aisel-line);padding-top:12px;margin-top:4px}
  #referenceCollectionView #rcSave{width:100%;height:var(--aisel-control-height)}

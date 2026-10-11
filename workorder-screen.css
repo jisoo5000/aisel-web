@@ -1,4 +1,4 @@
-/* Workorder v175: screen-only mapping onto the shared AISEL UI roles.
+/* Workorder v176: compact screen controls on the shared AISEL canvas.
    Never change the A4 DOM, print fonts, table widths or pagination here. */
 @media screen {
  html:root body :is(#editorView,#galleryView,#salesView) {
@@ -24,133 +24,143 @@
  html:root body #galleryView .gcard-title {padding:8px;font-size:13px;line-height:18px;font-weight:600;color:var(--aisel-ink);overflow-wrap:anywhere;}
  html:root body #galleryView #galleryGrid .gcard-name {font-size:13px!important;line-height:18px!important;font-weight:600!important;}
  html:root body #galleryView :is(.gcard-code,.gcard-title .code,.gcard-date,.gcard-soft) {font-size:12px;line-height:18px;font-weight:400;color:var(--aisel-muted);}
+ html:root body #galleryView #galleryGrid .gcard-code-row {display:flex;flex-wrap:wrap;gap:4px;min-width:0;white-space:normal;overflow:visible;}
+ html:root body #galleryView #galleryGrid .gcard-code-value {flex:0 1 auto;max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
  html:root body #galleryView .gcard-colors {display:flex;flex-wrap:wrap;gap:4px;}
- html:root body #galleryView #galleryGrid .gcard-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:28px!important;min-height:28px!important;padding:4px 6px!important;border-radius:4px;font-size:12px!important;line-height:18px!important;font-weight:500;}
+ html:root body #galleryView #galleryGrid .gcard-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px!important;min-height:22px!important;padding:2px 5px!important;border:0!important;border-radius:4px;font-size:12px!important;line-height:18px!important;font-weight:500;}
  html:root body #galleryView .gcard-color-mobile-extra {display:inline-flex!important;}
  html:root body #galleryView .gcard-color-more {display:none!important;}
  html:root body #galleryView .gcard.newcard {border-style:solid;min-height:228px;}
  html:root body #galleryView .gcard.newcard .gcard-title {font-size:13px;line-height:20px;font-weight:600;}
- html:root body #galleryView #galleryTabs {display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;}
- html:root body #galleryView #galleryTabs .gtab {flex:1 0 72px;width:72px;min-width:72px;height:44px;min-height:44px;padding:0 8px;font-size:13px!important;line-height:20px;font-weight:600;white-space:nowrap;}
+ html:root body #galleryView #galleryTabs {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;overflow:visible;}
+ html:root body #galleryView #galleryTabs .gtab {width:100%;min-width:0;height:32px;min-height:32px;padding:0;border:0;border-bottom:1px solid transparent;border-radius:0;font-size:12px!important;line-height:20px;font-weight:600;white-space:nowrap;}
  html:root body :is(#galleryView,#salesView) :is(#galleryTrashBtn,#galleryExportSheetBtn,#sheetSalesRefresh,.sheet-sales-refresh) {
   display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
-  width:88px;min-width:88px;height:44px;min-height:44px;padding:0 8px;
+  width:80px;min-width:80px;height:32px;min-height:32px;padding:0 8px;
   border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);
   font-size:13px!important;font-weight:600;line-height:20px;white-space:nowrap;box-shadow:none;
  }
- html:root body :is(#galleryView,#salesView) :is(input[type="search"],#gallerySearchInput,#salesSearchInput) {height:44px;min-height:44px;font-size:16px!important;font-weight:400;line-height:24px;}
- html:root body #galleryView :is(#galleryCounts,.gallery-counts) {font-size:12px;line-height:18px;font-weight:400;}
+ html:root body :is(#galleryView,#salesView) :is(input[type="search"],#gallerySearchInput,#salesSearchInput) {height:36px;min-height:36px;font-size:16px!important;font-weight:400;line-height:24px;}
+ html:root body #galleryView #galleryCounts {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;width:100%;min-width:0;margin:0;font-size:12px;line-height:18px;font-weight:400;text-align:center;}
+ html:root body #galleryView .gallery-toolbar {width:100%;margin:4px 0 0;}
+ html:root body #galleryView #galleryTabs .gtab.active {background:var(--aisel-soft);color:var(--aisel-ink);border-bottom:1px solid var(--aisel-ink);}
+ html:root body #galleryView #galleryGrid .gcard-sample-pickup {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:1px 5px;border:0;border-radius:4px;background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);font-size:12px;font-weight:500;line-height:18px;white-space:nowrap;}
 
  /* Reuse the existing mobile header, controls and field handlers on every screen. */
- html:root body #editorView .editor-mobile-head {border-radius:4px 4px 0 0;padding:12px 16px;gap:4px 8px;}
+ html:root body #editorView .editor-mobile-head {border-radius:4px 4px 0 0;padding:8px 12px;gap:4px 8px;}
  html:root body #editorView .editor-mobile-head #mobileProductName {font-size:16px;font-weight:600;line-height:24px!important;}
  html:root body #editorView #mobileProductCode {font-size:12px;font-weight:400;line-height:18px;}
- html:root body #editorView .toolbar {padding:8px 16px;overflow:hidden;}
- html:root body #editorView .toolbar > .tb-row {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(104px,1fr);grid-template-columns:none;grid-template-rows:44px;grid-auto-rows:44px;gap:8px;height:auto;min-height:44px;max-height:none;max-width:100%;padding:4px 0;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;}
- html:root body #editorView .toolbar > .tb-row > .btn {grid-column:auto!important;grid-row:1!important;order:0!important;width:100%;min-width:104px;max-height:44px;white-space:nowrap;}
- html:root body #editorView #statusBar {display:flex;flex-wrap:nowrap;gap:8px;padding:8px 16px;overflow-x:auto;overscroll-behavior-x:contain;}
- html:root body #editorView #statusBar .status-btn {flex:1 0 72px;width:72px;min-width:72px;}
+ html:root body #editorView .toolbar {padding:4px 12px;overflow:visible;}
+ html:root body #editorView .toolbar > .tb-row {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:32px;gap:4px;height:auto;min-height:32px;max-height:none;max-width:100%;padding:0;overflow:visible;}
+ html:root body #editorView .toolbar > .tb-row > .btn {grid-column:auto!important;grid-row:1!important;order:0!important;width:100%;min-width:0;max-height:32px;padding:0 2px;font-size:12px!important;line-height:15px;white-space:normal;}
+ html:root body #editorView #statusBar {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px 12px;overflow:visible;}
+ html:root body #editorView #statusBar .status-btn {width:100%;min-width:0;padding:0 2px!important;font-size:12px!important;}
  html:root body #editorView :is(.toolbar .btn,#statusBar .status-btn,#sampleRecoverySeg button,#printBtn),
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button {
   display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;
-  height:44px;min-height:44px;padding:0 8px;border:1px solid var(--aisel-line);border-radius:4px;
-  background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px!important;font-weight:600!important;line-height:20px;box-shadow:none;white-space:nowrap;
+  height:32px;min-height:32px;padding:0 6px;border:1px solid var(--aisel-line);border-radius:4px;
+  background:var(--aisel-bg);color:var(--aisel-ink);font-size:12px!important;font-weight:600!important;line-height:20px;box-shadow:none;white-space:nowrap;
  }
- html:root body #editorView :is(#statusBar .status-btn.active,#sampleRecoverySeg button.active) {background:var(--aisel-ink);border-color:var(--aisel-ink);color:var(--aisel-bg);}
+ html:root body #editorView :is(#statusBar .status-btn.active,#sampleRecoverySeg button.active) {background:var(--aisel-soft);border-color:var(--aisel-line);border-bottom-color:var(--aisel-ink);color:var(--aisel-ink);}
+ html:root body #editorView .toolbar .tb-row :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn) {padding:0 2px;font-size:12px!important;line-height:16px;white-space:nowrap;}
  html:root body #editorView #sampleRecoverySeg button[data-value="factory"].active {background:var(--aisel-factory-bg);border-color:var(--aisel-factory-ink);color:var(--aisel-factory-ink);}
- html:root body #editorView #mobileMeetingSummary {padding:8px 16px;gap:8px;}
- html:root body #editorView #sampleRecoverySeg {display:grid;grid-template-columns:repeat(2,64px);gap:8px;}
+ html:root body #editorView #mobileMeetingSummary {padding:8px 12px;gap:8px;}
+ html:root body #editorView #sampleRecoverySeg {display:grid;grid-template-columns:repeat(2,48px);gap:4px;}
+ html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button {width:48px;min-width:48px;height:26px;min-height:26px;padding:0 4px;font-size:12px!important;font-weight:500!important;}
  html:root body #editorView #mobileSampleStatus {min-width:0;flex-wrap:wrap;gap:4px;}
  html:root body #editorView #mobileSampleStatus > span:first-child {font-size:16px;font-weight:600;line-height:24px;}
  html:root body #editorView #mobileSampleRecoveryDate {font-size:12px;font-weight:400;line-height:18px;white-space:normal;}
- html:root body #editorView .editor-mobile-head #refPanel {max-width:100%;grid-template-columns:minmax(64px,max-content) auto 44px;gap:8px;}
- html:root body #editorView .editor-mobile-head #refPanel .ref-actions {gap:8px;}
- html:root body #editorView .editor-mobile-head #refPanel :is(.ref-short-link,.ref-icon-btn,#refAddBtn) {box-sizing:border-box;min-height:44px;height:44px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);}
- html:root body #editorView .editor-mobile-head #refPanel .ref-short-link {padding:0 8px;min-width:64px;font-size:13px;font-weight:600;line-height:20px;}
- html:root body #editorView .editor-mobile-head #refPanel :is(.ref-icon-btn,#refAddBtn) {width:44px;min-width:44px;flex-basis:44px;padding:0;}
+ html:root body #editorView .editor-mobile-head #refPanel {max-width:100%;grid-template-columns:minmax(56px,max-content) auto 30px;gap:4px;}
+ html:root body #editorView .editor-mobile-head #refPanel .ref-actions {gap:4px;}
+ html:root body #editorView .editor-mobile-head #refPanel :is(.ref-short-link,.ref-icon-btn,#refAddBtn) {box-sizing:border-box;min-height:30px;height:30px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);}
+ html:root body #editorView .editor-mobile-head #refPanel .ref-short-link {padding:0 6px;min-width:56px;font-size:13px;font-weight:600;line-height:20px;}
+ html:root body #editorView .editor-mobile-head #refPanel :is(.ref-icon-btn,#refAddBtn) {width:30px;min-width:30px;flex-basis:30px;padding:0;}
  html:root body #editorView :is(.ref-action-icon,.mobile-change-delete .ref-action-icon) {width:16px;height:16px;stroke-width:1.5;}
+
+ html:root body #editorView #printBtn .desktop-print-label {display:none;}
+ html:root body #editorView #printBtn .mobile-print-label {display:inline;}
 
  /* Screen form roles. Borderless heading dates retain their native calendar overlay. */
  html:root body #editorView #sheet {width:100%;max-width:100%;margin:0;border:1px solid var(--aisel-line);box-shadow:none;overflow-x:hidden;}
- html:root body #editorView #sheet > .title-row {padding:12px 16px;gap:8px;border-bottom:1px solid var(--aisel-line);}
+ html:root body #editorView #sheet > .title-row {padding:8px 12px;gap:4px;border-bottom:1px solid var(--aisel-line);}
  html:root body #editorView #sheet :is(h1,.sheet-section-title),
  html:root body #editorView #productColors .color-heading h2,
  html:root body #editorView #mobileSampleRecords .mobile-change-heading > span:first-child {font-size:16px!important;font-weight:600;line-height:24px!important;letter-spacing:0;color:var(--aisel-ink);}
  html:root body #editorView #sheet :is(.date-box,.title-spacer,.manual-created-date-row,.manual-modified-date-row) {min-width:0;}
- html:root body #editorView #sheet .header-date-control {height:44px;min-height:44px;padding:0 2px;border:0!important;border-radius:0;background:transparent!important;font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
- html:root body #editorView #sheet .header-date-control input[type="date"] {height:100%;min-height:44px;border:0!important;border-radius:0;background:transparent!important;font-size:16px!important;}
- html:root body #editorView #mobileHeaderNames .mobile-contact-name {min-height:44px;height:auto;font-size:14px;font-weight:400;line-height:22px;background:transparent;border:0;}
+ html:root body #editorView #sheet .header-date-control {height:30px;min-height:30px;padding:0 2px;border:0!important;border-radius:0;background:transparent!important;font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
+ html:root body #editorView #sheet .header-date-control input[type="date"] {height:100%;min-height:30px;border:0!important;border-radius:0;background:transparent!important;font-size:16px!important;}
+ html:root body #editorView #mobileHeaderNames .mobile-contact-name {min-height:32px;height:auto;font-size:14px;font-weight:400;line-height:22px;background:transparent;border:0;}
  html:root body #editorView #mobileHeaderNames .mobile-contact-name::before {font-size:12px;line-height:18px;font-weight:400;color:var(--aisel-muted);}
  html:root body #editorView #sheet :is(.designer .k,.cost-table th,.sizespec th,.fixed-row .k,.total-row .k,.owner-retail-row > label) {font-size:14px!important;font-weight:600;line-height:20px;}
  html:root body #editorView #sheet :is(#fabricSupplierField,#fabricNameField,#blend),
  html:root body #editorView #sheet #mobileHeaderNames input.mobile-name-editor,
  html:root body #editorView #sheet #mobileHeaderNames #factory.mobile-name-editor {
-  box-sizing:border-box;height:44px;min-height:44px;padding:8px;border:1px solid var(--aisel-line)!important;border-radius:4px;background:var(--aisel-bg)!important;
+  box-sizing:border-box;height:36px;min-height:36px;padding:5px 8px;border:1px solid var(--aisel-line)!important;border-radius:4px;background:var(--aisel-bg)!important;
   color:var(--aisel-ink)!important;-webkit-text-fill-color:var(--aisel-ink)!important;font-size:16px!important;font-weight:400;line-height:24px;
  }
- html:root body #editorView #sheet :is(#materials,.mobile-change-text) {box-sizing:border-box;padding:12px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:16px!important;font-weight:400;line-height:26px;}
+ html:root body #editorView #sheet :is(#materials,.mobile-change-text) {box-sizing:border-box;padding:8px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:16px!important;font-weight:400;line-height:26px;}
  html:root body #editorView #sheet :is(.unit-note,.tip) {font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
- html:root body #editorView #sheet #ph1 > .photo-src {display:grid;grid-template-columns:repeat(3,64px);gap:8px;right:16px;top:8px;}
- html:root body #editorView #sheet #ph1 > .photo-src > button {box-sizing:border-box;width:64px;min-width:64px;height:44px;min-height:44px;padding:0 8px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;}
- html:root body #editorView #sheet > .photos > #ph1 {height:302px;padding-top:60px;}
+ html:root body #editorView #sheet #ph1 > .photo-src {display:grid;grid-template-columns:repeat(3,52px);gap:4px;right:12px;top:8px;}
+ html:root body #editorView #sheet #ph1 > .photo-src > button {box-sizing:border-box;width:52px;min-width:52px;height:30px;min-height:30px;padding:0 4px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;}
+ html:root body #editorView #sheet > .photos > #ph1 {height:302px;padding-top:44px;}
 
  /* Cost values remain centered, totals right aligned, with narrow table overflow local. */
- html:root body #editorView #sheet #costCell .cost-table {min-width:398px;}
- html:root body #editorView #sheet #costCell .cost-col-name {width:56px;}
- html:root body #editorView #sheet #costCell .cost-col-unit {width:166px;}
- html:root body #editorView #sheet #costCell .cost-col-qty {width:56px;}
- html:root body #editorView #sheet #costCell .cost-col-amount {width:74px;}
- html:root body #editorView #sheet #costCell .cost-col-delete {width:46px;}
- html:root body #editorView #sheet #costCell .cost-table :is(th,td).noprint {width:46px!important;padding:0;}
+ html:root body #editorView #sheet #costCell .cost-table {min-width:360px;}
+ html:root body #editorView #sheet #costCell .cost-col-name {width:50px;}
+ html:root body #editorView #sheet #costCell .cost-col-unit {width:154px;}
+ html:root body #editorView #sheet #costCell .cost-col-qty {width:52px;}
+ html:root body #editorView #sheet #costCell .cost-col-amount {width:72px;}
+ html:root body #editorView #sheet #costCell .cost-col-delete {width:32px;}
+ html:root body #editorView #sheet #costCell .cost-table :is(th,td).noprint {width:32px!important;padding:0;}
  html:root body #editorView #sheet #costCell .cost-table .del,
- html:root body #editorView #sheet .sizespec :is(.ss-col-del,.row-del) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border:0;border-radius:0;background:transparent;color:var(--aisel-muted);font-size:16px;line-height:16px;}
+ html:root body #editorView #sheet .sizespec :is(.ss-col-del,.row-del) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:30px;min-width:30px;height:30px;min-height:30px;padding:0;border:0;border-radius:0;background:transparent;color:var(--aisel-muted);font-size:16px;line-height:16px;}
  html:root body #editorView #sheet #costCell .cost-table :is(th,td) {border:1px solid var(--aisel-line)!important;background:var(--aisel-bg);}
  html:root body #editorView #sheet #costCell .cost-pair,
- html:root body #editorView #sheet #costCell .cost-table .cost-pair {height:52px;min-height:52px;padding:4px;gap:4px;}
- html:root body #editorView #sheet #costCell :is(.cost-pair input,.cost-table input,.cost-table .qty) {box-sizing:border-box;height:44px;min-height:44px;padding:8px 2px;font-size:16px!important;font-weight:400;line-height:24px;text-align:center;}
+ html:root body #editorView #sheet #costCell .cost-table .cost-pair {height:40px;min-height:40px;padding:2px;gap:4px;}
+ html:root body #editorView #sheet #costCell :is(.cost-pair input,.cost-table input,.cost-table .qty) {box-sizing:border-box;height:36px;min-height:36px;padding:5px 2px;font-size:16px!important;font-weight:400;line-height:24px;text-align:center;}
  html:root body #editorView #sheet #costCell .cost-pair input {border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);}
  html:root body #editorView #sheet #costCell .cost-pair input::placeholder {font-size:12px;font-weight:400;letter-spacing:0;color:var(--aisel-muted);}
  html:root body #editorView #sheet #costCell .cost-pair input.nego-price-empty {background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);}
  html:root body #editorView #sheet #costCell .cost-table .amt {font-size:16px;font-weight:400;line-height:24px;text-align:center;}
  html:root body #editorView #sheet #costCell :is(.total-row,.owner-retail-row) {border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);}
  html:root body #editorView #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {font-size:22px!important;font-weight:700;line-height:28px;text-align:right;}
- html:root body #editorView #sheet #costCell #targetThreshold {min-height:44px;height:44px;}
+ html:root body #editorView #sheet #costCell #targetThreshold {min-height:36px;height:36px;}
  html:root body #editorView #sheet #costCell #addLine,
- html:root body #editorView #sheet .sizespec .ss-addrow .add {box-sizing:border-box;height:44px;min-height:44px;padding:0 8px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;white-space:nowrap;}
- html:root body #editorView #sheet .sizespec .ss-addrow {display:grid;grid-template-columns:repeat(3,minmax(104px,1fr));gap:8px;overflow-x:auto;overscroll-behavior-x:contain;}
+ html:root body #editorView #sheet .sizespec .ss-addrow .add {box-sizing:border-box;height:32px;min-height:32px;padding:0 6px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;white-space:nowrap;}
+ html:root body #editorView #sheet .sizespec .ss-addrow {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;overflow:visible;}
  html:root body #editorView #sheet .sizespec :is(table,th,td) {border:1px solid var(--aisel-line)!important;background:var(--aisel-bg);}
- html:root body #editorView #sheet .sizespec th.colhead {min-width:124px;width:124px;padding:0 44px 0 0;}
- html:root body #editorView #sheet .sizespec th.colhead input {min-width:78px;padding:0 2px;}
+ html:root body #editorView #sheet .sizespec th.colhead {min-width:108px;width:108px;padding:0 30px 0 0;}
+ html:root body #editorView #sheet .sizespec th.colhead input {min-width:76px;padding:0 2px;}
  html:root body #editorView #sheet .sizespec .ss-col-del {right:0;top:50%;transform:translateY(-50%);}
- html:root body #editorView #sheet .sizespec :is(th,td).noprint {width:46px!important;min-width:46px;padding:0;}
- html:root body #editorView #sheet .sizespec :is(th input,td input) {box-sizing:border-box;min-height:44px;height:44px;font-size:16px!important;font-weight:400;line-height:24px;}
- html:root body #editorView #mobileSampleRecords .mobile-change-heading {grid-template-columns:minmax(0,1fr) 112px 44px 44px;gap:8px;}
+ html:root body #editorView #sheet .sizespec :is(th,td).noprint {width:32px!important;min-width:32px;padding:0;}
+ html:root body #editorView #sheet .sizespec :is(th input,td input) {box-sizing:border-box;min-height:36px;height:36px;font-size:16px!important;font-weight:400;line-height:24px;}
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading {grid-template-columns:minmax(0,1fr) 108px 30px 30px;gap:4px;}
  html:root body #editorView #mobileSampleRecords .mobile-change-heading > span:first-child {white-space:normal;}
- html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.sample-date-field,.mobile-change-add,.mobile-change-delete) {box-sizing:border-box;height:44px;min-height:44px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);}
- html:root body #editorView #mobileSampleRecords .mobile-change-heading .sample-date-field {width:112px;padding:0 4px;}
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.sample-date-field,.mobile-change-add,.mobile-change-delete) {box-sizing:border-box;height:30px;min-height:30px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);}
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading .sample-date-field {width:108px;padding:0 4px;}
  html:root body #editorView #mobileSampleRecords .sample-date-label {font-size:16px;font-weight:400;line-height:24px;}
- html:root body #editorView #mobileSampleRecords :is(.mobile-change-add,.mobile-change-delete) {width:44px;min-width:44px;display:inline-flex;align-items:center;justify-content:center;padding:0;}
+ html:root body #editorView #mobileSampleRecords :is(.mobile-change-add,.mobile-change-delete) {width:30px;min-width:30px;display:inline-flex;align-items:center;justify-content:center;padding:0;}
 
- /* Color selection is a separate 28px control family, not a text action button. */
+ /* Color selection uses compact 22px chips, not a text action button. */
  html:root body #editorView #productColors {border-left:0;border-right:0;box-shadow:none;}
  html:root body #editorView #productColors .copygen-card {background:var(--aisel-bg);box-shadow:none;border:0;}
  html:root body #editorView #productColors #colorSwatches {display:flex;flex-wrap:nowrap;gap:4px;min-width:0;width:100%;overflow-x:auto;overscroll-behavior-x:contain;padding:4px 0;}
  html:root body #editorView #productColors #colorSwatches .copygen-swatch-btn {flex:0 0 28px;width:28px;min-width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:50%;background:transparent;}
  html:root body #editorView #productColors #colorSwatches .color-dot {box-sizing:border-box;flex:0 0 24px;width:24px;height:24px;border:1px solid var(--aisel-line);border-radius:50%;}
- html:root body #editorView #productColors #colorSwatches .copygen-selected-base .color-dot {outline:2px solid var(--aisel-ink);outline-offset:2px;}
+ html:root body #editorView #productColors #colorSwatches .copygen-selected-base .color-dot {outline:1px solid var(--aisel-ink);outline-offset:1px;}
  html:root body #editorView #productColors #selectedColors {display:flex;flex-wrap:wrap;gap:4px;}
- html:root body #editorView #productColors #selectedColors .copygen-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;min-height:28px;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500;line-height:18px;}
- html:root body #editorView #productColors #selectedColors .copygen-color-chip > button {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:20px;min-width:20px;height:20px;min-height:20px;padding:0;border:0;background:transparent;color:inherit;font-size:16px;line-height:20px;}
+ html:root body #editorView #productColors #selectedColors .copygen-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:1px 5px;border:0;border-radius:4px;font-size:12px;font-weight:500;line-height:18px;}
+ html:root body #editorView #productColors #selectedColors .copygen-color-chip > button {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:18px;min-width:18px;height:18px;min-height:18px;padding:0;border:0;background:transparent;color:inherit;font-size:16px;line-height:20px;}
 
  /* Sales keeps all source metrics and existing ordering; only typography changes. */
  html:root body #salesView #salesTableBody {width:100%;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;}
- html:root body #salesView .sheet-sales-grid {min-width:424px;grid-template-columns:44px minmax(144px,1fr) 56px 48px 56px 56px;column-gap:4px;font-size:14px;line-height:22px;border-bottom:1px solid var(--aisel-line);color:var(--aisel-ink);}
+ html:root body #salesView .sheet-sales-grid {min-width:358px;grid-template-columns:34px minmax(116px,1fr) 44px 44px 50px 50px;column-gap:4px;font-size:13px;line-height:20px;border-bottom:1px solid var(--aisel-line);color:var(--aisel-ink);}
  html:root body #salesView .sheet-sales-grid > span:is(:first-child,:nth-child(5),:nth-child(6)) {padding:0;white-space:nowrap;overflow:visible;text-overflow:clip;}
  html:root body #salesView .sheet-sales-head {font-size:12px;line-height:18px;color:var(--aisel-muted);}
  html:root body #salesView .sheet-sales-head > span {white-space:normal;}
- html:root body #salesView .sheet-sales-name {height:auto;min-height:44px;padding:8px 0;border:0;border-radius:0;box-shadow:none;background:var(--aisel-bg);color:var(--aisel-ink);text-align:left;font-size:13px;font-weight:600;line-height:18px;}
+ html:root body #salesView .sheet-sales-name {height:auto;min-height:36px;padding:6px 0;border:0;border-radius:0;box-shadow:none;background:var(--aisel-bg);color:var(--aisel-ink);text-align:left;font-size:13px;font-weight:600;line-height:18px;}
  html:root body #salesView .sheet-sales-name-label {white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
- html:root body #salesView .sheet-sales-badge {width:32px;height:24px;border-radius:4px;font-size:12px;line-height:18px;font-weight:500;}
+ html:root body #salesView .sheet-sales-badge {flex:0 0 28px;width:28px;height:22px;border:0;border-radius:4px;font-size:12px;line-height:18px;font-weight:500;}
  html:root body #salesView :is(#salesScopeNote,#salesUpdated,.sheet-sales-meta-info) {font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
  html:root body #salesView .sheet-sales-warning {color:var(--aisel-error);}
  html:root body #salesView .sheet-sales-caution {color:var(--aisel-factory-ink);}
@@ -161,5 +171,10 @@
  html:root body #editorView :is(input,textarea,select):focus {background:var(--aisel-bg)!important;}
  html:root body #editorView #sheet :is(input,textarea,select):focus {border-color:var(--aisel-line)!important;}
  html:root body #editorView :is(button,.ref-short-link):not(.active):not(:disabled):hover {background:var(--aisel-bg);border-color:var(--aisel-muted);}
- html:root body .scroll-fab {box-sizing:border-box;width:44px;height:44px;min-width:44px;min-height:44px;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;font:600 13px/20px var(--aisel-font);}
+ html:root body #scrollFabWrap {display:flex!important;position:fixed;left:auto;right:max(8px,calc((100vw - 390px)/2 - 38px),env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:500;flex-direction:column;gap:4px;width:30px;margin:0;padding:0;}
+ html:root body #scrollFabWrap .scroll-label {display:none;}
+ html:root body #scrollFabWrap .scroll-fab {display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:30px;height:30px;min-width:30px;min-height:30px;padding:0;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;font:600 13px/20px var(--aisel-font);}
+ html:root body #scrollFabWrap .scroll-fab svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+ html:root body :is(#editorView,#galleryView,#salesView) * {scrollbar-width:none;}
+ html:root body :is(#editorView,#galleryView,#salesView) *::-webkit-scrollbar {display:none;width:0;height:0;}
 }

@@ -1,10 +1,10 @@
-/* v175: shared mobile shell and one existing Google account session. */
+/* v176: responsive menu transitions and one existing Google account session. */
 (function(){
  'use strict';
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
  if(!A||!DM||!RC)return;
  const main=document.getElementById('mainBar'),$=id=>document.getElementById(id);
- let current='',busy=false,frame=null,productState=null,returnToProducts=false,bridgeReady=null,knownRole=null;
+ let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,bridgeReady=null,knownRole=null;
  const directEntry=!!location.hash||!!new URLSearchParams(location.search).get('code');
  let landingOpen=!directEntry;
  let lastLocation={state:history.state,url:location.href},replayingPop=false;
@@ -39,7 +39,7 @@
  window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;if(e.detail.uid!==undefined&&e.detail.uid!==window.AiselAuth?.currentUser()?.uid)return;if(e.detail.generation!==undefined&&e.detail.generation!==window.AiselAuth?.generation)return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
  function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=175';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=176';pane.append(frame);}
  function select(view){
   current=view;
   $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
@@ -57,15 +57,23 @@
   if(current==='references'&&target!=='references'&&!await RC.leave())return false;
   return true;
  }
+ function drainNavigation(completed=true){
+  if(busy||!pendingNavigation)return;
+  const next=pendingNavigation;pendingNavigation=null;
+  if(!completed){next.resolve(false);return;}
+  show(next.view,next.options).then(next.resolve);
+ }
  async function show(view,{history:writeHistory=true,replace=false,code}={}){
   if(!['products','orders','sales','editor','references','designmeeting'].includes(view))return false;
   if(!allowedView(view)){info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return false;}
   if(view==='editor'&&(typeof code!=='string'||!code.trim()||code.length>160||/[.#$\[\]\/\u0000-\u001f]/.test(code)))return false;
-  if(busy)return false;busy=true;
+  // Keep the latest destination while an input save is finishing.
+  if(busy)return new Promise(resolve=>{pendingNavigation?.resolve(false);pendingNavigation={view,options:{history:writeHistory,replace,code},resolve};});
+  busy=true;let completed=false;
   try{
    if(!await guard(view))return false;info();if(view!=='editor')returnToProducts=false;
-   if(view==='references'){if(await RC.show({history:writeHistory})===false)return false;select(view);return true;}
-   if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false})===false)return false;select(view);return true;}
+   if(view==='references'){if(await RC.show({history:writeHistory,background:true})===false)return false;select(view);completed=true;return true;}
+   if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
    A.hide();select(view);
    if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='제품 진행 현황';document.body.dataset.aiselListView='products';}
    else if(view==='orders')await A.orders();
@@ -73,9 +81,9 @@
    else if(view==='editor'){A.open(code);returnToProducts=true;}
    select(view);
    if(writeHistory)route(view,replace,code);
-   window.scrollTo(0,0);return true;
+   window.scrollTo(0,0);completed=true;return true;
   }catch(e){info(e.message||'화면을 열지 못했습니다. 다시 시도해주세요.');return false;}
-  finally{busy=false;}
+  finally{busy=false;drainNavigation(completed);}
  }
  async function referenceBridge(action,payload){
   const session=window.AiselAuth,generation=session?.generation,uid=session?.currentUser()?.uid||null;
@@ -128,11 +136,12 @@
   if(target.owner!=='unified'&&target.view===current){lastLocation=next;return;}
   e.stopImmediatePropagation();
   if(busy){restoreLocation(previous);return;}
+  if(target.owner==='unified'){
+   if(!await show(target.view,{history:false,code:target.code})){restoreLocation(previous);return;}
+   lastLocation=next;return;
+  }
+  let completed=false;
   try{
-   if(target.owner==='unified'){
-    if(!await show(target.view,{history:false,code:target.code})){restoreLocation(previous);return;}
-    lastLocation=next;return;
-   }
    busy=true;
    if(!await guard(target.view)){restoreLocation(previous);return;}
    if(target.owner==='reference'){
@@ -145,8 +154,9 @@
    // Their own handlers restore list/detail scroll after the shared leave guard succeeds.
    replayingPop=true;
    try{window.dispatchEvent(new PopStateEvent('popstate',{state:next.state}));}finally{replayingPop=false;}
+   completed=true;
   }catch(error){restoreLocation(previous);info(error.message||'화면을 열지 못했습니다.');}
-  finally{busy=false;}
+  finally{busy=false;drainNavigation(completed);}
  };
  window.AiselUnified={show,get view(){return current;}};
  applyRole();
