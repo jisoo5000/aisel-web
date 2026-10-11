@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- AISEL 제품 진행 현황 v28 (2026-10-11): 화면390px·2열·공통 글꼴/버튼/흰 배경; 기존 데이터·동작 보존. -->
 <!-- AISEL 제품 진행 현황 v27 (2026-10-11): 통합앱 임베드, 권한별 작지 연결, 목록 복귀 상태 보존. -->
 <!-- AISEL 제품 진행 현황 v26 (2026-10-09): 공통 돋보기 검색칸과 사무실 샘플의 정확한 품명·품번 검색. -->
 <!-- AISEL 제품 진행 현황 v20 (2026-10-09): 공통 에이슬 화면 스타일; v19 동작 보존; 발주생산 도착 확인→PDP 생성 완료→판매중, 한국 시간 도착 확인일, 단계별 버튼 하나. -->
@@ -95,36 +96,14 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:680px){.wrap{padding:16px 16px 48px}.page-header{padding-bottom:12px;margin-bottom:8px}.brand{font-size:21px}h1{gap:12px;font-size:18px}.page-title{padding-left:12px}.page-subtitle{font-size:11px}.connection{font-size:10px}.tabs{margin-bottom:6px;gap:2px}.tab{gap:4px;padding:7px 2px;font-size:14px}.tab-count{font-size:10px}.toolbar{margin-bottom:16px}.search-wrap{margin:0 0 12px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.body{padding:11px 10px;gap:5px}.desc{font-size:11.5px}.arrive-btn{font-size:11.5px}.name{font-size:12.5px}}
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
-<link rel="stylesheet" href="status-samples.css?v=status-recovery-20261009-v18" />
-<link rel="stylesheet" href="aisel-ui.css?v=20261009-v4" />
-<style id="aisel-v24-mobile-stage-labels">
-@media screen and (max-width:800px) {
-  .aisel-status #productsPanel .state {
-    background:var(--aisel-soft)!important;
-    color:var(--aisel-ink)!important;
-    gap:0;
-  }
-  .aisel-status #productsPanel .state::before {content:none;display:none;}
-}
-</style>
+<link rel="stylesheet" href="status-samples.css?v=175" />
+<link rel="stylesheet" href="aisel-ui.css?v=175" />
+
 <style id="aisel-status-embedded-style">
 @media screen {
-  html.aisel-status-embedded .wrap{width:100%;max-width:480px;padding:0 12px 24px;margin:0 auto}
+  html.aisel-status-embedded .aisel-status.wrap{padding-top:var(--aisel-space-3)}
   html.aisel-status-embedded .page-header{display:none}
-  html.aisel-status-embedded .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  html.aisel-status-embedded .toolbar{margin-bottom:16px}
-  html.aisel-status-embedded .state{background:var(--aisel-soft)!important;color:var(--aisel-ink)!important;gap:0}
-  html.aisel-status-embedded .state::before{display:none;content:none}
-  html.aisel-status-embedded .workorder-open{margin-top:6px;width:100%;min-height:44px;border:1px solid var(--aisel-line);border-radius:4px;padding:8px;background:#fff;color:var(--aisel-ink);font-size:13px;font-weight:600;cursor:pointer}
-  html.aisel-status-embedded .workorder-open:hover{background:var(--aisel-soft)}
-  html.aisel-status-embedded .sample-columns{display:none}
-  html.aisel-status-embedded .sample-row{display:block;padding:12px 2px}
-  html.aisel-status-embedded .sample-primary-line{display:block}
-  html.aisel-status-embedded .sample-secondary-line{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
-  html.aisel-status-embedded .sample-product,html.aisel-status-embedded .sample-product-name,html.aisel-status-embedded .sample-options,html.aisel-status-embedded .sample-option-main,html.aisel-status-embedded .sample-option-sub{display:inline}
-  html.aisel-status-embedded .sample-options{margin-left:8px}
-  html.aisel-status-embedded .sample-compact-value{display:inline}
-  html.aisel-status-embedded .sample-full-value{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  html.aisel-status-embedded .workorder-open{margin-top:8px;width:100%;cursor:pointer}
 }
 </style>
 </head>
@@ -780,6 +759,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   'use strict';
   if(!window.aiselStatusEmbedded_ || window.location.origin === 'null') return;
   var origin = window.location.origin, permitted = false, frame = null, previousState = '', previousHeight = 0;
+  var sharedSessionUid, sessionClearFlight = null;
   var observed = document.querySelector('main.wrap');
   function post(type,extra){window.parent.postMessage(Object.assign({type:type},extra || {}),origin);}
   function currentState(){return viewState_(pendingScroll === null ? window.scrollY : pendingScroll);}
@@ -795,8 +775,28 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   }
   function schedule(){if(frame !== null) return;frame = window.requestAnimationFrame(function(){frame = null;report(false);});}
   function restore(value){restoreView_(cleanState(value));saveCurrentView_();schedule();}
+  function sharedSession(message){
+    var uid = typeof message.uid === 'string' ? message.uid : null;
+    var changed = sharedSessionUid !== undefined && sharedSessionUid !== uid;
+    sharedSessionUid = uid;
+    var provider = window.AiselSampleData, sampleState = provider && typeof provider.getState === 'function' ? provider.getState() : null, sampleUser = null;
+    try{var sampleApp = (firebase.apps || []).find(function(app){return app.name === 'aiselShootingSamples';});sampleUser = sampleApp && sampleApp.auth().currentUser;}catch(ignore){}
+    var mismatch = sampleUser && sampleUser.uid !== uid;
+    var clear = message.reason === 'logout' || changed || mismatch;
+    if(clear && permitted){permitted = false;lastSig = null;render();}
+    if(clear && !sessionClearFlight && (sampleUser || sampleState && (sampleState.connected || sampleState.status === 'connecting'))){
+      sessionClearFlight = Promise.resolve().then(function(){if(!provider || typeof provider.disconnect !== 'function')throw Error('Sample connection unavailable');return provider.disconnect();}).catch(function(error){
+        // Disconnect clears the private token before reloading the public list.
+        // A failed public refresh must not prevent a completed logout.
+        var current = provider && provider.getState ? provider.getState() : null, signedIn = sampleApp && sampleApp.auth().currentUser;
+        if(!current || current.connected || current.status === 'connecting' || signedIn)throw error;
+      }).finally(function(){sessionClearFlight = null;});
+    }
+    Promise.resolve(sessionClearFlight).then(function(){if(message.requestId)post('aisel-session-cleared',{requestId:message.requestId,ok:true});},function(){if(message.requestId)post('aisel-session-cleared',{requestId:message.requestId,ok:false});});
+  }
   window.AiselStatusEmbed = {
     canOpenWorkorder:function(){return permitted;},
+    sessionUid:function(){return sharedSessionUid;},
     getState:currentState,
     restoreState:restore,
     openWorkorder:function(code){
@@ -807,7 +807,9 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   window.addEventListener('message',function(event){
     if(event.origin !== origin || event.source !== window.parent || !event.data || typeof event.data !== 'object') return;
     var message = event.data;
-    if(message.type === 'aisel-status-config'){
+    if(message.type === 'aisel-session-change'){
+      sharedSession(message);
+    }else if(message.type === 'aisel-status-config'){
       var nextPermission = message.canOpenWorkorder === true;
       if(permitted !== nextPermission){permitted = nextPermission;lastSig = null;render();}
       if(message.state) restore(message.state);

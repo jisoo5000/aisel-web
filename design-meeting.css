@@ -1,138 +1,89 @@
-#designMeetingView{max-width:820px;margin:0 auto;padding:0 16px 60px;color:#30343b;font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;box-sizing:border-box}
-#designMeetingView [hidden],#designMeetingView[hidden]{display:none!important}
-#designMeetingView button,#designMeetingView select,.dm-dialog button{font:inherit;color:inherit;cursor:pointer}
-#designMeetingView button,.dm-dialog button{border:1px solid #dedcd6;border-radius:4px;background:#fff;min-height:44px;padding:8px 12px;font-size:12px}
-.dm-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.dm-toolbar{display:flex;justify-content:flex-end;margin:0 0 4px}
-.dm-toolbar summary{font-size:12px;color:#6c727c;cursor:pointer}
-#dmTools{position:fixed;inset:0;box-sizing:border-box;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 64px);background:#fff;color:#30343b}
-#dmTools>button{margin:4px 2px}
-#dmToolsClose{display:block;margin-left:auto!important}
-#dmTools input[type=url],#dmTools input[type=email]{max-width:100%;min-width:0;box-sizing:border-box}
-#dmTools .dm-collect input[type=url]{width:100%}
-#dmTools .dm-collect label{width:100%}
-.dm-collect{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-.dm-collect label{font-size:12px}
-.dm-collect input[type=url],#dmSearch,.dm-dialog select{box-sizing:border-box;padding:10px 12px;background:#fff;border:1px solid #dedcd6;border-radius:4px;font-size:16px;min-height:44px}
-#dmSearch{width:100%;margin:12px 0 16px}
-.dm-filters{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #dedcd6}
-#designMeetingView .dm-filters button{border:0;border-radius:0;background:transparent;font-size:12px;color:#6c727c}
-.dm-filters button.active{border-bottom:1.5px solid #30343b!important;color:#30343b!important;font-weight:700}
-.dm-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.dm-card,#designMeetingView .dm-add-card{position:relative;border:1px solid #dedcd6;border-radius:4px;overflow:hidden;background:#fff;min-width:0}
-.dm-add-card{align-self:stretch;font-weight:600;min-height:280px!important}
-.dm-open{display:block;text-align:left;width:100%;border:0!important;padding:0!important;background:transparent!important}
-.dm-open img,.dm-no-photo{display:block;width:100%;aspect-ratio:3/4;object-fit:contain;background:#f5f4f1}
-.dm-no-photo{display:flex;align-items:center;justify-content:center;color:#6c727c}
-.dm-card-info{padding:8px;min-height:62px;box-sizing:border-box}
-.dm-card-info strong{display:block;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
-.dm-card-info time{display:block;font-size:11px;color:#6c727c;margin-top:4px}
-.dm-colors{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
-.dm-colors:empty{display:none}
-.dm-colors .gcard-color-chip{font-size:11px;border-radius:2px;padding:1px 3px;background:#f5f4f1}
-.dm-convert{margin:16px 0;background:#30343b!important;color:#fff!important;width:100%}
-.dm-detail{position:relative;width:100%;box-sizing:border-box;padding-top:12px}
-.dm-detail-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
-#dmDetailTitle{font-size:16px;font-weight:600;line-height:1.5;margin:0;min-width:100px;max-width:100%;overflow-wrap:anywhere;flex:1}
-#dmDetailTitle:focus{outline:1px solid #dedcd6}
-.dm-links{display:flex;align-items:center;gap:6px;flex-wrap:wrap;max-width:100%}
-.dm-link-row{display:flex;align-items:center;gap:6px}
-.dm-links svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.dm-link-open{display:flex;align-items:center;gap:5px;padding:7px 9px;min-height:32px;box-sizing:border-box;color:#30343b;text-decoration:none;border:1px solid #dedcd6;border-radius:4px;font-size:12px}
-#designMeetingView .dm-icon{padding:6px;width:32px;height:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
-#designMeetingView .dm-link-add{border:0;font-size:24px;padding:0 6px;min-height:32px}
-.dm-dates{font-size:12px;color:#6c727c;margin:6px 0 12px}
-.dm-assignee{border-top:1px solid #dedcd6;display:flex;align-items:center;gap:12px;min-height:44px;margin-bottom:12px;font-size:14px}
-.dm-assignee label{font-weight:600}
-.dm-assignee select{border:0;background:transparent;font-size:14px;min-height:44px;max-width:70%}
-.dm-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
-#designMeetingView .dm-photo{display:block;flex:0 0 100%;min-width:0;scroll-snap-align:start;padding:0;border:0;background:transparent}
-.dm-photo img{display:block;width:100%;height:clamp(220px,40vh,340px);height:clamp(220px,40svh,340px);object-fit:contain;background:#f5f4f1;border:1px solid #dedcd6;border-radius:4px;box-sizing:border-box}
-#dmAddPhotos{margin-top:6px;min-height:32px!important}
-.dm-section-title{font-size:16px;font-weight:600;margin:16px 0 8px}
-.dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid #dedcd6;border-radius:4px;overflow:hidden;font-size:14px;table-layout:fixed}
-.dm-evidence th,.dm-evidence td{height:48px;padding:10px 12px;text-align:left;vertical-align:top;border-bottom:1px solid #dedcd6;overflow-wrap:anywhere}
-.dm-evidence th{width:64px;font-weight:600;border-right:1px solid #dedcd6}
-.dm-evidence tr:last-child>*{border-bottom:0}
-.dm-additional{font-size:14px;line-height:1.5;margin:16px 0;overflow-wrap:anywhere}
-.dm-additional strong{margin-right:12px}
-.dm-review-status{font-size:12px;color:#6c727c}
-.dm-review-status:empty,#dmStatus:empty,#dmDetailSaveState:empty{display:none}
-.dm-detail-actions{display:grid;grid-template-columns:1fr 2fr;gap:12px;margin-top:20px}
-#dmWorkorder{background:#30343b!important;color:#fff!important}
-#dmDetailSaveState,#dmStatus{font-size:12px;line-height:1.5;overflow-wrap:anywhere}
-.dm-error{color:#9b4141!important}
-.dm-pending{padding:8px;background:#f5f4f1;font-size:12px}
-.dm-dialog{border:1px solid #dedcd6;border-radius:4px;width:min(680px,90vw);max-height:80vh;padding:20px;overflow:auto}
-.dm-dialog::backdrop{background:#0004}
-.dm-conversion-row{padding:12px 0;border-bottom:1px solid #dedcd6;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dm-conversion-row strong{grid-column:1/-1}
-.dm-dialog label{display:block}
-.dm-dialog select{width:100%}
-body[data-aisel-list-view=designmeeting] #mainBar{display:flex!important}
-#dmMainTab{white-space:nowrap!important}
-@media(max-width:600px){.dm-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.dm-add-card{min-height:0!important;aspect-ratio:auto}
-#designMeetingView{padding:0 16px 40px}
-.dm-grid:has(>.dm-add-card:only-child)>.dm-add-card{aspect-ratio:3/5}
-.dm-card-info strong{font-size:11px}
-.dm-links{gap:4px}
-.dm-link-row{gap:4px}
-.dm-detail-header{gap:8px}
-}
-@media(prefers-color-scheme:dark){body.dark #designMeetingView{color:#ecebe7}
-body.dark #designMeetingView button,body.dark #designMeetingView select,body.dark .dm-card,body.dark .dm-open{background:#242629!important;color:#ecebe7!important}
-}
-@media print{#designMeetingView,.dm-dialog{display:none!important}
-}
-
-/* v171 compact detail: actions own a row; long content scrolls above them. */
+/* v175: shared screen tokens, one mobile composition at every viewport width. */
 @media screen {
- #designMeetingView {background:#fff;--aisel-bg:#fff;--aisel-ink:#30343b;--aisel-muted:#6c727c;--aisel-line:#d9dce1;--aisel-radius:4px;}
- #designMeetingView .dm-search {margin:12px 0 16px;}
- #designMeetingView #dmSearch {margin:0;}
- #designMeetingView .dm-detail {display:flex;flex-direction:column;height:var(--dm-height,calc(100dvh - 142px));min-height:240px;padding:4px 0 0;}
- .dm-detail-header {display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:8px;flex-shrink:0;margin-bottom:6px;}
- .dm-heading {min-width:0;}
- .dm-detail-controls {display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
- .dm-toolbar {margin:0;}
- .dm-session {display:flex;justify-content:flex-end;margin-top:12px;}
- .dm-session:has(>button[hidden]) {display:none;}
- #dmDetailTitle {min-width:0;white-space:normal;font-size:14px;line-height:20px;max-height:60px;overflow:auto;}
- #dmDetailTitle:focus {white-space:normal;max-height:72px;overflow:auto;}
- .dm-assignee {flex:0 1 auto;min-width:0;border:0;margin:0;gap:3px;min-height:32px;font-size:12px;white-space:nowrap;}
- .dm-assignee select {min-width:44px;max-width:68px;min-height:32px;font-size:12px;padding:0;}
- .dm-links {flex:0 0 auto;max-width:160px;justify-content:flex-end;flex-wrap:wrap;gap:3px;}
- .dm-link-row {gap:2px;}
- #designMeetingView .dm-links .dm-icon {display:inline-flex;}
- #designMeetingView .dm-link-add {font-size:20px;padding:0 4px;min-width:24px;}
-
- .dm-dates {margin:2px 0 0;font-size:11px;line-height:16px;flex-shrink:0;}
- .dm-detail-body {flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:4px;}
- .dm-photo img {height:var(--dm-photo-height,260px);background:#fff;}
- .dm-open img,.dm-no-photo {background:#fff;}
- .dm-section-title {font-size:14px;margin:8px 0 5px;}
- .dm-evidence {font-size:13px;}
- .dm-evidence th,.dm-evidence td {box-sizing:border-box;height:40px;padding:9px 10px;line-height:20px;}
- .dm-evidence th {width:62px;}
- .dm-additional {font-size:12px;line-height:18px;margin:6px 0;}
- .dm-review-status {margin:4px 0;}
- .dm-detail-actions {flex-shrink:0;margin:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));background:#fff;border-top:1px solid #d9dce1;gap:8px;}
- .dm-detail-actions button {min-height:44px!important;}
- #designMeetingView:has(#dmDetail:not([hidden])) {padding-bottom:0;}
- #designMeetingView button:not(#dmWorkorder):not(.dm-convert):hover {background:#f3f4f6;}
- #designMeetingView button:focus-visible {outline:2px solid #30343b;outline-offset:2px;}
+ #designMeetingView{box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width);margin:0 auto;padding:0 var(--aisel-page-gutter) 40px;background:var(--aisel-bg);color:var(--aisel-ink);font:400 var(--aisel-body)/22px var(--aisel-font)}
+ #designMeetingView *,#designMeetingView *::before,#designMeetingView *::after{box-sizing:border-box}
+ #designMeetingView[hidden],#designMeetingView [hidden]{display:none!important}
+ #designMeetingView button,#designMeetingView select,#designMeetingView input,.dm-dialog button,.dm-dialog select{font-family:var(--aisel-font);color:var(--aisel-ink)}
+ #designMeetingView button,.dm-dialog button{display:inline-flex;align-items:center;justify-content:center;min-height:var(--aisel-control-height);padding:8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);cursor:pointer;box-shadow:none}
+ #designMeetingView button:disabled,.dm-dialog button:disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
+ #designMeetingView button:not(:disabled):hover,.dm-dialog button:not(:disabled):hover{border-color:var(--aisel-muted)}
+ #designMeetingView :is(button,input,select):focus-visible,.dm-dialog :is(button,select):focus-visible{outline:2px solid var(--aisel-focus);outline-offset:2px}
+ .dm-sr-only{position:absolute!important;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+ .dm-toolbar{display:flex;justify-content:flex-end;margin:0}
+ .dm-toolbar summary{font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line);color:var(--aisel-muted);cursor:pointer}
+ #dmTools{position:fixed;inset:0;box-sizing:border-box;width:min(var(--aisel-screen-width),calc(100vw - 32px));max-height:calc(100dvh - 64px);background:var(--aisel-bg);color:var(--aisel-ink)}
+ #dmTools>button{margin:4px 2px}
+ #designMeetingView #dmToolsClose{display:flex;margin-left:auto}
+ #dmTools input[type=url],#dmTools input[type=email]{max-width:100%;min-width:0;box-sizing:border-box}
+ #dmTools .dm-collect input[type=url],#dmTools .dm-collect label{width:100%}
+ .dm-collect{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+ .dm-collect label{font-size:var(--aisel-body);line-height:20px;font-weight:600}
+ .dm-collect input[type=url],#dmTools input[type=email],#dmSearch,.dm-dialog select{box-sizing:border-box;height:var(--aisel-control-height);padding:8px 12px;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);font-size:var(--aisel-input);font-weight:400;line-height:24px}
+ #designMeetingView .dm-search{margin:12px 0 16px}
+ #designMeetingView #dmSearch{width:100%;margin:0}
+ .dm-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+ #designMeetingView .dm-filters button{width:100%;min-width:0;height:var(--aisel-control-height);white-space:nowrap}
+ #designMeetingView .dm-filters button.active{background:var(--aisel-ink);border-color:var(--aisel-ink);color:var(--aisel-bg)}
+ .dm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .dm-card,#designMeetingView .dm-add-card{position:relative;min-width:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;background:var(--aisel-bg)}
+ #designMeetingView .dm-add-card{align-self:stretch;min-height:0}
+ .dm-grid:has(>.dm-add-card:only-child)>.dm-add-card{aspect-ratio:3/5}
+ #designMeetingView .dm-open{display:block;width:100%;min-width:0;padding:0;border:0;border-radius:0;background:var(--aisel-bg);text-align:left}
+ .dm-open img,.dm-no-photo{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:contain;background:var(--aisel-bg)}
+ .dm-no-photo{display:flex;align-items:center;justify-content:center;color:var(--aisel-muted);font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line)}
+ .dm-card-info{padding:12px;min-width:0}
+ .dm-card-info strong{display:block;font-size:var(--aisel-card-title-size);line-height:var(--aisel-card-title-line);font-weight:600;overflow-wrap:anywhere}
+ .dm-card-info time{display:block;font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line);font-weight:400;color:var(--aisel-muted);margin-top:4px}
+ .dm-colors{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+ .dm-colors:empty{display:none}
+ .dm-colors .gcard-color-chip{display:inline-flex;align-items:center;min-height:28px;padding:4px 8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);font-size:var(--aisel-meta-size);font-weight:500;line-height:var(--aisel-meta-line);overflow-wrap:anywhere;max-width:100%}
+ #designMeetingView .dm-convert{width:100%;margin:16px 0}
+ #designMeetingView .dm-detail{position:relative;display:flex;flex-direction:column;width:100%;height:var(--dm-height,calc(100dvh - 142px));min-height:240px;padding:12px 0 0}
+ .dm-detail-header{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:4px;flex-shrink:0;margin-bottom:8px}
+ .dm-heading{min-width:0}
+ #dmDetailTitle{min-width:0;max-width:100%;margin:0;font-size:var(--aisel-section);font-weight:600;line-height:24px;white-space:normal;overflow-wrap:anywhere;max-height:72px;overflow:auto}
+ #dmDetailTitle:focus{outline:2px solid var(--aisel-focus);outline-offset:2px}
+ #designMeetingView .dm-detail-meta{display:grid;grid-template-columns:minmax(78px,1fr) max-content minmax(72px,116px);align-items:center;gap:8px;width:100%;min-width:0}
+ .dm-dates{min-width:0;margin:0;font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);color:var(--aisel-muted);white-space:nowrap;overflow-x:auto;scrollbar-width:thin}
+ .dm-assignee{display:flex;align-items:center;gap:4px;min-width:max-content;margin:0;border:0;min-height:var(--aisel-control-height);white-space:nowrap}
+ .dm-assignee label{font-size:var(--aisel-body);line-height:20px;font-weight:600}
+ #designMeetingView #dmDesigner{flex:0 0 72px;width:72px;min-width:72px;max-width:72px;height:var(--aisel-control-height);padding:0;border:0;background:var(--aisel-bg);font-size:var(--aisel-input);font-weight:400;line-height:24px}
+ .dm-links{display:flex;align-items:center;min-width:0;max-width:100%;gap:8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+ .dm-link-row{display:flex;align-items:center;flex:0 0 auto;gap:8px}
+ .dm-links svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:0 0 16px}
+ html:root body #designMeetingView #dmLinks .dm-link-open{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;gap:4px;min-width:64px;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:8px;color:var(--aisel-ink);background:var(--aisel-bg);text-decoration:none;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);font-size:var(--aisel-button-size);font-weight:600;line-height:var(--aisel-button-line);white-space:nowrap}
+ #designMeetingView :is(.dm-icon,.dm-link-add){display:inline-flex;align-items:center;justify-content:center;flex:0 0 var(--aisel-control-height);width:var(--aisel-control-height);height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0}
+ #designMeetingView .dm-link-add{font-size:20px}
+ .dm-detail-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:4px}
+ .dm-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
+ #designMeetingView .dm-photo{display:block;flex:0 0 100%;min-width:0;scroll-snap-align:start;padding:0;border:0;background:var(--aisel-bg)}
+ .dm-photo img{display:block;width:100%;height:var(--dm-photo-height,260px);object-fit:contain;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius)}
+ #dmAddPhotos{margin-top:8px}
+ .dm-section-title{font-size:var(--aisel-section);font-weight:600;line-height:24px;margin:24px 0 12px}
+ .dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;font-size:var(--aisel-body);line-height:22px;table-layout:fixed}
+ .dm-evidence th,.dm-evidence td{padding:12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--aisel-line);overflow-wrap:anywhere}
+ .dm-evidence th{width:76px;font-weight:600;border-right:1px solid var(--aisel-line)}
+ .dm-evidence tr:last-child>*{border-bottom:0}
+ .dm-additional{font-size:var(--aisel-body);font-weight:400;line-height:22px;margin:12px 0;overflow-wrap:anywhere}
+ .dm-additional strong{margin-right:12px}
+ .dm-review-status{font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line);margin:4px 0}
+ .dm-review-status:empty,#dmStatus:empty,#dmDetailSaveState:empty{display:none}
+ .dm-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex-shrink:0;gap:8px;margin:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--aisel-line);background:var(--aisel-bg)}
+ .dm-detail-actions button{width:100%;min-width:0;height:var(--aisel-control-height)}
+ #dmDetailSaveState,#dmStatus{font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);overflow-wrap:anywhere}
+ .dm-error{color:#a63f57!important}
+ .dm-pending{padding:8px;background:var(--aisel-bg);font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line)}
+ .dm-dialog{border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);width:min(var(--aisel-screen-width),calc(100vw - 32px));max-height:80vh;padding:16px;overflow:auto;background:var(--aisel-bg);color:var(--aisel-ink);font-family:var(--aisel-font)}
+ .dm-dialog::backdrop{background:#0004}
+ .dm-conversion-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px 0;border-bottom:1px solid var(--aisel-line)}
+ .dm-conversion-row strong{grid-column:1/-1}
+ .dm-dialog label{display:block;font-size:var(--aisel-body);font-weight:600;line-height:20px}
+ .dm-dialog select{width:100%;min-width:0}
+ body[data-aisel-list-view=designmeeting] #mainBar{display:flex!important}
+ #dmMainTab{white-space:nowrap!important}
+ #designMeetingView:has(#dmDetail:not([hidden])){padding-bottom:0}
+ #designMeetingView #dmCloseDetail{display:none!important}
+ .dm-session{display:flex;justify-content:flex-end;margin-top:12px}
+ .dm-session:has(>button[hidden]){display:none}
 }
-
-/* v174: title first, then date / assignee / links on one metadata row. */
-@media screen {
- #designMeetingView .dm-detail-header {grid-template-columns:minmax(0,1fr);gap:4px;margin-bottom:8px;}
- #designMeetingView .dm-detail-meta {display:grid;grid-template-columns:minmax(78px,1fr) max-content minmax(72px,160px);align-items:center;gap:8px;width:100%;min-width:0;}
- #designMeetingView .dm-detail-meta .dm-dates {min-width:0;margin:0;white-space:nowrap;overflow-x:auto;scrollbar-width:thin;}
- #designMeetingView .dm-detail-meta .dm-assignee {min-width:max-content;max-width:none;}
- #designMeetingView .dm-detail-meta #dmDesigner {flex:0 0 68px;width:68px;min-width:68px;max-width:68px;}
- #designMeetingView .dm-detail-meta .dm-links {min-width:0;max-width:100%;justify-content:flex-start;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;}
- #designMeetingView .dm-detail-meta .dm-link-row {flex:0 0 auto;}
- #designMeetingView .dm-detail-meta .dm-link-add {flex:0 0 auto;}
- #designMeetingView #dmCloseDetail {display:none!important;}
-}
+@media print{#designMeetingView,.dm-dialog{display:none!important}}

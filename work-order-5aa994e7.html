@@ -1,3 +1,4 @@
+<!-- v175: shared 390px screen UI; existing A4 print and saved data behavior preserved (2026-10-11) -->
 <!-- v174: approved menu/header scope, compact read-only sales cache and preserved A4 print (2026-10-11) -->
 <!-- v173: unified mobile app, reference collection and preserved A4 print (2026-10-11) -->
 <!-- v166: design meeting candidate collection, versioned review queue and explicit workorder conversion (2026-10-11) -->
@@ -53,15 +54,15 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <script id="aisel-ipad-layout-mode">
-/* All screens share the 480px mobile composition. Native print rules are preserved. */
+/* All screens share the 390px mobile composition. Native print rules are preserved. */
 (function(root){
  'use strict';
  const nativeMedia=query=>root.matchMedia(query);
- const mobileWidth=480;
+ const mobileWidth=390;
  const widthRule=/\(\s*(min|max)-width\s*:\s*([\d.]+)px\s*\)/gi;
  function mobileQuery(query){
   return query.replace(widthRule,(original,kind,value)=>{
-   // Cap screen layout breakpoints at 480px; retain narrower phone rules.
+   // Cap screen layout breakpoints at 390px; retain narrower phone rules.
    if(kind.toLowerCase()==='max'&&Number(value)>=mobileWidth)return '(min-width:0px)';
    if(kind.toLowerCase()==='min'&&Number(value)>mobileWidth)return '(max-width:0px)';
    return original;
@@ -207,7 +208,7 @@
      words.json 은 work-order.html 과 같은 폴더에 둘 것
 -->
 <title>AISEL 작업지시서</title>
-<link rel="stylesheet" href="aisel-ui.css?v=20261009-v4">
+<link rel="stylesheet" href="aisel-ui.css?v=175">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
@@ -16391,7 +16392,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=174">
+<link rel="stylesheet" href="design-meeting.css?v=175">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16410,7 +16411,7 @@ window.AiselDesignMeetingAdapter={
 };
 </script>
 <script src="design-meeting-core.js?v=171"></script>
-<script src="design-meeting.js?v=174"></script>
+<script src="design-meeting.js?v=175"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16423,8 +16424,8 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=174">
-<link rel="stylesheet" href="unified-app.css?v=174">
+<link rel="stylesheet" href="reference-collection.css?v=175">
+<link rel="stylesheet" href="unified-app.css?v=175">
 <script>
 window.AiselUnifiedAdapter={
  async leave(){if(!await settleEditorSave_())return false;return true;},
@@ -16433,8 +16434,9 @@ window.AiselUnifiedAdapter={
  async sales(){restoringRoute_=true;try{await showSales();}finally{restoringRoute_=false;}},
  open(code){restoringRoute_=true;try{showEditor();newOrderMode_=false;attachWoRef(code);}finally{restoringRoute_=false;}},
  editorVisible(){return isViewVisible_("editorView");},
- isOwner(){return (firebase.apps||[]).some(app=>{try{const u=app.auth().currentUser;return u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com';}catch(_){return false;}});}
+ isOwner(){if(window.AiselAuth){const u=window.AiselAuth.currentUser();return !!(u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');}return (firebase.apps||[]).some(app=>{try{const u=app.auth().currentUser;return u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com';}catch(_){return false;}});}
 };
 </script>
-<script src="reference-collection.js?v=174"></script>
-<script src="unified-app.js?v=174"></script>
+<script src="reference-collection.js?v=175"></script>
+<script src="unified-app.js?v=175"></script>
+<link rel="stylesheet" href="workorder-screen.css?v=175" media="screen">

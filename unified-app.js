@@ -1,4 +1,4 @@
-/* v174: five shared menus; preserve each collection's bounded list state. */
+/* v175: shared mobile shell and one existing Google account session. */
 (function(){
  'use strict';
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
@@ -30,18 +30,19 @@
  }
  // A tiny account-scoped preference selects a landing page only. It never grants access.
  const landingKey='aisel.unified.landing.v1',validRoles=['owner','designer','md','logistics'];
- function memberUser(){try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
+ function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
  function rememberRole(value){const user=memberUser();if(!user?.emailVerified||!user.uid||!validRoles.includes(value))return;try{localStorage.setItem(landingKey,JSON.stringify({uid:user.uid,role:value,checkedAt:Date.now()}));}catch(_){} }
  function landingRole(){const verified=role();if(validRoles.includes(verified))return verified;const user=memberUser();if(!user?.emailVerified||!user.uid)return null;try{const hint=JSON.parse(localStorage.getItem(landingKey));const age=Date.now()-hint?.checkedAt;if(hint?.uid===user.uid&&age>=0&&age<86400000&&validRoles.includes(hint.role))return hint.role;}catch(_){}return null;}
  function landingView(){const value=landingRole();return value==='logistics'?'products':value==='designer'?'orders':'sales';}
  function restoreLanding(){if(!landingOpen||busy||!landingRole())return;landingOpen=false;const target=landingView();if(current!==target)show(target,{replace:true});}
  for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,()=>{landingOpen=false;},{capture:true,once:true});
- window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
+ window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;if(e.detail.uid!==undefined&&e.detail.uid!==window.AiselAuth?.currentUser()?.uid)return;if(e.detail.generation!==undefined&&e.detail.generation!==window.AiselAuth?.generation)return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
  function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=173';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=175';pane.append(frame);}
  function select(view){
   current=view;
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(view!=='products')unmount();pane.hidden=view!=='products';
@@ -77,12 +78,14 @@
   finally{busy=false;}
  }
  async function referenceBridge(action,payload){
+  const session=window.AiselAuth,generation=session?.generation,uid=session?.currentUser()?.uid||null;
   if(bridgeReady!==true){
    const response=await fetch(window.AISEL_DESIGN_MEETING_BRIDGE,{signal:AbortSignal.timeout(12000)});
    const state=await response.json();bridgeReady=state.referenceReady===true;
    if(!bridgeReady)throw Object.assign(Error('레퍼런스 저장 연결을 준비하고 있습니다. 연결이 완료되면 등록할 수 있습니다.'),{code:'connection_pending'});
   }
   const result=await DM.bridge(action,[],payload);
+  if(session&&(generation!==session.generation||uid!==(session.currentUser()?.uid||null)))throw Object.assign(Error('로그인 계정이 변경되었습니다. 다시 확인해주세요.'),{code:'session_changed'});
   if(action==='refAccess'&&validRoles.includes(result?.role)){knownRole=result.role;rememberRole(knownRole);applyRole();}
   return result;
  }
@@ -94,13 +97,14 @@
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame?.contentWindow)return;
   const data=e.data||{};
-  if(data.type==='aisel-status-ready')post('aisel-status-config',{canOpenWorkorder:allowedWorkorder(),state:productState});
+  if(data.type==='aisel-status-ready'){post('aisel-status-config',{canOpenWorkorder:allowedWorkorder(),state:productState});window.AiselAuth?.syncFrame?.();}
   if(data.type==='aisel-status-state')productState=data.state;
   if(data.type==='aisel-status-open-workorder'&&allowedWorkorder()&&typeof data.code==='string'){
    productState=data.state||productState;show('editor',{code:data.code});
   }
  });
- window.addEventListener('aisel-owner-auth-change',()=>{knownRole=null;applyRole();restoreLanding();});
+ window.addEventListener('aisel-owner-auth-change',()=>{if(window.AiselAuth)return;knownRole=null;applyRole();restoreLanding();});
+ window.addEventListener('aisel-session-change',()=>{knownRole=null;applyRole();restoreLanding();});
  window.addEventListener('aisel-view-change',e=>{if(e.detail?.view)select(e.detail.view);});
  window.addEventListener('aisel-legacy-view-change',e=>{
   if(busy)return;queueMicrotask(()=>{if(busy)return;select(e.detail.view==='orders'?(A.editorVisible()?'editor':'orders'):e.detail.view);});
@@ -160,4 +164,114 @@
   if(landingOpen&&hint?.uid&&validRoles.includes(hint.role)&&age>=0&&age<86400000&&window.firebase&&!(firebase.apps||[]).some(app=>app.name==='aiselDesignMeeting'))firebase.initializeApp(firebase.app().options,'aiselDesignMeeting');
  }catch(_){}
  for(const app of window.firebase?.apps||[]){try{app.auth().onAuthStateChanged(()=>queueMicrotask(restoreLanding));}catch(_){} }
+ initCommonSession();
+
+ function initCommonSession(){
+  const sdk=window.firebase;if(!sdk?.auth||!sdk.apps?.length)return;
+  let app,auth;
+  try{app=sdk.apps.find(a=>a.name==='aiselSalesReadOnly')||sdk.initializeApp(sdk.app().options,'aiselSalesReadOnly');auth=app.auth();}catch(_){return;}
+  const header=$('appBrandHeader'),button=document.createElement('button');button.id='aiselSessionButton';button.type='button';button.textContent='로그인';button.setAttribute('aria-haspopup','dialog');header.append(button);
+  const dialog=document.createElement('dialog');dialog.id='aiselAccountDialog';dialog.className='noprint';dialog.setAttribute('aria-labelledby','aiselAccountTitle');
+  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
+  document.body.append(dialog);document.body.dataset.aiselCommonSession='ready';
+  const google=$('aiselAccountGoogle'),logoutButton=$('aiselAccountLogout'),status=$('aiselAccountStatus'),identity=$('aiselAccountIdentity');
+  let generation=0,previousUid,authReady=false,suppressMigration=false,migration=null,sessionBusy=false,loginFlight=null,resolveLogin=null,rejectLogin=null;
+  let normalization=null,normalizedUid=null,loggingOut=false,normalizationError='',saveGuardDepth=0;
+  const listeners=new Set(),sameProject=a=>a.options?.projectId===app.options?.projectId;
+  const currentUser=()=>auth.currentUser||null;
+  const cancelled=()=>Object.assign(Error('로그인을 취소했습니다.'),{code:'auth/popup-closed-by-user'});
+  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;}
+  function sessionDetail(reason){const user=currentUser();return {uid:user?.uid||null,email:user?.email||'',generation,reason};}
+  function clearNormalizationError(){if(normalizationError&&notice.textContent===normalizationError)info();normalizationError='';}
+  function syncFrame(reason='sync',requestId){post('aisel-session-change',{...sessionDetail(reason),requestId});}
+  function publish(reason){
+   const user=currentUser(),uid=user?.uid||null,old=previousUid;renderAccount();if(uid===old)return;
+   previousUid=uid;generation++;normalizedUid=null;clearNormalizationError();if(old&&uid!==old)suppressMigration=true;
+   const detail={...sessionDetail(reason),previousUid:old||null};
+   window.dispatchEvent(new CustomEvent('aisel-session-change',{detail}));listeners.forEach(fn=>{try{fn(detail);}catch(_){}});syncFrame(reason);
+  }
+  async function settle(){saveGuardDepth++;try{if(!await A.leave())return false;if(!await DM.canLeave())return false;if(!await RC.canLeave())return false;return true;}finally{saveGuardDepth--;}}
+  function conflictingSessions(uid){return sdk.apps.filter(a=>a!==app&&sameProject(a)).filter(a=>{try{const other=a.auth().currentUser;return other?.uid&&!other.isAnonymous&&other.uid!==uid;}catch(_){return false;}});}
+  function ready(options={}){
+   const user=currentUser(),uid=user?.uid||null;if(!uid){normalizedUid=null;return Promise.resolve(null);}
+   // A collection save inside our own guard already uses the canonical token.
+   // Let that guarded request finish; awaiting its parent normalization would deadlock.
+   if(options.allowGuardRequest===true&&saveGuardDepth>0)return Promise.resolve(user);
+   if(loggingOut)return Promise.reject(Object.assign(Error('로그아웃 중입니다.'),{code:'session_changed'}));
+   if(normalization)return normalization.uid===uid?normalization.promise:normalization.promise.catch(()=>{}).then(ready);
+   if(!conflictingSessions(uid).length){normalizedUid=uid;clearNormalizationError();return Promise.resolve(user);}
+   normalizedUid=null;const expected=generation,entry={uid,promise:null};
+   entry.promise=(async()=>{
+    if(!await settle())throw Object.assign(Error('입력한 내용을 저장한 뒤 계정 연결을 다시 확인해주세요.'),{code:'save_pending'});
+    if(expected!==generation||uid!==currentUser()?.uid)throw Object.assign(Error('로그인 계정이 변경되었습니다.'),{code:'session_changed'});
+    for(const other of conflictingSessions(uid)){
+     if(expected!==generation||uid!==currentUser()?.uid||loggingOut)throw Object.assign(Error('로그인 계정이 변경되었습니다.'),{code:'session_changed'});
+     const otherUid=other.auth().currentUser?.uid;if(otherUid&&otherUid!==uid)await other.auth().signOut();
+    }
+    if(expected!==generation||uid!==currentUser()?.uid||conflictingSessions(uid).length)throw Object.assign(Error('계정 연결 해제를 확인하지 못했습니다. 다시 확인해주세요.'),{code:'session_changed'});
+    normalizedUid=uid;clearNormalizationError();return currentUser();
+   })().catch(error=>{if(expected===generation&&uid===currentUser()?.uid){normalizationError=error.message;status.textContent=error.message;info(error.message);}throw error;}).finally(()=>{if(normalization===entry)normalization=null;renderAccount();});
+   normalization=entry;return entry.promise;
+  }
+  function finishLogin(error,result){const resolve=resolveLogin,reject=rejectLogin;resolveLogin=rejectLogin=null;loginFlight=null;if(error)reject?.(error);else resolve?.(result);}
+  function login(){
+   if(currentUser())return ready().then(user=>({user}));if(loginFlight)return loginFlight;
+   loginFlight=new Promise((resolve,reject)=>{resolveLogin=resolve;rejectLogin=reject;});const result=loginFlight;
+   renderAccount();status.textContent='입력한 내용을 확인하고 있습니다.';google.disabled=true;dialog.showModal();
+   Promise.all([settle(),migration||Promise.resolve()]).then(([ok])=>{if(!loginFlight)return;if(ok&&currentUser()){finishLogin(null,{user:currentUser()});dialog.close();}else if(ok){status.textContent='';google.disabled=false;}else{status.textContent='입력한 내용을 저장한 뒤 다시 로그인해주세요.';finishLogin(Object.assign(Error(status.textContent),{code:'save_pending'}));}}).catch(error=>{status.textContent=error.message||'입력한 내용을 확인하지 못했습니다.';finishLogin(error);});
+   return result;
+  }
+  google.addEventListener('click',()=>{
+   if(sessionBusy||google.disabled)return;
+   if(currentUser()){
+    sessionBusy=true;google.disabled=true;status.textContent='계정 연결을 확인하고 있습니다.';
+    ready().then(user=>{status.textContent='';finishLogin(null,{user});dialog.close();},error=>{status.textContent=error.message;}).finally(()=>{sessionBusy=false;google.disabled=false;renderAccount();});return;
+   }
+   if(!loginFlight)return;sessionBusy=true;google.disabled=true;status.textContent='로그인 중…';suppressMigration=true;
+   const provider=new sdk.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});
+   // Invoke the popup synchronously from this click, after the save guard has settled.
+   let popup;try{popup=auth.signInWithPopup(provider);}catch(error){popup=Promise.reject(error);}
+   Promise.resolve(popup).then(async result=>{publish('login');await ready();status.textContent='';finishLogin(null,result);dialog.close();}).catch(error=>{status.textContent=normalizationError||(/popup-closed-by-user|cancelled-popup-request/.test(error?.code||'')?'로그인을 취소했습니다. 다시 로그인할 수 있습니다.':'로그인하지 못했습니다. 다시 시도해주세요.');}).finally(()=>{sessionBusy=false;google.disabled=false;renderAccount();});
+  });
+  function frameDisconnect(){
+   if(!frame?.contentWindow)return Promise.resolve();const target=frame.contentWindow,requestId='session-'+crypto.randomUUID();
+   return new Promise((resolve,reject)=>{const timer=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('샘플 시트 연결 해제를 확인하지 못했습니다. 다시 로그아웃해주세요.'));},12000);
+    function receive(e){if(e.origin!==location.origin||e.source!==target||e.data?.type!=='aisel-session-cleared'||e.data.requestId!==requestId)return;clearTimeout(timer);window.removeEventListener('message',receive);e.data.ok?resolve():reject(Error('샘플 시트 연결 해제를 확인하지 못했습니다.'));}
+    window.addEventListener('message',receive);target.postMessage({type:'aisel-session-change',...sessionDetail('logout'),uid:null,email:'',requestId},location.origin);
+   });
+  }
+  async function logout(){
+   if(sessionBusy)return false;sessionBusy=true;renderAccount();status.textContent='입력한 내용을 확인하고 있습니다.';
+   try{
+    if(!await settle()){status.textContent='입력한 내용을 저장한 뒤 다시 로그아웃해주세요.';return false;}
+    suppressMigration=true;loggingOut=true;if(migration)await migration.catch(()=>{});if(normalization)await normalization.promise.catch(()=>{});await frameDisconnect();
+    const outcomes=await Promise.allSettled(sdk.apps.filter(a=>{const user=a.auth().currentUser;return sameProject(a)&&user&&!user.isAnonymous;}).map(a=>a.auth().signOut()));publish('logout');
+    if(outcomes.some(r=>r.status==='rejected'))throw Error('일부 연결을 해제하지 못했습니다. 다시 로그아웃해주세요.');
+    status.textContent='';dialog.close();return true;
+   }catch(error){status.textContent=error.message||'로그아웃하지 못했습니다.';return false;}finally{loggingOut=false;sessionBusy=false;renderAccount();}
+  }
+  async function verifySession(){
+   const expected=generation,uid=currentUser()?.uid;if(!uid)return;
+   try{if(DM.verifyAccess)await DM.verifyAccess();}
+   catch(error){
+    if(expected!==generation||uid!==currentUser()?.uid)return;
+    if(error?.code==='forbidden'){try{await referenceBridge('refAccess',{});}catch(other){if(expected===generation)info(other.message||'메뉴 권한을 확인하지 못했습니다.');}}
+    else info(error.message||'메뉴 권한을 확인하지 못했습니다.');
+   }
+  }
+  function requestLogin(){return login().then(async result=>{await verifySession();return result;});}
+  button.addEventListener('click',()=>{if(currentUser()){renderAccount();status.textContent=normalizationError;dialog.showModal();}else requestLogin().catch(error=>{if(!/popup-closed-by-user|cancelled-popup-request/.test(error?.code||''))info(error.message||'로그인하지 못했습니다.');});});
+  logoutButton.addEventListener('click',logout);
+  $('aiselAccountClose').addEventListener('click',()=>{if(!sessionBusy)dialog.close();});
+  dialog.addEventListener('cancel',event=>{if(sessionBusy)event.preventDefault();});dialog.addEventListener('close',()=>{if(loginFlight&&!sessionBusy)finishLogin(cancelled());});
+  window.AiselAuth={currentUser,ready,login,requestLogin,logout,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},syncFrame,get generation(){return generation;},get normalized(){return normalizedUid===(currentUser()?.uid||null)&&!normalizationError;}};
+  async function adoptExistingSession(){
+   if(!authReady||currentUser()||suppressMigration||migration||loginFlight||sessionBusy||typeof auth.updateCurrentUser!=='function')return;
+   const prior=sdk.apps.filter(a=>a!==app&&sameProject(a)&&a.name!=='aiselShootingSamples').map(a=>{try{return a.auth().currentUser;}catch(_){return null;}}).find(user=>user?.uid&&user.emailVerified);
+   if(!prior)return;migration=Promise.resolve(auth.updateCurrentUser(prior));try{await migration;publish('restore');}catch(_){/* Existing session remains intact; sign-in can be retried from the common entry. */}finally{migration=null;}
+  }
+  auth.onAuthStateChanged(()=>{authReady=true;publish('auth');if(!loggingOut)ready().catch(()=>{});adoptExistingSession();});
+  for(const other of sdk.apps.filter(a=>a!==app&&sameProject(a))){try{other.auth().onAuthStateChanged(()=>{adoptExistingSession();if(currentUser()&&!loggingOut)ready().catch(()=>{});});}catch(_){} }
+  renderAccount();
+ }
 })();

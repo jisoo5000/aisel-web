@@ -4,7 +4,7 @@
  const ROOT=firebase.database().ref('moodboardRefs');
  const BRIDGE=window.AISEL_DESIGN_MEETING_BRIDGE||'';
  const OWNER='sooana1214@gmail.com';
- let cards={},results=[],active=null,filter='planned',limit=40,lastSig='',listening=false,busy=false,detailDirty=false,role=null;
+ let cards={},results=[],active=null,filter='planned',limit=40,lastSig='',listening=false,busy=false,detailDirty=false,role=null,authEpoch=0;
  const pending=new Map(),dirtyFields=new Set();let savePromise=null;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const safe=v=>esc(C.httpUrl(v));
@@ -52,22 +52,27 @@
  detailControls.replaceChildren($dm('#dmDates'),$dm('.dm-assignee'),$dm('#dmLinks'));
  const login=document.createElement('button');login.type='button';login.textContent='디자인회의 로그인';login.id='dmLogin';pane.querySelector('#dmSession').append(login);
  const members=document.createElement('details');members.id='dmMembers';members.hidden=true;members.innerHTML='<summary>참여자 관리</summary><p>Google 로그인 이메일을 등록하면 사진 등록·검토 요청·결과 확인을 사용할 수 있습니다. 등록·중지 시 메시지는 보내지 않습니다.</p><label>참여자 Google 이메일 <input type="email" id="dmMemberEmail" autocomplete="off"></label><button type="button" id="dmMemberAdd">참여자 등록</button><div id="dmMemberList"></div>';pane.querySelector('#dmTools').append(members);
- function memberUser(){return (firebase.apps||[]).map(a=>{try{return a.auth().currentUser;}catch(e){return null;}}).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()===OWNER)||(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')?.auth().currentUser;}
- function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();}
- async function access(){const data=await bridge('access',[]);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role}}));return data;}
+ function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();return (firebase.apps||[]).map(a=>{try{return a.auth().currentUser;}catch(e){return null;}}).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()===OWNER)||(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')?.auth().currentUser;}
+ function authStamp(){return {uid:memberUser()?.uid||null,generation:window.AiselAuth?.generation,epoch:authEpoch};}
+ function assertAuth(stamp){const current=authStamp();if(stamp.uid!==current.uid||stamp.generation!==current.generation||stamp.epoch!==current.epoch)throw Object.assign(Error('로그인 상태가 변경되었습니다. 다시 확인해주세요.'),{code:'auth_changed'});}
+ function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role||!!window.AiselAuth;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();}
+ async function access(){const stamp=authStamp(),data=await bridge('access',[]);assertAuth(stamp);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role,uid:stamp.uid,generation:stamp.generation}}));return data;}
+ function resetAuth(){authEpoch++;role=null;results=[];resultChecks.clear();resultFlights.clear();applyRole();}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
  members.addEventListener('toggle',async()=>{if(members.open)try{showMembers((await bridge('members',[])).members);}catch(e){message(e.message,true);}});
  $dm('#dmMemberAdd').onclick=async()=>{try{const data=await bridge('setMember',[],{email:$dm('#dmMemberEmail').value,active:true});showMembers(data.members);$dm('#dmMemberEmail').value='';message('참여자를 등록했습니다. 해당 계정으로 Google 로그인하면 사용할 수 있습니다.');}catch(e){message(e.message,true);}};
  async function signIn(options={}){
    const referenceScope=options.scope==='reference';
    try{
-     if(!memberUser()){const app=(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')||firebase.initializeApp(firebase.app().options,'aiselDesignMeeting');const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await app.auth().signInWithPopup(provider);}
+     if(window.AiselAuth)await window.AiselAuth.login();
+     else if(!memberUser()){const app=(firebase.apps||[]).find(a=>a.name==='aiselDesignMeeting')||firebase.initializeApp(firebase.app().options,'aiselDesignMeeting');const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});await app.auth().signInWithPopup(provider);}
      // A reference MD session does not confer design-meeting permissions.
      return referenceScope?await bridge('refAccess',[]):await access();
-   }catch(e){if(!referenceScope){role=null;applyRole();message(e.message,true);}throw e;}
+   }catch(e){if(!referenceScope&&e.code!=='auth_changed'){role=null;applyRole();message(e.message,true);}throw e;}
  }
  login.onclick=()=>signIn().catch(()=>{});
- window.addEventListener('aisel-owner-auth-change',()=>{if(!memberUser()){role=null;applyRole();}});
+ window.addEventListener('aisel-owner-auth-change',()=>{if(!window.AiselAuth&&!memberUser())resetAuth();});
+ window.addEventListener('aisel-session-change',resetAuth);
  function message(text,error=false){$dm('#dmStatus').textContent=text;$dm('#dmStatus').classList.toggle('dm-error',error);if(active)requestAnimationFrame(fitDetail);}
  function current(id){return cards[id];}
  function state(c){return C.status(c,results);}
@@ -214,7 +219,14 @@
    {const summary=result?C.reviewSummary(result):{demand:'—',supply:'—',differentiation:'—',additional:''},table=document.createElement('table');table.className='dm-evidence';for(const [label,key] of [['수요','demand'],['공급','supply'],['차별성','differentiation']]){const tr=table.insertRow();const th=document.createElement('th');th.scope='row';th.textContent=label;const td=document.createElement('td');td.textContent=summary[key];tr.append(th,td);}box.append(table);if(summary.additional){const p=document.createElement('p');p.className='dm-additional';const strong=document.createElement('strong');strong.textContent='추가 고려사항';p.append(strong,document.createTextNode(summary.additional));box.append(p);}}
    $dm('#dmReviewState').textContent=result?'':(C.states[status]||'확인 필요');const row=results.find(r=>r.id===c.id&&Number(r.version)===Number(c.inputVersion));if(row?.error)$dm('#dmReviewState').textContent=row.error;$dm('#dmRequest').hidden=!!result||['running','queued'].includes(status);$dm('#dmOpenWorkorder').hidden=true;requestAnimationFrame(fitDetail);
  }
- function saveDetail(){if(savePromise)return savePromise;savePromise=(async()=>{let ok;do{ok=await saveDetailNow();}while(ok&&detailDirty);return ok;})().finally(()=>savePromise=null);return savePromise;}
+ async function saveDetail(){
+   if(savePromise)return savePromise;
+   // Normalize before installing the save flight. The normalization guard may
+   // itself save this detail; it must not end up waiting on its own parent.
+   if(active&&detailDirty)try{await window.AiselAuth?.ready?.({allowGuardRequest:true});}catch(e){$dm('#dmDetailSaveState').textContent=e.message;return false;}
+   if(savePromise)return savePromise;
+   savePromise=(async()=>{let ok;do{ok=await saveDetailNow();}while(ok&&detailDirty);return ok;})().finally(()=>savePromise=null);return savePromise;
+ }
  async function saveDetailNow(){if(!active||!detailDirty)return true;const id=active;const patch={};for(const k of dirtyFields)patch[k]=$dm('[data-dm-field="'+k+'"]').value;try{await access();}catch(e){$dm('#dmDetailSaveState').textContent=e.message;return false;}
    if(role!=='owner'){delete patch.decision;delete patch.decisionReason;dirtyFields.delete('decision');dirtyFields.delete('decisionReason');}
    if(patch.link&&!C.httpUrl(patch.link)){$dm('#dmDetailSaveState').textContent='상품 링크는 http 또는 https 주소를 입력해주세요.';return false;}
@@ -225,9 +237,10 @@
  }
  async function bridge(action,ids,extra={}){
    if(!BRIDGE)throw Error('시트 연결 배포 대기입니다. 후보와 사진은 앱에 보존됩니다.');
-   const token=await memberToken();
+   await window.AiselAuth?.ready?.({allowGuardRequest:true});
+   const stamp=authStamp(),token=await memberToken();assertAuth(stamp);
    const response=await fetch(BRIDGE,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...extra,action,ids,token}),redirect:'follow'});
-   if(!response.ok)throw Error('시트 응답 확인 실패');const data=await response.json();if(!data.ok)throw Object.assign(Error(data.error||'시트 저장 확인 실패'),{code:data.code});
+   if(!response.ok)throw Error('시트 응답 확인 실패');const data=await response.json();assertAuth(stamp);if(!data.ok)throw Object.assign(Error(data.error||'시트 저장 확인 실패'),{code:data.code});
    if(Array.isArray(data.results)&&data.results.length){const keys=new Set(data.results.map(r=>C.rowKey(r.id,r.version)));results=results.filter(r=>!keys.has(C.rowKey(r.id,r.version))).concat(data.results);}
    if(action==='results'||action==='enqueue'){render();if(active&&!detailDirty)renderReview(current(active));}return data;
  }
@@ -243,7 +256,7 @@
    const waits=[];for(let n=0;n<need.length;n+=40){
      const group=need.slice(n,n+40),keys=group.map(id=>C.rowKey(id,cards[id].inputVersion)),key=keys.slice().sort().join('|');
      if(resultFlights.has(key)){waits.push(resultFlights.get(key));continue;}
-     const flight=bridge('results',group,{versions:Object.fromEntries(group.map(id=>[id,cards[id].inputVersion||1]))}).then(()=>keys.forEach(k=>resultChecks.set(k,Date.now()))).catch(e=>message(e.message,true)).finally(()=>resultFlights.delete(key));resultFlights.set(key,flight);waits.push(flight);
+     const flight=bridge('results',group,{versions:Object.fromEntries(group.map(id=>[id,cards[id].inputVersion||1]))}).then(()=>keys.forEach(k=>resultChecks.set(k,Date.now()))).catch(e=>{if(e.code!=='auth_changed')message(e.message,true);}).finally(()=>{if(resultFlights.get(key)===flight)resultFlights.delete(key);});resultFlights.set(key,flight);waits.push(flight);
    }await Promise.all(waits);
  }
  async function adopt(){
@@ -346,7 +359,7 @@
    window.dispatchEvent(new CustomEvent('aisel-view-change',{detail:{view:'designmeeting'}}));
    if(!draftsLoaded){draftsLoaded=true;try{for(const item of await local('all')){item.error='이전에 전송하지 못한 사진 · 다시 시도해주세요.';pending.set(item.id,item);}renderPending();}catch(e){}}
    render();await refresh();
-   if(memberUser())try{await access();}catch(e){role=null;applyRole();message(e.message,true);}else applyRole();
+   if(memberUser())try{await access();}catch(e){if(e.code!=='auth_changed'){role=null;applyRole();message(e.message,true);}}else applyRole();
    return true;
  }
  function undoPop(previous,target){
@@ -401,5 +414,5 @@
  $dm('#dmDetailTitle').oninput=e=>{dirtyFields.add('title');detailDirty=true;$dm('[data-dm-field="title"]').value=e.target.textContent.trim();};$dm('#dmDetailTitle').onblur=saveDetail;
  $dm('#dmDrop').onclick=async()=>{if(!active||!await saveDetail())return;try{await access();if(role!=='owner')throw Error('대표자만 변경할 수 있습니다.');await mutate(active,{decision:current(active).decision==='excluded'?'unselected':'excluded'});renderReview(current(active));lastSig='';render();}catch(e){message(e.message,true);}};
  $dm('#dmWorkorder').onclick=async()=>{if(!active||!await saveDetail())return;try{await access();if(role!=='owner')throw Error('대표자만 사용할 수 있습니다.');const c=current(active);if(c.convertedCode){window.AiselDesignMeetingAdapter.open(c.convertedCode);return;}await mutate(active,{decision:'selected'});await conversionDialog([active]);}catch(e){message(e.message,true);}};
- window.AiselDesignMeeting={show,open,back,canLeave,snapshot,login:signIn,getRole:()=>role,mutate,receive,convertOne,refresh,bridge,core:C};
+ window.AiselDesignMeeting={show,open,back,canLeave,snapshot,login:signIn,verifyAccess:access,resetAuth,getRole:()=>role,mutate,receive,convertOne,refresh,bridge,core:C};
 })();
