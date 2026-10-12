@@ -1,3 +1,4 @@
+<!-- v181: simple reference capture and cached AI classification/reaction summaries; server deployment required (2026-10-12) -->
 <!-- v180: use existing lightweight photo preview for design-meeting details; original and layout preserved (2026-10-12) -->
 <!-- v179: design-meeting detail photo, saved reference notes and verified review results; existing A4 and other screens preserved (2026-10-12) -->
 <!-- v177: reference content/product views and recoverable design-meeting deletion; existing A4 and workorder data preserved (2026-10-11) -->
@@ -16554,7 +16555,7 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=178">
+<link rel="stylesheet" href="reference-collection.css?v=181">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16567,6 +16568,7 @@ window.AiselUnifiedAdapter={
  isOwner(){if(window.AiselAuth){const u=window.AiselAuth.currentUser();return !!(u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');}return (firebase.apps||[]).some(app=>{try{const u=app.auth().currentUser;return u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com';}catch(_){return false;}});}
 };
 </script>
-<script src="reference-collection.js?v=177"></script>
+<script src="reference-analysis-core.js?v=181"></script>
+<script src="reference-collection.js?v=181"></script>
 <script src="unified-app.js?v=178"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=178" media="screen">

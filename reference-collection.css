@@ -70,3 +70,21 @@
  #referenceCollectionView .rc-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 }
 @media print{#referenceCollectionView{display:none!important}}
+
+@media screen {
+ #referenceCollectionView .rc-capture-tools{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px}
+ #referenceCollectionView .rc-easy-hint{font-size:11px;line-height:16px;color:var(--aisel-muted);margin:0 0 8px}
+ #referenceCollectionView .rc-analysis{margin:8px 0;border-top:1px solid var(--aisel-line);padding-top:8px}
+ #referenceCollectionView .rc-analysis h3{font-size:13px;line-height:18px;margin:0 0 4px}
+ #referenceCollectionView .rc-analysis p{font-size:12px;line-height:18px;margin:4px 0}
+ #referenceCollectionView .rc-reactions{display:flex;flex-wrap:wrap;gap:4px 8px;font-size:11px;line-height:16px}
+ #referenceCollectionView .rc-analysis .rc-analysis-caption{font-size:11px;color:var(--aisel-muted)}
+}
+
+@media screen {
+ #referenceCollectionView :is(#rcAddPhotos,#rcLinkToggle,#rcLinkEdit){display:none!important}
+ #referenceCollectionView .rc-link-panel{background:transparent;border:0;padding:0;margin:0 0 8px}
+ #referenceCollectionView .rc-metadata{grid-template-columns:104px minmax(0,1fr) 56px}
+ #referenceCollectionView .rc-reactions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}
+ #referenceCollectionView .rc-optional summary{font-size:12px;line-height:18px;margin:8px 0;color:var(--aisel-muted);cursor:pointer}
+}
