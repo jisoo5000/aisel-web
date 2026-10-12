@@ -2180,6 +2180,14 @@
     "existingSalesDataWritten": false,
     "existingCredentialsRotated": false,
     "firebaseCurrentAndDailyReadback": "not_performed",
-    "separateSheetCollection": "not_verified"
+    "separateSheetCollection": "sales_header_verified_through_2026-10-11_return_data_partially_older",
+    "appSalesFeatureOutageConfirmed": false,
+    "currentSheetVerification": {
+      "salesUpdatedAt": "2026-10-12T06:05:00+09:00",
+      "salesPeriodEnd": "2026-10-11",
+      "returnPeriodEnd": "2026-10-09",
+      "scope": "live_sheet_header_not_full_reconciliation",
+      "backendPathStillBlocked": true
+    }
   }
 }
