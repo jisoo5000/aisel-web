@@ -39,7 +39,7 @@
  window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;if(e.detail.uid!==undefined&&e.detail.uid!==window.AiselAuth?.currentUser()?.uid)return;if(e.detail.generation!==undefined&&e.detail.generation!==window.AiselAuth?.generation)return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
  function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=178';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=186';pane.append(frame);}
  function select(view){
   current=view;
   $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
@@ -163,7 +163,13 @@
  const hash=location.hash;
  if(/^#reference=/.test(hash))RC.show({id:decodeURIComponent(hash.slice(11)),history:false});
  else if(hash==='#references')show('references',{history:false});
- else if(/^#design-meeting/.test(hash)){} // DM owns its direct detail route.
+ else if(/^#design-meeting(?:=|$)/.test(hash)){
+  // Reload a meeting list or detail through its existing owner, without adding a route.
+  show('designmeeting',{history:false}).then(ok=>{
+   if(ok===false)return;
+   if(hash.startsWith('#design-meeting='))DM.open(decodeURIComponent(hash.slice(16)),{history:false}).catch(error=>info(error.message));
+  }).catch(error=>info(error.message));
+ }
  else if(new URLSearchParams(location.search).get('code'))select('editor');
  else if(/^#workorder=/.test(hash))show('editor',{history:false,code:decodeURIComponent(hash.slice(11))});
  else show(hash==='#sales'?'sales':hash==='#workorders'?'orders':hash==='#products'?'products':landingView(),{replace:true}).then(restoreLanding);

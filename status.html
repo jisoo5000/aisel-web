@@ -675,7 +675,7 @@ function navigate_(nextFilter,nextQuery,preserveInput){
   renderTabs();render();
   if(workflowView === "samples" && window.AiselSamples) window.AiselSamples.onProductsChanged();
 }
-function restoreView_(state){
+function restoreView_(state,resetInitialScroll){
   var url = new URL(window.location.href);
   var saved = state && state.aiselStatus;
   filter = validFilter(saved ? state.filter : url.searchParams.get("tab"));
@@ -683,14 +683,18 @@ function restoreView_(state){
   workflowView = (saved ? state.view : url.searchParams.get("view")) === "samples" ? "samples" : "products";
   sampleFilters = validSampleFilters_(saved && state.sampleFilters ? state.sampleFilters : {query:url.searchParams.get("sq"),field:url.searchParams.get("sfield")});
   document.getElementById("sampleSearch").value = sampleFilters.query;
-  searchEl.value = query;pendingScroll = saved ? Math.max(0,Number(state.scrollY) || 0) : 0;
+  searchEl.value = query;pendingScroll = saved && !resetInitialScroll ? Math.max(0,Number(state.scrollY) || 0) : 0;
   closeViewer();updateWorkflow_();renderTabs();render();
   if(workflowView === "samples" && window.AiselSamples) window.AiselSamples.render();
 }
 document.getElementById("workflowProducts").addEventListener("click",function(){navigateWorkflow_("products");});
 document.getElementById("workflowSamples").addEventListener("click",function(){navigateWorkflow_("samples");});
 if("scrollRestoration" in window.history) window.history.scrollRestoration = "manual";
-restoreView_(window.history.state);
+// Keep the selected tab/query, but a reload starts at the top rather than a saved reading position.
+var initialNavigation_ = window.performance.getEntriesByType ? window.performance.getEntriesByType("navigation")[0] : null;
+var resetInitialScroll_ = initialNavigation_ ? initialNavigation_.type === "reload" : window.performance.navigation && window.performance.navigation.type === 1;
+try{resetInitialScroll_ = resetInitialScroll_ || (window.parent !== window && window.parent.AiselReloadStartup && window.parent.AiselReloadStartup.active);}catch(ignore_){}
+restoreView_(window.history.state,resetInitialScroll_);
 window.history.replaceState(viewState_(pendingScroll),"",viewUrl_());
 window.addEventListener("popstate",function(ev){restoreView_(ev.state);});
 window.addEventListener("scroll",function(){
@@ -778,7 +782,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   'use strict';
   if(!window.aiselStatusEmbedded_ || window.location.origin === 'null') return;
   var origin = window.location.origin, permitted = false, frame = null, previousState = '', previousHeight = 0;
-  var sharedSessionUid, sessionClearFlight = null;
+  var sharedSessionUid, sessionClearFlight = null, initialConfig = true;
   var observed = document.querySelector('main.wrap');
   function post(type,extra){window.parent.postMessage(Object.assign({type:type},extra || {}),origin);}
   function currentState(){return viewState_(pendingScroll === null ? window.scrollY : pendingScroll);}
@@ -793,7 +797,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
     if(force || height !== previousHeight){previousHeight = height;post('aisel-status-height',{height:height,contentHeight:height});}
   }
   function schedule(){if(frame !== null) return;frame = window.requestAnimationFrame(function(){frame = null;report(false);});}
-  function restore(value){restoreView_(cleanState(value));saveCurrentView_();schedule();}
+  function restore(value,resetScroll){restoreView_(cleanState(value),resetScroll);saveCurrentView_();schedule();}
   function sharedSession(message){
     var uid = typeof message.uid === 'string' ? message.uid : null;
     var changed = sharedSessionUid !== undefined && sharedSessionUid !== uid;
@@ -831,7 +835,8 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
     }else if(message.type === 'aisel-status-config'){
       var nextPermission = message.canOpenWorkorder === true;
       if(permitted !== nextPermission){permitted = nextPermission;lastSig = null;render();}
-      if(message.state) restore(message.state);
+      if(message.state) restore(message.state,initialConfig && resetInitialScroll_);
+      initialConfig = false;
       report(true,message.requestId);
     }else if(message.type === 'aisel-status-get-state'){
       report(true,message.requestId);

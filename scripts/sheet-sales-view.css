@@ -55,7 +55,7 @@
  }
  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(1) {text-align:left;}
  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(3),
- html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(4) {text-align:center;}
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(4) {text-align:left;}
  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(5),
  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(6) {text-align:right;font-variant-numeric:proportional-nums;}
  html:root body #salesView #salesTableBody .sheet-sales-head > span {font-size:11px!important;line-height:16px!important;}
