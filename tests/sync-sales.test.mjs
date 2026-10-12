@@ -180,14 +180,21 @@ for (const stage of [1, 2, 3, 4]) {
       assert.equal(result.output, `Sales sync failed: REDIRECT_BLOCKED (HTTP ${status})`);
     });
   }
-  test(`uncertain Site request ${stage} is never retried and no payload is logged`, async () => {
+  test(`uncertain Site request ${stage} retries reads only and logs no payload`, async () => {
     const server = integrationServer({ override: ({ requests }) => {
       if (requests.length === stage) throw new Error('private-token response-body');
     } });
     const result = await run(server.fetchImpl);
-    assert.equal(result.code, 1);
-    assert.equal(server.requests.length, stage);
-    assert.equal(result.output, 'Sales sync failed: NETWORK_OR_TIMEOUT_FAILURE');
+    if (stage === 2 || stage === 4) {
+      assert.equal(result.code, 0);
+      assert.equal(server.requests.length, 12);
+    } else {
+      assert.equal(result.code, 1);
+      assert.equal(server.requests.length, stage);
+      assert.equal(result.output, 'Sales sync failed: NETWORK_OR_TIMEOUT_FAILURE');
+    }
+    assert.ok(!result.output.includes('private-token'));
+    assert.ok(!result.output.includes('response-body'));
   });
   test(`HTTP 400 on Site request ${stage} reports only its safe stage and stops without retry`, async () => {
     const server = integrationServer({ override: ({ requests }) => requests.length === stage
@@ -487,3 +494,74 @@ test('escapes masks and rejects multiline credentials before any request', async
   assert.equal(result.code, 1);
   assert.equal(result.output, 'Sales sync failed: INVALID_CONFIGURATION');
 });
+
+for (const status of [429, 502, 503, 504]) {
+  test(`transient status GET ${status} retries once, honors Retry-After and keeps one start/advance`, async () => {
+    let reads = 0;
+    const waits = [];
+    const server = integrationServer({ override: ({ endpoint }) => {
+      if (endpoint.pathname === `${CONTRACT.jobsPath}/test-job_123` && ++reads === 1) {
+        return json({ secret: 'private' }, status, { 'Retry-After': '10' });
+      }
+    } });
+    const result = await run(server.fetchImpl, { sleep: async ms => { waits.push(ms); } });
+    assert.equal(result.code, 0);
+    assert.deepEqual(waits, [5000, 10000]);
+    assert.equal(server.requests.filter(r => r.options.method === 'POST' && new URL(r.url).origin === CONTRACT.allowedOrigin).length, 2);
+    assert.ok(!result.output.includes('private'));
+  });
+}
+test('status GET retry exhaustion preserves the last snapshot and never advances', async () => {
+  const server = integrationServer({ override: ({ endpoint }) => endpoint.pathname === `${CONTRACT.jobsPath}/test-job_123`
+    ? json({ secret: 'private' }, 503) : undefined });
+  const result = await run(server.fetchImpl);
+  assert.equal(result.code, 1);
+  assert.equal(result.output, 'Sales sync failed: HTTP_FAILURE [stage: status] (HTTP 503)');
+  assert.equal(server.requests.length, 4);
+  assert.equal(server.saved(), null);
+});
+test('read network failure stops after three attempts without advancing', async () => {
+  const server = integrationServer({ override: ({ endpoint }) => {
+    if (endpoint.pathname === `${CONTRACT.jobsPath}/test-job_123`) throw new Error('private');
+  } });
+  const result = await run(server.fetchImpl);
+  assert.equal(result.code, 1);
+  assert.equal(server.requests.length, 4);
+  assert.equal(server.saved(), null);
+  assert.equal(result.output, 'Sales sync failed: NETWORK_OR_TIMEOUT_FAILURE');
+});
+for (const header of ['301', '-1', 'tomorrow', '1.5']) {
+  test(`invalid HTTP Retry-After ${header} is terminal`, async () => {
+    const server = integrationServer({ override: ({ endpoint }) => endpoint.pathname === `${CONTRACT.jobsPath}/test-job_123`
+      ? json({}, 429, { 'Retry-After': header }) : undefined });
+    const result = await run(server.fetchImpl);
+    assert.equal(result.code, 1);
+    assert.equal(server.requests.length, 2);
+    assert.equal(result.output, 'Sales sync failed: INVALID_HTTP_RETRY_AFTER [stage: status] (HTTP 429)');
+  });
+}
+test('read retries cannot exceed the overall deadline', async () => {
+  let clock = 0;
+  const server = integrationServer({ override: ({ endpoint }) => {
+    if (endpoint.pathname === `${CONTRACT.jobsPath}/test-job_123`) {
+      clock = CONTRACT.overallTimeoutMs - 500;
+      return json({}, 503);
+    }
+  } });
+  const result = await run(server.fetchImpl, { now: () => clock, sleep: async ms => { clock += ms; } });
+  assert.equal(result.code, 1);
+  assert.equal(result.output, 'Sales sync failed: OVERALL_TIMEOUT');
+  assert.equal(server.requests.length, 2);
+});
+for (const stage of ['start', 'advance']) {
+  test(`transient ${stage} POST is never retried`, async () => {
+    const server = integrationServer({ override: ({ endpoint, options }) =>
+      options.method === 'POST' && endpoint.origin === CONTRACT.allowedOrigin &&
+      (stage === 'start' ? endpoint.pathname === CONTRACT.jobsPath : endpoint.pathname.endsWith('/advance'))
+        ? json({}, 503) : undefined });
+    const result = await run(server.fetchImpl);
+    assert.equal(result.code, 1);
+    assert.equal(server.requests.length, stage === 'start' ? 1 : 3);
+    assert.equal(result.output, `Sales sync failed: HTTP_FAILURE [stage: ${stage}] (HTTP 503)`);
+  });
+}

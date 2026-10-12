@@ -1,0 +1,26 @@
+name: Sales runner regression
+on:
+  push:
+    branches: ['fix/sales-read-retries-20261013']
+  pull_request:
+    paths:
+      - 'scripts/sync-sales.mjs'
+      - 'scripts/publish-sales.mjs'
+      - 'scripts/sales-rules.mjs'
+      - 'tests/**'
+      - '.github/workflows/sales-runner-check.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run sales regressions with fixtures only
+        run: node --test tests/sync-sales.test.mjs tests/publish-sales.test.mjs tests/publish-sales-v2.test.mjs tests/sales-rules.test.mjs
