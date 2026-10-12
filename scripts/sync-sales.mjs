@@ -13,6 +13,9 @@ export const CONTRACT = Object.freeze({
   maximumPolls: 600,
   maximumRetryAfterSeconds: 300,
   maximumResponseBytes: 32_768,
+  maximumReadAttempts: 3,
+  readRetryBaseMs: 1_000,
+  readRetryHttpStatuses: Object.freeze([429, 502, 503, 504]),
   jobIdField: 'jobId',
   stateField: 'status',
   privateResultField: 'resultAvailable',
@@ -50,11 +53,12 @@ const ENV_FIELDS = Object.freeze([
 const REQUEST_STAGES = Object.freeze(['start', 'status', 'advance', 'result']);
 
 class SyncError extends Error {
-  constructor(code, status, stage, backendErrorCode) {
+  constructor(code, status, stage, backendErrorCode, retryAfterMs) {
     super(code);
     this.name = 'SyncError';
     this.code = code;
     this.status = status;
+    this.retryAfterMs = retryAfterMs;
     this.stage = REQUEST_STAGES.includes(stage) ? stage : undefined;
     this.backendErrorCode = CONTRACT.backendErrorCodes.includes(backendErrorCode) ? backendErrorCode : undefined;
   }
@@ -186,7 +190,18 @@ async function requestSummary(config, url, method, fetchImpl, timeoutMs, stage, 
   }
   if (!response.ok) {
     await response.body?.cancel().catch(() => {});
-    throw new SyncError('HTTP_FAILURE', response.status, stage);
+    let retryAfterMs;
+    if (method === 'GET' && CONTRACT.readRetryHttpStatuses.includes(response.status)) {
+      const header = response.headers.get('Retry-After');
+      if (header !== null) {
+        // Only bounded delta-seconds are accepted; an untrusted or excessive delay stops.
+        if (!/^\d+$/u.test(header) || Number(header) > CONTRACT.maximumRetryAfterSeconds) {
+          throw new SyncError('INVALID_HTTP_RETRY_AFTER', response.status, stage);
+        }
+        retryAfterMs = Number(header) * 1_000;
+      }
+    }
+    throw new SyncError('HTTP_FAILURE', response.status, stage, undefined, retryAfterMs);
   }
 
   try {
@@ -211,6 +226,32 @@ export async function synchronizeSales(config, {
     if (ms <= 0) throw new SyncError('OVERALL_TIMEOUT');
     return ms;
   };
+  // Retry only idempotent Site reads. Start/advance POSTs and Firebase writes keep
+  // their existing no-retry contract; blocked jobs such as ORDER_LIMIT_REACHED stop.
+  const readSummary = async (url, stage, maximumBytes = CONTRACT.maximumResponseBytes) => {
+    for (let attempt = 0; attempt < CONTRACT.maximumReadAttempts; attempt++) {
+      try {
+        const result = await requestSummary(config, url, 'GET', fetchImpl,
+          Math.min(CONTRACT.requestTimeoutMs, remaining()), stage, undefined, maximumBytes);
+        remaining();
+        return result;
+      } catch (error) {
+        const transient = error instanceof SyncError && (
+          error.code === 'NETWORK_OR_TIMEOUT_FAILURE'
+          || (error.code === 'HTTP_FAILURE' && CONTRACT.readRetryHttpStatuses.includes(error.status)));
+        if (!transient || attempt + 1 === CONTRACT.maximumReadAttempts) throw error;
+        const retryMs = Math.max(CONTRACT.readRetryBaseMs * 2 ** attempt, error.retryAfterMs ?? 0);
+        const budget = remaining();
+        if (budget <= retryMs) throw new SyncError('OVERALL_TIMEOUT');
+        try {
+          await sleep(retryMs, AbortSignal.timeout(Math.max(1, Math.floor(budget))));
+        } catch {
+          throw new SyncError('OVERALL_TIMEOUT');
+        }
+        remaining();
+      }
+    }
+  };
   // Exactly one start request. An uncertain POST result must never trigger a retry.
   const runDate = new Date(wallNow() + 9 * 60 * 60 * 1_000).toISOString().slice(0, 10);
   // Freeze the reporting date now; a run crossing Korean midnight keeps its period.
@@ -226,8 +267,7 @@ export async function synchronizeSales(config, {
     }
     // Sites published:false describes private storage; only our verified Firebase
     // write below may declare live publication. No response-supplied URL is used.
-    const snapshot = await requestSummary(config, `${pollUrl}/result`, 'GET', fetchImpl,
-      Math.min(CONTRACT.requestTimeoutMs, remaining()), 'result', undefined, PUBLISH_CONTRACT.maximumBytes);
+    const snapshot = await readSummary(`${pollUrl}/result`, 'result', PUBLISH_CONTRACT.maximumBytes);
     if (snapshot?.schemaVersion !== 2) throw new SyncError('SALES_SCHEMA_UPGRADE_REQUIRED');
     const result = await publishSalesSnapshot(snapshot, {
       env, fetchImpl, log, now, nowMs: wallNow(), budgetMs: remaining(), expectedPeriodEnd,
@@ -249,8 +289,7 @@ export async function synchronizeSales(config, {
     } catch {
       throw new SyncError('OVERALL_TIMEOUT');
     }
-    const current = readJob(await requestSummary(config, pollUrl, 'GET', fetchImpl,
-      Math.min(CONTRACT.requestTimeoutMs, remaining()), 'status'), started.jobId, lastRevision);
+    const current = readJob(await readSummary(pollUrl, 'status'), started.jobId, lastRevision);
     remaining();
     if (CONTRACT.completedStates.includes(current.state)) return publishReadyJob(current);
     // A successful advance processes the next bounded page/checkpoint. This is not a
