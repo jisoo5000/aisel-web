@@ -26,7 +26,7 @@
   const metric=returnMetric(snapshot);
   host.replaceChildren();
   const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
-  for(const label of ['상품명','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
+  for(const label of ['상품명 (판매순)','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
   const query=String(search||'').trim().toLocaleLowerCase('ko');
   for(const item of snapshot.items.filter(x=>{
    const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');

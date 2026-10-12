@@ -1,3 +1,4 @@
+<!-- v184: modest sales-column spacing and 상품명 (판매순) header only (2026-10-13) -->
 <!-- v183: empty retail-price input stays blank; existing separate 원 unit and pricing rules preserved (2026-10-13) -->
 <!-- v182: screen-only cost-table fit and plain fabric label; calculations, stored records and A4 preserved (2026-10-13) -->
 <!-- v180: use existing lightweight photo preview for design-meeting details; original and layout preserved (2026-10-12) -->
@@ -15057,8 +15058,8 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
 /* AISEL APP Core 1.0.0: screen layout only; the print contract stays unchanged. */
 @media screen {
  html:root body #salesView #salesTableBody .sheet-sales-grid {
-  display:grid!important;grid-template-columns:minmax(0,1fr) 24px 44px 34px 40px 44px!important;
-  column-gap:4px!important;row-gap:0!important;align-items:center;
+  display:grid!important;grid-template-columns:minmax(0,1fr) 24px 42px 34px 40px 44px!important;
+  column-gap:3px!important;row-gap:0!important;align-items:center;
   box-sizing:border-box;width:100%;min-width:0!important;height:36px!important;min-height:36px!important;
   padding:0!important;border-bottom:1px solid #E3E5E7;color:#34383C;font-size:12px!important;line-height:18px;
  }
@@ -15140,7 +15141,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   const metric=returnMetric(snapshot);
   host.replaceChildren();
   const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
-  for(const label of ['상품명','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
+  for(const label of ['상품명 (판매순)','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
   const query=String(search||'').trim().toLocaleLowerCase('ko');
   for(const item of snapshot.items.filter(x=>{
    const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
