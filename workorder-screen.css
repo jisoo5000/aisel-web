@@ -104,16 +104,22 @@
  html:root body #editorView #sheet #ph1 > .photo-src > button {box-sizing:border-box;width:52px;min-width:52px;height:28px;min-height:28px;padding:0 4px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;}
  html:root body #editorView #sheet > .photos > #ph1 {height:302px;padding-top:44px;}
 
- /* Cost values remain centered, totals right aligned, with narrow table overflow local. */
- html:root body #editorView #sheet #costCell .cost-table {min-width:360px;}
+ /* Fit the cost table inside the existing screen canvas; leave A4 widths unchanged. */
+ html:root body #editorView #sheet #costCell .cost-table {box-sizing:border-box;width:100%;max-width:100%;min-width:0;table-layout:fixed;}
  html:root body #editorView #sheet #costCell .cost-col-name {width:50px;}
- html:root body #editorView #sheet #costCell .cost-col-unit {width:154px;}
- html:root body #editorView #sheet #costCell .cost-col-qty {width:52px;}
- html:root body #editorView #sheet #costCell .cost-col-amount {width:72px;}
- html:root body #editorView #sheet #costCell .cost-col-delete {width:32px;}
- html:root body #editorView #sheet #costCell .cost-table :is(th,td).noprint {width:32px!important;padding:0;}
+ html:root body #editorView #sheet #costCell .cost-col-unit {width:auto;}
+ html:root body #editorView #sheet #costCell .cost-col-qty {width:46px;}
+ html:root body #editorView #sheet #costCell .cost-col-amount {width:70px;}
+ html:root body #editorView #sheet #costCell .cost-col-delete {width:28px;}
+ html:root body #editorView #sheet #costCell .cost-table :is(th,td).noprint {width:28px!important;padding:0;}
  html:root body #editorView #sheet #costCell .cost-table .del,
  html:root body #editorView #sheet .sizespec :is(.ss-col-del,.row-del) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:28px;min-width:28px;height:28px;min-height:28px;padding:0;border:0;border-radius:0;background:transparent;color:var(--aisel-muted);font-size:16px;line-height:16px;}
+ html:root body #editorView #sheet #costCell .cost-table .del {width:100%;min-width:0;max-width:28px;}
+ html:root body #editorView #sheet #costCell .cost-table input {width:100%;min-width:0;max-width:100%;}
+ html:root body #editorView #sheet #costCell .cost-table .nm-cell {position:relative;}
+ html:root body #editorView #sheet #costCell .cost-table .nm-cell:has(.cost-name-short) .nm:not(:focus) {color:transparent;}
+ html:root body #editorView #sheet #costCell .cost-table .cost-name-short {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:16px;line-height:24px;color:var(--aisel-ink);}
+ html:root body #editorView #sheet #costCell .cost-table .nm-cell:focus-within .cost-name-short {display:none;}
  html:root body #editorView #sheet #costCell .cost-table :is(th,td) {border:1px solid var(--aisel-line)!important;background:var(--aisel-bg);}
  html:root body #editorView #sheet #costCell .cost-pair,
  html:root body #editorView #sheet #costCell .cost-table .cost-pair {height:40px;min-height:40px;padding:2px;gap:4px;}
@@ -121,7 +127,7 @@
  html:root body #editorView #sheet #costCell .cost-pair input {border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);}
  html:root body #editorView #sheet #costCell .cost-pair input::placeholder {font-size:12px;font-weight:400;letter-spacing:0;color:var(--aisel-muted);}
  html:root body #editorView #sheet #costCell .cost-pair input.nego-price-empty {background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);}
- html:root body #editorView #sheet #costCell .cost-table .amt {font-size:16px;font-weight:400;line-height:24px;text-align:center;}
+ html:root body #editorView #sheet #costCell .cost-table .amt {box-sizing:border-box;max-width:100%;padding:5px 2px;font-size:14px;font-weight:400;line-height:24px;text-align:center;white-space:nowrap;overflow-wrap:normal;}
  html:root body #editorView #sheet #costCell :is(.total-row,.owner-retail-row) {border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);}
  html:root body #editorView #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {font-size:22px!important;font-weight:700;line-height:28px;text-align:right;}
  html:root body #editorView #sheet #costCell #targetThreshold {min-height:36px;height:36px;}

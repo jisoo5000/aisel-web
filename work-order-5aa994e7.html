@@ -1,4 +1,4 @@
-<!-- v181: simple reference capture and cached AI classification/reaction summaries; server deployment required (2026-10-12) -->
+<!-- v182: screen-only cost-table fit and plain fabric label; calculations, stored records and A4 preserved (2026-10-13) -->
 <!-- v180: use existing lightweight photo preview for design-meeting details; original and layout preserved (2026-10-12) -->
 <!-- v179: design-meeting detail photo, saved reference notes and verified review results; existing A4 and other screens preserved (2026-10-12) -->
 <!-- v177: reference content/product views and recoverable design-meeting deletion; existing A4 and workorder data preserved (2026-10-11) -->
@@ -5576,6 +5576,12 @@
       <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면 1" aria-label="완제품 1장당 소요량"></td>
       <td><span class="amt">0</span></td><td class="noprint"><button class="del" title="삭제">✕</button></td>`;
     row.querySelector(".nm").value=name;row.querySelector(".unit").value=unit;row.querySelector(".qty").value=qty;
+    // Compact the legacy label on screen without rewriting saved names or A4 content.
+    if(name==="원단(야드)"){
+      const label=document.createElement("span");label.className="cost-name-short noprint";label.textContent="원단";
+      row.querySelector(".nm-cell").append(label);
+      row.querySelector(".nm").addEventListener("input",()=>label.remove(),{once:true});
+    }
     negotiation_.displayInput(row.querySelector('.qty'),qty);
     row.negotiationEditor_=negotiation_.attachEditor(row.querySelector(".nego-material"),{
       title:()=>row.querySelector(".nm").value||"자재",legacy:()=>row.querySelector(".unit").value,quantity:()=>row.querySelector(".qty").value,
@@ -5586,7 +5592,7 @@
     linesWrap.appendChild(row);lineAmt(row);
   }
   // 로스 1,000원은 공임·시야게 아래의 고정 비용으로 한 번만 합산합니다.
-  [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
+  [["원단","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
   $("#addLine").addEventListener("click", ()=>{ makeLine(); calc(); autoPrice_(); save(); });
 
   // 단가/공임/시야게 자동 콤마 (.won)
@@ -16571,4 +16577,4 @@ window.AiselUnifiedAdapter={
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-collection.js?v=181"></script>
 <script src="unified-app.js?v=178"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=178" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=182" media="screen">
