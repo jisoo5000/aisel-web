@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- AISEL 제품 진행 현황 v31 (2026-10-12): 컬러 위치/번호 제거, 왼쪽 제작일 최신순 정렬. -->
 <!-- AISEL 제품 진행 현황 v30 (2026-10-12): 앱 코어 1.0.0, 버튼28·본문382·카드160, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v29 (2026-10-11): 과한 버튼/간격 축소, 상태필터 한 줄, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v28 (2026-10-11): 화면390px·2열·공통 글꼴/버튼/흰 배경; 기존 데이터·동작 보존. -->
@@ -374,6 +375,19 @@ function renderTabs(){
     : query ? "현재 탭과 관계없이 품명·품번으로 검색합니다. 최근 30일 판매중 상태도 포함합니다."
     : countOf(filter) ? current.desc(countOf(filter)) : current.empty;
 }
+function statusColorName_(value){
+  return String(value == null ? '' : value).trim().slice(0,80).replace(/^(?:(?:앞|뒤|위|아래|왼쪽|오른쪽)(?:에서|쪽)?\s*\d+\s*(?:번)?\s*|\d+\s*번\s*)+/,'').trim();
+}
+function productionDateKey_(entry){
+  var y = String(entry.yy || '').trim(), m = String(entry.mm || '').trim(), d = String(entry.dd || '').trim();
+  if(/^\d{4}$/.test(y) && /^\d{1,2}$/.test(m) && /^\d{1,2}$/.test(d)){
+    var check = new Date(Date.UTC(Number(y),Number(m)-1,Number(d)));
+    if(check.getUTCFullYear() === Number(y) && check.getUTCMonth()+1 === Number(m) && check.getUTCDate() === Number(d)){
+      return Number(y)*10000 + Number(m)*100 + Number(d);
+    }
+  }
+  return 0;
+}
 function rowsNow(){
   var needle = normalizeSearch(query);
   return Object.keys(all).map(function(code){return {code:code,e:all[code]};})
@@ -382,8 +396,7 @@ function rowsNow(){
       if(needle) return normalizeSearch(row.code).indexOf(needle) !== -1 || normalizeSearch(row.e.pumMyeong).indexOf(needle) !== -1;
       return filter === "sale" ? row.e.status === "sale" : ACTIVE.indexOf(row.e.status) !== -1 && (filter === "all" || row.e.status === filter);
     }).sort(function(a,b){
-      var aDate = String(a.e.createdAt || ""), bDate = String(b.e.createdAt || "");
-      return bDate.localeCompare(aDate) || b.code.localeCompare(a.code);
+      return productionDateKey_(b.e) - productionDateKey_(a.e) || b.code.localeCompare(a.code);
     });
 }
 function priceText_(entry){
@@ -528,7 +541,12 @@ function render(){
     appendField_(body,"blend","혼용률",entry.blend);
     var colors = document.createElement("div");colors.className = "colors";
     var colorLabel = document.createElement("span");colorLabel.className = "colors-label";colorLabel.textContent = "컬러";colors.appendChild(colorLabel);
-    var colorList = Array.isArray(entry.colors) ? entry.colors.filter(function(color){return color && String(typeof color === "object" ? color.n || "" : color).trim();}) : [];
+    var seenColors = new Set();
+    var colorList = Array.isArray(entry.colors) ? entry.colors.filter(function(color){
+      var name = color && statusColorName_(typeof color === "object" ? color.n : color);
+      if(!name || seenColors.has(name)) return false;
+      seenColors.add(name);return true;
+    }) : [];
     if(!colorList.length){
       var missing = document.createElement("span");missing.className = "blend";missing.textContent = "입력 필요";colors.appendChild(missing);
     }
@@ -537,7 +555,7 @@ function render(){
       var background = typeof color === "object" ? color.h : "";
       var foreground = typeof color === "object" ? color.t : "";
       if(background){chip.style.background = background;if(foreground) chip.style.color = foreground;if(foreground && foreground.toLowerCase() !== "#ffffff") chip.className += " light";}
-      chip.textContent = typeof color === "object" ? color.n : color;colors.appendChild(chip);
+      chip.textContent = statusColorName_(typeof color === "object" ? color.n : color);colors.appendChild(chip);
     });
     body.appendChild(colors);
     if(entry.status === "pdp" || entry.status === "sale"){

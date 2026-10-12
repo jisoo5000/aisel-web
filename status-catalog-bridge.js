@@ -7,12 +7,15 @@
   const rules = typeof module === 'object' && module.exports
     ? require('./status-pricing-rules.js') : root.AiselStatusPricing;
   const PATH = 'workorderStatusCatalog';
-  const FIELDS = ['status','updatedAt','createdAt','pumMyeong','factory','blend','selectedColors',
+  const FIELDS = ['status','updatedAt','createdAt','yy','mm','dd','pumMyeong','factory','blend','selectedColors',
     'cat','lines','gongim','siyage','targetThreshold','priceConfirmed','priceSource','arrivedAt','pdpReviewNeeded'];
   const ACTIVE = ['sampling','samplemgmt','planned','order','pdp'];
   const DAY = 86400000;
   const text = (v,max=500)=>String(v==null?'':v).trim().slice(0,max);
   const number = v=>Number(v)||0;
+  function colorName(value){
+    return text(value,80).replace(/^(?:(?:앞|뒤|위|아래|왼쪽|오른쪽)(?:에서|쪽)?\s*\d+\s*(?:번)?\s*|\d+\s*번\s*)+/,'').trim();
+  }
   function comparable(value){
     if(value==null)return null;
     if(Array.isArray(value))return value.length?value.map(comparable):null;
@@ -27,9 +30,9 @@
       number(source.updatedAt || source.createdAt)>0 && now-number(source.updatedAt||source.createdAt)<30*DAY);
   }
   function colorsFor(source,previousColors,lookup){
-    const previous = new Map((Array.isArray(previousColors)?previousColors:[]).filter(c=>c&&typeof c.n==='string').map(c=>[c.n,c]));
+    const previous = new Map((Array.isArray(previousColors)?previousColors:[]).filter(c=>c&&typeof c.n==='string').map(c=>[colorName(c.n),c]));
     const names = (Array.isArray(source.selectedColors)?source.selectedColors:[])
-      .map(c=>typeof c==='string'?text(c,80):c&&typeof c.n==='string'?text(c.n,80):'').filter(Boolean);
+      .map(c=>typeof c==='string'?colorName(c):c&&typeof c.n==='string'?colorName(c.n):'').filter(Boolean);
     return [...new Set(names)].slice(0,30).map(n=>{
       const info = typeof lookup==='function' ? lookup(n) : null;
       const old = previous.get(n), result={n};
@@ -57,7 +60,8 @@
       factory:text(source.factory,160),blend:text(source.blend),
       colors:colorsFor(source,sharedColors || previous && previous.colors,lookup),
       salePrice:decision.salePrice,priceState:decision.priceState,ruleVersion:decision.ruleVersion,
-      sourceUpdatedAt:number(source.updatedAt),createdAt:typeof source.createdAt==='number'?source.createdAt:text(source.createdAt,40),arrivedAt:text(source.arrivedAt,30)
+      sourceUpdatedAt:number(source.updatedAt),createdAt:typeof source.createdAt==='number'?source.createdAt:text(source.createdAt,40),
+      yy:text(source.yy,4),mm:text(source.mm,2),dd:text(source.dd,2),arrivedAt:text(source.arrivedAt,30)
     };
   }
   async function readSource(db,code){
