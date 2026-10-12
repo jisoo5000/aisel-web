@@ -311,3 +311,12 @@ adapter/서버/클라이언트10검사와 현재 비공개 bounded read21상품/
 실제 서버 오류는 `신상성과 표 머리글을 확인해 주세요.`였다. 기존 웹앱 주소를 유지한 Apps Script 버전8 배포 후 로그인 없는 실제응답21상품의6개필드·기간·전체비중·반품값을 원본과 전수 대조했다. 어댑터/서버/클라이언트/배지14검사·15내장스크립트 문법·화면9칩 통과. 실제 UI·원격·목차·백업 영수증은 [코어 등록 기록](https://github.com/jisoo5000/aisel-tools/blob/main/docs/core-registration-log.md#20261010-sales-header-recovery)에 분리한다. 이전 v154 배포대기·추정수령 지표는 당시 기록이며 현재 상태는 이 절과 JSON `headerCompatibilityRecovery20261010`이 우선한다.
 
 재발 대응은 서버 응답·실행 로그·현재 시트 머리글/지표 의미를 먼저 대조하고 어댑터와 앱 표시를 함께 수정한다. 소스코드 저장만으로 복구 완료라 하지 말고 같은 주소 새버전배포→로그인없는응답→실제앱목록/검색/상세/새로고침 순으로 검증한다. 임의 열 위치 fallback·다른 지표 선택·정적 판매자료 대체·원본 공개·새 예약을 추가하지 않는다.
+
+
+## 2026-10-13 주문 수집 한도 장애 후속
+
+최신 장애 점검과 운영 데이터 범위는 비공개 [MD 원본](https://github.com/jisoo5000/aisel-tools/blob/main/docs/sales-sync-incident-20261013.md)·[JSON 영수증](https://github.com/jisoo5000/aisel-tools/blob/main/docs/sales-sync-incident-20261013.json)에 기록한다. 과거 성공 기록으로 현재 수집 성공을 대신 판정하지 않는다.
+
+러너 [PR #1](https://github.com/jisoo5000/aisel-web/pull/1)은 main 반영 완료이며 클라우드 회귀 검사 186개를 통과했다. 상태·결과 GET의 일시적 조회 실패만 최대 3회, 전체 시간 제한 내에서 재시도한다. 시작/advance POST·Firebase PUT과 ORDER_LIMIT_REACHED 같은 terminal backend 실패는 자동 반복하지 않는다. 기존 완전성·ETag·기간·인증 검증은 유지한다.
+
+이 보완은 서버의 누적 주문 상한을 수정한 것이 아니다. 별도 서버 원본 수정·날짜별 분할 수집·운영 복구는 미완료이며 Firebase current/daily 현재 값과 별도 시트 경로의 최신성은 직접 검증하지 못했다. 상세 분할·중복 방지·재시도·복구 검토안은 비공개 원본을 따른다.
