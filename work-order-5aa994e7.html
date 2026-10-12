@@ -1,3 +1,4 @@
+<!-- v185: reload starts at header without suppressing back/user scroll; sales column gap2px only (2026-10-13) -->
 <!-- v184: modest sales-column spacing and 상품명 (판매순) header only (2026-10-13) -->
 <!-- v183: empty retail-price input stays blank; existing separate 원 unit and pricing rules preserved (2026-10-13) -->
 <!-- v182: screen-only cost-table fit and plain fabric label; calculations, stored records and A4 preserved (2026-10-13) -->
@@ -58,6 +59,34 @@
 <!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
+<script id="aisel-reload-position">
+(function(){
+ 'use strict';
+ const navigation=performance.getEntriesByType?.('navigation')[0];
+ const reloaded=navigation?navigation.type==='reload':performance.navigation?.type===1;
+ if(!reloaded||!('scrollRestoration' in history))return;
+ const events=new AbortController(),frames=new Set();
+ let active=true;
+ // Apply the app's existing manual history policy before Safari can restore a reload.
+ history.scrollRestoration='manual';
+ function release(){
+  if(!active)return;active=false;events.abort();
+  frames.forEach(cancelAnimationFrame);frames.clear();
+ }
+ function top(){if(active)window.scrollTo({top:0,left:0,behavior:'instant'});}
+ function nextFrame(callback){const id=requestAnimationFrame(()=>{frames.delete(id);if(active)callback();});frames.add(id);}
+ for(const type of ['pointerdown','touchstart','wheel','keydown','input'])
+  window.addEventListener(type,release,{capture:true,passive:true,signal:events.signal});
+ for(const type of ['popstate','pagehide'])
+  window.addEventListener(type,release,{capture:true,signal:events.signal});
+ document.addEventListener('DOMContentLoaded',top,{once:true,signal:events.signal});
+ window.addEventListener('pageshow',event=>{
+  if(event.persisted){release();return;}
+  top();nextFrame(()=>{top();nextFrame(top);});
+ },{once:true,signal:events.signal});
+ top();
+})();
+</script>
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <script id="aisel-ipad-layout-mode">
@@ -15059,7 +15088,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
 @media screen {
  html:root body #salesView #salesTableBody .sheet-sales-grid {
   display:grid!important;grid-template-columns:minmax(0,1fr) 24px 42px 34px 40px 44px!important;
-  column-gap:3px!important;row-gap:0!important;align-items:center;
+  column-gap:2px!important;row-gap:0!important;align-items:center;
   box-sizing:border-box;width:100%;min-width:0!important;height:36px!important;min-height:36px!important;
   padding:0!important;border-bottom:1px solid #E3E5E7;color:#34383C;font-size:12px!important;line-height:18px;
  }
