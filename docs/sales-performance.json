@@ -2160,5 +2160,26 @@
         "status": "remote_head_verified"
       }
     ]
+  },
+  "salesSyncIncident20261013": {
+    "status": "runner_hardened_backend_order_limit_unresolved",
+    "privateReceipt": "jisoo5000/aisel-tools/docs/sales-sync-incident-20261013.json",
+    "privateAnalysis": "jisoo5000/aisel-tools/docs/sales-sync-incident-20261013.md",
+    "runnerFix": {
+      "pr": "https://github.com/jisoo5000/aisel-web/pull/1",
+      "commit": "21a5ddc0391b27621504216c80798af15348501e",
+      "merged": true,
+      "testsPassed": 186,
+      "cloudVerified": true,
+      "getOnly": true,
+      "terminalBackendFailureRetried": false
+    },
+    "backendSourceRead": false,
+    "backendModified": false,
+    "liveRecoveryVerified": false,
+    "existingSalesDataWritten": false,
+    "existingCredentialsRotated": false,
+    "firebaseCurrentAndDailyReadback": "not_performed",
+    "separateSheetCollection": "not_verified"
   }
 }
