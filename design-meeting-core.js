@@ -27,15 +27,26 @@
     if(signature(c)!==signature(next)){next.inputVersion=(Number(c.inputVersion)||1)+1;next.reviewState=c.reviewRequestedVersion?'stale':'idle';}
     return next;
   }
-  function status(c,rows){
+  function reviewRow(c,rows){
+    if(!c)return undefined;
     const version=Number(c.inputVersion)||1;
-    const row=(rows||[]).find(r=>r.id===c.id&&Number(r.version)===version);
-    if(row?.state==='done'&&row.receipt&&row.reviewedAt)return 'done';
+    return (rows||[]).find(r=>r.id===c.id&&Number(r.version)===version);
+  }
+  function confirmedResult(c,rows){
+    const row=reviewRow(c,rows);
+    return row?.state==='done'&&row.receipt&&row.reviewedAt?row:undefined;
+  }
+  function status(c,rows){
+    const version=Number(c.inputVersion)||1,row=reviewRow(c,rows);
+    if(confirmedResult(c,rows))return 'done';
+    // A completed sheet row without its confirmation must never be presented
+    // as a completed review, even when a cached candidate says "done".
+    if(row?.state==='done')return 'blocked';
     if(row&&['running','queued','blocked','error'].includes(row.state))return row.state;
     if(c.reviewRequestedVersion&&Number(c.reviewRequestedVersion)!==version)return 'stale';
-    return c.reviewState||'idle';
+    return c.reviewState==='done'?'blocked':c.reviewState||'idle';
   }
   function rowKey(id,version){if(!/^[-\w]{8,100}$/.test(id)||!Number.isInteger(Number(version))||Number(version)<1)throw Error('후보 연결 정보를 확인해주세요.');return id+':'+version;}
-  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel,replacePhoto};
+  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel,replacePhoto,reviewRow,confirmedResult};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.AiselDesignMeetingCore=api;
 })(typeof window==='object'?window:globalThis);

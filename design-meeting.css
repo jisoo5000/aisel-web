@@ -1,4 +1,4 @@
-/* AISEL APP Core: 382px content, 28px filters and 160px list thumbnails; detail and print behavior are preserved. */
+/* AISEL APP Core: 382px content, 28px controls, 160px list / 240px detail photos. */
 @media screen {
  #designMeetingView{--aisel-control-height:28px;--aisel-icon-control-size:28px;--aisel-input-height:32px;--aisel-page-gutter:4px;--aisel-line:#e3e5e7;--aisel-soft:#f6f7f8;--aisel-muted:#6C727C;--aisel-radius:3px;--aisel-meta-size:11px;--aisel-meta-line:16px;--aisel-button-size:12px;--aisel-button-line:18px;--aisel-card-title-size:12px;--aisel-card-title-line:18px;box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width);margin:0 auto;padding:0 var(--aisel-page-gutter) calc(80px + env(safe-area-inset-bottom));background:var(--aisel-bg);color:var(--aisel-ink);font:400 var(--aisel-body)/22px var(--aisel-font)}
  html:root body #designMeetingView.noprint{--aisel-line:#E3E5E7;--aisel-muted:#6C727C;--aisel-radius:3px;--aisel-bg:#FFFFFF;--aisel-ink:#34383C;}
@@ -58,7 +58,7 @@
  .dm-detail-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding-bottom:4px}
  .dm-photos{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory}
  #designMeetingView .dm-photo{display:block;flex:0 0 100%;min-width:0;scroll-snap-align:start;padding:0;border:0;background:var(--aisel-bg)}
- .dm-photo img{display:block;width:100%;height:var(--dm-photo-height,160px);object-fit:contain;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius)}
+ .dm-photo img{display:block;width:100%;height:var(--dm-photo-height,240px);object-fit:contain;background:var(--aisel-bg);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius)}
  #dmAddPhotos{margin-top:8px}
  .dm-section-title{font-size:13px;font-weight:600;line-height:20px;margin:12px 0 4px}
  .dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;font-size:12px;line-height:18px;table-layout:fixed}
@@ -69,6 +69,24 @@
  .dm-additional strong{margin-right:12px}
  .dm-review-status{font-size:var(--aisel-meta-size);line-height:var(--aisel-meta-line);margin:4px 0}
  .dm-review-status:empty,#dmStatus:empty,#dmDetailSaveState:empty{display:none}
+ .dm-review-actions{display:flex;align-items:center;gap:4px;margin-top:4px}
+ .dm-review-actions:has(>button[hidden]):not(:has(>button:not([hidden]))){display:none}
+ #dmReferenceNotes{margin:12px 0 0;min-width:0}
+ .dm-reference-note+.dm-reference-note{margin-top:12px}
+ .dm-reference-header{display:flex;align-items:center;gap:4px;min-width:0;margin-bottom:8px}
+ .dm-reference-header h3{flex:1;min-width:0;margin:0;font-size:16px;font-weight:600;line-height:24px}
+ .dm-reference-date-field{position:relative;display:flex;align-items:center;justify-content:center;flex:0 0 108px;width:108px;min-width:0;height:28px;border:1px solid #E3E5E7;border-radius:3px;background:#FFFFFF}
+ .dm-reference-date-label{font-size:12px;font-weight:400;line-height:18px;white-space:nowrap;pointer-events:none}
+ .dm-reference-date-field:focus-within{outline:2px solid var(--aisel-focus);outline-offset:2px}
+ #designMeetingView .dm-reference-date{position:absolute;inset:0;display:block;box-sizing:border-box;width:100%;min-width:0;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px;font-weight:400;cursor:pointer}
+ #designMeetingView :is(.dm-reference-delete,.dm-reference-add){flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0}
+ .dm-reference-delete svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+ #designMeetingView .dm-reference-add{font-size:20px;font-weight:500}
+ #designMeetingView .dm-reference-text{display:block;box-sizing:border-box;width:100%;height:120px;min-height:120px;resize:vertical;margin:0;padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#FFFFFF;color:var(--aisel-ink);font-family:var(--aisel-font);font-size:16px;font-weight:400;line-height:24px}
+ #designMeetingView .dm-reference-text:focus-visible{outline:2px solid var(--aisel-focus);outline-offset:2px}
+ .dm-reference-save{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:4px}
+ #dmReferenceSaveState{font-size:11px;line-height:16px;color:var(--aisel-muted)}
+ .dm-reference-save:has(#dmReferenceSaveState:empty):has(#dmReferenceRetry[hidden]){display:none}
  .dm-detail-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex-shrink:0;gap:4px;margin:0;padding:8px 0 max(8px,env(safe-area-inset-bottom));border-top:1px solid var(--aisel-line);background:var(--aisel-bg)}
  .dm-detail-actions button{width:100%;min-width:0;height:var(--aisel-control-height)}
  #dmDetailSaveState,#dmStatus{font-size:var(--aisel-meta-size);font-weight:400;line-height:var(--aisel-meta-line);overflow-wrap:anywhere}
