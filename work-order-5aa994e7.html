@@ -1,3 +1,4 @@
+<!-- v183: empty retail-price input stays blank; existing separate 원 unit and pricing rules preserved (2026-10-13) -->
 <!-- v182: screen-only cost-table fit and plain fabric label; calculations, stored records and A4 preserved (2026-10-13) -->
 <!-- v180: use existing lightweight photo preview for design-meeting details; original and layout preserved (2026-10-12) -->
 <!-- v179: design-meeting detail photo, saved reference notes and verified review results; existing A4 and other screens preserved (2026-10-12) -->
@@ -3764,7 +3765,7 @@
           </div>
           <div class="targetbox-field">
             <span class="flbl">판매가</span>
-            <input type="text" id="targetThreshold" class="won tnum" value="" placeholder="아직 안 정함" /><!-- 2026-09-20: 기본값 59,000 을 지웠습니다. 아무도 안 건드렸는데 저장되면 "정한 값"으로 오해받았습니다 -->
+            <input type="text" id="targetThreshold" class="won tnum" value="" placeholder="" /><!-- 2026-09-20: 기본값 59,000 을 지웠습니다. 아무도 안 건드렸는데 저장되면 "정한 값"으로 오해받았습니다 -->
           </div>
           <div class="targetbox-field">
             <span class="flbl">계산값 (제조원가×4)</span>
@@ -5713,7 +5714,7 @@
       showPriceReview_(cost); return;
     }
     $("#targetThreshold").value=r.autoPrice ? r.autoPrice.toLocaleString("en-US") : "";
-    $("#targetThreshold").placeholder=r.review ? "98,000원 초과 · 직접 입력" : "원가 입력 후 계산";
+    $("#targetThreshold").placeholder="";
     priceConfirmed_=!!r.autoPrice; priceSource_=r.autoPrice ? "auto" : "";
     calc(); if(persist !== false) save();
   }
