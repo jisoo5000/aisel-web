@@ -203,10 +203,10 @@
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg {flex:0 0 auto;gap:4px;}
 }
 
-/* v192: equal contact columns stay beside the sheet title while editing. */
+/* v194: keep equal contact columns inline with 8px clearance after the title. */
 @media screen {
  html:root body #editorView #sheet > .title-row,
- html:root body #editorView #sheet > .title-row.mobile-name-editing {grid-template-columns:max-content minmax(0,1fr);}
+ html:root body #editorView #sheet > .title-row.mobile-name-editing {grid-template-columns:max-content minmax(0,1fr);column-gap:8px;}
  html:root body #editorView #sheet > .title-row h1 {white-space:nowrap;}
  html:root body #editorView #sheet > .title-row #mobileHeaderNames,
  html:root body #editorView #sheet > .title-row.mobile-name-editing #mobileHeaderNames {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-column:2;grid-row:1;gap:4px;width:100%;max-width:100%;min-width:0;padding:0;align-items:center;}
