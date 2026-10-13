@@ -300,12 +300,13 @@
        if(photos.some(p=>p.hash===hash))continue;
        const reusable=Object.values(cards).flatMap(C.photos).find(p=>p.hash===hash&&p.original&&p.thumb);
        if(reusable){photos.push({...reusable});continue;}
-       const thumb=await thumbnail(file);
-       // Original bytes preserve tall screenshots and small lettering. No resizing of existing workorder photos.
+       const prepared=await AiselPhoto.prepare(file,'collection');
+       const thumb=await thumbnail(prepared.blob);
+       // Automatic bounds retain tall screenshots; existing stored originals are not rewritten.
        const encode=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});
-       const original=(await bridge('upload',[],{id:item.id,hash,kind:'original',mime:file.type,data:await encode(file)})).photo.url;
+       const original=(await bridge('upload',[],{id:item.id,hash,kind:'original',mime:prepared.blob.type,data:await encode(prepared.blob)})).photo.url;
        const small=(await bridge('upload',[],{id:item.id,hash,kind:'thumb.jpg',mime:'image/jpeg',data:await encode(thumb.blob)})).photo.url;
-       photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:file.size,thumbBytes:thumb.blob.size});
+       photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});
      }
      const out=await ROOT.child(item.id).transaction(c=>{
        if(isDeleted(c))return;

@@ -1,3 +1,4 @@
+<!-- v189: lightweight durable text drafts and automatic photo compression (2026-10-13) -->
 <!-- v188: clear the missing-record draft guard only after confirmed new-record creation (2026-10-13) -->
 <!-- v187: editor title, sample name, two default materials and durable save recovery; v186:  mobile-first release verification; single late reload recovery and consistent sales text-column alignment (2026-10-13) -->
 <!-- v185: reload starts at header without suppressing back/user scroll; sales column gap2px only (2026-10-13) -->
@@ -5229,6 +5230,8 @@
   }
 </script>
 
+<script src="workorder-draft-storage.js?v=189"></script>
+<script src="aisel-photo.js?v=189"></script>
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -5831,25 +5834,22 @@
     // 일부 브라우저/기기에서는 file.type이 빈 문자열로 넘어오는 경우가 있어 확장자로도 한 번 더 확인
     return /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(file.name || "");
   }
-  function loadImgFile(file, box){
-    if(!file) return;
-    if(!looksLikeImage_(file)){ alert("이미지 파일이 아닌 것 같습니다. 사진(jpg/png 등) 파일을 선택해주세요."); return; }
-    const r = new FileReader();
-    r.onload = e => {
-      // 2026-08-13 수정: 가로 1000px -> 800px로 낮춰 저장 용량을 줄입니다.
-      // 사진 판독(셀링포인트 자동 선택)에 쓰이는 사진이라 너무 낮추면 정확도가 떨어질 수 있어
-      // 800px까지만 낮췄습니다. 화질 80%는 그대로 유지합니다.
-      makeThumbnail(e.target.result, 800, 0.8, medium => {
-        box.querySelector("img").src = medium; box.classList.add("filled");
-        makeThumbnail(e.target.result, 320, 0.6, thumb=>{ box.dataset.thumb = thumb; setTimeout(save,150); });
-        // 2026-08-13 추가: 작지 도식화 칸에 사진이 들어오면 자동으로 읽어서
-        // 셀링포인트·아이템명·고유명을 채웁니다. (다른 사진 칸은 판독하지 않음)
-        if(box.id === "ph1" && window.analyzeWorkOrderPhoto_){
-          window.analyzeWorkOrderPhoto_(medium);
-        }
-      });
-    };
-    r.readAsDataURL(file);
+  async function loadImgFile(file, box){
+    if(!file)return;
+    if(!looksLikeImage_(file)){alert("이미지 파일이 아닌 것 같습니다. 사진 파일을 선택해주세요.");return;}
+    const token=Symbol('photo'),code=currentCode,ref=woRef,pending=codePending_;
+    box.photoRequest_=token;
+    const current=()=>box.photoRequest_===token&&currentCode===code&&woRef===ref&&codePending_===pending&&isViewVisible_("editorView");
+    try{
+      const prepared=await AiselPhoto.prepare(file,'workorder');
+      const small=await AiselPhoto.prepare(prepared.blob,'workorderThumb');
+      const [photo,thumb]=await Promise.all([AiselPhoto.dataURL(prepared.blob),AiselPhoto.dataURL(small.blob)]);
+      if(!current())return;
+      box.querySelector('img').src=photo;box.dataset.thumb=thumb;box.classList.add('filled');
+      // Capture the new image before AI/category work or a later navigation.
+      saveSoon();
+      if(box.id==='ph1'&&window.analyzeWorkOrderPhoto_)window.analyzeWorkOrderPhoto_(photo);
+    }catch(error){if(current())alert(error.message||'사진을 처리하지 못했습니다. 기존 사진을 유지했습니다.');}
   }
   let pasteBox = null;
   document.querySelectorAll(".photo").forEach(box=>{
@@ -5862,7 +5862,7 @@
     box.addEventListener("mouseenter", ()=> pasteBox = box);
     box.querySelector(".clr").addEventListener("click", e=>{
       e.preventDefault(); e.stopPropagation();
-      box.querySelector("img").removeAttribute("src"); box.classList.remove("filled");
+      box.photoRequest_=null;box.querySelector("img").removeAttribute("src"); box.classList.remove("filled");
       box.dataset.thumb = "";
       inp.value=""; save();
     });
@@ -5895,7 +5895,7 @@
       const pos = colInput.selectionStart;
       colInput.value = colInput.value.toUpperCase();
       colInput.setSelectionRange(pos, pos);
-      save();
+      saveSoon();
     });
     colInput.addEventListener("blur", ()=>{
       const v = colInput.value.trim();
@@ -7024,7 +7024,7 @@
     st.sampleRecoveryStatus = sampleRecoveryStatus;
     st.sampleFactorySentDate = sampleFactorySentDate;
     st.sampleReturnedDate = sampleReturnedDate;
-    st.resampleHistory = JSON.parse(JSON.stringify(resampleHistory_));
+    st.resampleHistory = AiselDraftStorage.clone(resampleHistory_);
     st.pdpRows = window.getPdpRows_ ? window.getPdpRows_() : [];
     // 2026-08-13 추가: 핵심 키워드와 비고 칸도 작지별로 저장합니다.
     // 예전에는 이 두 칸이 저장 대상에 없어서 작지를 바꿔도 안 지워지고 화면에 계속 남았습니다.
@@ -7063,7 +7063,7 @@
     if(a === b) return true;
     if((ta === "string" || ta === "number" || ta === "boolean") &&
        (tb === "string" || tb === "number" || tb === "boolean")) return false;
-    try{ return JSON.stringify(a) === JSON.stringify(b); }catch(e){ return false; }
+    try{ return AiselDraftStorage.equal(a,b); }catch(e){ return false; }
   }
   function buildPatch_(oldSt, newSt){
     const patch = {};
@@ -7131,7 +7131,7 @@
     }catch(_){return 'local-browser:designer';}
   }
   function draftSnapshot_(value){
-    const result=JSON.parse(JSON.stringify(value||{}));
+    const result=AiselDraftStorage.clone(value||{});
     if(document.getElementById('ownerRetailRow')?.hidden!==false){
       for(const key of ['targetThreshold','priceConfirmed','priceSource','priceException'])delete result[key];
     }
@@ -7152,13 +7152,11 @@
   }
   async function draftTransaction_(mode,operation){
     const db=await openDraftDatabase_();
-    return new Promise((resolve,reject)=>{
-      let result;
-      const tx=db.transaction('drafts',mode),store=tx.objectStore('drafts');
-      const timer=setTimeout(()=>{try{tx.abort();}catch(_){}reject(new Error('기기 저장을 확인하지 못했습니다'));},4000);
-      tx.oncomplete=()=>{clearTimeout(timer);resolve(result);};tx.onerror=tx.onabort=()=>{clearTimeout(timer);reject(tx.error||new Error('기기 저장 실패'));};
-      try{const req=operation(store);if(req)req.onsuccess=()=>{result=req.result;};}catch(error){try{tx.abort();}catch(_){}reject(error);}
-    });
+    return AiselDraftStorage.transaction(db,mode,operation);
+  }
+  let draftCleanupTimer_=null;
+  function scheduleDraftCleanup_(){
+    clearTimeout(draftCleanupTimer_);draftCleanupTimer_=setTimeout(()=>{draftCleanupTimer_=null;if(draftDatabase_)AiselDraftStorage.cleanup(draftDatabase_).catch(()=>{});},2000);
   }
   function currentDraft_(ctx){return !!ctx&&activeDraft_===ctx&&ctx.code===currentCode&&ctx.owner===draftOwner_();}
   function mobileDraftMode_(){return workOrderLayoutMedia_('screen and (max-width:600px)').matches;}
@@ -7224,6 +7222,7 @@
     const record=localDraftRecord_(ctx);ctx.record=record;ctx.local='pending';renderDraft_(ctx);
     return draftQueue_(ctx,async()=>{
       await ctx.ready;
+      if(ctx.dirty&&ctx.revision>record.revision)return;
       try{
         await draftTransaction_('readwrite',store=>store.put(record));
         if(ctx.dirty&&ctx.revision===record.revision){ctx.local='saved';renderDraft_(ctx);}
@@ -7237,17 +7236,17 @@
     const changed=Object.keys(buildPatch_(base,draftSnapshot_(data))).filter(key=>!draftIgnored_.has(key));
     if(!changed.length&&!ctx.dirty)return ctx;
     if(ctx.data){const a=draftSnapshot_(ctx.data),b=draftSnapshot_(data);for(const key of draftIgnored_){delete a[key];delete b[key];}if(sameValue_(a,b))return ctx;}
-    if(!ctx.dirty){ctx.base=base===null?null:JSON.parse(JSON.stringify(base));ctx.delayed=false;clearTimeout(ctx.pendingTimer);ctx.pendingTimer=setTimeout(()=>{if(ctx.dirty){ctx.delayed=true;renderDraft_(ctx);}},3000);}
-    ctx.data=JSON.parse(JSON.stringify(data));ctx.dirty=true;ctx.revision++;
+    if(!ctx.dirty){ctx.base=base===null?null:AiselDraftStorage.clone(base);ctx.delayed=false;clearTimeout(ctx.pendingTimer);ctx.pendingTimer=setTimeout(()=>{if(ctx.dirty){ctx.delayed=true;renderDraft_(ctx);}},3000);}
+    ctx.data=AiselDraftStorage.clone(data);ctx.dirty=true;ctx.revision++;
     persistDraft_(ctx);return ctx;
   }
   function acknowledgeDraft_(ctx,sent){
     if(!ctx||!ctx.dirty||ctx.owner!==draftOwner_())return;
     const difference=Object.keys(buildPatch_(draftSnapshot_(sent),draftSnapshot_(ctx.data))).filter(key=>!draftIgnored_.has(key));
-    if(difference.length){ctx.base=JSON.parse(JSON.stringify(sent));ctx.revision++;persistDraft_(ctx);return;}
+    if(difference.length){ctx.base=AiselDraftStorage.clone(sent);ctx.revision++;persistDraft_(ctx);return;}
     if(ctx.candidate?.id===ctx.id){ctx.candidate=null;ctx.candidates=ctx.candidates.filter(r=>r.id!==ctx.id);}
     const revision=ctx.revision,restored=ctx.restoredIds||[];ctx.dirty=false;ctx.data=null;ctx.record=null;ctx.local='idle';ctx.restoredIds=[];ctx.delayed=false;clearTimeout(ctx.pendingTimer);renderDraft_(ctx);
-    draftQueue_(ctx,async()=>{if(ctx.revision!==revision||ctx.dirty)return;await draftTransaction_('readwrite',store=>{store.delete(ctx.id);for(const id of restored)store.delete(id);});}).catch(()=>{});
+    draftQueue_(ctx,async()=>{if(ctx.revision!==revision||ctx.dirty)return;await draftTransaction_('readwrite',store=>{store.delete(ctx.id);for(const id of restored)store.delete(id);});scheduleDraftCleanup_();}).catch(()=>{});
   }
   function draftValueText_(value){
     if(value===null||value===undefined||value==='')return '비어 있음';
@@ -7527,7 +7526,8 @@
   const pendingSaveWrites_ = new Set();
   let initialCreationWrite_=null,initialCreationRef_=null;
   function rejectEditorSave_(reason){const state=editorSaveState_();state.queued=false;state.result=false;state.confirmed=false;state.blockReason=reason;renderEditorSaveState_(state);return false;}
-  function save(){
+  function save(event){
+    if(event?.type==='input'){saveSoon();return false;}
     if(loading || !woRef || statusChanging_)return false;
     normalizePendingBlend_();
     const draftContext=captureDraft_();
@@ -7672,6 +7672,7 @@
 
   function setPhoto(boxSel, src, thumb){
     const box = document.querySelector(boxSel);
+    if(box.querySelector("img").getAttribute("src")!==(src||null))box.photoRequest_=null;
     const img = box.querySelector("img");
     // 2026-08-13 추가: 사진 주소가 지금과 같으면 다시 대입하지 않습니다.
     // img.src를 다시 쓰면 브라우저가 사진을 처음부터 다시 그려서 화면이 번쩍입니다.
@@ -16621,7 +16622,7 @@ window.AiselDesignMeetingAdapter={
 </script>
 <script src="design-meeting-core.js?v=179"></script>
 <script src="design-meeting-notes.js?v=179"></script>
-<script src="design-meeting.js?v=187"></script>
+<script src="design-meeting.js?v=189"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16648,6 +16649,6 @@ window.AiselUnifiedAdapter={
 };
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
-<script src="reference-collection.js?v=181"></script>
+<script src="reference-collection.js?v=189"></script>
 <script src="unified-app.js?v=186"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=187" media="screen">

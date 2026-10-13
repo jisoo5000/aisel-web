@@ -39,6 +39,7 @@
 <p id="status" role="status" aria-live="polite">초안을 확인하고 있습니다…</p>
 <div class="actions"><button id="backup" disabled>초안 파일 내려받기</button><button id="refresh">다시 확인</button></div>
 <section id="records"></section><p id="next" hidden>내려받은 JSON 파일을 보관하고 이 대화에 첨부해 주세요. 현재 창은 그대로 유지해 주세요.</p>
+<script src="workorder-draft-storage.js?v=189"></script>
 <script>
 'use strict';
 const code=new URL(location.href).searchParams.get('code')||'';
@@ -52,7 +53,8 @@ req.onsuccess=()=>{clearTimeout(timer);resolve(req.result);};});}
 async function read(){backup.disabled=true;records=[];list.replaceChildren();document.getElementById('next').hidden=true;
 if(!/^[A-Za-z0-9_-]{4,80}$/.test(code)){status.textContent='품번을 확인해주세요. 기존 창은 유지해주세요.';return;}
 let db;try{db=await database();const all=await new Promise((resolve,reject)=>{const tx=db.transaction('drafts','readonly'),r=tx.objectStore('drafts').getAll();let value;r.onsuccess=()=>value=r.result;tx.oncomplete=()=>resolve(value);tx.onerror=tx.onabort=()=>reject(tx.error||Error('초안을 읽지 못했습니다.'));});
-records=all.filter(r=>r.schema===1&&r.code===code&&r.values).sort((a,b)=>b.savedAt-a.savedAt);
+const hydrated=await AiselDraftStorage.hydrate(db,all.filter(r=>(r.schema===1||r.schema===2)&&r.code===code&&r.values));
+records=hydrated.filter(r=>r.schema===1&&r.code===code&&r.values).sort((a,b)=>b.savedAt-a.savedAt);
 status.textContent=records.length?'보관된 초안 '+records.length+'개를 찾았습니다. 먼저 파일로 내려받아 주세요.':'이 품번의 초안을 찾지 못했습니다. 작성 중인 창은 유지하고 이 결과를 알려주세요.';
 for(const r of records){const card=document.createElement('article'),title=document.createElement('h2'),info=document.createElement('p'),cost=document.createElement('small');title.textContent=r.values.pumMyeong||'이름 없는 작지';info.textContent=new Date(r.savedAt).toLocaleString('ko-KR')+' · 사진 '+(r.values.p1?'있음':'없음');cost.textContent='원가 항목 '+(Array.isArray(r.values.lines)?r.values.lines.length:0)+'개 · 공임 '+(r.values.gongim||'빈칸')+' · 시야게 '+(r.values.siyage||'빈칸');card.append(title,info,cost);list.append(card);}backup.disabled=!records.length;
 }catch(e){status.textContent=e.message||'초안 확인 실패. 기존 창은 유지해주세요.';}finally{db?.close();}}
