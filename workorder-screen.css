@@ -215,3 +215,10 @@
  html:root body #editorView #sheet #mobileHeaderNames .mobile-contact-name {height:28px;min-height:28px;padding:0 2px;}
  html:root body #editorView #sheet #mobileHeaderNames :is(#designer,#factory).mobile-name-editor {width:100%!important;min-width:0;height:28px;min-height:28px;padding:2px;font-size:16px!important;line-height:22px;}
 }
+
+/* v195: keep the 50px item column; fit two, three and four Korean characters. */
+@media screen {
+ html:root body #editorView #sheet #costCell .cost-table .nm[data-cost-name-size="16"] {font-size:16px!important;}
+ html:root body #editorView #sheet #costCell .cost-table .nm[data-cost-name-size="14"] {font-size:14px!important;}
+ html:root body #editorView #sheet #costCell .cost-table .nm[data-cost-name-size="12"] {font-size:12px!important;}
+}

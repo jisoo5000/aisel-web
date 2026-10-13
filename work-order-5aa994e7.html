@@ -1,3 +1,4 @@
+<!-- v195: fit short cost item names with screen-only 16/14/12px typography -->
 <!-- v194: add breathing room between the sheet title and equal contact columns -->
 <!-- v193: recognize taupe brown aliases using the existing taupe swatch -->
 <!-- v192: equal inline designer/factory columns and compact sample-name text -->
@@ -5623,7 +5624,14 @@
     fixed:true,title:()=>id==="gongim"?"공임":"시야게",legacy:()=>$("#"+id).value,quantity:()=>1,worker:()=>$("#designer").value,
     get:()=>fixedNegotiations_()[id],set:value=>{$("#costNegotiationData").value=JSON.stringify({...fixedNegotiations_(),[id]:value});},change:()=>{calc();autoPrice_();save();}
   })));
+  // Screen-only name sizing; preserve stored text, cost calculations and A4 typography.
+  function updateCostNameSize_(row){
+    const input=row.querySelector(".nm");
+    const length=Array.from(input.value.normalize("NFC")).length;
+    input.dataset.costNameSize=length<=2?"16":length===3?"14":"12";
+  }
   function lineAmt(row){
+    updateCostNameSize_(row);
     const result=negotiation_.evaluate(row.querySelector(".unit").value,row.negotiation_,row.querySelector(".qty").value);
     // Keep legacy loss records and stable IDs for save/reopen; apply the fixed loss once.
     const legacyLoss=negotiation_.isFixedLossLine(readCostRow_(row));
@@ -16658,4 +16666,4 @@ window.AiselUnifiedAdapter={
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-collection.js?v=189"></script>
 <script src="unified-app.js?v=186"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=194" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=195" media="screen">
