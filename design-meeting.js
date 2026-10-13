@@ -471,7 +471,9 @@
    await window.AiselAuth?.ready?.({allowGuardRequest:true});
    const stamp=authStamp(),token=await memberToken();assertAuth(stamp);
    if(action==='enqueue'&&ids.some(id=>isDeleted(current(id))))throw deletionError();
-   const response=await fetch(BRIDGE,{signal:AbortSignal.timeout(15000),method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...extra,action,ids,token}),redirect:'follow'});
+   // Reference requests include Apps Script cold starts, photo storage and verified Sheet readback.
+   const timeoutMs=['refAccess','refEnsure','refList','refGet','refSave','refUpload','refArchive'].includes(action)?60000:15000;
+   const response=await fetch(BRIDGE,{signal:AbortSignal.timeout(timeoutMs),method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...extra,action,ids,token}),redirect:'follow'});
    if(!response.ok)throw Error('시트 응답 확인 실패');const data=await response.json();assertAuth(stamp);if(!data.ok)throw Object.assign(Error(data.error||'시트 저장 확인 실패'),{code:data.code});
    if(Array.isArray(data.results)&&data.results.length){
      const merged=new Map(results.map(row=>[C.rowKey(row.id,row.version),row]));
