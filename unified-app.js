@@ -39,7 +39,50 @@
  window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;if(e.detail.uid!==undefined&&e.detail.uid!==window.AiselAuth?.currentUser()?.uid)return;if(e.detail.generation!==undefined&&e.detail.generation!==window.AiselAuth?.generation)return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
  function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=186';pane.append(frame);}
+
+ // The product list scrolls inside an iframe. Wheel/touch events over the shell's
+ // header or side gutters belong to the parent document and never reach it.
+ // Forward only those gestures; native gestures inside the iframe stay native.
+ function productScrollRoot(){
+  if(current!=='products'||!frame||pane.hidden)return null;
+  try{
+   const doc=frame.contentDocument,win=frame.contentWindow;
+   if(!doc?.body||doc.querySelector('.viewer.on,dialog[open]'))return null;
+   const root=doc.scrollingElement||doc.documentElement;
+   if(win.getComputedStyle(doc.body).overflowY==='hidden')return null;
+   return root.scrollHeight>win.innerHeight+1?root:null;
+  }catch(_){return null;}
+ }
+ function shellGestureBlocked(target){
+  return !!document.querySelector('dialog[open]')||!!target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
+ }
+ function moveProductBy(delta){
+  const root=productScrollRoot();if(!root||!Number.isFinite(delta)||!delta)return false;
+  const before=root.scrollTop,limit=Math.max(0,root.scrollHeight-root.ownerDocument.defaultView.innerHeight);
+  root.scrollTop=Math.max(0,Math.min(limit,before+delta));
+  return Math.abs(root.scrollTop-before)>.1;
+ }
+ document.addEventListener('wheel',event=>{
+  if(event.defaultPrevented||event.ctrlKey||event.metaKey||shellGestureBlocked(event.target)||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
+  const scale=event.deltaMode===1?18:event.deltaMode===2?(frame?.contentWindow?.innerHeight||innerHeight):1;
+  if(moveProductBy(event.deltaY*scale))event.preventDefault();
+ },{passive:false});
+ let productTouch=null;
+ document.addEventListener('touchstart',event=>{
+  productTouch=event.touches.length===1&&productScrollRoot()&&!shellGestureBlocked(event.target)?
+   {x:event.touches[0].clientX,y:event.touches[0].clientY}:null;
+ },{passive:true});
+ document.addEventListener('touchmove',event=>{
+  if(!productTouch||event.touches.length!==1||event.defaultPrevented)return;
+  const touch=event.touches[0],dx=touch.clientX-productTouch.x,dy=productTouch.y-touch.clientY;
+  if(Math.abs(dx)>Math.abs(dy)){productTouch=null;return;}
+  if(Math.abs(dy)<4)return;
+  if(moveProductBy(dy))event.preventDefault();
+  productTouch={x:touch.clientX,y:touch.clientY};
+ },{passive:false});
+ for(const name of ['touchend','touchcancel'])document.addEventListener(name,()=>{productTouch=null;},{passive:true});
+
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=197';pane.append(frame);}
  function select(view){
   current=view;
   $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';

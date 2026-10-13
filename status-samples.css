@@ -138,7 +138,7 @@
   html body .aisel-status .state {height:var(--aisel-badge-height);min-height:var(--aisel-badge-height);align-items:center;padding:2px 8px;margin-bottom:0;border:0;border-radius:var(--aisel-radius);font-size:12px;font-weight:500;line-height:18px;gap:0;}
   html body .aisel-status .state::before {display:none;content:none;}
   html body .aisel-status .state[aria-label*='발주생산'] {background:var(--aisel-order-bg)!important;color:var(--aisel-order-ink)!important;}
-  html body .aisel-status .chip {display:inline-flex;align-items:center;min-height:var(--aisel-chip-height);padding:1px 5px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);font-size:12px;font-weight:500;line-height:18px;}
+  html body .aisel-status .chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px;min-height:22px;padding:2px 5px;border:0;border-radius:var(--aisel-radius);font-size:12px;font-weight:500;line-height:18px;}
   html body .aisel-status .arrive-row {margin-top:4px;padding-top:0;gap:4px;}
   html body .aisel-status .workorder-open {margin-top:4px;width:100%;cursor:pointer;}
   html body .aisel-status :is(.arrive-btn,.workorder-open) {height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;}

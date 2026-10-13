@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<!-- AISEL 제품 진행 현황 v31 (2026-10-12): 컬러 위치/번호 제거, 왼쪽 제작일 최신순 정렬. -->
+<!-- AISEL 제품 진행 현황 v32 (2026-10-14): 카드 상태배지/컬러 라벨 제거, 작지 컬러칩 규격 일치. -->
 <!-- AISEL 제품 진행 현황 v30 (2026-10-12): 앱 코어 1.0.0, 버튼28·본문382·카드160, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v29 (2026-10-11): 과한 버튼/간격 축소, 상태필터 한 줄, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v28 (2026-10-11): 화면390px·2열·공통 글꼴/버튼/흰 배경; 기존 데이터·동작 보존. -->
@@ -100,7 +100,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 <link rel="stylesheet" href="aisel-ui.css?v=178" />
-<link rel="stylesheet" href="status-samples.css?v=178" />
+<link rel="stylesheet" href="status-samples.css?v=197" />
 
 <style id="aisel-status-embedded-style">
 @media screen {
@@ -533,14 +533,11 @@ function render(){
     card.appendChild(thumb);
     var body = document.createElement("div");body.className = "body";
     var state = stateOf(entry.status);
-    var badge = document.createElement("span");badge.className = "state";
-    badge.style.background = state.bg;badge.style.color = state.fg;badge.textContent = entry.status === "pdp" ? "PDP · 생성 대기" : state.label;badge.setAttribute("aria-label","현재 상태: " + badge.textContent);body.appendChild(badge);
     var name = document.createElement("div");name.className = "name";name.textContent = entry.pumMyeong || "품명 입력 필요";name.title = name.textContent;body.appendChild(name);
     var code = document.createElement("div");code.className = "code";code.textContent = row.code;body.appendChild(code);
     appendField_(body,"factory","공장",entry.factory);
     appendField_(body,"blend","혼용률",entry.blend);
     var colors = document.createElement("div");colors.className = "colors";
-    var colorLabel = document.createElement("span");colorLabel.className = "colors-label";colorLabel.textContent = "컬러";colors.appendChild(colorLabel);
     var seenColors = new Set();
     var colorList = Array.isArray(entry.colors) ? entry.colors.filter(function(color){
       var name = color && statusColorName_(typeof color === "object" ? color.n : color);
