@@ -1,3 +1,4 @@
+<!-- v198: readable factory names and shared intrinsic numeric columns -->
 <!-- v196: reference category, link tools, photo and dated notes -->
 <!-- v195: fit short cost item names with screen-only 16/14/12px typography -->
 <!-- v194: add breathing room between the sheet title and equal contact columns -->
@@ -16668,3 +16669,26 @@ window.AiselUnifiedAdapter={
 <script src="reference-collection.js?v=196"></script>
 <script src="unified-app.js?v=197"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=195" media="screen">
+
+<style id="aisel-v198-sales-column-balance">
+@media screen {
+ /* Keep header/body aligned. Size numeric columns to their widest visible value. */
+ html:root body #salesView #salesTableBody .sheet-sales-grid {
+  grid-template-columns:minmax(0,1fr) 24px 40px 34px 40px 44px!important;
+  column-gap:4px!important;
+ }
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(3),
+ html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(4) {text-align:center;}
+ @supports (grid-template-columns:subgrid) {
+  html:root body #salesView #salesTableBody:has(> .sheet-sales-grid) {
+   display:grid;grid-template-columns:minmax(0,1fr) 24px 40px 34px max-content max-content;
+   column-gap:4px;row-gap:0;
+  }
+  html:root body #salesView #salesTableBody .sheet-sales-grid {
+   grid-column:1 / -1;grid-template-columns:subgrid!important;
+  }
+  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(5) {min-width:28px;}
+  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(6) {min-width:34px;}
+ }
+}
+</style>
