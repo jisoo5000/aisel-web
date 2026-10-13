@@ -198,7 +198,20 @@
  html:root body #editorView #mobileMeetingSummary {gap:4px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleStatus {display:flex;flex:1 1 0;min-width:0;flex-wrap:nowrap;gap:4px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {flex:0 0 28px;font-size:16px;}
- html:root body #editorView #mobileMeetingSummary #sampleNoteTitle {display:block;box-sizing:border-box;flex:1 1 128px;width:128px;min-width:0;max-width:128px;height:28px;min-height:28px;padding:2px 4px;border:1px solid var(--aisel-line);border-radius:3px;font-size:16px!important;line-height:22px;}
+ html:root body #editorView #mobileMeetingSummary #sampleNoteTitle {display:block;box-sizing:border-box;flex:1 1 128px;width:128px;min-width:0;max-width:128px;height:28px;min-height:28px;padding:2px 4px;border:1px solid var(--aisel-line);border-radius:3px;font-size:12px!important;font-weight:400;line-height:18px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleRecoveryDate {flex:0 0 88px;min-width:0;font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg {flex:0 0 auto;gap:4px;}
+}
+
+/* v192: equal contact columns stay beside the sheet title while editing. */
+@media screen {
+ html:root body #editorView #sheet > .title-row,
+ html:root body #editorView #sheet > .title-row.mobile-name-editing {grid-template-columns:max-content minmax(0,1fr);}
+ html:root body #editorView #sheet > .title-row h1 {white-space:nowrap;}
+ html:root body #editorView #sheet > .title-row #mobileHeaderNames,
+ html:root body #editorView #sheet > .title-row.mobile-name-editing #mobileHeaderNames {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-column:2;grid-row:1;gap:4px;width:100%;max-width:100%;min-width:0;padding:0;align-items:center;}
+ html:root body #editorView #sheet > .title-row.mobile-name-editing :is(.date-box,.title-spacer) {grid-row:2;}
+ html:root body #editorView #sheet #mobileHeaderNames :is(.mobile-contact-name,input.mobile-name-editor) {box-sizing:border-box;width:100%!important;min-width:0;max-width:100%;transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+ html:root body #editorView #sheet #mobileHeaderNames .mobile-contact-name {height:28px;min-height:28px;padding:0 2px;}
+ html:root body #editorView #sheet #mobileHeaderNames :is(#designer,#factory).mobile-name-editor {width:100%!important;min-width:0;height:28px;min-height:28px;padding:2px;font-size:16px!important;line-height:22px;}
 }
