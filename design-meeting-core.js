@@ -36,6 +36,12 @@
     const row=reviewRow(c,rows);
     return row?.state==='done'&&row.receipt&&row.reviewedAt?row:undefined;
   }
+  // Display-only fallback. It must never satisfy current approval/conversion.
+  function previousResult(c,rows){
+    if(!c)return undefined;
+    return (rows||[]).filter(r=>r.id===c.id&&Number(r.version)<(Number(c.inputVersion)||1)&&r.state==='done'&&r.receipt&&r.reviewedAt)
+      .sort((a,b)=>Number(b.version)-Number(a.version)||Date.parse(b.reviewedAt)-Date.parse(a.reviewedAt))[0];
+  }
   function status(c,rows){
     const version=Number(c.inputVersion)||1,row=reviewRow(c,rows);
     if(confirmedResult(c,rows))return 'done';
@@ -47,6 +53,6 @@
     return c.reviewState==='done'?'blocked':c.reviewState||'idle';
   }
   function rowKey(id,version){if(!/^[-\w]{8,100}$/.test(id)||!Number.isInteger(Number(version))||Number(version)<1)throw Error('후보 연결 정보를 확인해주세요.');return id+':'+version;}
-  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel,replacePhoto,reviewRow,confirmedResult};
+  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel,replacePhoto,reviewRow,confirmedResult,previousResult};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.AiselDesignMeetingCore=api;
 })(typeof window==='object'?window:globalThis);
