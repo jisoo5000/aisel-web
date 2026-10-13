@@ -88,3 +88,50 @@
  #referenceCollectionView .rc-reactions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 8px}
  #referenceCollectionView .rc-optional summary{font-size:12px;line-height:18px;margin:8px 0;color:var(--aisel-muted);cursor:pointer}
 }
+/* v196: design-meeting detail structure, with category and dated reference notes. */
+@media screen {
+ #referenceCollectionView .rc-title-row{gap:8px;margin:12px 0 8px}
+ #referenceCollectionView .rc-title-row .rc-title{flex:1;min-width:0}
+ #referenceCollectionView #rcDelete{flex:0 0 40px;color:#875566;padding:0 4px}
+ #referenceCollectionView .rc-metadata{grid-template-columns:minmax(0,1fr) 120px;gap:8px;margin-bottom:8px}
+ #referenceCollectionView #rcCategory{display:flex;gap:4px;justify-content:flex-start;width:100%;padding:0 8px;color:var(--aisel-muted);font-size:12px;font-weight:400;white-space:nowrap}
+ #referenceCollectionView #rcCategoryText{flex:1;overflow:hidden;text-overflow:ellipsis;text-align:center}
+ #referenceCollectionView .rc-link-tools{display:grid;grid-template-columns:56px 28px 28px;gap:4px}
+ #referenceCollectionView .rc-link-tools :is(button,#rcSourceOpen){display:inline-flex!important;height:28px;min-height:28px;padding:0;color:var(--aisel-muted);font-size:12px;font-weight:400}
+ #referenceCollectionView #rcLinkAdd{font-size:20px}
+ #referenceCollectionView #rcPhotos{display:block;width:100%;overflow:hidden}
+ #referenceCollectionView #rcPhotos figure{width:100%;height:240px}
+ #referenceCollectionView #rcPhotos .rc-photo-open{position:static;display:block;min-width:0;width:100%;height:240px;padding:0;border:1px solid var(--aisel-line);background:#fff;overflow:hidden}
+ #referenceCollectionView #rcPhotos img{display:block;width:100%;height:238px;object-fit:contain;border:0;border-radius:0;background:#fff}
+ #referenceCollectionView #rcPhotos .rc-photo-empty{height:240px;width:100%;background:#fff;font-size:12px;color:var(--aisel-muted);font-weight:400}
+ #referenceCollectionView .rc-photo-pager{display:flex;justify-content:center;gap:4px;margin-top:4px;flex-wrap:wrap}
+ #referenceCollectionView .rc-photo-pager button{width:28px;padding:0}
+ #referenceCollectionView .rc-photo-pager button[aria-pressed=true]{background:var(--aisel-soft)}
+ #referenceCollectionView .rc-notes{margin:12px 0 0}
+ #referenceCollectionView .rc-note-entry+.rc-note-entry{margin-top:12px}
+ #referenceCollectionView .rc-note-head{display:grid;grid-template-columns:minmax(0,1fr) 108px 28px 28px;gap:4px;align-items:center;margin-bottom:8px}
+ #referenceCollectionView .rc-note-head strong{font-size:14px;font-weight:550}
+ #referenceCollectionView .rc-note-head button{padding:0}
+ #referenceCollectionView .rc-note-head button:last-child{font-size:20px}
+ #referenceCollectionView .rc-note-date{position:relative;display:grid;place-items:center;height:28px;border:1px solid var(--aisel-line);border-radius:3px;color:var(--aisel-muted);font-size:12px;overflow:hidden}
+ #referenceCollectionView .rc-note-date input{position:absolute;inset:0;opacity:0;height:28px;min-height:28px;width:100%;padding:0;font-size:16px}
+ #referenceCollectionView .rc-note-date input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%}
+ #referenceCollectionView .rc-note-entry textarea{display:block;height:120px;min-height:120px;padding:8px;font-size:14px!important;line-height:20px;resize:vertical}
+ #referenceCollectionView #rcDialog{width:calc(100% - 32px);max-width:358px;max-height:80dvh;padding:16px;border:1px solid var(--aisel-line);border-radius:3px;color:var(--aisel-ink);background:white}
+ #referenceCollectionView #rcDialog::backdrop{background:#0004}
+ #referenceCollectionView #rcDialog h3{font-size:16px;margin:0 0 12px}
+ #referenceCollectionView #rcDialogBody{display:grid;gap:8px}
+ #referenceCollectionView #rcDialogBody label{display:flex;gap:4px;min-width:0}
+ #referenceCollectionView #rcDialogBody input{flex:1;width:100%;min-width:0}
+ #referenceCollectionView #rcDialogBody a{overflow-wrap:anywhere;color:var(--aisel-ink)}
+ #referenceCollectionView #rcDialogBody select{font-size:16px;height:36px}
+ #referenceCollectionView .rc-dialog-actions{display:flex;justify-content:flex-end;gap:4px;margin-top:12px}
+ #referenceCollectionView .rc-dialog-error{font-size:12px;color:#a63f57;margin:0}
+ #referenceCollectionView #rcNotices{margin-top:8px}
+ #referenceCollectionView #rcAIExtra{margin-top:12px;color:var(--aisel-muted)}
+ #referenceCollectionView #rcAIExtra summary{cursor:pointer;font-size:12px}
+}
+@media screen {
+ #referenceCollectionView #rcDetail .rc-title-row input{font-size:14px!important;font-weight:600;line-height:20px}
+ #referenceCollectionView #rcRestore{margin:0 0 8px auto;display:flex}
+}
