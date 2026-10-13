@@ -4,7 +4,7 @@
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
  if(!A||!DM||!RC)return;
  const main=document.getElementById('mainBar'),$=id=>document.getElementById(id);
- let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,knownRole=null;
+ let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,knownRole=null,navigationRevision=0;
  const directEntry=!!location.hash||!!new URLSearchParams(location.search).get('code');
  let landingOpen=!directEntry;
  let lastLocation={state:history.state,url:location.href},replayingPop=false;
@@ -36,6 +36,14 @@
  function landingView(){const value=landingRole();return value==='logistics'?'products':value==='designer'?'orders':'sales';}
  function restoreLanding(){if(!landingOpen||busy||!landingRole())return;landingOpen=false;const target=landingView();if(current!==target)show(target,{replace:true});}
  for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,()=>{landingOpen=false;},{capture:true,once:true});
+ // Resuming input cancels a destination chosen before that input. A delayed save
+ // acknowledgement must never hide the form the user has continued editing.
+ for(const name of ['input','change','compositionstart'])document.addEventListener(name,event=>{
+  const form=event.target?.closest?.('#editorView,#designMeetingView,#referenceCollectionView');
+  if(!form||form.hidden||getComputedStyle(form).display==='none')return;
+  navigationRevision++;
+  if(busy&&pendingNavigation){pendingNavigation.resolve(false);pendingNavigation=null;}
+ },true);
  window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;if(e.detail.uid!==undefined&&e.detail.uid!==window.AiselAuth?.currentUser()?.uid)return;if(e.detail.generation!==undefined&&e.detail.generation!==window.AiselAuth?.generation)return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
  function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
@@ -93,12 +101,13 @@
   if(view!=='designmeeting')$('designMeetingView').hidden=true;
  }
  function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
- async function guard(target){
-  if(current==='references'&&target!=='references'&&!await RC.canLeave())return false;
-  if(current==='designmeeting'&&target!=='designmeeting'&&!await DM.canLeave())return false;
-  if(!await A.leave())return false;
-  if(current==='references'&&target!=='references'&&!await RC.leave())return false;
-  return true;
+ async function guard(target,intent=navigationRevision){
+  const isCurrent=()=>intent===navigationRevision;
+  if(current==='references'&&target!=='references'&&(!await RC.canLeave()||!isCurrent()))return false;
+  if(current==='designmeeting'&&target!=='designmeeting'&&(!await DM.canLeave()||!isCurrent()))return false;
+  if(!isCurrent()||!await A.leave()||!isCurrent())return false;
+  if(current==='references'&&target!=='references'&&(!isCurrent()||!await RC.leave({isCurrent})||!isCurrent()))return false;
+  return isCurrent();
  }
  function drainNavigation(completed=true){
   if(busy||!pendingNavigation)return;
@@ -106,26 +115,49 @@
   if(!completed){next.resolve(false);return;}
   show(next.view,next.options).then(next.resolve);
  }
+ async function restoreAfterOpenFailure(view,previousCode,previousLocation){
+  // Detach the failed subscription before a late response can replace another screen.
+  A.hide();select(view);
+  if(view==='designmeeting')window.AiselDesignMeetingAdapter.restore();
+  else if(view==='references')await RC.show({history:false,preserveDetail:true,background:true});
+  else if(view==='products')mount();
+  else if(view==='sales')await A.sales();
+  else if(view==='editor'&&previousCode)await A.open(previousCode);
+  else{await A.orders();select('orders');}
+  restoreLocation(previousLocation);
+ }
  async function show(view,{history:writeHistory=true,replace=false,code}={}){
   if(!['products','orders','sales','editor','references','designmeeting'].includes(view))return false;
   if(!allowedView(view)){info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return false;}
   if(view==='editor'&&(typeof code!=='string'||!code.trim()||code.length>160||/[.#$\[\]\/\u0000-\u001f]/.test(code)))return false;
   // Keep the latest destination while an input save is finishing.
   if(busy)return new Promise(resolve=>{pendingNavigation?.resolve(false);pendingNavigation={view,options:{history:writeHistory,replace,code},resolve};});
-  busy=true;let completed=false;
+  const previousView=current,previousCode=window.AiselWorkorderMeetingPhotos?.currentCode,previousLocation={state:history.state,url:location.href},intent=navigationRevision;
+  busy=true;let completed=false,openingEditor=false;
   try{
-   if(!await guard(view))return false;info();if(view!=='editor')returnToProducts=false;
+   if(!await guard(view,intent)||intent!==navigationRevision)return false;info();if(view!=='editor')returnToProducts=false;
    if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:false})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
+   if(intent!==navigationRevision)return false;
    A.hide();select(view);
    if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='제품 진행 현황';document.body.dataset.aiselListView='products';}
    else if(view==='orders')await A.orders();
    else if(view==='sales'){await A.sales();window.AiselSheetSalesSource?.refreshIfStale?.();}
-   else if(view==='editor'){A.open(code);returnToProducts=true;}
+   else if(view==='editor'){
+    openingEditor=true;
+    const waiting=window.AiselWorkorderMeetingPhotos?.expectOpen(code);
+    try{
+     if(await A.open(code)===false||waiting&&!await waiting.ready)throw Error('작업지시서를 불러오지 못했습니다. 입력 내용은 유지했습니다. 다시 열어주세요.');
+    }finally{waiting?.cancel();}
+    returnToProducts=previousView==='products';
+   }
    select(view);
    if(writeHistory)route(view,replace,code);
    window.scrollTo(0,0);completed=true;return true;
-  }catch(e){info(e.message||'화면을 열지 못했습니다. 다시 시도해주세요.');return false;}
+  }catch(e){
+   if(openingEditor){try{await restoreAfterOpenFailure(previousView,previousCode,previousLocation);}catch(_){A.hide();}}
+   info(e.message||'화면을 열지 못했습니다. 다시 시도해주세요.');return false;
+  }
   finally{busy=false;drainNavigation(completed);}
  }
  async function referenceBridge(action,payload){
@@ -200,6 +232,9 @@
   finally{busy=false;drainNavigation(completed);}
  };
  window.AiselUnified={show,get view(){return current;}};
+ // Conversion and reopening a linked meeting use the same save guard, route and
+ // acknowledged editor load as every other cross-menu workorder navigation.
+ if(window.AiselDesignMeetingAdapter)window.AiselDesignMeetingAdapter.open=code=>show('editor',{code});
  applyRole();
  const hash=location.hash;
  if(/^#reference=/.test(hash))RC.show({id:decodeURIComponent(hash.slice(11)),history:false});

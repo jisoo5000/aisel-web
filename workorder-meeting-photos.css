@@ -1,0 +1,20 @@
+/* v201: these controls never participate in either workorder print layout. */
+@media screen {
+ html:root body #workorderLoadingNotice {box-sizing:border-box;width:100%;margin:8px 0;padding:8px 4px;color:var(--aisel-muted,#6c727c);font-size:12px;line-height:18px;}
+ html:root body #workorderLoadingNotice[hidden] {display:none!important;}
+ html:root body #workorderLoadingRecovery #localDraftStatus:not([hidden]) {display:flex;flex-wrap:wrap;gap:4px;margin:4px 12px;font-size:12px;line-height:18px;}
+ html:root body #editorView #sheet #ph1 #workorderMeetingPhotos {position:absolute;right:8px;bottom:8px;z-index:2;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;height:28px;min-height:28px;width:auto;max-width:calc(100% - 16px);margin:0;padding:0 8px;border:1px solid var(--aisel-line,#DEDEDE);border-radius:3px;background:#fff;color:var(--aisel-ink,#34383C);font:500 12px/20px var(--aisel-font,sans-serif);white-space:nowrap;}
+ html:root body #editorView #sheet #ph1 #workorderMeetingPhotos[hidden] {display:none!important;}
+ html:root body #workorderMeetingPhotoViewer {box-sizing:border-box;width:min(382px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100dvh - 32px);padding:12px;border:1px solid var(--aisel-line,#DEDEDE);border-radius:4px;background:#fff;color:var(--aisel-ink,#34383C);overflow:auto;}
+ html:root body #workorderMeetingPhotoViewer::backdrop {background:rgba(0,0,0,.45);}
+ html:root body #workorderMeetingPhotoViewer .wmp-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;}
+ html:root body #workorderMeetingPhotoViewer .wmp-heading strong {font-size:16px;line-height:24px;}
+ html:root body #workorderMeetingPhotoViewer button {box-sizing:border-box;height:28px;min-height:28px;margin:0;padding:0 8px;border:1px solid var(--aisel-line,#DEDEDE);border-radius:3px;background:#fff;color:var(--aisel-ink,#34383C);font-size:12px;line-height:20px;}
+ html:root body #workorderMeetingPhotoViewer .wmp-photo {display:block;width:100%;height:min(360px,50dvh);object-fit:contain;}
+ html:root body #workorderMeetingPhotoViewer .wmp-status {margin:4px 0;font-size:12px;line-height:18px;}
+ html:root body #workorderMeetingPhotoViewer .wmp-status:empty {display:none;}
+ html:root body #workorderMeetingPhotoViewer .wmp-navigation {display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px;font-size:12px;line-height:20px;}
+}
+@media print {
+ #workorderMeetingPhotos,#workorderMeetingPhotoViewer,#workorderMeetingPhotoViewer::backdrop,#workorderLoadingNotice,#workorderLoadingRecovery {display:none!important;}
+}

@@ -1,4 +1,4 @@
-<!-- v200: reference tab returns to gallery, fewer blocking requests and no duplicate photo button -->
+<!-- v201: stable mobile editing, compact reference/meeting tools and safe workorder handoff -->
 <!-- v199: mobile collection cards, direct links and independent loading -->
 <!-- v198: readable factory names and shared intrinsic numeric columns -->
 <!-- v196: reference category, link tools, photo and dated notes -->
@@ -7845,6 +7845,7 @@
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
     editorContentBaseline_=collect();
+    window.AiselWorkorderMeetingPhotos?.render(currentCode,st);
   }
   function updateRefLinkMode_(){
     document.querySelectorAll("#refLinksList .ref-link-row:not([hidden]) input").forEach(input=>updateOneRefLinkMode_("#" + input.id));
@@ -8364,6 +8365,7 @@
   // 2026-08-25 추가: 화면을 떠날 때 예약된 자동저장을 취소하고 연결을 끊습니다.
   // 이 세 줄이 없어서 "작지가 사라짐 · 품명이 다른 이름으로 바뀜" 사고가 났습니다.
   function detachWoRefNow_(reason){
+    window.AiselWorkorderMeetingPhotos?.clear();
     captureDraft_();activeDraft_=null;renderDraft_();
     try{ clearTimeout(saveT); }catch(e){}
     if(woRef && woListener) woRef.off("value", woListener);
@@ -8376,6 +8378,7 @@
   }
   function attachWoRef(code){
     if(!code || code === currentCode) return;
+    window.AiselWorkorderMeetingPhotos?.clear();
     captureDraft_();
     // 저장 전 새 작지라면, 품번이 바뀔 때 앞서 자동으로 만들어진 줄을 정리합니다
     if(newOrderMode_) cleanupAutoCreated_(code);
@@ -8395,6 +8398,7 @@
     priceException_ = null;   // 2026-09-20 추가: 새 스냅샷이 오기 전까지는 미확정으로 둡니다
     loading = true;
     currentCode = code;
+    window.AiselWorkorderMeetingPhotos?.beginLoading(code);
     beginDraft_(code);
     if(mobileUnifiedReady_)renderMobileSampleDate_();
     sampleChangeBaseline_=null; sampleChangeBaselineCode_=null;
@@ -8421,7 +8425,7 @@
         resetEditorSaveFeedback_(!!st);
       }
       if(!st){
-        if(isFirst){ loading = false;if(mobileUnifiedReady_)renderMobileSampleDate_();return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
+        if(isFirst){ loading = !newOrderMode_;window.AiselWorkorderMeetingPhotos?.empty(code,newOrderMode_);if(mobileUnifiedReady_)renderMobileSampleDate_();return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
         // 2026-09-20 추가: 열어둔 작지가 밑에서 사라졌습니다(다른 기기에서 삭제·품번 이동).
         // 예전에는 화면이 그대로 남아서 한 글자만 쳐도 부분 저장이 나가 "품명만 있는 빈 작지"가 되살아났습니다.
         // 내가 지운 것(justDeletedCode_)과 내가 옮기는 중(movingCodeNow_)은 각자 처리하므로 여기서 제외합니다.
@@ -8435,7 +8439,7 @@
       // (예전에는 새 작지를 눌렀는데 기존 작지의 사진과 내용이 스르륵 채워지는 문제가 있었음)
       // 대신 품번이 겹친다는 경고를 띄우고 저장을 막음.
       if(newOrderMode_){
-        if(isFirst) loading = false;
+        if(isFirst){loading = false;window.AiselWorkorderMeetingPhotos?.empty(code,true);}
         if(mobileUnifiedReady_)renderMobileSampleDate_();
         updateCodeConflictUI_();
         return;
@@ -8460,7 +8464,11 @@
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
       if(isFirst) syncIndexFromFull_(code, st);
     };
-    woRef.on("value", woListener,draftReadFailed_);
+    woRef.on("value", woListener,error=>{
+      if(woRef!==subscribedRef||currentCode!==code)return;
+      window.AiselWorkorderMeetingPhotos?.failed(code,error);
+      draftReadFailed_(error);
+    });
   }
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
   document.addEventListener("focusout", ()=>{
@@ -11958,13 +11966,27 @@
       alert("한글 입력을 마친 뒤 다시 이동해주세요."); return false;
     }
     clearTimeout(saveT);saveT=null;
-    if(!loading&&woRef&&currentCode!==justDeletedCode_){
-      if(codeConflictNow_()||statusChanging_){alert("현재 작업 처리가 끝난 뒤 다시 이동해주세요.");return false;}
-      const done=await save();
-      if(done===false){alert("저장하지 못해 현재 작지를 유지합니다. 연결을 확인하고 다시 시도해주세요.");return false;}
+    const ref=woRef,code=currentCode,state=editorSaveState_(),revision=state.revision;
+    const sameIntent=()=>ref===woRef&&code===currentCode&&isCurrentSaveState_(state)&&state.revision===revision&&!isEditorComposing_();
+    // A navigation deadline must never skip the durable local draft.
+    const ctx=captureDraft_();
+    if(ctx){await ctx.ready;await ctx.chain;if(ctx.dirty&&ctx.local==='failed'){alert("기기 초안 저장을 확인하지 못해 현재 작지를 유지합니다. 다시 저장해주세요.");return false;}}
+    if(!sameIntent())return false;
+    if(!loading&&woRef&&currentCode!==justDeletedCode_&&(codeConflictNow_()||statusChanging_)){
+      alert("현재 작업 처리가 끝난 뒤 다시 이동해주세요.");return false;
     }
-    const results=await Promise.all([...pendingSaveWrites_]);
-    if(results.includes(false)){alert("저장 실패로 이동을 멈췄습니다. 다시 저장해주세요.");return false;}
+    // Only stop waiting for navigation. Original writes retain their ownership,
+    // acknowledgements and drafts even when the network is temporarily offline.
+    const remote=(async()=>{
+      if(!loading&&ref&&code!==justDeletedCode_&&await save()===false)return false;
+      return !(await Promise.all([...pendingSaveWrites_])).includes(false);
+    })().catch(()=>false);
+    let timer;
+    const result=await Promise.race([remote,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),15000);})]);
+    clearTimeout(timer);
+    if(!sameIntent())return false;
+    if(result===null){state.waiting=true;renderEditorSaveState_(state);return false;}
+    if(result===false){alert("저장하지 못해 현재 작지를 유지합니다. 연결을 확인하고 다시 시도해주세요.");return false;}
     return true;
   }
   // 목록으로 이동하기 전에 현재 품번의 저장을 끝냅니다.
@@ -16621,19 +16643,21 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=199">
+<link rel="stylesheet" href="design-meeting.css?v=201">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
  designers(){return Object.keys(designerListCache_||{});},
  async leave(){if(!await settleEditorSave_())return false;if(woRef)detachWoRefNow_("디자인회의 준비");return true;},
  blank(season,category){
-   startNewWorkOrder();document.getElementById('season').value=season;catSel.value=String(category);
-   const st=collect();detachWoRefNow_("후보 전환 템플릿");
-   st.lines=(st.lines||[]).map(l=>({...l,unit:'',qty:'',negotiation:null}));
-   st.gongim='';st.siyage='';st.fabricPrice='';st.targetThreshold='';st.priceConfirmed=false;st.priceSource='';
-   st.designer='';st.phone='';st.factory='';st.factoryPhone='';st.blend='';st.materials='';
-   return st;
+   const st=Object.fromEntries(TXT_IDS.map(id=>[id,''])),d=modificationDateParts_(Date.now());
+   // Build data without opening/resetting the current editor or its draft.
+   return {...st,season,cat:String(category),yy:d.myy,mm:d.mmm,dd:d.mdd,myy:d.myy,mmm:d.mmm,mdd:d.mdd,
+     pumAuto:'0',status:'sampling',lines:[{nm:'원단',unit:'',qty:''},{nm:'밴드',unit:'',qty:''}],
+     gongim:'',siyage:'',materials:'',priceConfirmed:false,priceSource:'',priceException:null,
+     sizeSpecVersion:SIZESPEC_DEFAULT_VERSION,sizeSpecCols:[...SIZESPEC_DEFAULT.cols],
+     sizeSpec:SIZESPEC_DEFAULT.parts.map(part=>({part,values:SIZESPEC_DEFAULT.cols.map(()=> '')})),
+     refLinks:[],p1:'',p1Thumb:'',photoStage:'reference',resampleHistory:[],selectedColors:[],fabricMemoSync:{},editLog:[]};
  },
  restore(){['editorView','galleryView','salesView','moodboardView','quickOrderView','sampleMgmtView'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});document.getElementById('designMeetingView').hidden=false;setMainTabActive_('designmeeting');},
  open(code){showEditor();newOrderMode_=false;attachWoRef(code);}
@@ -16641,7 +16665,7 @@ window.AiselDesignMeetingAdapter={
 </script>
 <script src="design-meeting-core.js?v=190"></script>
 <script src="design-meeting-notes.js?v=179"></script>
-<script src="design-meeting.js?v=199"></script>
+<script src="design-meeting.js?v=201"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16654,7 +16678,7 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=200">
+<link rel="stylesheet" href="reference-collection.css?v=201">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16668,8 +16692,10 @@ window.AiselUnifiedAdapter={
 };
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
-<script src="reference-collection.js?v=200"></script>
-<script src="unified-app.js?v=200"></script>
+<script src="reference-collection.js?v=201"></script>
+<link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
+<script src="workorder-meeting-photos.js?v=201"></script>
+<script src="unified-app.js?v=201"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=199" media="screen">
 
 <style id="aisel-v198-sales-column-balance">

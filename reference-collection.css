@@ -169,3 +169,30 @@
 @media screen {
  #referenceCollectionView .rc-photo-controls:has(#rcPhotoPager[hidden]){display:none}
 }
+/* v201: compact detail controls and stable native mobile inputs. */
+@media screen {
+ #referenceCollectionView .rc-title-row{gap:6px}
+ #referenceCollectionView .rc-title-actions{display:flex;flex:none;align-items:center;gap:4px}
+ #referenceCollectionView .rc-title-actions #rcSave{flex:0 0 48px;width:48px}
+ #referenceCollectionView .rc-title-actions #rcDelete{flex:0 0 40px;width:40px}
+ #referenceCollectionView .rc-title-actions #rcComplete{flex:0 0 64px;width:64px;margin:0;padding:0 4px;white-space:nowrap;color:var(--aisel-ink)}
+ #referenceCollectionView #rcDetail .rc-title-row input{font-size:16px!important;line-height:24px}
+ #referenceCollectionView .rc-metadata{grid-template-columns:88px minmax(0,1fr) 120px;gap:4px;align-items:start}
+ #referenceCollectionView .rc-link-tools{grid-column:auto;grid-template-columns:56px 28px 28px;gap:4px;width:120px;justify-self:end;align-items:start}
+ #referenceCollectionView #rcCategory{padding:0 2px;gap:2px}
+ #referenceCollectionView .rc-link-tools.is-editing{grid-template-columns:minmax(0,1fr)}
+ #referenceCollectionView #rcSourceOpen[hidden],#referenceCollectionView #rcLinkEdit[hidden],#referenceCollectionView #rcLinkDelete[hidden],#referenceCollectionView #rcLinkEditor[hidden]{display:none!important}
+ #referenceCollectionView #rcLinkEditor{display:grid;gap:4px;min-width:0;width:100%}
+ #referenceCollectionView #rcLinkInput{display:block;min-height:28px;height:28px;max-height:140px;padding:2px 4px;font-size:16px;line-height:22px;resize:vertical;overflow:auto}
+ #referenceCollectionView .rc-link-editor-actions{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+ #referenceCollectionView .rc-link-editor-actions button{padding:0 4px!important;flex:1;white-space:nowrap}
+ #referenceCollectionView #rcInlineLinkAdd{flex-basis:100%}
+ #referenceCollectionView #rcLinkError{margin:0;font-size:11px;line-height:16px;color:#a63f57;overflow-wrap:anywhere}
+ #referenceCollectionView .rc-note-date input{inset:0;margin:0;padding:0;cursor:pointer}
+ #referenceCollectionView .rc-note-date>span{pointer-events:none}
+ #referenceCollectionView #rcPhotos{touch-action:pan-y}
+ #referenceCollectionView #rcPhotos figure{position:relative}
+ #referenceCollectionView .rc-photo-nav{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;gap:4px;padding:0 4px;border-radius:3px;background:#ffffffed}
+ #referenceCollectionView #rcPhotos .rc-photo-nav button{position:static;flex:none;width:28px;min-width:28px;height:28px;padding:0;font-size:20px;background:transparent;border:0}
+ #referenceCollectionView #rcPhotoCounter{min-width:34px;white-space:nowrap;text-align:center;font-size:11px;line-height:18px}
+}

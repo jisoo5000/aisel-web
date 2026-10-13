@@ -136,3 +136,35 @@
  html:root body #designMeetingView .dm-detail-meta {grid-template-columns:92px minmax(0,1fr);}
  #designMeetingView #dmLinks {grid-column:1/-1;justify-self:end;width:152px;}
 }
+
+/* v201: actual meeting dates, inline links, date/designer organization. */
+@media screen {
+ html:root body #designMeetingView .dm-detail-meta {grid-template-columns:88px minmax(0,1fr) 120px;gap:4px;}
+ html:root body #designMeetingView #dmLinks {grid-column:auto;grid-template-columns:56px 28px 28px;width:120px;justify-self:end;}
+ #designMeetingView #dmDates {position:relative;width:88px;overflow:visible;font-size:12px;line-height:18px;}
+ #designMeetingView #dmMeetingDate {position:absolute;inset:0;width:100%;height:100%;min-width:0;margin:0;padding:0;border:0;opacity:0;font-size:16px;cursor:pointer;}
+ #designMeetingView #dmMeetingDateLabel {pointer-events:none;}
+ #designMeetingView .dm-dialog-heading {display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;}
+ #designMeetingView .dm-dialog-heading h3 {margin:0;font-size:14px;line-height:20px;}
+ #designMeetingView .dm-dialog-heading button {height:28px;min-width:40px;flex:none;}
+ #designMeetingView #dmDetailTitle:focus {font-size:16px;line-height:22px;}
+ #designMeetingView .dm-organize-filters {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-bottom:8px;}
+ #designMeetingView .dm-organize-filters select {min-width:0;width:100%;height:32px;padding:0 6px;border:1px solid var(--aisel-line);border-radius:3px;background:var(--aisel-bg);font-size:16px;line-height:22px;}
+ #designMeetingView #dmCoverageState {grid-column:1/-1;font-size:11px;line-height:16px;color:var(--aisel-muted);}
+ #designMeetingView #dmCoverageState:empty {display:none;}
+ #designMeetingView .dm-date-heading,#designMeetingView .dm-date-group {margin:0 0 8px;font-size:12px;font-weight:600;line-height:18px;color:var(--aisel-muted);}
+ #designMeetingView .dm-date-group {grid-column:1/-1;margin:0;}
+ #designMeetingView .dm-card-designer {display:block;font-size:11px;line-height:16px;color:var(--aisel-muted);margin-top:4px;}
+ #designMeetingView .dm-detail-meta:has(#dmLinks.is-editing) .dm-assignee {display:none;}
+ html:root body #designMeetingView #dmLinks.is-editing {display:block;grid-column:2/-1;width:100%;min-width:0;}
+ #designMeetingView .dm-link-editor {width:100%;min-width:0;margin:0;}
+ #designMeetingView .dm-link-field {display:flex;gap:4px;min-width:0;margin-bottom:4px;}
+ #designMeetingView .dm-link-field input {width:100%;min-width:0;flex:1;height:32px;padding:4px 6px;border:1px solid var(--aisel-line);border-radius:3px;font-size:16px;line-height:22px;}
+ #designMeetingView .dm-link-field button {flex:none;width:36px;padding:0 2px;font-size:11px;}
+ #designMeetingView .dm-link-editor-actions {display:flex;justify-content:flex-end;gap:4px;}
+ #designMeetingView .dm-link-editor-actions button {font-size:11px;font-weight:400;padding:0 4px;}
+ #designMeetingView .dm-link-error {display:block;color:#a63f57;font-size:11px;line-height:16px;overflow-wrap:anywhere;}
+ #designMeetingView .dm-link-error:empty {display:none;}
+}
+
+@media screen { html:root body #designMeetingView #dmDesignerTrigger {display:block;text-align:left;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;} }
