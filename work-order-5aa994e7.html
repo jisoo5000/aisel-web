@@ -1,3 +1,4 @@
+<!-- v193: recognize taupe brown aliases using the existing taupe swatch -->
 <!-- v192: equal inline designer/factory columns and compact sample-name text -->
 <!-- v191: photo-referenced mood blue swatch; existing chip dimensions preserved -->
 <!-- v190: compact meeting controls and labeled previous review evidence -->
@@ -13586,7 +13587,7 @@ const CUSTOM_COLOR_HEX = Object.freeze(Object.fromEntries([
   ["#A9C8DA", ["스카이 블루", "하늘색", "sky blue"]],
   ["#707C6A", ["올리브", "olive"]],
   ["#B8A7C8", ["라벤더", "lavender"]],
-  ["#A69A90", ["토프", "taupe"]],
+  ["#A69A90", ["토프", "taupe", "토프 브라운", "토프브라운", "taupe brown"]],
   ["#5B3B2A", ["초콜릿", "초코", "chocolate"]],
 ].flatMap(([hex, names]) => names.map(name => [customColorKey_(name), hex]))));
 function customColorSwatch_(hex){
