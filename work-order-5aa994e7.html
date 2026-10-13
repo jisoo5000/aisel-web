@@ -1,3 +1,4 @@
+<!-- v191: photo-referenced mood blue swatch; existing chip dimensions preserved -->
 <!-- v190: compact meeting controls and labeled previous review evidence -->
 <!-- v189: lightweight durable text drafts and automatic photo compression (2026-10-13) -->
 <!-- v188: clear the missing-record draft guard only after confirmed new-record creation (2026-10-13) -->
@@ -13570,6 +13571,7 @@ const CUSTOM_COLOR_HEX = Object.freeze(Object.fromEntries([
   ["#D9C6A8", ["베이지", "beige"]],
   ["#2F3B52", ["네이비", "남색", "navy"]],
   ["#4A78A8", ["블루", "파랑", "파란색", "blue"]],
+  ["#76818A", ["무드 블루", "mood blue"]],
   ["#B74C4C", ["레드", "빨강", "빨간색", "red"]],
   ["#D8A4B3", ["핑크", "분홍", "분홍색", "pink"]],
   ["#DFCA75", ["옐로우", "옐로", "노랑", "노란색", "yellow"]],
@@ -13599,6 +13601,7 @@ function resolveColorSwatch_(name){
   const key = customColorKey_(normalized);
   if(["melangegray", "melangegrey", "heathergray", "heathergrey"].includes(key)) return COLOR_VARIANT_HEX["멜란지 그레이"];
   if(["lightgray", "lightgrey"].includes(key)) return COLOR_VARIANT_HEX["라이트 그레이"];
+  if(["무드블루", "moodblue"].includes(key)) return {hex:CUSTOM_COLOR_HEX[key],text:"#111111"};
   if(Object.prototype.hasOwnProperty.call(CUSTOM_COLOR_HEX, key)) return customColorSwatch_(CUSTOM_COLOR_HEX[key]);
   // One brightness modifier is allowed, only when the remaining name is known.
   const modifier = key.match(/^(light|pale|deep|dark|라이트|밝은|연한|연|딥|다크|진한|진|어두운)(.+)$/);
