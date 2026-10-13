@@ -1,4 +1,4 @@
-<!-- v186: mobile-first release verification; single late reload recovery and consistent sales text-column alignment (2026-10-13) -->
+<!-- v187: editor title, sample name, two default materials and durable save recovery; v186:  mobile-first release verification; single late reload recovery and consistent sales text-column alignment (2026-10-13) -->
 <!-- v185: reload starts at header without suppressing back/user scroll; sales column gap2px only (2026-10-13) -->
 <!-- v184: modest sales-column spacing and 상품명 (판매순) header only (2026-10-13) -->
 <!-- v183: empty retail-price input stays blank; existing separate 원 unit and pricing rules preserved (2026-10-13) -->
@@ -5650,7 +5650,7 @@
     linesWrap.appendChild(row);lineAmt(row);
   }
   // 로스 1,000원은 공임·시야게 아래의 고정 비용으로 한 번만 합산합니다.
-  [["원단","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
+  [["원단","5,000","1"],["밴드","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
   $("#addLine").addEventListener("click", ()=>{ makeLine(); calc(); autoPrice_(); save(); });
 
   // 단가/공임/시야게 자동 콤마 (.won)
@@ -7180,7 +7180,6 @@
   function renderDraft_(ctx=activeDraft_){
     if(ctx&&ctx!==activeDraft_)return;
     const box=draftPanel_();if(!currentDraft_(ctx)){box.hidden=true;return;}
-    if(mobileDraftMode_()){box.hidden=true;return;}
     let text='';
     if(ctx.candidate)text='최근 기기 초안이 있습니다';
     else if(ctx.dirty&&ctx.local==='failed')text='기기 저장 실패 · 초안을 내보내 주세요';
@@ -7504,7 +7503,8 @@
     if(!isCurrentSaveState_(state) || (loading&&!allowLoading))return;
     const button=$("#saveBtn");if(!button || codeConflictNow_())return;
     let phase="idle",label="저장";
-    if(state.queued || state.result==="pending" || (state.result!==false && (state.pending.size || state.manual))){phase="saving";label="저장 중…";}
+    if(state.waiting && state.pending.size){phase="waiting";label="서버 확인 중";}
+    else if(state.queued || state.result==="pending" || (state.result!==false && (state.pending.size || state.manual))){phase="saving";label="저장 중…";}
     else if(state.result===false){phase="error";label=state.blockReason?"저장 안됨":"저장 실패 · 재시도";}
     else if(state.confirmed){phase=state.sheetError?"sheet-error":"saved";label=state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
     button.dataset.saveState=phase;button.textContent=label;button.disabled=state.manual;
@@ -7587,9 +7587,10 @@
     state.sentSnapshots.push({id,at:st.updatedAt,signature:serverSnapshotSignature_(writtenServerState)});
     while(state.sentSnapshots.length>16&&!state.pending.has(state.sentSnapshots[0].id))state.sentSnapshots.shift();
     let originalWritten=false;
+    const pendingNotice=setTimeout(()=>{if(state.pending.has(id)&&state.latest===id){state.waiting=true;if(draftContext){draftContext.delayed=true;renderDraft_(draftContext);}renderEditorSaveState_(state);}},12000);
     const creating=newOrderMode_&&!editorContentBaseline_;
     const writePromise=Promise.resolve().then(async()=>{
-      if(draftContext){if(!draftContext.loaded)await draftContext.ready;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.remotePending||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
+      if(draftContext){if(!draftContext.loaded)await draftContext.ready;await draftContext.chain;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.remotePending||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
       if(creating){
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
@@ -7613,7 +7614,7 @@
       if(state.latest===id)state.result=false;
       return false;
     }).finally(()=>{
-      state.pending.delete(id);renderEditorSaveState_(state);
+      clearTimeout(pendingNotice);state.pending.delete(id);if(state.latest===id)state.waiting=false;renderEditorSaveState_(state);
     });
     if(creating){
       initialCreationWrite_=writePromise;initialCreationRef_=targetRef;
@@ -7637,7 +7638,12 @@
       if(typeof waitForEditorComposition_==="function" && !await waitForEditorComposition_())return;
       if(!isCurrentSaveState_(state))return;
       clearTimeout(saveT);saveT=null;
-      originalSaved=await save()===true;
+      const originalWrite=Promise.resolve(save());
+      let manualWait;
+      const result=await Promise.race([originalWrite,new Promise(resolve=>{manualWait=setTimeout(()=>resolve(null),15000);})]);
+      clearTimeout(manualWait);
+      if(result===null)return; // The write and local draft remain pending; a late server acknowledgement still resolves them.
+      originalSaved=result===true;
       if(!originalSaved || !isCurrentSaveState_(state)){if(isCurrentSaveState_(state)&&state.result!=='pending'&&!state.queued)rejectEditorSave_(state.blockReason||'저장 조건을 확인한 뒤 다시 저장해 주세요.');return;}
       // External transfers start only after this record's original write succeeded.
       if(window.saveFabricMaster_)Promise.resolve(window.saveFabricMaster_({
@@ -7645,10 +7651,13 @@
         width:$("#fabricWidth").value,blend:$("#fabricBlend").value,supplierPhone:$("#fabricSupplierPhone").value,negoPrice:$("#fabricNegoPrice").value
       })).catch(()=>{});
       Promise.resolve(sendScorecard_()).catch(()=>{});
-      const result=await syncToAiselSheets_();
-      if(!isCurrentSaveState_(state))return;
-      state.sheetError=!result.ok;
-      if(!result.ok)alert("작업지시서는 앱에 저장됐지만 구글시트 전송에 문제가 있었습니다: "+result.message);
+      // Sheets is an additional transfer. It must not hold the original Save button.
+      const sheetAttempt=state.sheetAttempt=(state.sheetAttempt||0)+1;
+      let sheetTimer;
+      Promise.race([syncToAiselSheets_(),new Promise(resolve=>{sheetTimer=setTimeout(()=>resolve({ok:false}),15000);})])
+        .then(result=>{if(isCurrentSaveState_(state)&&state.sheetAttempt===sheetAttempt){state.sheetError=!result.ok;renderEditorSaveState_(state);}})
+        .catch(()=>{if(isCurrentSaveState_(state)&&state.sheetAttempt===sheetAttempt){state.sheetError=true;renderEditorSaveState_(state);}})
+        .finally(()=>clearTimeout(sheetTimer));
     }catch(err){
       if(isCurrentSaveState_(state)){
         if(originalSaved){state.sheetError=true;alert("작업지시서는 앱에 저장됐지만 추가 전송에 문제가 있었습니다: "+err.message);}
@@ -10563,7 +10572,7 @@
     lastSavedState_ = null;   // 2026-08-25 추가: 새 작지는 비교 기준 없이 처음부터 씁니다
     showEditor();
     linesWrap.querySelectorAll(".line").forEach(row=>row.negotiationEditor_?.remove());linesWrap.innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";
-    [["원단(야드)","5,000","1"],["단추","30","3"],["단추고리","30","3"],["우라","",""],["심지","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
+    [["원단","5,000","1"],["밴드","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
     $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
     // 2026-08-21 추가: 품명 칸이 빠져 있어서 새 작지를 만들어도 직전 작지 품명이 그대로 남아 있었습니다.
@@ -12100,6 +12109,7 @@
   const finalTitle=finalSpec.previousElementSibling,desktopFinalTitle=finalTitle.textContent;
   const mobileStatus=document.createElement('div');mobileStatus.id='mobileSampleStatus';mobileStatus.className='noprint';
   const sampleLabel=document.createElement('span');sampleLabel.textContent='샘플';mobileStatus.append(sampleLabel);
+  const sampleName=document.getElementById('sampleNoteTitle');sampleName.type='text';sampleName.placeholder='샘플명';sampleName.setAttribute('aria-label','샘플명');mobileStatus.append(sampleName);
   const sampleDate=document.createElement('span');sampleDate.id='mobileSampleRecoveryDate';mobileStatus.append(sampleDate);
   document.getElementById('sampleRecoverySection').prepend(mobileStatus);
   // v134: the original date/state controls move together; no duplicate save path.
@@ -12135,10 +12145,11 @@
   function finishHeaderNameEdits_(){contactLayouts.forEach(finishHeaderNameEdit_);}
   function renderHeaderNames_(){contactLayouts.forEach(record=>{record.view.textContent=record.input.value.trim()||record.label;});}
   function renderMobileSampleDate_(){
-    sampleDate.textContent=sampleRecoveryStatus==='returned'&&sampleReturnedDate?'회수 '+sampleReturnedDate:document.getElementById('sampleRecoveryDates').textContent;
+    const fullDate=document.getElementById('sampleRecoveryDates').textContent;
+    const date=sampleRecoveryStatus==='returned'?sampleReturnedDate:sampleFactorySentDate;
+    sampleDate.textContent=date?(sampleRecoveryStatus==='returned'?'회수 ':'전달 ')+date.slice(2).replace(/-/g,'.'):'회수날짜';
     sampleDate.classList.toggle('overdue',document.getElementById('sampleRecoveryRow').classList.contains('overdue'));
-    if(!sampleDate.textContent)sampleDate.textContent='회수날짜 미입력';
-    sampleDate.title=sampleDate.textContent;
+    sampleDate.title=fullDate||sampleDate.textContent;
     sampleSeg.querySelectorAll('button').forEach(button=>{button.disabled=mobileLayout.matches&&(loading||codeConflictNow_());});
   }
 
@@ -16557,7 +16568,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 
 <style id="aisel-v157-mobile-cost-gaps">
 @media screen and (max-width:600px) {
- html:root body #editorView #localDraftStatus {display:none!important;}
+ html:root body #editorView #localDraftStatus:not([hidden]) {display:flex!important;flex-wrap:wrap;gap:4px;margin:4px 12px;font-size:12px;line-height:18px;}
  html:root body #editorView #sheet #costCell > .sec-title {margin-bottom:12px!important;}
  html:root body #editorView #sheet #costCell .cost-table {margin-bottom:8px;}
 }
@@ -16606,7 +16617,7 @@ window.AiselDesignMeetingAdapter={
 </script>
 <script src="design-meeting-core.js?v=179"></script>
 <script src="design-meeting-notes.js?v=179"></script>
-<script src="design-meeting.js?v=180"></script>
+<script src="design-meeting.js?v=187"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16635,4 +16646,4 @@ window.AiselUnifiedAdapter={
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-collection.js?v=181"></script>
 <script src="unified-app.js?v=186"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=182" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=187" media="screen">

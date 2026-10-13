@@ -190,3 +190,15 @@
  html:root body #editorView #mobileSampleRecords :is(.mobile-change-add,.mobile-change-delete) {height:28px;min-height:28px;width:28px;min-width:28px;}
  html:root body :is(#galleryView,#salesView,#editorView) {padding-bottom:80px;}
 }
+
+/* v187: only the editor's product heading and sample summary change. */
+@media screen {
+ html:root body #editorView .editor-mobile-head .editor-mobile-title {min-width:0;overflow:hidden;}
+ html:root body #editorView .editor-mobile-head #mobileProductName {display:block;min-width:0;font-size:14px!important;line-height:20px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ html:root body #editorView #mobileMeetingSummary {gap:4px;}
+ html:root body #editorView #mobileMeetingSummary #mobileSampleStatus {display:flex;flex:1 1 0;min-width:0;flex-wrap:nowrap;gap:4px;}
+ html:root body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {flex:0 0 28px;font-size:16px;}
+ html:root body #editorView #mobileMeetingSummary #sampleNoteTitle {display:block;box-sizing:border-box;flex:1 1 128px;width:128px;min-width:0;max-width:128px;height:28px;min-height:28px;padding:2px 4px;border:1px solid var(--aisel-line);border-radius:3px;font-size:16px!important;line-height:22px;}
+ html:root body #editorView #mobileMeetingSummary #mobileSampleRecoveryDate {flex:0 0 88px;min-width:0;font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg {flex:0 0 auto;gap:4px;}
+}
