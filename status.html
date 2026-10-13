@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<!-- AISEL 제품 진행 현황 v33 (2026-10-14): 제작진행 사진 화살표 제거·작성일 최신순 및 짧은 연도 호환. -->
 <!-- AISEL 제품 진행 현황 v32 (2026-10-14): 카드 상태배지/컬러 라벨 제거, 작지 컬러칩 규격 일치. -->
 <!-- AISEL 제품 진행 현황 v30 (2026-10-12): 앱 코어 1.0.0, 버튼28·본문382·카드160, 기존 자료/동작 유지. -->
 <!-- AISEL 제품 진행 현황 v29 (2026-10-11): 과한 버튼/간격 축소, 상태필터 한 줄, 기존 자료/동작 유지. -->
@@ -60,7 +61,6 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 .thumb img{width:100%;height:100%;object-fit:contain;display:block}
 .thumb.can-open{cursor:zoom-in}
 .thumb.can-open:focus-visible{outline-offset:-3px}
-.thumb.can-open::after{content:"↗";position:absolute;bottom:8px;right:8px;width:24px;height:24px;display:grid;place-items:center;background:rgba(255,255,255,.9);border:1px solid rgba(47,59,82,.12);border-radius:4px;color:var(--navy);font-size:15px;pointer-events:none}
 .body{flex:1;min-width:0;padding:12px;display:flex;flex-direction:column;gap:6px}
 .state{align-self:flex-start;display:inline-flex;align-items:center;gap:5px;border-radius:3px;padding:3px 7px;font-size:10.5px;line-height:1.4;font-weight:500;margin-bottom:2px}
 .state::before{content:"";width:4px;height:4px;background:currentColor;border-radius:50%}
@@ -379,7 +379,10 @@ function statusColorName_(value){
   return String(value == null ? '' : value).trim().slice(0,80).replace(/^(?:(?:앞|뒤|위|아래|왼쪽|오른쪽)(?:에서|쪽)?\s*\d+\s*(?:번)?\s*|\d+\s*번\s*)+/,'').trim();
 }
 function productionDateKey_(entry){
+  // Sort by the document's written date only. Imports and later edits must not
+  // move a product above a newer document; missing/invalid dates remain last.
   var y = String(entry.yy || '').trim(), m = String(entry.mm || '').trim(), d = String(entry.dd || '').trim();
+  if(/^\d{2}$/.test(y)) y = '20' + y;
   if(/^\d{4}$/.test(y) && /^\d{1,2}$/.test(m) && /^\d{1,2}$/.test(d)){
     var check = new Date(Date.UTC(Number(y),Number(m)-1,Number(d)));
     if(check.getUTCFullYear() === Number(y) && check.getUTCMonth()+1 === Number(m) && check.getUTCDate() === Number(d)){

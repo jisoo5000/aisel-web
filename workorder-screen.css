@@ -182,7 +182,7 @@
  html:root body #galleryView .gallery-toolbar {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
  html:root body #galleryView #gallerySearchRow {display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:0 0 8px;}
  html:root body #galleryView #gallerySearchRow > label[hidden] {display:none!important;}
- html:root body #galleryView #galleryTrashBtn {flex:0 0 auto;width:auto;min-width:64px;max-width:112px;height:28px;min-height:28px;padding:0 6px;margin:0;font-size:11px!important;overflow:hidden;text-overflow:ellipsis;}
+ html:root body #galleryView #galleryTrashBtn {flex:0 0 auto;width:auto;min-width:64px;max-width:112px;height:36px;min-height:36px;padding:0 6px;margin:0;font-size:11px!important;overflow:hidden;text-overflow:ellipsis;}
  html:root body #galleryView #galleryGrid .gcard-info {display:grid;grid-template-rows:none;align-content:start;gap:4px;padding:8px;}
  html:root body #galleryView #galleryGrid .gcard-name {font-size:12px!important;line-height:18px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal;}
  html:root body #galleryView #galleryGrid :is(.gcard-code-row,.gcard-date,.gcard-soft) {font-size:11px;line-height:16px;}

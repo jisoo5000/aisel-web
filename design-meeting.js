@@ -5,7 +5,10 @@
  const BRIDGE=window.AISEL_DESIGN_MEETING_BRIDGE||'';
  const OWNER='sooana1214@gmail.com';
  let cards={},results=[],active=null,filter='planned',limit=40,lastSig='',listening=false,busy=false,detailDirty=false,role=null,authEpoch=0;
- const pending=new Map(),dirtyFields=new Set();let savePromise=null,deleteFlight=null,deletePreview=null,undoDeletion=null;
+ const pending=new Map(),dirtyFields=new Set();let savePromise=null,deleteFlight=null,deletePreview=null,undoDeletion=null,externalNavigation=false,externalNavigationBusy=false;
+ let viewStartedAt=0,listRequestedAt=0;const measuredViewPhases=new Set();
+ function measurePhase(name,start){if(!start)return;try{performance.clearMeasures('aisel:meeting:'+name);performance.measure('aisel:meeting:'+name,{start,end:performance.now()});}catch(_){}}
+ function measureViewPhase(name,start=viewStartedAt){if(!start||start!==viewStartedAt||measuredViewPhases.has(name)||pane.hidden)return;measuredViewPhases.add(name);measurePhase(name,start);}
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const safe=v=>esc(C.httpUrl(v));
  const uid=()=> 'dm_'+crypto.randomUUID().replace(/-/g,'');
@@ -171,11 +174,11 @@
  const designerClose=document.createElement('button');designerClose.type='button';designerClose.textContent='닫기';designerClose.onclick=()=>designerDialog.close();designerDialog.append(designerClose);pane.append(designerDialog);
  $dm('.dm-assignee label').htmlFor='dmDesignerTrigger';designerTrigger.onclick=()=>{renderDesigner(current(active));designerDialog.showModal();};
 
- // Keep candidate creation beside search; a full-height empty card wastes the
- // first thumbnail slot and hides the existing camera/link collection options.
+ // Creation stays visible as the first grid cell, including an empty list.
+ // The existing role check still owns its action and collection dialog.
  const searchRow=document.createElement('div');searchRow.className='dm-search-row';
  const searchField=$dm('.dm-search');searchField.before(searchRow);searchRow.append(searchField);
- const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.textContent='+ 회의 추가';addMeeting.onclick=()=>$dm('#dmTools').showModal();searchRow.append(addMeeting);
+ const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.className='dm-add-card';addMeeting.textContent='＋ 추가';addMeeting.setAttribute('aria-label','디자인회의 추가');addMeeting.onclick=()=>$dm('#dmTools').showModal();$dm('#dmGrid').prepend(addMeeting);
  const galleryButton=document.createElement('button');galleryButton.type='button';galleryButton.id='dmGallery';galleryButton.textContent='사진 선택';galleryButton.onclick=()=>{$dm('#dmTools').close();$dm('#dmFileInput').dataset.target='';$dm('#dmFileInput').click();};$dm('#dmToolsClose').after(galleryButton);
  const deleteButton=document.createElement('button');deleteButton.id='dmDelete';deleteButton.type='button';deleteButton.textContent='삭제';deleteButton.hidden=true;deleteButton.onclick=askDelete;$dm('.dm-heading').append(deleteButton);
  const deleteDialog=document.createElement('dialog');deleteDialog.id='dmDeleteDialog';deleteDialog.className='dm-dialog';deleteDialog.innerHTML='<h3>이 항목을 삭제할까요?</h3><p id="dmDeleteDescription"></p><p id="dmDeleteError" class="dm-error" role="status"></p><div class="dm-delete-actions"><button type="button" id="dmDeleteCancel">취소</button><button type="button" id="dmDeleteConfirm">삭제</button></div>';pane.append(deleteDialog);
@@ -202,7 +205,7 @@
    checkResult.disabled=!memberUser()||!!deleteFlight;
  }
  function applyRole(){members.hidden=role!=='owner';login.textContent=role==='owner'?'대표자 · 디자인회의 연결됨':role==='designer'?'디자이너 · 디자인회의 연결됨':'디자인회의 로그인';login.hidden=!!role||!!window.AiselAuth;$dm('#dmDrop').hidden=role!=='owner';$dm('#dmWorkorder').hidden=role!=='owner';for(const k of ['decision','decisionReason'])$dm('[data-dm-field="'+k+'"]').disabled=role!=='owner';render();applyEditingState();}
- async function access(){const stamp=authStamp(),data=await bridge('access',[]);assertAuth(stamp);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role,uid:stamp.uid,generation:stamp.generation}}));return data;}
+ async function access(){const started=performance.now(),stamp=authStamp(),data=await bridge('access',[]);measurePhase('access',started);assertAuth(stamp);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role,uid:stamp.uid,generation:stamp.generation}}));return data;}
  function resetAuth(){authEpoch++;ensureTextDraftOwner();role=null;results=[];deletePreview=null;undoDeletion=null;deleteDialog.close();designerDialog.close();historyChecks.clear();resultChecks.clear();resultFlights.clear();resultFailures.clear();stopReviewPolling();applyRole();}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
  members.addEventListener('toggle',async()=>{if(members.open)try{showMembers((await bridge('members',[])).members);}catch(e){message(e.message,true);}});
@@ -289,7 +292,19 @@
  }
  let draftDb;
  function drafts(){if(!draftDb)draftDb=new Promise((resolve,reject)=>{const r=indexedDB.open('aisel-design-meeting-drafts',1);r.onupgradeneeded=()=>r.result.createObjectStore('files',{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});return draftDb;}
- async function local(action,item){const db=await drafts();return new Promise((resolve,reject)=>{const tx=db.transaction('files',action==='all'?'readonly':'readwrite'),store=tx.objectStore('files');let request;if(action==='put')request=store.put(item);else if(action==='delete')request=store.delete(item);else request=store.getAll();let result;request.onsuccess=()=>result=request.result;tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);});}
+ async function local(action,item){
+   // Safari can abort IndexedDB File writes without a useful error. Persist
+   // bytes plus metadata, and retain support for already-stored File drafts.
+   let stored=item;
+   if(action==='put')stored={...item,mediaFormat:'arraybuffer-v1',files:await Promise.all(item.files.map(async file=>({name:file.name||'photo.jpg',type:file.type||'image/jpeg',lastModified:file.lastModified||Date.now(),bytes:await file.arrayBuffer()})))};
+   const db=await drafts();return new Promise((resolve,reject)=>{
+     const tx=db.transaction('files',action==='all'?'readonly':'readwrite'),store=tx.objectStore('files');let request;
+     if(action==='put')request=store.put(stored);else if(action==='delete')request=store.delete(item);else request=store.getAll();
+     let result;request.onsuccess=()=>result=request.result;
+     tx.oncomplete=()=>{try{resolve(action==='all'?(result||[]).map(record=>record.mediaFormat==='arraybuffer-v1'?{...record,files:record.files.map(file=>new File([file.bytes],file.name,{type:file.type,lastModified:file.lastModified}))}:record):result);}catch(e){reject(e);}};
+     const failed=()=>reject(tx.error||Error('기기 사진 초안을 보관하지 못했습니다. 화면을 유지하고 다시 시도해주세요.'));tx.onerror=failed;tx.onabort=failed;
+   });
+ }
  async function digest(file){const bytes=await file.arrayBuffer();return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');}
  async function thumbnail(file){
    const url=URL.createObjectURL(file);
@@ -330,10 +345,15 @@
  function renderPending(){const box=$dm('#dmPending');box.replaceChildren();for(const item of pending.values()){const row=document.createElement('div');row.className='dm-pending';row.textContent=`${item.files.length}장 · ${item.error||'저장 중…'}`;if(item.error){const b=document.createElement('button');b.textContent='다시 시도';b.onclick=()=>upload(item);row.append(b);}box.append(row);}}
  async function receive(files,target=null,replaceKey=null){
    const images=[...files].filter(f=>f.type.startsWith('image/'));const usable=replaceKey?images.slice(0,1):images;if(!usable.length)return;
-   if(target&&detailDirty){await saveDetail();if(detailDirty)return;}
    const grouped=target||$dm('#dmGroup').checked;
    const groups=grouped?[usable]:usable.map(f=>[f]);
-   for(const group of groups){const item={id:target||uid(),files:group,...(replaceKey?{replaceKey}:{})};try{await local('put',item);}catch(e){message('이 기기는 임시 사진 보관을 지원하지 않습니다. 업로드가 끝날 때까지 화면을 유지해주세요.',true);}await upload(item);}
+   // Register every selected photo before the first asynchronous upload. A
+   // link navigation can then retain the whole selection, not only photo one.
+   const items=groups.map(group=>({id:target||uid(),files:group,...(replaceKey?{replaceKey}:{})}));
+   for(const item of items)pending.set(item.id,item);renderPending();
+   for(const item of items){try{await local('put',item);}catch(e){message('이 기기는 임시 사진 보관을 지원하지 않습니다. 업로드가 끝날 때까지 화면을 유지해주세요.',true);}}
+   if(target&&detailDirty&&!await saveDetail()){for(const item of items)item.error='입력한 내용 저장을 확인한 뒤 사진을 다시 시도해주세요.';renderPending();return;}
+   for(const item of items)await upload(item);
  }
  function render(){
    if(pane.hidden)return;
@@ -355,20 +375,21 @@
    $dm('#dmMore').hidden=shown.length<=limit&&!hasOlder;$dm('#dmMore').textContent=shown.length>limit?'더 보기':'이전 후보 더 보기';
    const sig=JSON.stringify([shown.slice(0,limit),results,filter,q,role]);if(sig===lastSig)return;lastSig=sig;
    const grid=$dm('#dmGrid');
-   const keep=new Set(shown.slice(0,limit).map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();let previous=null;
-   for(const c of shown.slice(0,limit)){
+   const keep=new Set(shown.slice(0,limit).map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();if(grid.firstElementChild!==addMeeting)grid.prepend(addMeeting);let previous=addMeeting;
+   for(const [position,c] of shown.slice(0,limit).entries()){
      const result=confirmedResult(c),photo=C.photos(c)[0];let card=[...grid.children].find(n=>n.dataset.id===c.id);if(!card){card=document.createElement('article');card.className='dm-card';card.dataset.id=c.id;
      card.innerHTML=`<button class="dm-open" type="button">${photo?.thumb?`<img loading="lazy" decoding="async" src="${safe(photo.thumb)}" alt="후보 사진">`:'<span class="dm-no-photo">사진 없음</span>'}<div class="dm-card-info"><strong>${esc(c.title||'사진 후보')}</strong><div class="dm-colors"></div><time>${esc(C.dateLabel(c.createdAt))}</time></div></button>`;
      }
      const opener=card.querySelector('.dm-open'),src=C.httpUrl(photo?.thumb),oldImg=opener.querySelector('img');
      if(src){if(oldImg){if(oldImg.getAttribute('src')!==src)oldImg.src=src;}else{opener.querySelector('.dm-no-photo')?.remove();const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.alt='후보 사진';img.src=src;opener.prepend(img);}}
      else if(oldImg){const empty=document.createElement('span');empty.className='dm-no-photo';empty.textContent='사진 없음';oldImg.replaceWith(empty);}
+     const preview=opener.querySelector('img');if(preview){preview.loading=position<3?'eager':'lazy';preview.fetchPriority=position===0?'high':'auto';if(position===0){const started=viewStartedAt;if(preview.complete&&preview.naturalWidth)measureViewPhase('first-preview',started);else if(preview.dataset.timed!==String(started)){preview.dataset.timed=String(started);preview.addEventListener('load',()=>measureViewPhase('first-preview',started),{once:true});}}}
      card.querySelector('strong').textContent=c.title||'사진 후보';card.querySelector('time').textContent=C.dateLabel(c.createdAt);
      const colors=card.querySelector('.dm-colors');colors.replaceChildren();renderColors(colors,c,result);
      card.querySelector('.dm-open').onclick=()=>open(c.id);
      if(previous){if(previous.nextElementSibling!==card)previous.after(card);}else if(grid.firstElementChild!==card)grid.prepend(card);previous=card;
    }
-   applyEditingState();
+   applyEditingState();if(shown.length)measureViewPhase('first-cards');
  }
  async function open(id,options={}){
    designerDialog.close();
@@ -388,7 +409,7 @@
    ensureTextDraftOwner();active=id;detailBases.clear();$dm('#dmTools').close();message('');detailDirty=false;dirtyFields.clear();$dm('#dmList').hidden=true;$dm('.dm-toolbar').hidden=true;
    const detail=$dm('#dmDetail');detail.hidden=false;window.scrollTo(0,0);$dm('.dm-detail-body').scrollTop=0;$dm('#dmDetailTitle').textContent=c.title||'후보 상세';
    for(const k of ['title','link','memo','development','meetingDate','decision','decisionReason','meetingMemo'])$dm('[data-dm-field="'+k+'"]').value=c[k]||(['decision'].includes(k)?'unselected':'');
-   $dm('#dmDetailSaveState').textContent='';$dm('#dmSaveDetail').hidden=true;noteMessage(id,'');renderLinks(c);renderDesigner(c);renderDetailPhotos(c);renderReview(c);restoreTextDraft(c);renderNotes(c);if(hasNoteChanges(id))noteMessage(id,'기기 초안 복원됨 · 다시 저장해주세요.',true);applyEditingState();watchActive();requestAnimationFrame(fitDetail);refresh(false,[id]);return true;
+   $dm('#dmDetailSaveState').textContent='';$dm('#dmSaveDetail').hidden=true;noteMessage(id,'');renderLinks(c);renderDesigner(c);renderDetailPhotos(c);renderReview(c);restoreTextDraft(c);renderNotes(c);if(hasNoteChanges(id))noteMessage(id,'기기 초안 복원됨 · 다시 저장해주세요.',true);applyEditingState();watchActive();requestAnimationFrame(fitDetail);restoreExternalPosition();refresh(false,[id]);return true;
  }
  let layoutFrame=0,photoSizingKey='';
  function fitDetail(){
@@ -417,7 +438,7 @@
    const box=$dm('#dmLinks'),links=Array.isArray(c.links)?c.links:(c.link?[c.link]:[]);
    const signature=JSON.stringify([c.id,links,role]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();
    const button=document.createElement('button');button.type='button';button.className='dm-link-open';button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>링크</span>';
-   if(links.length){button.dataset.dmReadonly='true';button.title='상품 링크 '+links.length+'개';button.onclick=manageLinks;}else{button.onclick=()=>editLink();}
+   if(links.length){button.dataset.dmReadonly='true';button.title='대표 상품 링크로 이동';button.onclick=()=>openSourceLink(links.find(url=>C.httpUrl(url)));}else{button.onclick=()=>editLink();}
    box.append(button);
    const iconButton=(label,path,action)=>{const b=document.createElement('button');b.type='button';b.className='dm-icon';b.dataset.linkRequired='true';b.setAttribute('aria-label',label);b.title=label;b.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+path+'</svg>';b.onclick=action;box.append(b);};
    iconButton('링크 수정','<path d="m4 16 12-12 4 4-12 12-5 1Z M13 7l4 4"/>',()=>links.length===1?editLink(0):manageLinks('edit'));
@@ -425,11 +446,49 @@
    const add=document.createElement('button');add.type='button';add.className='dm-link-add';add.textContent='+';add.setAttribute('aria-label','링크 추가');add.onclick=()=>editLink();box.append(add);applyEditingState();
  }
 
+
+ // Navigation must not depend on a slow network save. Text is synchronous and
+ // pending photo bytes commit to IndexedDB before leaving; a local failure
+ // keeps this page open. The existing retry controls remain available on Back.
+ async function openSourceLink(value){
+   const url=C.httpUrl(value),id=active;if(!url||!id||externalNavigationBusy)return;
+   externalNavigationBusy=true;
+   try{
+     const stamp=authStamp();
+     if((detailDirty||hasNoteChanges(id))&&!persistTextDraft(id))throw Error('기기 초안을 보관하지 못해 링크를 열지 않았습니다. 입력한 내용을 유지했습니다. 저장 후 다시 눌러주세요.');
+     const photos=[...pending.values()];
+     if(photos.length){
+       let timeout;try{await Promise.race([Promise.all(photos.map(item=>local('put',item))),new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('사진 초안 보관을 확인하지 못해 링크를 열지 않았습니다. 잠시 후 다시 눌러주세요.')),5000);})]);}finally{clearTimeout(timeout);}
+     }
+     assertAuth(stamp);if(active!==id||pane.hidden)return;
+     const position={owner:stamp.uid,id,list:galleryState||listSnapshot(),windowScroll:window.scrollY||0,bodyScroll:$dm('.dm-detail-body').scrollTop,photoScroll:$dm('#dmPhotos').scrollLeft};
+     sessionStorage.setItem('aisel-dm-return-v1',JSON.stringify(position));
+     const route=ownRoute(history.state)?history.state:putRoute('detail',id,{replace:true});
+     history.replaceState({...route,externalReturn:position},'',routeUrl(id));lastRoute=history.state;
+     // A blur may have started a remote save; the durable local copy above is
+     // sufficient for this explicit navigation even if the network is offline.
+     externalNavigation=true;location.assign(url);
+   }catch(e){externalNavigation=false;const reason=e?.message||'초안을 보관하지 못했습니다.';message(reason.includes('링크를 열지 않았습니다')?reason:'링크를 열지 않았습니다. 기기 초안 보관을 확인한 뒤 다시 눌러주세요. '+reason,true);}
+   finally{externalNavigationBusy=false;}
+ }
+ function restoreExternalPosition(){
+   let saved=history.state?.externalReturn;
+   if(!saved)try{saved=JSON.parse(sessionStorage.getItem('aisel-dm-return-v1')||'null');}catch(_){}
+   if(!saved||saved.id!==active||saved.owner!==authStamp().uid)return;
+   galleryState=saved.list||galleryState;
+   requestAnimationFrame(()=>requestAnimationFrame(()=>{
+     if(saved.id!==active||pane.hidden)return;
+     window.scrollTo(0,saved.windowScroll||0);$dm('.dm-detail-body').scrollTop=saved.bodyScroll||0;$dm('#dmPhotos').scrollLeft=saved.photoScroll||0;
+     try{const stored=JSON.parse(sessionStorage.getItem('aisel-dm-return-v1')||'null');if(stored?.id===saved.id&&stored?.owner===saved.owner)sessionStorage.removeItem('aisel-dm-return-v1');}catch(_){}
+     if(history.state?.externalReturn?.id===saved.id&&history.state?.externalReturn?.owner===saved.owner){const route={...history.state};delete route.externalReturn;history.replaceState(route,'',location.href);lastRoute=route;}
+   }));
+ }
+ window.addEventListener('pageshow',()=>{externalNavigation=false;restoreExternalPosition();});
  function manageLinks(mode='open'){
    const c=current(active),links=Array.isArray(c.links)?c.links:(c.link?[c.link]:[]);
    let dlg=$dm('#dmLinkDialog');if(!dlg){dlg=document.createElement('dialog');dlg.id='dmLinkDialog';dlg.className='dm-dialog';pane.append(dlg);}dlg.replaceChildren();
    const title=document.createElement('h3');title.textContent='상품 링크';dlg.append(title);
-   links.forEach((url,index)=>{const row=document.createElement('p'),a=document.createElement('a');a.href=C.httpUrl(url);a.target='_blank';a.rel='noopener';a.textContent='링크 '+(index+1);row.append(a);for(const [text,remove] of (mode==='edit'?[['수정',false]]:mode==='remove'?[['삭제',true]]:[['수정',false],['삭제',true]])){const b=document.createElement('button');b.textContent=text;b.disabled=role!=='owner'&&role!=='designer';b.onclick=async()=>{dlg.close();await editLink(index,remove);};row.append(b);}dlg.append(row);});
+   links.forEach((url,index)=>{const row=document.createElement('p'),a=document.createElement('a');a.href=C.httpUrl(url);a.textContent='링크 '+(index+1);a.onclick=event=>{event.preventDefault();dlg.close();openSourceLink(url);};row.append(a);if(mode==='edit'){const primary=document.createElement('button');primary.type='button';primary.textContent=index===0?'대표 링크':'대표로';primary.disabled=index===0||!['owner','designer'].includes(role);primary.onclick=async()=>{if(!await saveDetail())return;try{await access();const ordered=[links[index],...links.filter((_,i)=>i!==index)];await mutate(c.id,{links:ordered,link:ordered[0]},true);$dm('[data-dm-field="link"]').value=ordered[0];dlg.close();renderLinks(current(c.id));renderReview(current(c.id));enqueueCandidate(c.id);}catch(e){message(e.message,true);}};row.append(primary);}for(const [text,remove] of (mode==='edit'?[['수정',false]]:mode==='remove'?[['삭제',true]]:[['수정',false],['삭제',true]])){const b=document.createElement('button');b.textContent=text;b.disabled=role!=='owner'&&role!=='designer';b.onclick=async()=>{dlg.close();await editLink(index,remove);};row.append(b);}dlg.append(row);});
    const add=document.createElement('button');add.textContent='링크 추가';add.disabled=role!=='owner'&&role!=='designer';add.onclick=()=>{dlg.close();editLink();};const close=document.createElement('button');close.textContent='닫기';close.onclick=()=>dlg.close();dlg.append(add,close);dlg.showModal();
  }
  async function editLink(index,remove=false){if(!active||!await saveDetail())return;const c=current(active),links=Array.isArray(c.links)?[...c.links]:(c.link?[c.link]:[]);if(remove){if(!window.confirm('이 링크를 삭제할까요? 회의 내용과 사진은 유지됩니다.'))return;links.splice(index,1);}else{const value=window.prompt('상품 링크',index===undefined?'':links[index]);if(value===null)return;if(!C.httpUrl(value)){message('http 또는 https 상품 링크를 입력해주세요.',true);return;}if(index===undefined)links.unshift(C.httpUrl(value));else links[index]=C.httpUrl(value);}try{await access();await mutate(c.id,{links,link:links[0]||''},true);$dm('[data-dm-field="link"]').value=links[0]||'';renderLinks(current(c.id));renderReview(current(c.id));await enqueueCandidate(c.id);}catch(e){message(e.message,true);}}
@@ -600,8 +659,8 @@
  function stopListening(){if(latestQuery)latestQuery.off('value',latestCallback);latestQuery=null;latestCallback=null;listening=false;stopActive();stopReviewPolling();}
  function startListening(){
    if(listening||pane.hidden||document.hidden)return;listening=true;
-   latestQuery=ROOT.orderByChild('createdAt').limitToLast(PAGE);
-   latestCallback=snap=>{const values=entries(snap),next=new Set(values.map(c=>c.id));for(const id of latestIds)if(!next.has(id)&&!olderIds.has(id)&&id!==active)delete cards[id];latestIds=next;accept(values);
+   listRequestedAt=performance.now();latestQuery=ROOT.orderByChild('createdAt').limitToLast(PAGE);
+   latestCallback=snap=>{measurePhase('candidate-query',listRequestedAt);listRequestedAt=0;const values=entries(snap),next=new Set(values.map(c=>c.id));for(const id of latestIds)if(!next.has(id)&&!olderIds.has(id)&&id!==active)delete cards[id];latestIds=next;accept(values);
      if(!olderIds.size){olderCursor=values[0]?{value:values[0].createdAt??null,id:values[0].id}:null;hasOlder=values.length===PAGE;}
      watchActive();render();repaintActive();refresh();
    };latestQuery.on('value',latestCallback,e=>{message(e.message,true);stopListening();});
@@ -615,6 +674,7 @@
    limit+=PAGE;updateListRoute();lastSig='';render();await refresh();
  }
  async function show(options={}){
+   viewStartedAt=performance.now();measuredViewPhases.clear();
    if(!await saveDetail()||await window.AiselDesignMeetingAdapter.leave()===false)return false;
    if(!active&&!pane.hidden)galleryState=listSnapshot();
    ['editorView','galleryView','salesView','moodboardView','quickOrderView','sampleMgmtView'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
@@ -625,9 +685,12 @@
    if(!draftsLoaded){draftsLoaded=true;try{for(const item of await local('all')){item.error='이전에 전송하지 못한 사진 · 다시 시도해주세요.';pending.set(item.id,item);}renderPending();}catch(e){}}
    render();const epoch=++showEpoch;
    const hydrate=async()=>{
-     await refresh();
-     if(epoch!==showEpoch||pane.hidden)return;
-     if(memberUser())try{await access();}catch(e){if(epoch===showEpoch&&!pane.hidden&&e.code!=='auth_changed'){role=null;applyRole();message(e.message,true);}}else applyRole();
+     // AI results do not gate the authenticated add/edit controls or photos.
+     const permissions=(async()=>{if(epoch!==showEpoch||pane.hidden)return;if(memberUser())try{await access();}catch(e){if(epoch===showEpoch&&!pane.hidden&&e.code!=='auth_changed'){role=null;applyRole();message(e.message,true);}}else applyRole();})();
+     const review=refresh().catch(e=>{if(epoch===showEpoch&&!pane.hidden)message(e.message,true);});await permissions;
+     // Opening a detail route can proceed after authorization while its review
+     // request continues independently and keeps the last confirmed result.
+     void review;
    };
    // Top-level menu clicks show the cached list immediately. Server checks do
    // not own the shell's navigation lock; saves and explicit routes still do.
@@ -692,7 +755,7 @@
  pane.addEventListener('drop',e=>{if(e.dataTransfer?.files.length){e.preventDefault();receive(e.dataTransfer.files,target(e),e.target.closest('.dm-photo')?.dataset.photoKey||null);}});
  document.addEventListener('paste',e=>{if(pane.hidden||e.target.closest('input,textarea,[contenteditable="true"]'))return;const files=[...(e.clipboardData?.items||[])].filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile());if(files.length){e.preventDefault();receive(files,target(e),e.target.closest('.dm-photo')?.dataset.photoKey||null);}});
  document.addEventListener('focusout',()=>setTimeout(render,60));
- window.addEventListener('beforeunload',e=>{if(detailDirty||pending.size||[...noteDrafts.keys()].some(hasNoteChanges)){e.preventDefault();e.returnValue='';}});
+ window.addEventListener('beforeunload',e=>{if(!externalNavigation&&(detailDirty||pending.size||[...noteDrafts.keys()].some(hasNoteChanges))){e.preventDefault();e.returnValue='';}});
  $dm('#dmDesigner').onchange=async e=>{const id=active;if(!id)return;const value=e.target.value;try{await access();await mutate(id,{designer:value});if(active===id)renderDesigner(current(id));designerDialog.close();message('담당자를 저장했습니다.');}catch(err){e.target.value=current(id)?.designer||'';if(active===id)renderDesigner(current(id));message(err.message,true);}};
  $dm('#dmDetailTitle').oninput=e=>{$dm('[data-dm-field="title"]').value=e.target.textContent.trim();markDetailDraft('title');};$dm('#dmDetailTitle').onblur=saveDetail;
  $dm('#dmDrop').onclick=async()=>{if(!active||!await saveDetail())return;try{await access();if(role!=='owner')throw Error('대표자만 변경할 수 있습니다.');await mutate(active,{decision:current(active).decision==='excluded'?'unselected':'excluded'});renderReview(current(active));lastSig='';render();}catch(e){message(e.message,true);}};

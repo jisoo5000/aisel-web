@@ -106,7 +106,7 @@
  .dm-session{display:flex;justify-content:flex-end;margin-top:12px}
  .dm-session:has(>button[hidden]){display:none}
  .dm-search-row{display:flex;align-items:center;gap:4px;margin:0 0 8px;min-width:0}
- #designMeetingView #dmAddMeeting{width:82px;flex:0 0 82px;height:28px;min-height:28px;padding:0 4px;font-size:12px;font-weight:500}
+ #designMeetingView #dmAddMeeting{display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:220px;padding:8px;font-size:12px;font-weight:500;line-height:18px}
  html:root body #designMeetingView .dm-search-row #dmSearch{height:32px;min-height:32px;padding-top:4px;padding-bottom:4px;font-size:16px!important;line-height:22px}
  #designMeetingView #dmDelete{height:28px;min-height:28px;flex:0 0 42px;width:42px;padding:0 4px;font-size:12px;font-weight:500;border-color:#dfced4;color:#875566}
  #designMeetingView #dmDelete:disabled{color:#9ba1aa;border-color:var(--aisel-line)}

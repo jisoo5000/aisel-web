@@ -4,7 +4,7 @@
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
  if(!A||!DM||!RC)return;
  const main=document.getElementById('mainBar'),$=id=>document.getElementById(id);
- let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,bridgeReady=null,knownRole=null;
+ let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,knownRole=null;
  const directEntry=!!location.hash||!!new URLSearchParams(location.search).get('code');
  let landingOpen=!directEntry;
  let lastLocation={state:history.state,url:location.href},replayingPop=false;
@@ -82,7 +82,7 @@
  },{passive:false});
  for(const name of ['touchend','touchcancel'])document.addEventListener(name,()=>{productTouch=null;},{passive:true});
 
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=197';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=199';pane.append(frame);}
  function select(view){
   current=view;
   $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
@@ -130,11 +130,9 @@
  }
  async function referenceBridge(action,payload){
   const session=window.AiselAuth,generation=session?.generation,uid=session?.currentUser()?.uid||null;
-  if(bridgeReady!==true){
-   const response=await fetch(window.AISEL_DESIGN_MEETING_BRIDGE,{signal:AbortSignal.timeout(12000)});
-   const state=await response.json();bridgeReady=state.referenceReady===true;
-   if(!bridgeReady)throw Object.assign(Error('레퍼런스 저장 서버 업데이트가 필요합니다. 관리자에게 연결을 요청해주세요.'),{code:'connection_pending'});
-  }
+  // refAccess already checks the authenticated backend contract. A separate
+  // unauthenticated health GET adds another Apps Script round trip before every
+  // cold entry; it neither authorizes the user nor makes the following POST safer.
   const result=await DM.bridge(action,[],payload);
   if(session&&(generation!==session.generation||uid!==(session.currentUser()?.uid||null)))throw Object.assign(Error('로그인 계정이 변경되었습니다. 다시 확인해주세요.'),{code:'session_changed'});
   if(action==='refAccess'&&validRoles.includes(result?.role)){knownRole=result.role;rememberRole(knownRole);applyRole();}
