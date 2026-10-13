@@ -4,6 +4,37 @@
 <style>body{max-width:390px;margin:24px auto;padding:0 12px;box-sizing:border-box;font:14px/1.6 system-ui,sans-serif;color:#34383c;background:#fff}h1{font-size:18px}h2{font-size:14px}button{min-height:36px;padding:6px 12px;font:inherit;border:1px solid #e3e5e7;border-radius:3px;background:#fff;color:inherit;cursor:pointer}#backup{background:#34383c;color:#fff}button:disabled{opacity:.5}article{border-top:1px solid #e3e5e7;padding:12px 0}p{overflow-wrap:anywhere}.actions{display:flex;gap:8px;flex-wrap:wrap}small{color:#6c727c}[hidden]{display:none!important}</style>
 <h1>AISEL 초안 백업</h1>
 <p><strong>작성 중인 원래 창은 닫거나 새로고침하지 마세요.</strong></p>
+<section id="live-rescue" style="border:1px solid #e3e5e7;padding:12px;margin:16px 0"><h2>초안에 최신 내용이 없을 때: 현재 화면 백업</h2><p>PC 크롬·엣지에서 아래 링크를 <strong>즐겨찾기 모음으로 끌어 놓으세요.</strong> 모음이 안 보이면 Ctrl+Shift+B를 누르세요.</p><p><a id="live-bookmark" draggable="true" href="javascript:(function(){
+  &#x27;use strict&#x27;;
+  const root=document.getElementById(&#x27;editorView&#x27;);
+  if(location.origin!==&#x27;https://jisoo5000.github.io&#x27;||!root||getComputedStyle(root).display===&#x27;none&#x27;){
+    alert(&#x27;사진과 입력 내용이 남아 있는 원래 작업지시서 창에서 이 즐겨찾기를 눌러주세요.&#x27;);return;
+  }
+  const read=fn=&gt;{try{return fn();}catch(e){return {unavailable:e.name};}};
+  const control=e=&gt;({id:e.id,name:e.name||&#x27;&#x27;,tag:e.tagName,type:e.type||&#x27;&#x27;,className:e.className,value:e.value,checked:e.checked,dataset:{...e.dataset},selected:e.tagName===&#x27;SELECT&#x27;?[...e.selectedOptions].map(o=&gt;o.value):undefined});
+  const controls=[...root.querySelectorAll(&#x27;input,textarea,select&#x27;)].filter(e=&gt;![&#x27;password&#x27;,&#x27;file&#x27;].includes(e.type)).map(control);
+  const code=(document.getElementById(&#x27;codeView&#x27;)?.textContent||document.getElementById(&#x27;mobileProductCode&#x27;)?.textContent||&#x27;unknown&#x27;).trim();
+  const data={format:&#x27;aisel-live-screen-rescue&#x27;,version:1,exportedAt:new Date().toISOString(),code,
+    title:document.getElementById(&#x27;pumMyeong&#x27;)?.value||document.getElementById(&#x27;mobileProductName&#x27;)?.textContent||&#x27;&#x27;,
+    controls,images:[...root.querySelectorAll(&#x27;img&#x27;)].map(e=&gt;({id:e.id,containerId:e.parentElement?.id||&#x27;&#x27;,src:e.getAttribute(&#x27;src&#x27;)||&#x27;&#x27;,currentSrc:e.currentSrc,alt:e.alt,containerDataset:{...e.parentElement?.dataset}})),
+    costRows:[...root.querySelectorAll(&#x27;.line&#x27;)].map(e=&gt;({text:e.innerText,controls:[...e.querySelectorAll(&#x27;input,textarea,select&#x27;)].map(control)})),
+    visibleText:root.innerText,
+    diagnostics:{
+      release:[...document.childNodes].filter(n=&gt;n.nodeType===8).map(n=&gt;n.textContent).find(s=&gt;/v\d+/.test(s))||&#x27;&#x27;,
+      online:navigator.onLine,saveLabel:document.getElementById(&#x27;saveBtn&#x27;)?.textContent,saveDisabled:document.getElementById(&#x27;saveBtn&#x27;)?.disabled,
+      currentCode:read(()=&gt;currentCode),loading:read(()=&gt;loading),newOrder:read(()=&gt;newOrderMode_),codePending:read(()=&gt;codePending_),statusChanging:read(()=&gt;statusChanging_),
+      firstWritePending:read(()=&gt;!!initialCreationWrite_),saveTimer:read(()=&gt;!!saveT),
+      missingFields:read(()=&gt;TXT_IDS.filter(id=&gt;!document.getElementById(id))),
+      composition:read(()=&gt;({settling:editorCompositionSettling_,targets:[...editorComposingTargets_].map(e=&gt;({id:e.id,connected:e.isConnected,active:e===document.activeElement}))})),
+      save:read(()=&gt;{const s=editorSaveFeedback_;return s?{code:s.code,revision:s.revision,serial:s.serial,latest:s.latest,result:s.result,queued:s.queued,manual:s.manual,waiting:s.waiting,pending:[...s.pending],failedKeys:[...s.failedKeys],blockReason:s.blockReason}:null;}),
+      draft:read(()=&gt;{const d=activeDraft_;return d?{code:d.code,revision:d.revision,dirty:d.dirty,local:d.local,loaded:d.loaded,serverReady:d.serverReady,serverMissing:d.serverMissing,awaitingServer:d.awaitingServer,savedAt:d.record?.savedAt,candidateCount:d.candidates?.length}:null;})
+    }};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:&#x27;application/json&#x27;}));
+  const a=document.createElement(&#x27;a&#x27;);a.href=url;a.download=code.replace(/[^A-Za-z0-9_-]/g,&#x27;_&#x27;)+&#x27;-현재화면-구조.json&#x27;;document.body.append(a);a.click();a.remove();
+  setTimeout(()=&gt;URL.revokeObjectURL(url),60000);
+  alert(&#x27;현재 화면 백업 파일의 다운로드를 요청했습니다. 다운로드 목록에서 JSON 파일을 확인하고 이 대화에 첨부해주세요. 원래 창은 계속 열어두세요.&#x27;);
+})();
+" style="display:inline-block;padding:8px 12px;background:#34383c;color:white;border-radius:3px">작지 현재화면 백업</a></p><ol><li>이 링크를 즐겨찾기 모음으로 끌어 놓기</li><li>사진·금액을 입력한 <strong>원래 작지 탭</strong>으로 돌아가기</li><li>방금 만든 ‘작지 현재화면 백업’ 즐겨찾기 누르기</li><li>다운로드된 JSON 파일을 대화에 첨부하기</li></ol><p><small>현재 화면의 입력값·사진 주소·저장 진단 상태만 파일로 내보냅니다. 서버와 기기 초안을 수정하거나 새로고침하지 않습니다. 사진이 주소로만 남은 경우 원본 파일 확보는 별도 확인이 필요합니다.</small></p></section>
 <p id="code"></p><p>이 브라우저에 보관된 초안을 파일로 내려받습니다. 작업지시서와 서버 내용은 변경하지 않습니다.</p>
 <p id="status" role="status" aria-live="polite">초안을 확인하고 있습니다…</p>
 <div class="actions"><button id="backup" disabled>초안 파일 내려받기</button><button id="refresh">다시 확인</button></div>
@@ -28,3 +59,4 @@ for(const r of records){const card=document.createElement('article'),title=docum
 backup.onclick=()=>{if(!records.length)return;const blob=new Blob([JSON.stringify({format:'aisel-workorder-drafts',version:1,exportedAt:new Date().toISOString(),workorder:code,drafts:records},null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=code+'-복구초안-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);document.getElementById('next').hidden=false;status.textContent='다운로드를 요청했습니다. 브라우저의 다운로드 목록에서 JSON 파일을 확인해주세요.';};
 document.getElementById('refresh').onclick=read;read();
 </script></html>
+
