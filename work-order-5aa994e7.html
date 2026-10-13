@@ -1,4 +1,4 @@
-<!-- v201: stable mobile editing, compact reference/meeting tools and safe workorder handoff -->
+<!-- v202: compact URL editing, direct meeting drafts and authorized gallery prewarming -->
 <!-- v199: mobile collection cards, direct links and independent loading -->
 <!-- v198: readable factory names and shared intrinsic numeric columns -->
 <!-- v196: reference category, link tools, photo and dated notes -->
@@ -16643,7 +16643,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=201">
+<link rel="stylesheet" href="design-meeting.css?v=202">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16663,9 +16663,12 @@ window.AiselDesignMeetingAdapter={
  open(code){showEditor();newOrderMode_=false;attachWoRef(code);}
 };
 </script>
+<!-- Enable only after server ACL, rules and summary backfill are deployed and verified. -->
+<script>window.AISEL_GALLERY_INDEX_ENABLED = false;</script>
+<script src="aisel-gallery-index.js?v=202"></script>
 <script src="design-meeting-core.js?v=190"></script>
 <script src="design-meeting-notes.js?v=179"></script>
-<script src="design-meeting.js?v=201"></script>
+<script src="design-meeting.js?v=202"></script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16678,7 +16681,7 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=201">
+<link rel="stylesheet" href="reference-collection.css?v=202">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16692,10 +16695,10 @@ window.AiselUnifiedAdapter={
 };
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
-<script src="reference-collection.js?v=201"></script>
+<script src="reference-collection.js?v=202"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
-<script src="unified-app.js?v=201"></script>
+<script src="unified-app.js?v=202"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=199" media="screen">
 
 <style id="aisel-v198-sales-column-balance">

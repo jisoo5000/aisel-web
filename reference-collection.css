@@ -196,3 +196,13 @@
  #referenceCollectionView #rcPhotos .rc-photo-nav button{position:static;flex:none;width:28px;min-width:28px;height:28px;padding:0;font-size:20px;background:transparent;border:0}
  #referenceCollectionView #rcPhotoCounter{min-width:34px;white-space:nowrap;text-align:center;font-size:11px;line-height:18px}
 }
+
+/* v202: one-line URL entry and compact title/date rhythm. */
+@media screen {
+ #referenceCollectionView .rc-card strong{margin-bottom:2px}
+ #referenceCollectionView .rc-card time{font-size:12px;line-height:18px;font-weight:400;color:#6C727C}
+ #referenceCollectionView .rc-title-row{margin-bottom:4px}
+ #referenceCollectionView .rc-date,#referenceCollectionView .rc-note-date{font-size:12px;line-height:18px;font-weight:400;color:#6C727C}
+ #referenceCollectionView #rcLinkEditor{display:block;height:28px;width:120px}
+ #referenceCollectionView #rcLinkInput{display:block;height:28px;min-height:28px;max-height:28px;width:120px;padding:2px 4px;font-size:16px;line-height:22px}
+}

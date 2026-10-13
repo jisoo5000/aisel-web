@@ -19,6 +19,26 @@
  const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
  main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),orders);
  function info(s=''){notice.textContent=s;}
+ // Warm each collection without changing the visible pane or waiting in navigation.
+ // Modules authorize their own requests; the landing-role hint is never an access grant.
+ let galleryWarmKey='';
+ function scheduleGalleryWarm(){
+  const session=window.AiselAuth,user=session?.currentUser();
+  if(!user?.uid||!user.emailVerified||!session.normalized||document.hidden)return;
+  const key=user.uid+':'+session.generation;
+  if(galleryWarmKey===key)return;galleryWarmKey=key;
+  const run=()=>{
+   if(window.AiselAuth!==session||key!==(session.currentUser()?.uid+':'+session.generation)||!session.normalized)return;
+   if(document.hidden){galleryWarmKey='';return;}
+   if(window.AiselGalleryIndex?.enabled){window.AiselGalleryIndex.start().catch(()=>{});return;}
+   const calls=[];
+   if(knownRole!=='logistics'&&RC.preloadGallery)calls.push(Promise.resolve().then(()=>RC.preloadGallery()));
+   if(!['md','logistics'].includes(knownRole)&&DM.preloadGallery)calls.push(Promise.resolve().then(()=>DM.preloadGallery()));
+   Promise.allSettled(calls).catch(()=>{});
+  };
+  if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:2500});else setTimeout(run,750);
+ }
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGalleryWarm();});
  function role(){return A.isOwner()?'owner':knownRole||DM.getRole();}
  function allowedWorkorder(){return ['owner','designer'].includes(role());}
  function allowedView(view){return !((['md','logistics'].includes(role())&&['orders','editor','designmeeting'].includes(view))||(role()==='logistics'&&view==='references'));}
@@ -264,15 +284,15 @@
   try{app=sdk.apps.find(a=>a.name==='aiselSalesReadOnly')||sdk.initializeApp(sdk.app().options,'aiselSalesReadOnly');auth=app.auth();}catch(_){return;}
   const header=$('appBrandHeader'),button=document.createElement('button');button.id='aiselSessionButton';button.type='button';button.textContent='로그인';button.setAttribute('aria-haspopup','dialog');header.append(button);
   const dialog=document.createElement('dialog');dialog.id='aiselAccountDialog';dialog.className='noprint';dialog.setAttribute('aria-labelledby','aiselAccountTitle');
-  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
+  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselMeetingTools" hidden>디자인회의 관리 도구</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
   document.body.append(dialog);document.body.dataset.aiselCommonSession='ready';
-  const google=$('aiselAccountGoogle'),logoutButton=$('aiselAccountLogout'),status=$('aiselAccountStatus'),identity=$('aiselAccountIdentity');
+  const google=$('aiselAccountGoogle'),logoutButton=$('aiselAccountLogout'),meetingTools=$('aiselMeetingTools'),status=$('aiselAccountStatus'),identity=$('aiselAccountIdentity');
   let generation=0,previousUid,authReady=false,suppressMigration=false,migration=null,sessionBusy=false,loginFlight=null,resolveLogin=null,rejectLogin=null;
   let normalization=null,normalizedUid=null,loggingOut=false,normalizationError='',saveGuardDepth=0;
   const listeners=new Set(),sameProject=a=>a.options?.projectId===app.options?.projectId;
   const currentUser=()=>auth.currentUser||null;
   const cancelled=()=>Object.assign(Error('로그인을 취소했습니다.'),{code:'auth/popup-closed-by-user'});
-  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;}
+  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;meetingTools.hidden=!user||!allowedWorkorder();meetingTools.disabled=sessionBusy;}
   function sessionDetail(reason){const user=currentUser();return {uid:user?.uid||null,email:user?.email||'',generation,reason};}
   function clearNormalizationError(){if(normalizationError&&notice.textContent===normalizationError)info();normalizationError='';}
   function syncFrame(reason='sync',requestId){post('aisel-session-change',{...sessionDetail(reason),requestId});}
@@ -354,6 +374,7 @@
   function requestLogin(){return login().then(async result=>{await verifySession();return result;});}
   button.addEventListener('click',()=>{if(currentUser()){renderAccount();status.textContent=normalizationError;dialog.showModal();}else requestLogin().catch(error=>{if(!/popup-closed-by-user|cancelled-popup-request/.test(error?.code||''))info(error.message||'로그인하지 못했습니다.');});});
   logoutButton.addEventListener('click',logout);
+  meetingTools.addEventListener('click',async()=>{if(sessionBusy)return;dialog.close();if(current==='designmeeting'||await show('designmeeting'))DM.openTools?.();});
   $('aiselAccountClose').addEventListener('click',()=>{if(!sessionBusy)dialog.close();});
   dialog.addEventListener('cancel',event=>{if(sessionBusy)event.preventDefault();});dialog.addEventListener('close',()=>{if(loginFlight&&!sessionBusy)finishLogin(cancelled());});
   window.AiselAuth={currentUser,ready,login,requestLogin,logout,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},syncFrame,get generation(){return generation;},get normalized(){return normalizedUid===(currentUser()?.uid||null)&&!normalizationError;}};
@@ -362,7 +383,7 @@
    const prior=sdk.apps.filter(a=>a!==app&&sameProject(a)&&a.name!=='aiselShootingSamples').map(a=>{try{return a.auth().currentUser;}catch(_){return null;}}).find(user=>user?.uid&&user.emailVerified);
    if(!prior)return;migration=Promise.resolve(auth.updateCurrentUser(prior));try{await migration;publish('restore');}catch(_){/* Existing session remains intact; sign-in can be retried from the common entry. */}finally{migration=null;}
   }
-  auth.onAuthStateChanged(()=>{authReady=true;publish('auth');if(!loggingOut)ready().catch(()=>{});adoptExistingSession();});
+  auth.onAuthStateChanged(()=>{authReady=true;publish('auth');if(!loggingOut)ready().then(scheduleGalleryWarm).catch(()=>{});adoptExistingSession();});
   for(const other of sdk.apps.filter(a=>a!==app&&sameProject(a))){try{other.auth().onAuthStateChanged(()=>{adoptExistingSession();if(currentUser()&&!loggingOut)ready().catch(()=>{});});}catch(_){} }
   renderAccount();
  }

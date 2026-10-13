@@ -168,3 +168,23 @@
 }
 
 @media screen { html:root body #designMeetingView #dmDesignerTrigger {display:block;text-align:left;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;} }
+
+/* v202: one stable URL rectangle and matching gallery metadata. */
+@media screen {
+ #designMeetingView .dm-card-designer,#designMeetingView .dm-card-info time {margin-top:2px;font-size:12px;line-height:18px;font-weight:400;color:#6C727C;}
+ #designMeetingView .dm-organize-filters select {font-size:16px;line-height:22px;color:#6C727C;height:32px;min-height:32px;}
+ #designMeetingView .dm-detail-meta:has(#dmLinks.is-editing) .dm-assignee {display:flex;}
+ html:root body #designMeetingView #dmLinks.is-editing {position:relative;display:block;grid-column:auto;width:120px;height:28px;}
+ #designMeetingView .dm-link-editor {width:120px;height:28px;margin:0;}
+ html:root body #designMeetingView .dm-link-editor>input {display:block;box-sizing:border-box;width:120px;min-width:0;max-width:120px;height:28px;min-height:28px;margin:0;padding:2px 6px;border:1px solid var(--aisel-line);border-radius:3px;font-size:16px;line-height:22px;background:#fff;color:var(--aisel-ink);}
+ #designMeetingView .dm-link-editor>.dm-link-error {position:absolute;right:0;top:30px;width:220px;max-width:calc(100vw - 24px);z-index:2;background:#fff;}
+ #designMeetingView #dmSession {display:flex;gap:4px;}
+ #designMeetingView .dm-managed-links>div {display:flex;align-items:center;gap:4px;margin-bottom:8px;}
+ #designMeetingView .dm-managed-links>div>span {flex:1;min-width:0;overflow-wrap:anywhere;font-size:12px;line-height:18px;}
+ #designMeetingView .dm-managed-links button {flex:none;}
+}
+
+@media screen {
+ #designMeetingView #dmDetailTitle:empty::before {content:attr(data-placeholder);color:#6C727C;font-weight:400;}
+ #designMeetingView #dmAddPhotos.dm-empty-photo {display:flex;align-items:center;justify-content:center;width:100%;height:240px;margin:0;font-size:12px;font-weight:400;}
+}
