@@ -1,3 +1,4 @@
+<!-- v188: clear the missing-record draft guard only after confirmed new-record creation (2026-10-13) -->
 <!-- v187: editor title, sample name, two default materials and durable save recovery; v186:  mobile-first release verification; single late reload recovery and consistent sales text-column alignment (2026-10-13) -->
 <!-- v185: reload starts at header without suppressing back/user scroll; sales column gap2px only (2026-10-13) -->
 <!-- v184: modest sales-column spacing and 상품명 (판매순) header only (2026-10-13) -->
@@ -7599,6 +7600,9 @@
       originalWritten=true;
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
       if(isCurrentSaveState_(state) && state.latest===id){lastSavedState_=writtenServerState;editorContentBaseline_=st;newOrderMode_=false;autoCreatedCode_=null;
+        // A confirmed create replaces the initial null snapshot. Later edits must no
+        // longer be blocked as a missing record; failed/aborted creates keep the guard.
+        if(creating&&draftContext)draftContext.serverMissing=false;
         for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";
         refreshModifiedDateInput_();}
       if(isCurrentSaveState_(state)&&state.latest===id){
