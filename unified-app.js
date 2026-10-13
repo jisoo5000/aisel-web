@@ -115,7 +115,7 @@
   busy=true;let completed=false;
   try{
    if(!await guard(view))return false;info();if(view!=='editor')returnToProducts=false;
-   if(view==='references'){if(await RC.show({history:writeHistory,background:true})===false)return false;select(view);completed=true;return true;}
+   if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:false})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
    A.hide();select(view);
    if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='제품 진행 현황';document.body.dataset.aiselListView='products';}
@@ -187,7 +187,7 @@
    if(!await guard(target.view)){restoreLocation(previous);return;}
    if(target.owner==='reference'){
     const id=new URL(next.url).hash.startsWith('#reference=')?decodeURIComponent(new URL(next.url).hash.slice(11)):undefined;
-    if(await RC.show({history:false,id})===false){restoreLocation(previous);return;}
+    if(await RC.show({history:false,id,preserveDetail:!!id})===false){restoreLocation(previous);return;}
    }else if(target.owner==='meeting'){
     if(await DM.show({history:false,preserveDetail:true})===false){restoreLocation(previous);return;}
    }else{returnToProducts=false;A.hide();select(target.view);}
