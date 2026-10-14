@@ -1,3 +1,4 @@
+<!-- v204: recover mobile reload position and preserve collection edits across save conflicts -->
 <!-- v203: shared note classifications, inline reference entry and linked review display -->
 <!-- v199: mobile collection cards, direct links and independent loading -->
 <!-- v198: readable factory names and shared intrinsic numeric columns -->
@@ -79,7 +80,7 @@
  const reloaded=navigation?navigation.type==='reload':performance.navigation?.type===1;
  if(!reloaded||!('scrollRestoration' in history))return;
  const events=new AbortController(),frames=new Set();
- let active=true,lateRecovered=false;
+ let active=true,recoveryQueued=false;
  history.scrollRestoration='manual';
  window.AiselReloadStartup={get active(){return active;},release};
  function release(){
@@ -88,11 +89,11 @@
  }
  function position(){
   const root=document.scrollingElement;
-  return Math.max(window.scrollY||0,root?.scrollTop||0,window.visualViewport?.pageTop||0);
+  return Math.max(window.scrollY||0,root?.scrollTop||0,document.body?.scrollTop||0,document.documentElement?.scrollTop||0,window.visualViewport?.pageTop||0);
  }
  function top(){
   if(!active)return;
-  if(document.scrollingElement)document.scrollingElement.scrollTop=0;
+  for(const root of new Set([document.scrollingElement,document.documentElement,document.body]))if(root)root.scrollTop=0;
   window.scrollTo({top:0,left:0,behavior:'instant'});
   if((window.visualViewport?.offsetTop||0)>1)
    document.getElementById('appBrandHeader')?.scrollIntoView({block:'start',behavior:'instant'});
@@ -103,13 +104,14 @@
   window.addEventListener(type,userIntent,{capture:true,passive:true,signal:events.signal});
  for(const type of ['popstate','pagehide'])
   window.addEventListener(type,release,{capture:true,signal:events.signal});
- // One late browser restoration may happen after the initial paint on a phone.
- // Recover it only before interaction; never keep forcing an active reader to the top.
+ // Mobile Safari can restore more than once as the route, photos and viewport settle.
+ // Keep startup at the header until the first real gesture; history traversal and
+ // active typing/reading release this immediately, without a polling scroll lock.
  function recoverLate(){
-  if(!active||lateRecovered||position()<=1)return;
-  lateRecovered=true;nextFrame(()=>{top();release();});
+  if(!active||recoveryQueued||position()<=1)return;
+  recoveryQueued=true;nextFrame(()=>{recoveryQueued=false;top();});
  }
- window.addEventListener('scroll',recoverLate,{passive:true,signal:events.signal});
+ window.addEventListener('scroll',recoverLate,{capture:true,passive:true,signal:events.signal});
  for(const type of ['resize','scroll'])
   window.visualViewport?.addEventListener(type,recoverLate,{passive:true,signal:events.signal});
  // Product progress owns a nested scrolling document, which can load after the shell.
@@ -16672,10 +16674,10 @@ window.AiselDesignMeetingAdapter={
 <script>window.AISEL_GALLERY_INDEX_ENABLED = false;</script>
 <script src="aisel-gallery-index.js?v=203"></script>
 <script src="design-meeting-core.js?v=190"></script>
-<script src="design-meeting-notes.js?v=203"></script>
+<script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=203"></script>
-<script src="design-meeting.js?v=203"></script>
+<script src="design-meeting.js?v=204"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselDesignMeeting.bridge(action,[],payload)});
 </script>
@@ -16705,7 +16707,8 @@ window.AiselUnifiedAdapter={
 };
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
-<script src="reference-collection.js?v=203"></script>
+<script src="reference-save-core.js?v=204"></script>
+<script src="reference-collection.js?v=204"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=202"></script>

@@ -8,7 +8,18 @@
   function same(a,b){return JSON.stringify(value(a))===JSON.stringify(value(b));}
   function validDate(date){const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date);if(!match)return false;const d=new Date(date+'T00:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===date;}
   function notes(candidate){const raw=candidate?.referenceNotes;if(raw==null)return {};if(typeof raw!=='object'||Array.isArray(raw))throw Error('참고 저장 형식을 확인해주세요. 입력한 내용은 유지했습니다.');return raw;}
-  function conflict(){return Object.assign(Error('다른 기기에서 같은 참고를 수정했습니다. 입력은 유지했습니다. 최신 내용을 확인해주세요.'),{code:'note_conflict'});}
+  // Rebase only edits made after the submitted snapshot. Otherwise an older
+  // date/category in a still-typing draft would undo a concurrent remote edit.
+  function rebase(current,submitted,saved){
+    const merged={...saved};
+    for(const key of fields){
+      if(!Object.prototype.hasOwnProperty.call(current,key))continue;
+      const read=note=>key==='categoryId'?categoryId(note):note?.[key];
+      if(read(current)!==read(submitted))merged[key]=current[key];
+    }
+    return merged;
+  }
+  function conflict(){return Object.assign(Error('저장된 참고와 입력한 내용이 다릅니다. 입력은 보관했습니다. 내용을 확인해주세요.'),{code:'note_conflict'});}
   function apply(candidate,changes,now=Date.now()){
     if(!candidate||candidate.designMeeting!==true||candidate.designMeetingDeletedAt)throw Error('삭제되었거나 찾을 수 없는 디자인회의입니다. 입력한 참고는 유지했습니다.');
     const next={...notes(candidate)};
@@ -38,6 +49,6 @@
     return {...candidate,referenceNotes:next,updatedAt:now};
   }
   function today(now=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);}
-  const api={value,same,validDate,notes,apply,today};
+  const api={value,same,validDate,notes,apply,rebase,today};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.AiselDesignMeetingNotes=api;
 })(typeof window==='object'?window:globalThis);

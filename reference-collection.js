@@ -10,7 +10,8 @@
   const timings={},composing=new Set(),previewUrls=new Map();let linkEditor=null,noteRenderId='',suppressPhotoClickUntil=0;
   async function timed(name,task){const start=performance.now();try{return await task();}finally{timings[name]=Math.round(performance.now()-start);}}
   let photoSignature='',autoSaveTimer=null,localOnly=false,selectedPhoto=0,photoMode='append',replaceHash=null;
-  const AI=window.AiselReferenceAnalysis;
+  const AI=window.AiselReferenceAnalysis,SaveCore=window.AiselReferenceSave;
+  let activeBase=null,pendingSave=null,saveConflict=null;
   const categories={content:'콘텐츠',product:'제품'};
   const clone=v=>JSON.parse(JSON.stringify(v));
   const http=v=>{try{const u=new URL(String(v||''));return /^https?:$/.test(u.protocol)?u.href:'';}catch(_){return '';}};
@@ -26,7 +27,7 @@
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
       <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">제목 검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="제목으로 검색" autocomplete="off"></label><button type="button" id="rcRestore" hidden>삭제 복원</button></div>
       <label class="rc-note-filter"><span class="rc-sr-only">참고 분류로 찾기</span><select id="rcNoteCategoryFilter" aria-label="참고 분류로 찾기"><option value="">참고 분류 전체</option></select></label><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
-      <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>최신 내용 보기</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
+      <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
       <div id="rcGrid" class="rc-grid"><button type="button" id="rcCreate" class="rc-card rc-create-card" aria-label="레퍼런스 추가">＋ 추가</button></div><p id="rcEmpty" hidden>등록된 콘텐츠 레퍼런스가 없습니다.</p><button type="button" id="rcMore" hidden>더 보기</button></div>
       <div id="rcDetail" hidden>
       <div class="rc-title-row"><label class="rc-field rc-title"><span class="rc-sr-only">제목</span><input data-rc-field="title" type="text" maxlength="160" placeholder="레퍼런스 제목" aria-label="레퍼런스 제목"></label><div class="rc-title-actions"><button type="button" id="rcComplete" hidden>참고 완료</button><button type="button" id="rcSave">저장</button><button type="button" id="rcDelete">삭제</button></div></div>
@@ -41,7 +42,27 @@
     $('#rcLogin').onclick=async()=>{try{if(config.login)await config.login();else if(window.AiselDesignMeeting?.login)await window.AiselDesignMeeting.login({scope:'reference'});else throw Error('상단 디자인회의에서 로그인한 뒤 다시 열어주세요.');await access();await refresh();}catch(e){message(errorText(e),true);}};
     $('#rcSetup').onclick=async()=>{if(role!=='owner')return;try{await call('refEnsure');$('#rcSetup').hidden=true;await refresh();}catch(e){message(errorText(e),true);}};
     $('#rcRetry').onclick=()=>{accessAt=0;return show({history:false,forceRefresh:true});};
-    $('#rcLatest').onclick=async()=>{if(!active)return;const id=active.id,epoch=showEpoch,selection=openEpoch,editRevision=revision,stillHere=()=>active?.id===id&&epoch===showEpoch&&selection===openEpoch&&editRevision===revision;try{if(!await persistDraft()){message('입력을 보관하지 못했습니다. 최신 내용을 열기 전에 내용을 복사해주세요.',true);return;}if(!stillHere())return;const record=await remoteDetail(id,null,true);if(!stillHere())return;if(!record)throw Error('최신 내용을 확인하지 못했습니다.');active=normalizeDetail(clone(record));linkEditor=null;selectedPhoto=0;pendingFiles=[];dirty=false;revision++;$('#rcLatest').hidden=true;renderDetail();message('최신 내용입니다. 이전 입력은 목록의 작성 중 카드에 보관했습니다.');}catch(e){if(stillHere())message(errorText(e),true);}};
+    $('#rcLatest').onclick=async()=>{
+      if(!active||saveFlight)return;const id=active.id,stamp=authStamp(),selection=openEpoch,editRevision=revision;
+      const stillHere=()=>active?.id===id&&selection===openEpoch&&editRevision===revision;
+      try{
+        const record=await remoteDetail(id,null,true);assertAuth(stamp);if(!stillHere())return;
+        // Keep the local input under its own recovery ID. Reopening the original
+        // must not restore the same stale version and enter another conflict loop.
+        if(!await copyRecoveryDraft()||!stillHere())return;
+        await removeDraft(id,{revision:editRevision});assertAuth(stamp);if(!stillHere())return;
+        active=normalizeDetail(clone(record));activeBase=clone(active);pendingSave=null;saveConflict=null;linkEditor=null;selectedPhoto=0;pendingFiles=[];dirty=false;revision++;
+        renderDetail();message('저장된 내용입니다. 이전 입력은 목록에 별도로 보관했습니다.');
+      }catch(e){if(stillHere())message(errorText(e),true);}
+    };
+    $('#rcSaveCopy').onclick=async()=>{
+      if(!active||saveFlight||!permissions.canCreate)return;const id=active.id,stamp=authStamp(),editRevision=revision;
+      try{const recovery=await copyRecoveryDraft();assertAuth(stamp);if(!recovery||active?.id!==id||revision!==editRevision)return;
+        await removeDraft(id,{revision:editRevision});assertAuth(stamp);if(active?.id!==id||revision!==editRevision)return;
+        active=normalizeDetail(clone(recovery.record));activeBase=null;pendingSave=null;saveConflict=null;
+        linkEditor=restoredLinkEditor(recovery.linkEditor,active.id);revision++;dirty=true;renderDetail();setRoute(active.id,true);await save();
+      }catch(e){if(active?.id===id)message(errorText(e),true);}
+    };
     $('#rcMore').onclick=()=>refresh(true);$('#rcCreate').onclick=createEntry;$('#rcRestore').onclick=restoreDialog;$('#rcSave').onclick=()=>save();$('#rcCategory').onclick=chooseCategory;$('#rcLinkEdit').onclick=chooseLinkEditor;$('#rcLinkDelete').onclick=deleteLink;$('#rcSourceOpen').onclick=openSource;$('#rcLinkInput').oninput=captureLinkDraft;$('#rcLinkInput').onblur=()=>{const editor=linkEditor;queueMicrotask(()=>{if(editor&&linkEditor===editor&&active?.id===editor.id&&!isComposing())finishLinkEditor();});};$('#rcLinkInput').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&!isComposing()){e.preventDefault();finishLinkEditor();}else if(e.key==='Escape'&&!e.isComposing){e.preventDefault();cancelLinkEditor();}};$('#rcDelete').onclick=()=>archiveRecord();$('#rcComplete').onclick=()=>archiveRecord(true);$('#rcDate').oninput=()=>{if(!active||!canEdit()||$('#rcDate').value&&!/^\d{4}-\d{2}-\d{2}$/.test($('#rcDate').value))return;active.date=$('#rcDate').value;$('#rcDateText').textContent=shortDate(active.date);markDirty();};$('#rcDialogCancel').onclick=()=>$('#rcDialog').close();$('#rcDialog form').onsubmit=e=>{e.preventDefault();$('#rcDialogConfirm').click();};
     $('#rcNoteCategoryFilter').onchange=()=>{gallerySignature='';renderList();rememberList();};$('#rcNoteCategoryFilter').onfocus=()=>window.AiselNoteCategories?.load().catch(()=>{});
     $('#rcSearch').oninput=()=>{gallerySignature='';renderList();rememberList();};
@@ -128,12 +149,12 @@
   function assertAuth(stamp){const current=authStamp();if(stamp.uid!==current.uid||stamp.generation!==current.generation||stamp.epoch!==current.epoch)throw Object.assign(Error('로그인 상태가 변경되었습니다. 다시 확인해주세요.'),{code:'auth_changed'});}
   async function call(action,payload={}){const bridge=config.bridge||((a,p)=>window.AiselDesignMeeting.bridge(a,[],p));const stamp=authStamp(),result=await bridge(action,payload);assertAuth(stamp);if(result?.ok===false)throw Object.assign(Error(result.error||'연결을 확인해주세요.'),{code:result.code});return result;}
   function message(text,error=false){ensure();if($('#rcDetail').hidden)$('.rc-list-tools').after($('#rcNotices'));else $('.rc-detail-actions').before($('#rcNotices'));$('#rcStatus').textContent=text;$('#rcStatus').classList.toggle('rc-error',error);}
-  function errorText(e){if(e?.code==='connection_pending'){$('#rcRetry').hidden=false;$('#rcLogin').hidden=true;return '레퍼런스 저장 서버 업데이트가 필요합니다. 관리자에게 연결을 요청해주세요.';}if(e?.code==='conflict'){$('#rcLatest').hidden=false;return draftStored?'다른 기기에서 먼저 수정했습니다. 입력은 이 기기에 보관했습니다. 최신 내용을 확인해주세요.':'다른 기기에서 먼저 수정했습니다. 입력은 화면에 남아 있습니다. 창을 닫기 전에 내용을 복사해주세요.';}if(e?.code==='setup_required'){$('#rcSetup').hidden=role!=='owner';return '레퍼런스 시트 연결을 준비해주세요.';}return e?.message||'저장을 확인하지 못했습니다. 입력을 유지했습니다.';}
+  function errorText(e){if(e?.code==='connection_pending'){$('#rcRetry').hidden=false;$('#rcLogin').hidden=true;return '레퍼런스 저장 서버 업데이트가 필요합니다. 관리자에게 연결을 요청해주세요.';}if(e?.code==='conflict'){$('#rcLatest').hidden=false;$('#rcSaveCopy').hidden=!permissions.canCreate;return draftStored?'저장된 내용과 입력이 겹칩니다. 입력은 보관했으니 저장할 내용을 선택해주세요.':'입력은 화면에 남아 있습니다. 창을 닫기 전에 내용을 복사해주세요.';}if(e?.code==='setup_required'){$('#rcSetup').hidden=role!=='owner';return '레퍼런스 시트 연결을 준비해주세요.';}return e?.message||'저장을 확인하지 못했습니다. 입력을 유지했습니다.';}
   async function access(){
     if(galleryEnabled()&&galleryState?.authorized===false&&galleryState.uid===window.AiselAuth?.currentUser()?.uid)throw Object.assign(Error('레퍼런스 열람 권한을 다시 확인해주세요.'),{code:'forbidden'});
     const stamp=authStamp();
     if(authorizedStamp&&account&&!localOnly&&performance.now()-accessAt<60000){try{assertAuth(authorizedStamp);return {role,permissions,accountKey:account};}catch(_){}}
-    if(accessFlight&&accessFlight.epoch===stamp.epoch)return accessFlight.promise;
+    if(accessFlight&&SaveCore.equal(accessFlight.stamp,stamp))return accessFlight.promise;
     const task=(async()=>{
       const data=await timed('accessMs',()=>call('refAccess'));assertAuth(stamp);
       const next=String(data.accountKey||data.email||config.account?.()||'');if(!next)throw Error('로그인 계정 확인이 필요합니다.');
@@ -142,7 +163,7 @@
       if(![196,203].includes(permissions.referenceDetailVersion))throw Object.assign(Error('레퍼런스 저장 서버 연결이 필요합니다.'),{code:'connection_pending'});
       localOnly=false;$('#rcRestore').hidden=!permissions.canManage;authorizedStamp=stamp;accessAt=performance.now();$('#rcRetry').hidden=true;$('#rcLogin').hidden=true;
       renderList();renderDrafts();if(permissions.noteCategoriesVersion===203)window.AiselNoteCategories?.load().catch(()=>{});return data;
-    })();accessFlight={epoch:stamp.epoch,promise:task};
+    })();accessFlight={epoch:stamp.epoch,stamp,promise:task};
     try{return await task;}catch(e){if(stamp.epoch===authEpoch&&!['auth_changed','session_changed'].includes(e.code))await invalidateAccess(e,stamp);throw e;}finally{if(accessFlight?.promise===task)accessFlight=null;}
   }
   async function invalidateAccess(error,stamp){
@@ -184,7 +205,7 @@
   }
   async function remoteDetail(id,prefetch,force=false){
     if(!force){const cached=cachedDetail(id);if(cached)return clone(cached);}
-    if(detailFlights.has(id))return detailFlights.get(id);
+    if(!force&&detailFlights.has(id))return detailFlights.get(id);
     const stamp=authStamp(),scope=account;
     const task=(async()=>{const data=await readWithRepair('refGet',{id},prefetch);assertAuth(stamp);if(scope!==account)throw Object.assign(Error('로그인 상태가 변경되었습니다.'),{code:'auth_changed'});if(!data.record?.id)throw Error('레퍼런스를 찾지 못했습니다.');const known=records.get(id);if(known&&Number(known.version)>Number(data.record.version)){const newer=cachedDetail(id);if(newer)return clone(newer);throw Object.assign(Error('더 최신 내용이 있습니다. 레퍼런스를 다시 열어주세요.'),{code:'stale_read'});}rememberRecord(data.record,true);return data.record;})();
     detailFlights.set(id,task);try{return await task;}finally{if(detailFlights.get(id)===task)detailFlights.delete(id);}
@@ -381,9 +402,34 @@
     if(!await save()||!stillVisible())return false;captureList();
     try{
       message('불러오는 중…');const local=await getDraft(id);assertAuth(stamp);if(!stillVisible())return false;
-      const record=local?local.record:await remoteDetail(id,options.prefetch);
+      let record,base=null,conflict=null;
+      if(local){
+        record=normalizeDetail(clone(local.record));base=local.baseRecord?normalizeDetail(clone(local.baseRecord)):null;
+        if(record.version>0||local.pendingSave){
+          let latest;
+          try{latest=normalizeDetail(clone(await remoteDetail(id,options.prefetch,true)));}
+          catch(error){
+            // A first request may fail before the server created the row.
+            // Its durable version-zero draft must still open and retry normally.
+            if(error.code==='not_found'&&record.version===0&&!base)local.pendingSave=null;
+            else throw error;
+          }
+          if(latest){
+            if(!base&&record.version===latest.version)base=clone(latest);
+            const merged=SaveCore.merge(base,record,latest,local.pendingSave);
+            if(merged.ok){record=normalizeDetail(merged.record);base=clone(latest);}
+            else conflict={record:latest,conflicts:merged.conflicts};
+          }
+        }
+      }else{record=normalizeDetail(clone(await remoteDetail(id,options.prefetch)));base=clone(record);}
       assertAuth(stamp);if(!stillVisible())return false;if(!record?.id)throw Error('레퍼런스를 찾지 못했습니다.');
-      active=normalizeDetail(clone(record));linkEditor=restoredLinkEditor(local?.linkEditor,record.id);selectedPhoto=priorPhoto;pendingFiles=local?.files||[];replaceHash=local?.replaceHash||null;dirty=!!local;revision++;$('#rcList').hidden=true;$('#rcDetail').hidden=false;renderDetail();if(options.history!==false)setRoute(id);window.scrollTo(0,0);message(local?'이 기기에 보관한 입력을 이어서 작성할 수 있습니다.':'');return true;
+      active=record;activeBase=base;pendingSave=local?.pendingSave||null;saveConflict=conflict;
+      linkEditor=restoredLinkEditor(local?.linkEditor,record.id);selectedPhoto=priorPhoto;pendingFiles=local?.files||[];replaceHash=local?.replaceHash||null;
+      dirty=!!local&&(!base||Object.keys(SaveCore.patch(base,active)).length>0||pendingFiles.length>0||!!linkEditor);revision++;
+      $('#rcList').hidden=true;$('#rcDetail').hidden=false;renderDetail();if(options.history!==false)setRoute(id);window.scrollTo(0,0);
+      if(conflict)message(errorText({code:'conflict'}),true);
+      else{if(local&&!dirty)await removeDraft(id,{revision});assertAuth(stamp);if(!stillVisible())return false;message(local&&dirty?'이 기기에 보관한 입력을 이어서 작성할 수 있습니다.':'');}
+      return true;
     }catch(e){if(stillVisible()&&e.code!=='auth_changed')message(errorText(e),true);return false;}
   }
   async function createEntry(){
@@ -403,8 +449,8 @@
     if(links.length===1){remove(0);return;}
     dialog('삭제할 링크',box=>links.forEach((url,index)=>{const button=document.createElement('button');button.type='button';button.className='rc-link-delete-item';button.textContent=url;button.onclick=()=>remove(index);box.append(button);}));
   }
-  async function create(epoch=showEpoch,selection=openEpoch){const stamp=authStamp();if(!permissions.canCreate||!await save())return;assertAuth(stamp);if(selection!==openEpoch||epoch!==showEpoch||!visible||pane.hidden)return;captureList();active={id:'ref_'+crypto.randomUUID().replace(/-/g,''),version:0,title:'',date:today(),category:selectedCategory(),contentType:selectedCategory()==='content'?'image':'',noteEntries:[{id:'note_'+crypto.randomUUID(),date:today(),text:''}],sourceLinks:[],notes:'',sourceUrl:'',categoryMode:'manual',photos:[],permissions:{canEdit:true,canArchive:false}};pendingFiles=[];linkEditor=null;dirty=true;revision++;$('#rcList').hidden=true;$('#rcDetail').hidden=false;renderDetail();setRoute(active.id);await persistDraft();message('');return true;}
-  function renderDetail(){normalizeDetail(active);$('.rc-detail-actions').before($('#rcNotices'));$('#rcLatest').hidden=true;$('#rcSave').disabled=!!saveFlight||!canEdit();fields.forEach(k=>{const input=$('[data-rc-field="'+k+'"]');if(input.dataset.recordId!==active.id||document.activeElement!==input&&!composing.has(input)&&input.value!==(active[k]||''))input.value=active[k]||'';input.dataset.recordId=active.id;input.disabled=!canEdit();});$('#rcSave').hidden=!canEdit();$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcDelete').disabled=!!saveFlight;$('#rcCategory').disabled=!canEdit();$('#rcDate').value=active.date||'';$('#rcDate').disabled=!canEdit();$('#rcDateText').textContent=shortDate(active.date);$('#rcComplete').hidden=!canEdit()||!active.version||active.permissions?.canArchive!==true;$('#rcCategoryText').textContent=categoryLabel(active);updateSource();renderPhotos();renderNotes();renderAnalysis();$('[data-rc-field="title"]').placeholder=AI.title(active);}
+  async function create(epoch=showEpoch,selection=openEpoch){const stamp=authStamp();if(!permissions.canCreate||!await save())return;assertAuth(stamp);if(selection!==openEpoch||epoch!==showEpoch||!visible||pane.hidden)return;captureList();active={id:'ref_'+crypto.randomUUID().replace(/-/g,''),version:0,title:'',date:today(),category:selectedCategory(),contentType:selectedCategory()==='content'?'image':'',noteEntries:[{id:'note_'+crypto.randomUUID(),date:today(),text:''}],sourceLinks:[],notes:'',sourceUrl:'',categoryMode:'manual',photos:[],permissions:{canEdit:true,canArchive:false}};activeBase=null;pendingSave=null;saveConflict=null;pendingFiles=[];linkEditor=null;dirty=true;revision++;$('#rcList').hidden=true;$('#rcDetail').hidden=false;renderDetail();setRoute(active.id);await persistDraft();message('');return true;}
+  function renderDetail(){normalizeDetail(active);$('.rc-detail-actions').before($('#rcNotices'));$('#rcLatest').hidden=!saveConflict;$('#rcSaveCopy').hidden=!saveConflict||!permissions.canCreate;$('#rcSave').disabled=!!saveFlight||!canEdit();fields.forEach(k=>{const input=$('[data-rc-field="'+k+'"]');if(input.dataset.recordId!==active.id||document.activeElement!==input&&!composing.has(input)&&input.value!==(active[k]||''))input.value=active[k]||'';input.dataset.recordId=active.id;input.disabled=!canEdit();});$('#rcSave').hidden=!canEdit();$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcDelete').disabled=!!saveFlight;$('#rcCategory').disabled=!canEdit();$('#rcDate').value=active.date||'';$('#rcDate').disabled=!canEdit();$('#rcDateText').textContent=shortDate(active.date);$('#rcComplete').hidden=!canEdit()||!active.version||active.permissions?.canArchive!==true;$('#rcCategoryText').textContent=categoryLabel(active);updateSource();renderPhotos();renderNotes();renderAnalysis();$('[data-rc-field="title"]').placeholder=AI.title(active);}
   function updateSource(){
     const editing=linkEditor?.id===active?.id,tools=$('.rc-link-tools');tools.classList.toggle('is-editing',editing);$('#rcLinkEditor').hidden=!editing;
     for(const id of ['rcSourceOpen','rcLinkEdit','rcLinkDelete'])$('#'+id).hidden=editing;
@@ -471,21 +517,127 @@
       let touch=null;box.onpointerdown=e=>{touch=e.target.closest('.rc-photo-nav')?null:{x:e.clientX,y:e.clientY};};box.onpointerup=e=>{if(!touch)return;const dx=e.clientX-touch.x,dy=e.clientY-touch.y;touch=null;if(Math.abs(dx)>40&&Math.abs(dx)>Math.abs(dy)*1.5){suppressPhotoClickUntil=Date.now()+350;turn(dx<0?1:-1);}};box.onpointercancel=()=>{touch=null;};
     }else{box.onpointerdown=box.onpointerup=box.onpointercancel=null;}
   }
-  function scheduleSave(){clearTimeout(autoSaveTimer);autoSaveTimer=setTimeout(()=>{if(linkEditor?.id===active?.id||[...composing].some(node=>node.isConnected)||[...notePickers.values()].some(picker=>picker.hasDraft?.()))return;save();},600);}
+  function scheduleSave(){clearTimeout(autoSaveTimer);if(saveConflict)return;autoSaveTimer=setTimeout(()=>{if(linkEditor?.id===active?.id||[...composing].some(node=>node.isConnected)||[...notePickers.values()].some(picker=>picker.hasDraft?.()))return;save();},600);}
   function markDirty(){dirty=true;revision++;renderAnalysis();message(localOnly?'입력 중 · 시트 연결 대기':'입력 중');clearTimeout(draftTimer);draftTimer=setTimeout(()=>persistDraft().catch(()=>message('이 기기에 입력을 보관하지 못했습니다. 창을 닫기 전에 저장해주세요.',true)),250);scheduleSave();}
   async function receive(files){if(!active||!canEdit()||saveFlight||photoFlight)return;let valid=[...files].filter(f=>/^image\/(jpeg|png|webp|gif)$/.test(f.type));if(!valid.length){message('JPG, PNG, WebP, GIF 사진을 선택해주세요.',true);return;}if(photoMode==='replace')valid=valid.slice(0,1);if((active.photos?.length||0)+pendingFiles.length+valid.length-(replaceHash?1:0)>12){message('사진은 한 레퍼런스에12장까지 등록할 수 있습니다.',true);return;}if(valid.some(f=>f.size>26214400)){message('사진 한 장은25MB 이하로 선택해주세요.',true);return;}pendingFiles.push(...valid);selectedPhoto=(active.photos?.length||0)+pendingFiles.length-1;markDirty();renderPhotos();await persistDraft();}
   async function digest(file){return [...new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()))].map(b=>b.toString(16).padStart(2,'0')).join('');}
   async function thumbnail(file){const url=URL.createObjectURL(file);try{const image=new Image();image.src=url;await image.decode();const canvas=document.createElement('canvas');const scale=Math.min(1,480/Math.max(image.naturalWidth,image.naturalHeight));canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);let blob;for(const quality of [.8,.65,.5,.35,.2]){blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(blob&&blob.size<=102400)break;}if(!blob||blob.size>102400)throw Error('사진 미리보기 생성에 실패했습니다. 다른 사진으로 다시 시도해주세요.');return {blob,width:image.naturalWidth,height:image.naturalHeight};}finally{URL.revokeObjectURL(url);}}
   function encode(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});}
-  async function uploadPhotos(){while(pendingFiles.length){const file=pendingFiles[0],prepared=await AiselPhoto.prepare(file,'collection'),hash=await digest(prepared.blob);if(!active.photos)active.photos=[];if(!active.photos.some(p=>p.hash===hash)){const thumb=await thumbnail(prepared.blob);const original=(await call('refUpload',{id:active.id,hash,kind:'original',mime:prepared.blob.type,data:await encode(prepared.blob)})).photo;const small=(await call('refUpload',{id:active.id,hash,kind:'thumb.jpg',mime:'image/jpeg',data:await encode(thumb.blob)})).photo;if(!http(original?.url)||!http(small?.url))throw Error('사진 저장을 확인하지 못했습니다.');active.photos.push({hash,original:original.url,thumb:small.url,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});}if(replaceHash){active.photos=active.photos.filter(p=>p.hash!==replaceHash||p.hash===hash);replaceHash=null;photoMode='append';}pendingFiles.shift();await persistDraft();}renderPhotos();}
-  async function save(){clearTimeout(autoSaveTimer);if(isComposing()){await persistDraft();return false;}if(!await flushNotePickers())return false;if(linkEditor?.id===active?.id&&!finishLinkEditor())return false;clearTimeout(autoSaveTimer);if(localOnly&&active){if(!canEdit()){message('로그인 상태를 확인해주세요.',true);return false;}const ok=await persistDraft();message(ok?'이 기기에 임시 보관됨 · 시트 연결 대기':'임시 보관에 실패했습니다. 창을 닫기 전에 내용을 복사해주세요.',!ok);return ok;}if(saveFlight)return saveFlight;if(!active||!dirty&&!pendingFiles.length)return true;try{await window.AiselAuth?.ready?.({allowGuardRequest:true});}catch(e){message(e.message,true);return false;}if(saveFlight)return saveFlight;if(!active||!dirty&&!pendingFiles.length)return true;if(active.version===0&&!String(active.title||'').trim()&&!(active.noteEntries||[]).some(n=>n.text.trim()||n.categoryId)&&!active.sourceUrl&&!(active.photos||[]).length&&!pendingFiles.length){await removeDraft(active.id);dirty=false;return true;}if(!canEdit()){message('이 레퍼런스는 조회만 가능합니다.',true);return false;}if(active.sourceUrl&&!http(active.sourceUrl)){message('출처 링크는 http 또는 https 주소로 입력해주세요.',true);await persistDraft();return false;}const task=async()=>{const id=active.id,priorSource=reviewSourceKeys.get(active.id);$('#rcSave').disabled=true;$('#rcDelete').disabled=true;try{await persistDraft();message('저장 중…');if(active.noteEntries?.some(note=>note.categoryId)&&permissions.noteCategoriesVersion!==203)throw Object.assign(Error('참고 분류 저장 연결 준비 중입니다. 입력은 이 기기에 보관됩니다.'),{code:'category_backend_pending'});for(const categoryId of new Set((active.noteEntries||[]).map(note=>note.categoryId).filter(Boolean))){if(!window.AiselNoteCategories)throw Error('참고 분류 저장 연결을 확인해주세요. 입력은 이 기기에 보관됩니다.');await window.AiselNoteCategories.ensure(categoryId);}photoFlight=uploadPhotos();await photoFlight;photoFlight=null;const snapshot=clone(active),sentRevision=revision;const patch=Object.fromEntries(['title','date','category','contentType','notes','sourceUrl'].map(k=>[k,snapshot[k]||'']));patch.sourceLinks=snapshot.sourceLinks||[];patch.noteEntries=snapshot.noteEntries||[];patch.photos=snapshot.photos||[];patch.categoryMode=snapshot.categoryMode||'auto';const data=await call('refSave',{id,version:snapshot.version,patch});if(!data.record||data.record.id!==id||!(data.record.version>snapshot.version))throw Error('저장을 확인하지 못했습니다. 입력을 유지했습니다.');rememberRecord(data.record,true);const returnedNotes=new Map((data.record.noteEntries||[]).map(note=>[note.id,note]));if((snapshot.noteEntries||[]).some(note=>(note.categoryId||'')!==(returnedNotes.get(note.id)?.categoryId||''))){if(active?.id===id){active.version=data.record.version;active.permissions=data.record.permissions;}throw Object.assign(Error('참고 분류의 서버 저장을 확인하지 못했습니다. 입력은 이 기기에 보관했습니다. 다시 저장해주세요.'),{code:'category_not_retained'});}if(active?.id===id){if(sentRevision===revision){active=normalizeDetail({...clone(data.record),noteEntries:active.noteEntries,sourceLinks:active.sourceLinks});dirty=false;await removeDraft(id);}else{active.version=data.record.version;active.permissions=data.record.permissions;await persistDraft();}}gallerySignature='';renderList();if(snapshot.category==='product'&&(snapshot.photos?.length||snapshot.sourceLinks?.length)&&(snapshot.version===0||sourceKey(snapshot)!==priorSource)&&permissions.referenceJudgmentVersion===203)void prepareProductJudgment(data.record);renderAnalysis();message(dirty?'추가 입력을 저장해주세요.':'저장됨');return !dirty;}catch(e){await persistDraft().catch(()=>{});message(errorText(e),true);return false;}finally{photoFlight=null;$('#rcSave').disabled=false;$('#rcDelete').disabled=false;}};saveFlight=task();try{return await saveFlight;}finally{saveFlight=null;if(active){$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcComplete').hidden=!canEdit()||!active.version||active.permissions?.canArchive!==true;renderPhotos();if(dirty&&!$('#rcStatus').classList.contains('rc-error'))scheduleSave();}}}
+  async function uploadPhotos(expectedId=active?.id,stamp=authStamp()){
+    const check=()=>{assertAuth(stamp);if(active?.id!==expectedId)throw Object.assign(Error('열린 자료가 변경되었습니다.'),{code:'session_changed'});};
+    while(pendingFiles.length){
+      check();const file=pendingFiles[0],prepared=await AiselPhoto.prepare(file,'collection'),hash=await digest(prepared.blob);check();active.photos||=[];
+      if(!active.photos.some(photo=>photo.hash===hash)){
+        const thumb=await thumbnail(prepared.blob),originalData=await encode(prepared.blob),thumbData=await encode(thumb.blob);check();
+        const original=(await call('refUpload',{id:expectedId,hash,kind:'original',mime:prepared.blob.type,data:originalData})).photo;check();
+        const small=(await call('refUpload',{id:expectedId,hash,kind:'thumb.jpg',mime:'image/jpeg',data:thumbData})).photo;check();
+        if(!http(original?.url)||!http(small?.url))throw Error('사진 저장을 확인하지 못했습니다.');
+        active.photos.push({hash,original:original.url,thumb:small.url,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});
+      }
+      if(replaceHash){active.photos=active.photos.filter(photo=>photo.hash!==replaceHash||photo.hash===hash);replaceHash=null;photoMode='append';}
+      pendingFiles.shift();await persistDraft();check();
+    }
+    renderPhotos();
+  }
+  function clearConflict(){saveConflict=null;$('#rcLatest').hidden=true;$('#rcSaveCopy').hidden=true;}
+  async function saveSnapshot(snapshot,base,assertCurrent){
+    let current=clone(snapshot),confirmed=base?clone(base):null,attempt=pendingSave;
+    // Older drafts did not record their confirmed base. Read before writing;
+    // identical data is already saved, but differing unknown input is not safe to overwrite.
+    if(current.version>0&&!confirmed){
+      const remote=normalizeDetail(clone(await remoteDetail(current.id,null,true)));assertCurrent();
+      if(current.version===remote.version)confirmed=clone(remote);
+      const merged=SaveCore.merge(confirmed,current,remote,attempt);
+      if(!merged.ok){saveConflict={record:remote,conflicts:merged.conflicts};throw Object.assign(Error('저장 내용을 선택해주세요.'),{code:'conflict'});}
+      current=merged.record;confirmed=remote;
+    }
+    for(let tries=0;tries<3;tries++){
+      assertCurrent();const patch=SaveCore.patch(confirmed,current);
+      if(!Object.keys(patch).length&&confirmed)return {record:confirmed,snapshot:current};
+      pendingSave={base:confirmed,snapshot:clone(current),patch:clone(patch)};
+      await persistDraft();assertCurrent();
+      try{
+        const data=await call('refSave',{id:current.id,version:current.version,patch});assertCurrent();
+        if(!data.record||data.record.id!==current.id||!(data.record.version>current.version))throw Error('저장을 확인하지 못했습니다. 입력을 유지했습니다.');
+        return {record:data.record,snapshot:current};
+      }catch(e){
+        if(e.code!=='conflict'||tries===2)throw e;
+        const remote=normalizeDetail(clone(await remoteDetail(current.id,null,true)));assertCurrent();
+        const merged=SaveCore.merge(confirmed,current,remote,attempt);
+        if(!merged.ok){saveConflict={record:remote,conflicts:merged.conflicts};throw e;}
+        current=merged.record;confirmed=remote;attempt=null;
+      }
+    }
+  }
+  async function save(){
+    clearTimeout(autoSaveTimer);
+    if(isComposing()){await persistDraft();return false;}
+    if(!await flushNotePickers())return false;
+    if(linkEditor?.id===active?.id&&!finishLinkEditor())return false;clearTimeout(autoSaveTimer);
+    if(localOnly&&active){if(!canEdit()){message('로그인 상태를 확인해주세요.',true);return false;}const ok=await persistDraft();message(ok?'이 기기에 임시 보관됨 · 시트 연결 대기':'임시 보관에 실패했습니다. 창을 닫기 전에 내용을 복사해주세요.',!ok);return ok;}
+    if(saveFlight)return saveFlight;
+    if(!active||!dirty&&!pendingFiles.length)return true;
+    try{await window.AiselAuth?.ready?.({allowGuardRequest:true});}catch(e){message(e.message,true);return false;}
+    if(saveFlight)return saveFlight;if(!active||!dirty&&!pendingFiles.length)return true;
+    if(active.version===0&&!String(active.title||'').trim()&&!(active.noteEntries||[]).some(n=>n.text.trim()||n.categoryId)&&!active.sourceUrl&&!(active.photos||[]).length&&!pendingFiles.length){const emptyId=active.id,emptyRevision=revision;await removeDraft(emptyId,{revision:emptyRevision});if(active?.id!==emptyId||revision!==emptyRevision)return false;dirty=false;return true;}
+    if(!canEdit()){message('이 레퍼런스는 조회만 가능합니다.',true);return false;}
+    if(active.sourceUrl&&!http(active.sourceUrl)){message('출처 링크는 http 또는 https 주소로 입력해주세요.',true);await persistDraft();return false;}
+    const id=active.id,stamp=authStamp(),scope=account,priorSource=reviewSourceKeys.get(id);
+    const assertCurrent=()=>{assertAuth(stamp);if(active?.id!==id||account!==scope)throw Object.assign(Error('열린 자료가 변경되었습니다.'),{code:'session_changed'});};
+    const task=async()=>{
+      $('#rcSave').disabled=true;$('#rcDelete').disabled=true;
+      try{
+        await persistDraft();assertCurrent();message('저장 중…');
+        if(active.noteEntries?.some(note=>note.categoryId)&&permissions.noteCategoriesVersion!==203)throw Object.assign(Error('참고 분류 저장 연결 준비 중입니다. 입력은 이 기기에 보관됩니다.'),{code:'category_backend_pending'});
+        for(const categoryId of new Set((active.noteEntries||[]).map(note=>note.categoryId).filter(Boolean))){if(!window.AiselNoteCategories)throw Error('참고 분류 저장 연결을 확인해주세요. 입력은 이 기기에 보관됩니다.');await window.AiselNoteCategories.ensure(categoryId);assertCurrent();}
+        photoFlight=uploadPhotos(id,stamp);await photoFlight;photoFlight=null;assertCurrent();
+        const snapshot=clone(active),sentRevision=revision,base=activeBase?clone(activeBase):null;
+        const data=await saveSnapshot(snapshot,base,assertCurrent);assertCurrent();rememberRecord(data.record,true);
+        const returnedNotes=new Map((data.record.noteEntries||[]).map(note=>[note.id,note]));
+        if((data.snapshot.noteEntries||[]).some(note=>(note.categoryId||'')!==(returnedNotes.get(note.id)?.categoryId||''))){active.version=data.record.version;active.permissions=data.record.permissions;throw Object.assign(Error('참고 분류의 서버 저장을 확인하지 못했습니다. 입력은 이 기기에 보관했습니다. 다시 저장해주세요.'),{code:'category_not_retained'});}
+        // Type-ahead belongs to the next save. Merge it onto the acknowledged
+        // record instead of replacing the form or keeping its stale version.
+        const after=sentRevision===revision?{ok:true,record:data.record}:SaveCore.merge(snapshot,active,data.record);
+        if(!after.ok){activeBase=clone(snapshot);saveConflict={record:data.record,conflicts:after.conflicts};await persistDraft();throw Object.assign(Error('저장 내용을 선택해주세요.'),{code:'conflict'});}
+        active=normalizeDetail(clone(after.record));activeBase=normalizeDetail(clone(data.record));pendingSave=null;clearConflict();
+        dirty=Object.keys(SaveCore.patch(activeBase,active)).length>0||pendingFiles.length>0||!!linkEditor;
+        if(dirty)await persistDraft();else await removeDraft(id,{revision});assertCurrent();
+        gallerySignature='';renderList();renderDetail();
+        if(data.record.category==='product'&&(data.record.photos?.length||data.record.sourceLinks?.length)&&(snapshot.version===0||sourceKey(data.record)!==priorSource)&&permissions.referenceJudgmentVersion===203)void prepareProductJudgment(data.record);
+        message(dirty?'입력 중':'저장됨');return !dirty;
+      }catch(e){
+        try{assertCurrent();}catch(_){return false;}
+        await persistDraft().catch(()=>{});if(e.code==='conflict')saveConflict||={};message(errorText(e),true);return false;
+      }finally{photoFlight=null;if(active?.id===id&&account===scope){$('#rcSave').disabled=!canEdit();$('#rcDelete').disabled=false;}}
+    };
+    saveFlight=task();const ownFlight=saveFlight;
+    try{return await ownFlight;}finally{if(saveFlight===ownFlight)saveFlight=null;if(active?.id===id&&account===scope){$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcComplete').hidden=!canEdit()||!active.version||active.permissions?.canArchive!==true;renderPhotos();if(dirty&&!$('#rcStatus').classList.contains('rc-error'))scheduleSave();}}
+  }
   async function back(){if(!await canLeave())return false;active=null;linkEditor=null;dirty=false;pendingFiles=[];showList();if(history.state?.aiselReference?.id)history.back();else setRoute(null,true);return true;}
   function db(){if(!draftDb)draftDb=new Promise((resolve,reject)=>{const r=indexedDB.open('aisel-reference-inputs',2);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('inputs'))r.result.createObjectStore('inputs',{keyPath:'key'});if(!r.result.objectStoreNames.contains('media'))r.result.createObjectStore('media',{keyPath:'key'});};r.onsuccess=()=>{r.result.onversionchange=()=>{r.result.close();draftDb=null;};resolve(r.result);};r.onerror=()=>{draftDb=null;reject(r.error);};});return draftDb;}
   async function storage(mode,value,table='inputs'){const database=await db();return new Promise((resolve,reject)=>{const tx=database.transaction(table,mode==='all'||mode==='get'?'readonly':'readwrite'),store=tx.objectStore(table);const request=mode==='put'?store.put(value):mode==='delete'?store.delete(value):mode==='get'?store.get(value):store.getAll();let result;request.onsuccess=()=>result=request.result;tx.oncomplete=()=>resolve(result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);});}
   async function preserveFile(file,scope){let byScope=draftFileKeys.get(file);if(!byScope){byScope=new Map();draftFileKeys.set(file,byScope);}if(!byScope.has(scope)){const task=(async()=>{const data=await file.arrayBuffer();const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',data))].map(b=>b.toString(16).padStart(2,'0')).join('');const key=scope+'|'+hash;if(!await storage('get',key,'media'))await storage('put',{key,data,name:file.name,type:file.type,lastModified:file.lastModified},'media');return key;})();byScope.set(scope,task);task.catch(()=>byScope.delete(scope));}return byScope.get(scope);}
-  async function persistDraft(){if(!account||!active||!dirty&&!pendingFiles.length&&!linkEditor)return true;const item={key:account+'|'+active.id,account,id:active.id,record:clone(active),at:Date.now(),replaceHash,linkEditor:linkEditor?.id===active.id?clone(linkEditor):null},files=[...pendingFiles];const task=draftWrites.catch(()=>{}).then(async()=>{item.fileKeys=await Promise.all(files.map(f=>preserveFile(f,item.key)));if(files.length&&!item.record.photos?.length){const first=files[0];if(!draftPreviews.has(first))draftPreviews.set(first,thumbnail(first).then(async({blob})=>'data:image/jpeg;base64,'+await encode(blob)).catch(()=>''));item.preview=await draftPreviews.get(first);}await storage('put',item);return true;});draftWrites=task;try{await task;draftStored=true;if(item.account===account){draftRows.set(item.id,item);gallerySignature='';if($('#rcDetail').hidden)renderList();}return true;}catch(_){draftStored=false;if(!saveFlight)message('이 기기에 입력을 보관하지 못했습니다. 창을 닫기 전에 저장해주세요.',true);return false;}}
+  async function persistDraft(){if(!account||!active||!dirty&&!pendingFiles.length&&!linkEditor)return true;const item={key:account+'|'+active.id,account,id:active.id,record:clone(active),baseRecord:activeBase?clone(activeBase):null,pendingSave:pendingSave?clone(pendingSave):null,at:Date.now(),replaceHash,linkEditor:linkEditor?.id===active.id?clone(linkEditor):null},files=[...pendingFiles];const task=draftWrites.catch(()=>{}).then(async()=>{item.fileKeys=await Promise.all(files.map(f=>preserveFile(f,item.key)));if(files.length&&!item.record.photos?.length){const first=files[0];if(!draftPreviews.has(first))draftPreviews.set(first,thumbnail(first).then(async({blob})=>'data:image/jpeg;base64,'+await encode(blob)).catch(()=>''));item.preview=await draftPreviews.get(first);}await storage('put',item);return true;});draftWrites=task;try{await task;draftStored=true;if(item.account===account){draftRows.set(item.id,item);gallerySignature='';if($('#rcDetail').hidden)renderList();}return true;}catch(_){draftStored=false;if(!saveFlight)message('이 기기에 입력을 보관하지 못했습니다. 창을 닫기 전에 저장해주세요.',true);return false;}}
   async function getDraft(id){await draftWrites.catch(()=>{});const item=await storage('get',account+'|'+id);if(!item)return item;if(item.fileKeys){item.files=await Promise.all(item.fileKeys.map(async key=>{const media=await storage('get',key,'media');if(!media)throw Error('보관한 사진을 읽지 못했습니다. 현재 화면을 유지해주세요.');return new File([media.data],media.name,{type:media.type,lastModified:media.lastModified});}));}return item;}
-  async function removeDraft(id){const scope=account+'|'+id;await draftWrites.catch(()=>{});try{await storage('delete',scope);draftRows.delete(id);gallerySignature='';const database=await db();await new Promise((resolve,reject)=>{const tx=database.transaction('media','readwrite');const cursor=tx.objectStore('media').openCursor(IDBKeyRange.bound(scope+'|',scope+'|\uffff'));cursor.onsuccess=()=>{const c=cursor.result;if(c){c.delete();c.continue();}};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}catch(_){}}
+  async function removeDraft(id,options={}){
+    const scope=account+'|'+id,owner=account;
+    const task=draftWrites.catch(()=>{}).then(async()=>{
+      if(options.revision!==undefined&&(account!==owner||active?.id!==id||revision!==options.revision))return false;
+      await storage('delete',scope);if(account===owner){draftRows.delete(id);gallerySignature='';}
+      const database=await db();await new Promise((resolve,reject)=>{const tx=database.transaction('media','readwrite'),cursor=tx.objectStore('media').openCursor(IDBKeyRange.bound(scope+'|',scope+'|\uffff'));cursor.onsuccess=()=>{const c=cursor.result;if(c){c.delete();c.continue();}};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});return true;
+    });draftWrites=task;try{return await task;}catch(_){return false;}
+  }
+  async function copyRecoveryDraft(){
+    const stamp=authStamp(),owner=account,sourceId=active?.id;
+    if(!sourceId||!await persistDraft())return null;assertAuth(stamp);
+    const source=await getDraft(sourceId);assertAuth(stamp);if(!source||source.account!==owner||account!==owner)return null;
+    const id='ref_'+crypto.randomUUID().replace(/-/g,''),scope=owner+'|'+id;
+    const record={...clone(source.record),id,version:0,title:(source.record.title||AI.title(source.record)).slice(0,140)+' · 보관한 입력',archivedAt:'',createdAt:new Date().toISOString(),updatedAt:'',permissions:{canEdit:true,canArchive:false},analysis:null,analysisSignature:'',analysisState:'idle',reviewedAt:'',analysisReceipt:''};
+    const item={...source,key:scope,id,record,baseRecord:null,pendingSave:null,recoveryOf:source.id,at:Date.now(),linkEditor:source.linkEditor?{...source.linkEditor,id}:null};delete item.files;
+    const task=draftWrites.catch(()=>{}).then(async()=>{item.fileKeys=await Promise.all((source.files||[]).map(file=>preserveFile(file,scope)));await storage('put',item);});draftWrites=task;await task;
+    if(item.account===account){draftRows.set(id,item);gallerySignature='';}return item;
+  }
+
 
   async function renderDrafts(){
     const scope=account,epoch=authEpoch,read=++draftRead;if(!scope)return;
@@ -498,7 +650,7 @@
     // remaining input locally before clearing the previous account's view.
     if((dirty||pendingFiles.length)&&!await persistDraft())return false;
     if(epoch!==authEpoch)return false;
-    localOnly=false;clearTimeout(autoSaveTimer);renderCategoryFilter('');role=null;permissions={};account='';active=null;linkEditor=null;dirty=false;pendingFiles=[];records.clear();draftRows.clear();detailCache.clear();detailFlights.clear();listReadAt=0;initialized=false;checkedAt='';cursor=null;gallerySignature='';releasePreviews();$('#rcLogin').hidden=!!window.AiselAuth;$('#rcCreate').disabled=true;$('#rcDetail').hidden=true;$('#rcList').hidden=false;draftRows.clear();renderList();if(visible)message('로그인 후 레퍼런스를 확인해주세요.');return true;
+    localOnly=false;clearTimeout(autoSaveTimer);renderCategoryFilter('');role=null;permissions={};account='';active=null;activeBase=null;pendingSave=null;saveConflict=null;linkEditor=null;dirty=false;pendingFiles=[];records.clear();draftRows.clear();detailCache.clear();detailFlights.clear();listReadAt=0;initialized=false;checkedAt='';cursor=null;gallerySignature='';releasePreviews();$('#rcLogin').hidden=!!window.AiselAuth;$('#rcCreate').disabled=true;$('#rcDetail').hidden=true;$('#rcList').hidden=false;draftRows.clear();renderList();if(visible)message('로그인 후 레퍼런스를 확인해주세요.');return true;
   }
   window.addEventListener('aisel-owner-auth-change',()=>{if(!window.AiselAuth)resetAuth();});
   window.addEventListener('aisel-session-change',async()=>{if(!await resetAuth())return;if(visible&&window.AiselAuth?.currentUser()?.uid){const match=location.hash.match(/^#reference=(.+)$/);await show({id:match?decodeURIComponent(match[1]):undefined,history:false});}});
