@@ -1,4 +1,4 @@
-<!-- v205: preserve reference inputs while switching menus during an active save -->
+<!-- v206: retain reload positioning through same-entry startup history events -->
 <!-- v203: shared note classifications, inline reference entry and linked review display -->
 <!-- v199: mobile collection cards, direct links and independent loading -->
 <!-- v198: readable factory names and shared intrinsic numeric columns -->
@@ -78,9 +78,38 @@
  'use strict';
  const navigation=performance.getEntriesByType?.('navigation')[0];
  const reloaded=navigation?navigation.type==='reload':performance.navigation?.type===1;
- if(!reloaded||!('scrollRestoration' in history))return;
+ if(!('scrollRestoration' in history))return;
+ const entryKey='__aiselEntryId';
+ const entryId=state=>state&&typeof state[entryKey]==='string'?state[entryKey]:null;
+ const newId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
+ function tagged(state,id){
+  if(state===null||typeof state==='object'&&(Object.getPrototypeOf(state)===Object.prototype||Object.getPrototypeOf(state)===null))
+   return {...state,[entryKey]:id};
+  return state;
+ }
+ function entry(){
+  const state=history.state,id=entryId(state);let signature=null;
+  if(!id)try{signature=JSON.stringify(state);}catch(_){/* Non-app history values retain native semantics. */}
+  return {url:location.href,id,state:signature};
+ }
+ const initial=history.state;
+ history.replaceState(tagged(initial,entryId(initial)||newId()),'');
+ let active=false,committedEntry=entry();
+ // Tag actual entries, including identical routes pushed more than once.
+ // Keep the caller's fields intact; replacing metadata keeps this entry's ID,
+ // while pushing always starts a new one even if the caller copied old state.
+ for(const method of ['pushState','replaceState']){
+  const original=history[method];
+  history[method]=function(state,...args){
+   const id=method==='replaceState'?entryId(history.state)||newId():newId();
+   const result=original.call(this,tagged(state,id),...args);
+   if(active)committedEntry=entry();
+   return result;
+  };
+ }
+ if(!reloaded)return;
  const events=new AbortController(),frames=new Set();
- let active=true,recoveryQueued=false;
+ let recoveryQueued=false;active=true;
  history.scrollRestoration='manual';
  window.AiselReloadStartup={get active(){return active;},release};
  function release(){
@@ -102,8 +131,16 @@
  function userIntent(event){if(event.isTrusted)release();}
  for(const type of ['pointerdown','touchstart','wheel','keydown','input'])
   window.addEventListener(type,userIntent,{capture:true,passive:true,signal:events.signal});
- for(const type of ['popstate','pagehide'])
-  window.addEventListener(type,release,{capture:true,signal:events.signal});
+ window.addEventListener('popstate',event=>{
+  const current=entry();
+  if(current.url!==committedEntry.url||current.id!==committedEntry.id||current.state!==committedEntry.state)release();
+  else {
+   // A duplicate startup event must not also reopen a stale legacy route.
+   event.stopImmediatePropagation();
+   recoverLate();
+  }
+ },{capture:true,signal:events.signal});
+ window.addEventListener('pagehide',release,{capture:true,signal:events.signal});
  // Mobile Safari can restore more than once as the route, photos and viewport settle.
  // Keep startup at the header until the first real gesture; history traversal and
  // active typing/reading release this immediately, without a polling scroll lock.
