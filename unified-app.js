@@ -1,4 +1,4 @@
-/* v178: responsive menu transitions and one existing Google account session. */
+/* v205: keep reference saves running after durable, account-scoped menu transitions. */
 (function(){
  'use strict';
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
@@ -123,10 +123,13 @@
  function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
  async function guard(target,intent=navigationRevision){
   const isCurrent=()=>intent===navigationRevision;
-  if(current==='references'&&target!=='references'&&(!await RC.canLeave()||!isCurrent()))return false;
+  // A menu switch keeps the same account and document alive. Once the current
+  // input is durable locally, the reference request can finish in its own pane.
+  // Identity changes below still use the default server-confirmed save guard.
+  if(current==='references'&&target!=='references'&&(!await RC.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   if(current==='designmeeting'&&target!=='designmeeting'&&(!await DM.canLeave()||!isCurrent()))return false;
   if(!isCurrent()||!await A.leave()||!isCurrent())return false;
-  if(current==='references'&&target!=='references'&&(!isCurrent()||!await RC.leave({isCurrent})||!isCurrent()))return false;
+  if(current==='references'&&target!=='references'&&(!isCurrent()||!await RC.leave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   return isCurrent();
  }
  function drainNavigation(completed=true){
