@@ -16,7 +16,7 @@ test('rankless rows preserve source order and reserve a separate badge cell, wit
  const longName='렌 보트넥 드레이프 블라우스 긴 상품명 전체 표시 확인';
  const items=[{rank:9,name:longName,designer:'노승희',factory:'태경',share:null,returns:null},{...fixture.items[0],rank:1}];
  api.render(host,{...fixture,items},'');
- assert.deepEqual([...host.querySelector('.sheet-sales-head').children].map(cell=>cell.textContent),['상품명','','디자이너','공장','판매%','반품%']);
+ assert.deepEqual([...host.querySelector('.sheet-sales-head').children].map(cell=>cell.textContent),['상품명 (판매순)','','디자이너','공장','판매%','반품%']);
  const rows=[...host.querySelectorAll('.sheet-sales-grid:not(.sheet-sales-head)')];
  assert.equal(rows.length,2);assert.ok(rows.every(row=>row.children.length===6));
  assert.deepEqual(rows.map(row=>row.firstElementChild.title),items.map(item=>item.name));

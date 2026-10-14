@@ -119,6 +119,11 @@
       thumbnail: /^https:\/\//i.test(row.thumbnail || '') ? text(row.thumbnail, 4096) : '',
       version: number(row.version), createdAt: number(row.createdAt), updatedAt: number(row.updatedAt),
       archivedAt: number(row.archivedAt), publicationVersion: number(row.publicationVersion) };
+    const noteIds = Array.isArray(row.noteCategoryIds) ? row.noteCategoryIds : row.categoryIds;
+    if (Array.isArray(noteIds) && noteIds.every(id => typeof id === 'string' && /^cat_[a-f0-9]{64}$/.test(id))) {
+      result.noteCategoryIds = [...new Set(noteIds)].sort();
+      result.noteCategoryCoverage = row.noteCategoryCoverage !== false;
+    } else result.noteCategoryCoverage = false;
     return result;
   }
   function parseRows(value, meta, archived) {

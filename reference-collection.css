@@ -206,3 +206,33 @@
  #referenceCollectionView #rcLinkEditor{display:block;height:28px;width:120px}
  #referenceCollectionView #rcLinkInput{display:block;height:28px;min-height:28px;max-height:28px;width:120px;padding:2px 4px;font-size:16px;line-height:22px}
 }
+/* v203: inline capture, shared note classifications, and consistent note controls. */
+@media screen {
+ #referenceCollectionView .rc-note-filter{display:block;margin:0 0 8px;min-width:0}
+ #referenceCollectionView .rc-note-filter select{font-size:16px;line-height:22px;color:#6C727C;height:32px;min-height:32px}
+ #referenceCollectionView .rc-filter-status{font-size:11px;line-height:16px;color:#6C727C;margin:0 0 8px}
+ #referenceCollectionView .rc-note-head{grid-template-columns:26px minmax(0,1fr) 88px 28px 28px;gap:4px;margin-bottom:8px}
+ #referenceCollectionView .rc-note-head strong{font-size:13px;line-height:20px;font-weight:600;color:#34383C;white-space:nowrap}
+ #referenceCollectionView .rc-note-head>button{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;min-height:28px;padding:0;color:#6C727C;border-color:#E3E5E7;background:#FFF}
+ #referenceCollectionView .rc-note-head>button svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
+ #referenceCollectionView .rc-note-date{width:88px;height:28px;padding:0;color:#6C727C;border-color:#E3E5E7;background:#FFF}
+ #referenceCollectionView .rc-note-category{min-width:0;width:100%;height:28px}
+ #referenceCollectionView .rc-note-category :is(select,input){width:100%;height:28px;min-height:28px;padding:0 4px;font-size:16px;line-height:24px;color:#6C727C;border-color:#E3E5E7;text-overflow:ellipsis}
+ #referenceCollectionView .rc-note-entry textarea{font-size:16px!important;line-height:24px}
+ #referenceCollectionView .rc-empty-photo-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:8px}
+ #referenceCollectionView .rc-empty-photo-actions button{color:#6C727C;min-width:88px;height:28px;min-height:28px;padding:0 8px;background:#FFF}
+ #referenceCollectionView #rcDialog.rc-category-dialog form{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:12px}
+ #referenceCollectionView #rcDialog.rc-category-dialog #rcDialogBody{display:contents}
+ #referenceCollectionView #rcDialog.rc-category-dialog h3{grid-column:1;grid-row:1;margin:0;align-self:center;font-size:16px;line-height:24px}
+ #referenceCollectionView #rcDialog.rc-category-dialog .rc-dialog-actions{grid-column:2;grid-row:1;gap:4px;margin:0}
+ #referenceCollectionView #rcDialog.rc-category-dialog .rc-dialog-actions button{height:28px;min-height:28px}
+ #referenceCollectionView #rcDialog.rc-category-dialog #rcCategorySelect{grid-column:1/-1;grid-row:2}
+ #referenceCollectionView #rcDialog.rc-category-dialog .rc-dialog-error{grid-column:1/-1}
+ #referenceCollectionView #rcAIExtra{margin-top:12px;color:#34383C}
+ #referenceCollectionView .rc-analysis h3{font-size:13px;line-height:20px;font-weight:600;color:#34383C;margin:0 0 4px}
+ #referenceCollectionView .rc-analysis p,#referenceCollectionView .rc-reactions{font-size:12px;line-height:18px;font-weight:400;color:#34383C}
+ #referenceCollectionView .rc-analysis .rc-review-status{color:#6C727C}
+ #referenceCollectionView .rc-judgment-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px;line-height:18px;font-weight:400;color:#34383C}
+ #referenceCollectionView .rc-judgment-table :is(th,td){border:1px solid #E3E5E7;padding:8px;vertical-align:top;text-align:left;overflow-wrap:anywhere}
+ #referenceCollectionView .rc-judgment-table th{width:52px;font-weight:400}
+}

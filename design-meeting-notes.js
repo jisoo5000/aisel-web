@@ -2,8 +2,9 @@
   'use strict';
   // Reference notes are meeting metadata. They never change review inputs,
   // inputVersion, a verified review receipt, or existing workorder fields.
-  const fields=['date','text'];
-  function value(note){return note?{date:String(note.date||''),text:String(note.text||'')}:null;}
+  const fields=['date','text','categoryId'];
+  const categoryId=note=>String(note?.categoryId||'');
+  function value(note){return note?{date:String(note.date||''),text:String(note.text||''),categoryId:categoryId(note)}:null;}
   function same(a,b){return JSON.stringify(value(a))===JSON.stringify(value(b));}
   function validDate(date){const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(date);if(!match)return false;const d=new Date(date+'T00:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===date;}
   function notes(candidate){const raw=candidate?.referenceNotes;if(raw==null)return {};if(typeof raw!=='object'||Array.isArray(raw))throw Error('참고 저장 형식을 확인해주세요. 입력한 내용은 유지했습니다.');return raw;}
@@ -17,13 +18,18 @@
       if(target===null){if(!same(remote,base)&&remote!==null)throw conflict();delete next[change.id];continue;}
       if(!validDate(String(target.date||'')))throw Error('참고 날짜를 확인해주세요.');
       if(typeof target.text!=='string'||target.text.length>20000)throw Error('참고는 20,000자 이내로 입력해주세요.');
+      if(Object.prototype.hasOwnProperty.call(target,'categoryId')&&target.categoryId!==''&&!/^cat_[a-f0-9]{64}$/.test(target.categoryId))throw Error('참고 분류를 확인해주세요. 입력한 내용은 유지했습니다.');
       if(!remote&&base)throw conflict();
       if(remote&&!base&&!same(remote,target))throw conflict();
       const merged={...(remote||{}),createdAt:remote?.createdAt||target.createdAt||now};
       for(const key of fields){
-        if(!base||target[key]!==base[key]){
-          if(base&&remote?.[key]!==base[key]&&remote?.[key]!==target[key])throw conflict();
-          merged[key]=target[key];
+        // An older editor omits categoryId. That omission is not a request to
+        // clear a classification another editor saved. Explicit '' clears it.
+        if(key==='categoryId'&&!Object.prototype.hasOwnProperty.call(target,key))continue;
+        const read=note=>key==='categoryId'?categoryId(note):note?.[key];
+        if(!base||read(target)!==read(base)){
+          if(base&&read(remote)!==read(base)&&read(remote)!==read(target))throw conflict();
+          merged[key]=read(target);
         }
       }
       next[change.id]={...merged,updatedAt:now};

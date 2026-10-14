@@ -35,3 +35,18 @@ test('invalid dates, excessive input, unexpected data shape and deleted candidat
  assert.throws(()=>N.apply({...candidate(),designMeetingDeletedAt:50},[]),/삭제/);
  assert.equal(N.today(new Date('2026-10-11T16:00:00Z')),'2026-10-12');
 });
+test('category changes merge with independent text/date edits and never change review inputs',()=>{
+ const category='cat_'+'a'.repeat(64),c=candidate();c.referenceNotes[id].date='2026-10-14';c.referenceNotes[id].text='서버 참고';
+ const next=N.apply(c,[{id,base,next:{...base,categoryId:category}}],60);
+ assert.equal(next.referenceNotes[id].categoryId,category);assert.equal(next.referenceNotes[id].date,'2026-10-14');assert.equal(next.referenceNotes[id].text,'서버 참고');assert.equal(C.signature(next),C.signature(c));assert.equal(next.inputVersion,c.inputVersion);
+});
+test('same-category-field conflicts preserve both inputs for caller reconciliation',()=>{
+ const c=candidate(),remote='cat_'+'a'.repeat(64),local='cat_'+'b'.repeat(64);c.referenceNotes[id].categoryId=remote;
+ assert.throws(()=>N.apply(c,[{id,base,next:{...base,categoryId:local}}]),{code:'note_conflict'});assert.equal(c.referenceNotes[id].categoryId,remote);
+});
+test('legacy omission preserves existing category while explicit empty string clears it',()=>{
+ const c=candidate(),category='cat_'+'a'.repeat(64);c.referenceNotes[id].categoryId=category;
+ const legacy=N.apply(c,[{id,base,next:{...base,text:'구형 화면 수정'}}],60);assert.equal(legacy.referenceNotes[id].categoryId,category);
+ const clear=N.apply(c,[{id,base:{...base,categoryId:category},next:{...base,categoryId:''}}],70);assert.equal(clear.referenceNotes[id].categoryId,'');
+ assert.equal(N.same(base,{...base,categoryId:''}),true);assert.throws(()=>N.apply(c,[{id,base,next:{...base,categoryId:'arbitrary'}}]),/분류/);
+});

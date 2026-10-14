@@ -1,4 +1,4 @@
-<!-- v202: compact URL editing, direct meeting drafts and authorized gallery prewarming -->
+<!-- v203: shared note classifications, inline reference entry and linked review display -->
 <!-- v199: mobile collection cards, direct links and independent loading -->
 <!-- v198: readable factory names and shared intrinsic numeric columns -->
 <!-- v196: reference category, link tools, photo and dated notes -->
@@ -15209,11 +15209,14 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   align-items:center;margin:0 0 8px!important;padding:0!important;font-size:11px;line-height:16px;
  }
  html:root body #salesView .sheet-sales-meta-info {
-  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:4px!important;min-width:0;
+  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px!important;min-width:0;
  }
  html:root body #salesView :is(#salesScopeNote,#salesUpdated) {
   margin:0!important;padding:0;font-size:11px!important;line-height:16px!important;color:#6C727C;
  }
+ html:root body #salesView :is(#salesScopeNote,#salesUpdated) {white-space:nowrap;flex:0 0 auto;}
+ html:root body #salesView .sheet-sales-read-state {grid-column:1/-1;margin-top:4px;color:#A63F57;font-size:11px;line-height:16px;}
+ html:root body #salesView .sheet-sales-read-state[hidden] {display:none;}
  html:root body #salesView .sheet-sales-refresh {
   box-sizing:border-box;width:auto!important;min-width:64px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
   margin:0;padding:0 8px!important;align-self:center;border:1px solid #E3E5E7;border-radius:3px;
@@ -15312,6 +15315,7 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   const scope=document.getElementById('salesScopeNote');if(scope)info.append(scope);
   info.append(period,updated);
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';refresh.id='sheetSalesRefresh';meta.append(refresh);
+  const readState=document.createElement('span');readState.className='sheet-sales-read-state';readState.id='sheetSalesReadState';readState.hidden=true;readState.setAttribute('role','status');meta.append(readState);
   search.addEventListener('input',show);
   function compact(value){
    if(!value||value.ok!==true||value.source!=='operations-sheet'||!Array.isArray(value.items)||value.items.length>2000||!Number.isFinite(Date.parse(value.readAt)))return null;
@@ -15339,12 +15343,13 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
    }catch(error){/* Sales remain usable when browser storage is unavailable. */}
   }
   function showCheckedTime(failed=false){
-   if(!snapshot){updated.textContent='시트 연결 확인 필요';return;}
+   readState.hidden=!failed||!snapshot;readState.textContent=failed&&snapshot?'연결 실패 · 이전 자료 표시 중':'';
+   if(!snapshot){updated.textContent='연결 확인 필요';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
    const valid=Number.isFinite(checked.getTime());
    const oldDate=valid&&checked.toLocaleDateString('ko-KR',zone)!==now.toLocaleDateString('ko-KR',zone);
    const stamp=valid?checked.toLocaleString('ko-KR',{...zone,...(oldDate?{month:'2-digit',day:'2-digit'}:{}),hour:'2-digit',minute:'2-digit'}):'시간 확인 필요';
-   updated.textContent='시트 확인 '+stamp+(failed?' · 연결 실패, 이전 자료':'');
+   updated.textContent='확인 '+stamp;
   }
   function contentKey(value){
    return JSON.stringify([value.periodLabel,returnMetric(value).key,value.items.map(x=>[x.rank,x.name,x.designer,x.factory,x.share,x.returns])]);
@@ -16643,7 +16648,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=202">
+<link rel="stylesheet" href="design-meeting.css?v=203">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16665,10 +16670,15 @@ window.AiselDesignMeetingAdapter={
 </script>
 <!-- Enable only after server ACL, rules and summary backfill are deployed and verified. -->
 <script>window.AISEL_GALLERY_INDEX_ENABLED = false;</script>
-<script src="aisel-gallery-index.js?v=202"></script>
+<script src="aisel-gallery-index.js?v=203"></script>
 <script src="design-meeting-core.js?v=190"></script>
-<script src="design-meeting-notes.js?v=179"></script>
-<script src="design-meeting.js?v=202"></script>
+<script src="design-meeting-notes.js?v=203"></script>
+<link rel="stylesheet" href="aisel-note-categories.css?v=203">
+<script src="aisel-note-categories.js?v=203"></script>
+<script src="design-meeting.js?v=203"></script>
+<script>
+window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselDesignMeeting.bridge(action,[],payload)});
+</script>
 
 <style id="aisel-v171-white-surfaces">
 @media screen {
@@ -16681,7 +16691,7 @@ window.AiselDesignMeetingAdapter={
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=202">
+<link rel="stylesheet" href="reference-collection.css?v=203">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16695,7 +16705,7 @@ window.AiselUnifiedAdapter={
 };
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
-<script src="reference-collection.js?v=202"></script>
+<script src="reference-collection.js?v=203"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=202"></script>
