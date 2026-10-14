@@ -5,7 +5,7 @@
   let draftWrites=Promise.resolve();const draftFileKeys=new WeakMap(),draftPreviews=new WeakMap();
   let draftRows=new Map(),draftRead=0,accessAt=0,accessFlight=null,listFlight=null,createFlight=false,openEpoch=0,listReadAt=0;
   const detailCache=new Map(),detailFlights=new Map(),LIST_TTL=30000,DETAIL_TTL=60000;
-  let galleryModule=null,galleryUnsubscribe=null,galleryState=null,galleryEpoch=0,preloadFlight=null;
+  let galleryModule=null,galleryUnsubscribe=null,galleryState=null,galleryEpoch=0,galleryOwned=false,preloadFlight=null;
   let categoryUnsubscribe=null,categoryCoverageFlight=null;const categoryCoverageErrors=new Set(),notePickers=new Map(),reviewSourceKeys=new Map(),productReviews=new Map();
   const timings={},composing=new Set(),previewUrls=new Map();let linkEditor=null,noteRenderId='',suppressPhotoClickUntil=0;
   async function timed(name,task){const start=performance.now();try{return await task();}finally{timings[name]=Math.round(performance.now()-start);}}
@@ -114,10 +114,16 @@
     const user=window.AiselAuth?.currentUser?.(),epoch=++galleryEpoch,stamp=authStamp();
     if(!user?.uid||state.uid!==user.uid)return;
     if(state.authorized===false){
+      galleryOwned=false;
       await invalidateAccess(Object.assign(Error('레퍼런스 열람 권한을 다시 확인해주세요.'),{code:'permission_denied'}),stamp);
       if(epoch===galleryEpoch&&visible)message('레퍼런스 열람 권한을 다시 확인해주세요.',true);return;
     }
-    if(!galleryReady()||!user.email)return;
+    if(!galleryReady()||!user.email){
+      // Index summaries require a current online lease. Remove only the list
+      // derived from that lease; preserve the open canonical form and drafts.
+      if(galleryOwned){galleryOwned=false;records.clear();detailCache.clear();initialized=false;checkedAt='';cursor=null;listReadAt=0;gallerySignature='';renderList();}
+      return;
+    }
     const next=String(user.email).toLowerCase();
     if(account&&account!==next){if(!await resetAuth())return;if(window.AiselAuth?.currentUser()?.uid!==state.uid)return;galleryState=state;return acceptGalleryState(state);}
     try{assertAuth(stamp);}catch(_){return;}
@@ -126,9 +132,11 @@
     // remove archived rows, but local input drafts remain independent.
     for(const id of records.keys())if(!incoming.has(id)){records.delete(id);detailCache.delete(id);}
     for(const record of state.records||[])rememberRecord({...record,createdAt:galleryISO(record.createdAt),updatedAt:galleryISO(record.updatedAt),archivedAt:galleryISO(record.archivedAt)});
-    initialized=true;cursor=null;listReadAt=performance.now();
+    galleryOwned=true;initialized=true;cursor=null;listReadAt=performance.now();
     if(state.role){permissions={...permissions,canCreate:['owner','md','designer'].includes(state.role),canManage:state.role==='owner'};$('#rcRestore').hidden=state.role!=='owner';}
-    gallerySignature='';renderList();await renderDrafts();
+    // Lease and metadata checks also emit unchanged rows. Keep existing cards
+    // and pointer/focus targets when the rendered data signature still matches.
+    renderList();await renderDrafts();
     if(epoch===galleryEpoch&&visible&&$('#rcDetail').hidden&&!dirty)message('');
   }
   async function preloadGallery(){
@@ -287,7 +295,7 @@
       if(more||!initialized)cursor=data.nextCursor||null;
       // Show the first available page before draining a large delta. Only advance
       // checkedAt after the full delta succeeds, so a retry cannot skip changes.
-      const delta=initialized&&!more;initialized=true;renderList();if($('#rcDetail').hidden&&!dirty)message('');
+      const delta=initialized&&!more;galleryOwned=false;initialized=true;renderList();if($('#rcDetail').hidden&&!dirty)message('');
       if(delta&&data.nextCursor){let next=data.nextCursor;while(next){const page=await call('refList',{...payload,cursor:next});for(const item of page.items||[])rememberRecord(item);renderList();next=page.nextCursor||null;}}
       checkedAt=data.checkedAt||checkedAt;listReadAt=performance.now();
     }catch(e){if(epoch===authEpoch)message(errorText(e),true);}finally{if(epoch===authEpoch){loading=false;$('#rcMore').disabled=false;}}})();
@@ -673,7 +681,7 @@
   }
   window.addEventListener('popstate',async e=>{if(!pane||!visible)return;const match=location.hash.match(/^#reference=(.+)$/);if(match){await open(decodeURIComponent(match[1]),{history:false});return;}if(location.hash==='#references'){if(!await canLeave()){setRoute(active?.id,true);return;}active=null;dirty=false;pendingFiles=[];restoreList(e.state?.aiselReference);showList();return;}if(!await leave()){setRoute(active?.id,true);return;}config.onExit?.();});
   async function resetAuth(){
-    const epoch=++authEpoch;saveStatuses.clear();galleryEpoch++;galleryState=null;preloadFlight=null;categoryCoverageErrors.clear();categoryCoverageFlight=null;reviewSourceKeys.clear();productReviews.clear();openEpoch++;authorizedStamp=null;accessAt=0;accessFlight=null;listFlight=null;detailCache.clear();detailFlights.clear();listReadAt=0;draftRead++;role=null;permissions={};loading=false;if(!pane)return true;$('#rcCreate').disabled=true;$('#rcSave').disabled=true;$('#rcDelete').disabled=true;$('#rcDelete').disabled=true;$('#rcCategory').disabled=true;fields.forEach(k=>$('[data-rc-field="'+k+'"]').disabled=true);$('#rcPhotos').querySelectorAll('button').forEach(button=>button.disabled=true);
+    const epoch=++authEpoch;saveStatuses.clear();galleryEpoch++;galleryState=null;galleryOwned=false;preloadFlight=null;categoryCoverageErrors.clear();categoryCoverageFlight=null;reviewSourceKeys.clear();productReviews.clear();openEpoch++;authorizedStamp=null;accessAt=0;accessFlight=null;listFlight=null;detailCache.clear();detailFlights.clear();listReadAt=0;draftRead++;role=null;permissions={};loading=false;if(!pane)return true;$('#rcCreate').disabled=true;$('#rcSave').disabled=true;$('#rcDelete').disabled=true;$('#rcDelete').disabled=true;$('#rcCategory').disabled=true;fields.forEach(k=>$('[data-rc-field="'+k+'"]').disabled=true);$('#rcPhotos').querySelectorAll('button').forEach(button=>button.disabled=true);
     // The common shell saves before a user-driven identity change. Preserve any
     // remaining input locally before clearing the previous account's view.
     if((dirty||pendingFiles.length)&&!await persistDraft())return false;

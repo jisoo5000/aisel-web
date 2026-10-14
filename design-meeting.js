@@ -851,7 +851,7 @@ let savePromise=null,deleteFlight=null,deletePreview=null,undoDeletion=null,exte
  function applyGallerySnapshot(value){
    if(!galleryIndex?.enabled)return;
    if(value.authorized===false){stopListening();summaryActive=false;summaryRows=[];galleryDenied=true;galleryHold=false;legacyAllowed=false;role=null;for(const id of Object.keys(cards))if(!localCandidate(id)&&id!==active)delete cards[id];lastSig='';applyRole();return;}
-   if(value.available&&value.authorized&&value.complete&&value.uid===memberUser()?.uid){if(!summaryActive)stopListening();summaryActive=true;galleryDenied=false;galleryHold=false;summaryRows=value.records;hasOlder=false;$dm('#dmCoverageState').textContent='';lastSig='';render();watchActive();return;}
+   if(value.available&&value.authorized&&value.complete&&value.uid===memberUser()?.uid){if(!summaryActive)stopListening();summaryActive=true;galleryDenied=false;galleryHold=false;summaryRows=value.records;role=value.role;hasOlder=false;$dm('#dmCoverageState').textContent='';lastSig='';applyRole();watchActive();return;}
    if(summaryActive){stopListening();summaryActive=false;summaryRows=[];galleryHold=true;legacyAllowed=false;lastSig='';render();if(!pane.hidden)startListening();}
  }
  if(galleryIndex?.enabled)galleryIndex.subscribe('meetings',applyGallerySnapshot);

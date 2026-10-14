@@ -7,11 +7,12 @@
   const enabled = window.AISEL_GALLERY_INDEX_ENABLED === true;
   const ROOT = 'aiselGallery/v1', KINDS = ['references', 'meetings'];
   const roles = { references: ['owner', 'designer', 'md'], meetings: ['owner', 'designer'] };
-  const CACHE = 'aisel.gallery.v1:', REQUEST_MS = 12000;
+  const CACHE = 'aisel.gallery.v1:', REQUEST_MS = 12000, RETRY_MS = 30000;
   const buckets = new Map(), subscribers = new Map();
   let epoch = 0, uid = '', email = '', app = null, access = null, accessProved = false;
   let started = false, flight = null, leaseTimer = null, refreshTimer = null, retryTimer = null;
   let sessionUnsubscribe = null, listeners = [], listenerUid = '', sessionGeneration;
+  let enrollment = null;
   const overlays = new Map();
   const bucketKey = (kind, archived) => kind + (archived ? ':archived' : ':active');
   const validKind = kind => { if (!KINDS.includes(kind)) throw Error('Unknown gallery kind'); return kind; };
@@ -23,7 +24,7 @@
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   function bucket(kind, archived = false) {
     validKind(kind); const key = bucketKey(kind, archived);
-    if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), meta: null, available: false,
+    if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), sourceRows: null, meta: null, available: false,
       authorized: null, complete: false, mode: enabled ? 'unavailable' : 'disabled', error: null });
     return buckets.get(key);
   }
@@ -63,10 +64,10 @@
         try { window.localStorage.removeItem(cacheKey(kind, archived)); } catch (_) {}
       }
     }
-    if (clearAccount) { overlays.clear(); uid = ''; email = ''; app = null; }
+    if (clearAccount) { overlays.clear(); enrollment = null; uid = ''; email = ''; app = null; }
     for (const b of buckets.values()) {
       b.available = b.complete = false; b.authorized = denied ? false : null;
-      b.mode = denied ? 'denied' : 'unavailable'; b.error = error(code); b.rows.clear(); b.meta = null;
+      b.mode = denied ? 'denied' : 'unavailable'; b.error = error(code); b.rows.clear(); b.sourceRows = null; b.meta = null;
       emit(b.kind, b.archived);
     }
   }
@@ -104,12 +105,53 @@
     return value?.active === true && String(value.email || '').toLowerCase() === email &&
       ['owner', 'designer', 'md'].includes(value.role) && number(value.expiresAt) > now();
   }
+  async function enroll(stamp) {
+    // A never-enrolled UID cannot read its ACL yet. The canonical source API
+    // verifies Firebase identity and current membership before provisioning it;
+    // successful source access alone never grants summary access.
+    assertSession(stamp);
+    if (enrollment && now() - enrollment.at < RETRY_MS) {
+      if (enrollment.code) throw error(enrollment.code);
+      return enrollment.provisioned;
+    }
+    const bridge = window.AiselDesignMeeting?.bridge;
+    if (!bridge) throw error('index_unavailable');
+    enrollment = { at: now(), provisioned: false };
+    try {
+      const result = await bridge('refAccess', [], {}); assertSession(stamp);
+      if (result?.ok === false) throw error(result.code || 'permission_denied');
+      const provisioned = result?.gallery?.enabled === true && result.gallery.provisioned === true;
+      enrollment = { at: now(), provisioned, code: provisioned ? null : 'index_unavailable' };
+      if (!provisioned) throw error('index_unavailable');
+      return true;
+    } catch (cause) {
+      assertSession(stamp);
+      const denied = ['forbidden', 'unauthorized', 'unauthenticated', 'permission_denied', 'access_denied'].includes(cause?.code) ||
+        /Google 로그인 확인|대표자가 등록한 참여자/.test(cause?.message || '');
+      const code = denied ? 'permission_denied' : cause?.code === 'index_unavailable' ? 'index_unavailable' : 'network';
+      enrollment = { at: now(), provisioned: false, code }; throw error(code);
+    }
+  }
+  async function readAccess(stamp) {
+    let value;
+    try { value = await read('access/' + encodeURIComponent(uid), stamp); }
+    catch (cause) { if (cause?.code !== 'permission_denied') throw cause; }
+    if (validAccess(value)) return value;
+    await enroll(stamp);
+    // Neither cached roles nor a bootstrap receipt can substitute for rules.
+    value = await read('access/' + encodeURIComponent(uid), stamp);
+    if (!validAccess(value)) throw error('permission_denied');
+    return value;
+  }
+  function retryLater() {
+    if (!enabled || !started || !online() || !canonical()?.uid || retryTimer) return;
+    retryTimer = setTimeout(() => { retryTimer = null; warm().catch(() => {}); }, RETRY_MS);
+  }
   function validMeta(value) {
-    return value?.schemaVersion === 1 && value.ready === true &&
+    return value?.schemaVersion === 1 && value.protocolVersion === 207 && value.ready === true &&
       Number.isInteger(value.activeCount) && value.activeCount >= 0 &&
       Number.isInteger(value.archivedCount) && value.archivedCount >= 0 &&
-      (typeof value.generation === 'string' || Number.isFinite(value.generation)) &&
-      String(value.generation) !== '' && number(value.reconciledAt) > 0;
+      Number.isSafeInteger(value.generation) && value.generation >= 0 && number(value.reconciledAt) > 0;
   }
   function summary(row, id) {
     if (!row || typeof row !== 'object' || !id || /[.#$\[\]/]/.test(id)) return null;
@@ -119,7 +161,10 @@
       thumbnail: /^https:\/\//i.test(row.thumbnail || '') ? text(row.thumbnail, 4096) : '',
       version: number(row.version), createdAt: number(row.createdAt), updatedAt: number(row.updatedAt),
       archivedAt: number(row.archivedAt), publicationVersion: number(row.publicationVersion) };
-    const noteIds = Array.isArray(row.noteCategoryIds) ? row.noteCategoryIds : row.categoryIds;
+    // RTDB omits empty arrays. An explicit coverage receipt distinguishes a
+    // confirmed empty classification set from legacy unknown/malformed data.
+    const knownEmpty = row.noteCategoryCoverage === true && row.noteCategoryIds == null && row.categoryIds == null;
+    const noteIds = knownEmpty ? [] : Array.isArray(row.noteCategoryIds) ? row.noteCategoryIds : row.categoryIds;
     if (Array.isArray(noteIds) && noteIds.every(id => typeof id === 'string' && /^cat_[a-f0-9]{64}$/.test(id))) {
       result.noteCategoryIds = [...new Set(noteIds)].sort();
       result.noteCategoryCoverage = row.noteCategoryCoverage !== false;
@@ -138,11 +183,15 @@
     return rows;
   }
   function cacheKey(kind, archived) { return CACHE + encodeURIComponent(app.options.databaseURL) + ':' + encodeURIComponent(uid) + ':' + bucketKey(kind, archived); }
+  function sameMeta(a, b) {
+    return a?.generation === b.generation && a?.reconciledAt === b.reconciledAt &&
+      a?.activeCount === b.activeCount && a?.archivedCount === b.archivedCount;
+  }
   function cachedRows(b, meta) {
+    if (b.sourceRows && sameMeta(b.meta, meta)) return b.sourceRows;
     try {
       const saved = JSON.parse(window.localStorage.getItem(cacheKey(b.kind, b.archived)) || 'null');
-      if (!saved || saved.uid !== uid || saved.email !== email || saved.meta?.generation !== meta.generation ||
-        saved.meta?.reconciledAt !== meta.reconciledAt) return null;
+      if (!saved || saved.uid !== uid || saved.email !== email || !sameMeta(saved.meta, meta)) return null;
       return parseRows(saved.records, meta, b.archived);
     } catch (_) { return null; }
   }
@@ -163,9 +212,9 @@
       const server = rows.get(id);
       const newer = server && isAtLeast(server, local.row) && !isAtLeast(local.row, server);
       const acknowledged = server && isAtLeast(server, local.row) && !!server.archivedAt === local.archived && !local.deleted;
-      const removalPublished = !server && (local.deleted || local.archived !== archived) &&
-        local.row.publicationVersion > 0 && number(meta?.generation) >= local.row.publicationVersion;
-      if (authoritative && (newer || acknowledged || removalPublished)) { pending.delete(id); continue; }
+      // A collection generation cannot acknowledge deletion of one record.
+      // Keep its session-local fence until that record itself proves newer.
+      if (authoritative && (newer || acknowledged)) { pending.delete(id); continue; }
       if (local.deleted || local.archived !== archived) merged.delete(id);
       else merged.set(id, { ...local.row });
     }
@@ -173,7 +222,7 @@
   }
   function applyRows(b, rows, meta, mode) {
     if (!hasAuthority(b.kind, b.archived)) return;
-    b.rows = mergeRemembered(b.kind, rows, b.archived, true, meta); b.meta = meta;
+    b.sourceRows = rows; b.rows = mergeRemembered(b.kind, rows, b.archived, true, meta); b.meta = meta;
     b.available = b.complete = true; b.authorized = true; b.mode = mode; b.error = null; emit(b.kind, b.archived);
   }
   function remember(kind, row, options = {}) {
@@ -194,7 +243,7 @@
     refreshTimer = setTimeout(() => { refreshTimer = null; warm().catch(() => {}); }, 180);
   }
   function watch(ref, update, cancel) {
-    ref.on('value', update, cancel); listeners.push(() => ref.off('value', update));
+    listeners.push(() => ref.off('value', update)); ref.on('value', update, cancel);
   }
   function attachListeners(stamp) {
     const listenerKey = uid + '|' + access.role;
@@ -210,9 +259,11 @@
         if (!validAccess(value)) { invalidate('permission_denied', true); return; }
         if (value.role !== access?.role || number(value.updatedAt) > number(access?.updatedAt)) scheduleRefresh();
       }, () => { if (stamp === epoch) invalidate('permission_denied', true); });
+      if (stamp !== epoch) return;
       for (const kind of KINDS) if (roles[kind].includes(access.role)) {
-        const paths = ['meta/' + kind, kind + '/active'];
-        if (access.role === 'owner') paths.push(kind + '/archived');
+        // The server changes metadata only after publishing a complete summary
+        // revision. Subscribe to that small invalidation signal, not row bodies.
+        const paths = [kind + '/_meta'];
         for (const path of paths) {
           let first = true;
           watch(db.ref(ROOT + '/' + path), () => {
@@ -228,14 +279,15 @@
     if (!roles[b.kind].includes(access.role) || (b.archived && access.role !== 'owner')) {
       b.available = b.complete = false; b.authorized = false; b.rows.clear(); b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived); return;
     }
-    let meta = await read('meta/' + b.kind, stamp);
+    let meta = await read(b.kind + '/_meta', stamp);
     if (!validMeta(meta)) {
       b.available = b.complete = false; b.authorized = true; b.rows.clear(); b.mode = 'unavailable'; b.error = error('index_not_ready'); emit(b.kind, b.archived); return;
     }
-    const saved = cachedRows(b, meta); if (saved) applyRows(b, saved, meta, 'cache');
+    const saved = cachedRows(b, meta);
+    if (saved) { applyRows(b, saved, meta, 'cache'); return; }
     for (let attempt = 0; attempt < 2; attempt++) {
       const value = await read(b.kind + (b.archived ? '/archived' : '/active'), stamp);
-      const checked = await read('meta/' + b.kind, stamp);
+      const checked = await read(b.kind + '/_meta', stamp);
       if (!validMeta(checked)) throw error('index_not_ready');
       if (meta.generation !== checked.generation || meta.reconciledAt !== checked.reconciledAt ||
         meta.activeCount !== checked.activeCount || meta.archivedCount !== checked.archivedCount) { meta = checked; continue; }
@@ -267,8 +319,7 @@
     if (flight) return flight;
     const stamp = epoch;
     const task = (async () => {
-      const value = await read('access/' + encodeURIComponent(uid), stamp);
-      if (!validAccess(value)) throw error('permission_denied');
+      const value = await readAccess(stamp);
       access = value; accessProved = true;
       clearTimeout(leaseTimer);
       leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
@@ -282,7 +333,9 @@
       return kind ? snapshot(kind, options) : null;
     })().catch(cause => {
       if (stamp !== epoch) return null;
-      const code = cause?.code || 'network'; invalidate(code, code === 'permission_denied' || code === 'lease_expired'); return null;
+      const code = cause?.code || 'network'; invalidate(code, code === 'permission_denied' || code === 'lease_expired');
+      if (!['permission_denied', 'lease_expired', 'auth_changed', 'offline'].includes(code)) retryLater();
+      return null;
     }).finally(() => { if (flight === task) flight = null; });
     flight = task; return task;
   }
