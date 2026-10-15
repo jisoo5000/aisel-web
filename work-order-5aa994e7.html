@@ -1,3 +1,4 @@
+<!-- v214: canonical Firebase collection save acknowledgements and asynchronous projections -->
 <!-- v213: authenticated Firebase detail reads for references and design meetings -->
 <!-- v212: reference designers, shared date filters and responsive detail navigation -->
 <!-- v203: shared note classifications, inline reference entry and linked review display -->
@@ -16709,15 +16710,16 @@ window.AiselDesignMeetingAdapter={
 };
 </script>
 <!-- Enable only after server ACL, rules and summary backfill are deployed and verified. -->
-<script>window.AISEL_GALLERY_INDEX_ENABLED = true;</script>
-<script src="aisel-gallery-index.js?v=213"></script>
+<script>window.AISEL_GALLERY_INDEX_ENABLED = true; window.AISEL_COLLECTION_WRITES_ENABLED = true;</script>
+<script src="aisel-gallery-index.js?v=214"></script>
+<script src="aisel-collection-writes.js?v=214"></script>
 <script src="design-meeting-core.js?v=190"></script>
 <script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=203"></script>
-<script src="design-meeting.js?v=213"></script>
+<script src="design-meeting.js?v=214"></script>
 <script>
-window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselDesignMeeting.bridge(action,[],payload)});
+window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 </script>
 
 <style id="aisel-v171-white-surfaces">
@@ -16746,7 +16748,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=213"></script>
+<script src="reference-collection.js?v=214"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=213"></script>

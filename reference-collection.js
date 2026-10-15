@@ -176,7 +176,7 @@
     if(authorizedStamp){try{assertAuth(authorizedStamp);}catch(_){return false;}}
     const task=(async()=>{
       if(galleryEnabled()){await window.AiselGalleryIndex.warm('references',{preferCache:true});assertAuth(stamp);if(galleryReady())return true;if(galleryState?.authorized===false)return false;}
-      const prefetch=!authorizedStamp?{action:'refList',promise:timed('listMs',()=>call('refList',{limit:24})).then(data=>({data}),error=>({error}))}:null;
+      const prefetch=!authorizedStamp?{action:'refList',promise:timed('listMs',()=>referenceRequest('refList',{limit:24})).then(data=>({data}),error=>({error}))}:null;
       await access();assertAuth(stamp);if(galleryReady())return true;
       if(!initialized||performance.now()-listReadAt>LIST_TTL)await refresh(false,prefetch,{repair:false});
       return initialized;
@@ -186,6 +186,20 @@
   function authStamp(){return {uid:window.AiselAuth?.currentUser()?.uid||null,generation:window.AiselAuth?.generation,epoch:authEpoch};}
   function assertAuth(stamp){const current=authStamp();if(stamp.uid!==current.uid||stamp.generation!==current.generation||stamp.epoch!==current.epoch)throw Object.assign(Error('로그인 상태가 변경되었습니다. 다시 확인해주세요.'),{code:'auth_changed'});}
   async function call(action,payload={}){const bridge=config.bridge||((a,p)=>window.AiselDesignMeeting.bridge(a,[],p));const stamp=authStamp(),result=await bridge(action,payload);assertAuth(stamp);if(result?.ok===false)throw Object.assign(Error(result.error||'연결을 확인해주세요.'),{code:result.code});return result;}
+  function collectionWriter(){
+    const writer=window.AiselCollectionWrites;
+    if(writer?.enabled===false)return null;
+    if(writer?.enabled!==true)throw Object.assign(Error('레퍼런스 저장 연결을 확인해주세요. 입력은 유지됩니다.'),{code:'connection_pending'});
+    return writer;
+  }
+  async function referenceRequest(action,payload={}){
+    const writer=collectionWriter();if(!writer)return call(action,payload);
+    const method={refSave:'saveReference',refArchive:'archiveReference',refList:'listReferences'}[action];
+    if(!method||typeof writer[method]!=='function')throw Object.assign(Error('레퍼런스 저장 연결을 확인해주세요. 입력은 유지됩니다.'),{code:'connection_pending'});
+    const stamp=authStamp(),result=await writer[method](payload);assertAuth(stamp);
+    if(result?.ok===false)throw Object.assign(Error(result.error||'저장을 확인하지 못했습니다. 입력을 유지했습니다.'),{code:result.code});
+    return result;
+  }
   function message(text,error=false){ensure();if($('#rcDetail').hidden)$('.rc-list-tools').after($('#rcNotices'));else $('.rc-detail-actions').before($('#rcNotices'));$('#rcStatus').textContent=text;$('#rcStatus').classList.toggle('rc-error',error);}
   function errorText(e){if(e?.code==='connection_pending'){$('#rcRetry').hidden=false;$('#rcLogin').hidden=true;return '레퍼런스 저장 서버 업데이트가 필요합니다. 관리자에게 연결을 요청해주세요.';}if(e?.code==='conflict'){$('#rcLatest').hidden=$('#rcDetail').hidden;$('#rcSaveCopy').hidden=$('#rcDetail').hidden||!permissions.canCreate;return draftStored?'저장된 내용과 입력이 겹칩니다. 입력은 보관했으니 저장할 내용을 선택해주세요.':'입력은 화면에 남아 있습니다. 창을 닫기 전에 내용을 복사해주세요.';}if(e?.code==='setup_required'){$('#rcSetup').hidden=role!=='owner';return '레퍼런스 시트 연결을 준비해주세요.';}return e?.message||'저장을 확인하지 못했습니다. 입력을 유지했습니다.';}
   function sharedDetailEnabled(){return galleryEnabled()&&typeof window.AiselGalleryIndex?.detail==='function'&&typeof window.AiselGalleryIndex?.authorize==='function';}
@@ -205,7 +219,8 @@
     if(accessFlight&&SaveCore.equal(accessFlight.stamp,stamp))return accessFlight.promise;
     const task=(async()=>{
       let data;
-      if(sharedDetailEnabled())try{data=await timed('accessMs',()=>window.AiselGalleryIndex.authorize('references'));}
+      if(window.AiselCollectionWrites?.enabled===true){const writer=collectionWriter();if(typeof writer.authorize!=='function')throw Object.assign(Error('레퍼런스 저장 연결을 확인해주세요.'),{code:'connection_pending'});data=await timed('accessMs',()=>writer.authorize('references'));if(!data)throw Object.assign(Error('레퍼런스 권한을 확인하지 못했습니다.'),{code:'connection_pending'});}
+      else if(sharedDetailEnabled())try{data=await timed('accessMs',()=>window.AiselGalleryIndex.authorize('references'));}
       catch(error){if(!mirrorFallback(error))throw error;assertAuth(stamp);}
       if(!data)data=await timed('accessMs',()=>call('refAccess'));
       return adoptAccess(data,stamp);
@@ -241,7 +256,7 @@
   }
   async function readResult(action,payload,prefetch){
     if(prefetch?.action===action){const result=await prefetch.promise;if(result.error)throw result.error;return result.data;}
-    return timed(action==='refGet'?'detailMs':'listMs',()=>call(action,payload));
+    return timed(action==='refGet'?'detailMs':'listMs',()=>action==='refList'?referenceRequest(action,payload):call(action,payload));
   }
   async function readWithRepair(action,payload,prefetch){
     try{return await readResult(action,payload,prefetch);}catch(e){
@@ -252,7 +267,8 @@
     }
   }
   async function remoteDetail(id,prefetch,force=false){
-    const shared=sharedDetailEnabled();
+    const shared=sharedDetailEnabled(),canonical=window.AiselCollectionWrites?.enabled===true;
+    if(canonical&&!shared)throw Object.assign(Error('레퍼런스 조회 연결을 확인해주세요.'),{code:'connection_pending'});
     // The Firebase reader validates live ACL and the canonical snapshot revision;
     // an old process-local cache must not bypass those checks.
     if(!shared&&!force){const cached=cachedDetail(id);if(cached)return clone(cached);}
@@ -265,7 +281,7 @@
         const known=records.get(id);if(!data?.record?.id||data.record.id!==id||known&&Number(known.version)>Number(data.record.version))throw Object.assign(Error('최신 레퍼런스를 확인하고 있습니다.'),{code:'detail_stale'});
         adoptAccess(data,stamp);timings.detailSource='firebase';
       }catch(error){
-        if(!mirrorFallback(error))throw error;assertAuth(stamp);data=null;timings.detailFallback=error.code;
+        if(canonical||!mirrorFallback(error))throw error;assertAuth(stamp);data=null;timings.detailFallback=error.code;
         if(!force&&['detail_stale','detail_unavailable'].includes(error.code)){
           const known=records.get(id);if(known?.archivedAt)throw Object.assign(Error('보관된 레퍼런스입니다.'),{code:'not_found'});
           const cached=cachedDetail(id);
@@ -318,7 +334,7 @@
     // Both read actions authorize on the server. Hold the read result until the
     // fresh access/version check succeeds; no data is rendered on its own.
     const action=options.id?'refGet':'refList';
-    const prefetch=!sharedDetailEnabled()&&!preloadFlight&&!authorizedStamp&&!localOnly&&(options.id||gallery&&!galleryEnabled())?{action,promise:timed(action==='refGet'?'detailMs':'listMs',()=>call(action,options.id?{id:options.id}:{limit:24})).then(data=>({data}),error=>({error}))}:null;
+    const prefetch=window.AiselCollectionWrites?.enabled!==true&&!sharedDetailEnabled()&&!preloadFlight&&!authorizedStamp&&!localOnly&&(options.id||gallery&&!galleryEnabled())?{action,promise:timed(action==='refGet'?'detailMs':'listMs',()=>call(action,options.id?{id:options.id}:{limit:24})).then(data=>({data}),error=>({error}))}:null;
     const hydrate=async()=>{try{
       if(gallery&&galleryEnabled()){await window.AiselGalleryIndex.warm('references',{preferCache:!options.forceRefresh});if(!stillVisible())return;if(galleryReady())return;if(galleryState?.authorized===false){message('레퍼런스 열람 권한을 다시 확인해주세요.',true);return;}}
       if(options.id){await open(options.id,{history:options.history!==false,prefetch});return;}
@@ -369,7 +385,7 @@
       // Show the first available page before draining a large delta. Only advance
       // checkedAt after the full delta succeeds, so a retry cannot skip changes.
       const delta=initialized&&!more;galleryOwned=false;initialized=true;renderList();if($('#rcDetail').hidden&&!dirty)message('');
-      if(delta&&data.nextCursor){let next=data.nextCursor;while(next){const page=await call('refList',{...payload,cursor:next});for(const item of page.items||[])rememberRecord(item);renderList();next=page.nextCursor||null;}}
+      if(delta&&data.nextCursor){let next=data.nextCursor;while(next){const page=await referenceRequest('refList',{...payload,cursor:next});for(const item of page.items||[])rememberRecord(item);renderList();next=page.nextCursor||null;}}
       checkedAt=data.checkedAt||checkedAt;listReadAt=performance.now();
     }catch(e){if(epoch===authEpoch)message(errorText(e),true);}finally{if(epoch===authEpoch){loading=false;$('#rcMore').disabled=false;}}})();
     listFlight=task;try{return await task;}finally{if(listFlight===task)listFlight=null;}
@@ -482,7 +498,7 @@
       if(document.activeElement!==text&&!composing.has(text)&&text.value!==note.text)text.value=note.text||'';text.disabled=!edit;section.querySelectorAll('button').forEach(button=>button.disabled=!edit);
     }
   }
-  async function restoreDialog(){if(!permissions.canManage||localOnly)return;try{const data=await call('refList',{archived:true,limit:40});dialog('삭제 복원',box=>{if(!data.items?.length){const p=document.createElement('p');p.textContent='삭제한 자료가 없습니다.';box.append(p);}for(const record of data.items||[]){const button=document.createElement('button');button.type='button';button.textContent=(record.title||'제목 없음')+' · 복원';button.onclick=async()=>{button.disabled=true;try{const result=await call('refArchive',{id:record.id,version:record.version,archived:false});if(!result.record||result.record.archivedAt)throw Error('복원을 확인하지 못했습니다.');rememberRecord(result.record,true);gallerySignature='';renderList();button.remove();}catch(e){button.disabled=false;message(errorText(e),true);}};box.append(button);}});}catch(e){message(errorText(e),true);}}
+  async function restoreDialog(){if(!permissions.canManage||localOnly)return;try{const data=await referenceRequest('refList',{archived:true,limit:40});dialog('삭제 복원',box=>{if(!data.items?.length){const p=document.createElement('p');p.textContent='삭제한 자료가 없습니다.';box.append(p);}for(const record of data.items||[]){const button=document.createElement('button');button.type='button';button.textContent=(record.title||'제목 없음')+' · 복원';button.onclick=async()=>{button.disabled=true;try{const result=await referenceRequest('refArchive',{id:record.id,version:record.version,archived:false});if(!result.record||result.record.archivedAt)throw Error('복원을 확인하지 못했습니다.');rememberRecord(result.record,true);gallerySignature='';renderList();button.remove();}catch(e){button.disabled=false;message(errorText(e),true);}};box.append(button);}});}catch(e){message(errorText(e),true);}}
   async function archiveRecord(completed=false){
     if(!active||isComposing())return;if(linkEditor?.id===active.id&&!finishLinkEditor())return;
     if(!confirm(completed?'참고를 완료한 레퍼런스를 보관할까요? 삭제 복원에서 다시 볼 수 있습니다.':'이 레퍼런스를 삭제할까요? 저장된 자료는 보관함에서 복원할 수 있습니다.'))return;
@@ -493,7 +509,7 @@
     if(active.permissions?.canArchive!==true||!canEdit())return;if(!await save()||!sameIntent())return;
     const version=active.version;
     try{
-      const data=await call('refArchive',{id,version,archived:true});if(!data.record?.archivedAt)throw Error('삭제 저장을 확인하지 못했습니다.');rememberRecord(data.record,true);
+      const data=await referenceRequest('refArchive',{id,version,archived:true});if(!data.record?.archivedAt)throw Error('삭제 저장을 확인하지 못했습니다.');rememberRecord(data.record,true);
       if(active?.id!==id||revision===startRevision)await removeDraft(id);
       gallerySignature='';
       if(sameIntent()){active=null;dirty=false;pendingFiles=[];showList();setRoute(null,true);message(completed?'참고 완료로 보관했습니다. 삭제 복원에서 다시 볼 수 있습니다.':'삭제한 자료를 시트에 보관했습니다.');}
@@ -673,11 +689,19 @@
     while(pendingFiles.length){
       check();const file=pendingFiles[0],prepared=await AiselPhoto.prepare(file,'collection'),hash=await digest(prepared.blob);check();active.photos||=[];
       if(!active.photos.some(photo=>photo.hash===hash)){
-        const thumb=await thumbnail(prepared.blob),originalData=await encode(prepared.blob),thumbData=await encode(thumb.blob);check();
-        const original=(await call('refUpload',{id:expectedId,hash,kind:'original',mime:prepared.blob.type,data:originalData})).photo;check();
-        const small=(await call('refUpload',{id:expectedId,hash,kind:'thumb.jpg',mime:'image/jpeg',data:thumbData})).photo;check();
-        if(!http(original?.url)||!http(small?.url))throw Error('사진 저장을 확인하지 못했습니다.');
-        active.photos.push({hash,original:original.url,thumb:small.url,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});
+        const thumb=await thumbnail(prepared.blob);check();const writer=collectionWriter();let uploaded;
+        if(writer){
+          if(typeof writer.uploadPhotos!=='function')throw Object.assign(Error('사진 저장 연결을 확인해주세요. 입력은 유지됩니다.'),{code:'connection_pending'});
+          uploaded=await writer.uploadPhotos('references',{id:expectedId,hash,original:prepared.blob,thumb:thumb.blob});check();
+          if(![uploaded?.original,uploaded?.thumb].every(url=>typeof url==='string'&&url.startsWith('https://')&&http(url)))throw Error('사진 저장을 확인하지 못했습니다.');
+        }else{
+          const originalData=await encode(prepared.blob),thumbData=await encode(thumb.blob);check();
+          const original=(await call('refUpload',{id:expectedId,hash,kind:'original',mime:prepared.blob.type,data:originalData})).photo;check();
+          const small=(await call('refUpload',{id:expectedId,hash,kind:'thumb.jpg',mime:'image/jpeg',data:thumbData})).photo;check();
+          uploaded={original:original?.url,thumb:small?.url};
+          if(!http(uploaded.original)||!http(uploaded.thumb))throw Error('사진 저장을 확인하지 못했습니다.');
+        }
+        active.photos.push({hash,original:uploaded.original,thumb:uploaded.thumb,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});
       }
       if(replaceHash){active.photos=active.photos.filter(photo=>photo.hash!==replaceHash||photo.hash===hash);replaceHash=null;photoMode='append';}
       pendingFiles.shift();await persistDraft();check();
@@ -710,7 +734,7 @@
       pendingSave={base:confirmed,snapshot:clone(current),patch:clone(patch)};
       await persistDraft();assertCurrent();
       try{
-        const data=await call('refSave',{id:current.id,version:current.version,patch});assertCurrent();
+        const data=await referenceRequest('refSave',{id:current.id,version:current.version,patch});assertCurrent();
         if(!data.record||data.record.id!==current.id||!(data.record.version>current.version))throw Error('저장을 확인하지 못했습니다. 입력을 유지했습니다.');
         return {record:data.record,snapshot:current};
       }catch(e){

@@ -16,6 +16,7 @@
   let enrollment = null;
   let strictAccessFlight = null, proofSequence = 0, acceptedProof = 0;
   const overlays = new Map(), detailFlights = new Map(), provenUids = new Set();
+  const confirmedMarkers = new Map(), confirmedFlights = new Map(), CONFIRMED = 'aisel.gallery.confirmed.v214:';
   const refreshTargets = new Set();
   const bucketKey = (kind, archived) => kind + (archived ? ':archived' : ':active');
   const validKind = kind => { if (!KINDS.includes(kind)) throw Error('Unknown gallery kind'); return kind; };
@@ -64,13 +65,14 @@
   function invalidate(code, denied = false, clearAccount = false) {
     epoch++; accessProved = false; accessNeedsRefresh = false; access = null; detach(); accessFlight = null;
     strictAccessFlight = null; acceptedProof = ++proofSequence;
-    detailFlights.clear();
+    detailFlights.clear(); confirmedFlights.clear();
+    if (window.AiselCollectionWrites?.enabled === true) overlays.clear();
     if ((clearAccount || denied) && uid && app) {
       for (const kind of KINDS) for (const archived of [false, true]) {
         try { window.localStorage.removeItem(cacheKey(kind, archived)); } catch (_) {}
       }
     }
-    if (clearAccount) { overlays.clear(); enrollment = null; uid = ''; email = ''; app = null; }
+    if (clearAccount) { overlays.clear(); confirmedMarkers.clear(); enrollment = null; uid = ''; email = ''; app = null; }
     for (const b of buckets.values()) {
       b.available = b.complete = false; b.authorized = denied ? false : null;
       b.mode = denied ? 'denied' : 'unavailable'; b.error = error(code); b.rows.clear(); b.sourceRows = null; b.meta = null;
@@ -203,6 +205,45 @@
     return rows;
   }
   function cacheKey(kind, archived) { return CACHE + encodeURIComponent(app.options.databaseURL) + ':' + encodeURIComponent(uid) + ':' + bucketKey(kind, archived); }
+  function confirmedKey(kind) { return CONFIRMED + encodeURIComponent(app.options.databaseURL) + ':' + encodeURIComponent(uid) + ':' + encodeURIComponent(email) + ':' + kind; }
+  function markers(kind) {
+    if (window.AiselCollectionWrites?.enabled !== true || !hasAuthority(kind)) return new Map();
+    if (!confirmedMarkers.has(kind)) {
+      const rows = new Map();
+      try {
+        const raw = window.localStorage.getItem(confirmedKey(kind));
+        const saved = raw && raw.length < 32768 ? JSON.parse(raw) : null;
+        if (saved?.uid === uid && saved.email === email && Array.isArray(saved.markers)) {
+          for (const m of saved.markers.slice(-40)) if (m && /^[-\w]{1,128}$/.test(m.id) && Number.isSafeInteger(m.version) && m.version > 0 && number(m.updatedAt) > 0) {
+            rows.set(m.id, { id: m.id, version: m.version, updatedAt: number(m.updatedAt), archived: m.archived === true, deleted: m.deleted === true, savedAt: number(m.savedAt) });
+          }
+        }
+      } catch (_) { /* A marker never grants authority or supplies a displayed body. */ }
+      confirmedMarkers.set(kind, rows);
+    }
+    return confirmedMarkers.get(kind);
+  }
+  function persistMarkers(kind) {
+    if (!hasAuthority(kind) || window.AiselCollectionWrites?.enabled !== true) return;
+    const rows = markers(kind);
+    while (rows.size > 40) rows.delete(rows.keys().next().value);
+    try {
+      if (rows.size) window.localStorage.setItem(confirmedKey(kind), JSON.stringify({ uid, email, markers: [...rows.values()] }));
+      else window.localStorage.removeItem(confirmedKey(kind));
+    } catch (_) { /* Storage quota cannot turn an acknowledged write into a failure. */ }
+  }
+  function sourceAtLeast(row, remembered) {
+    if (!row) return false;
+    if (number(row.version) !== number(remembered.version)) return number(row.version) > number(remembered.version);
+    return number(row.updatedAt) >= number(remembered.updatedAt);
+  }
+  function markConfirmed(kind, row, archived, deleted) {
+    if (window.AiselCollectionWrites?.enabled !== true || !Number.isSafeInteger(row.version) || row.version < 1 || row.updatedAt <= 0) return;
+    const pending = markers(kind), previous = pending.get(row.id);
+    if (previous && !sourceAtLeast(row, previous)) return;
+    pending.delete(row.id); pending.set(row.id, { id: row.id, version: row.version, updatedAt: row.updatedAt, archived, deleted, savedAt: now() });
+    persistMarkers(kind);
+  }
   function sameMeta(a, b) {
     return a?.generation === b.generation && a?.reconciledAt === b.reconciledAt &&
       a?.activeCount === b.activeCount && a?.archivedCount === b.archivedCount;
@@ -227,7 +268,16 @@
     return row.updatedAt >= remembered.updatedAt;
   }
   function mergeRemembered(kind, rows, archived, authoritative = true, meta = null) {
-    const merged = new Map(rows), pending = overlays.get(kind);
+    const merged = new Map(rows), pending = overlays.get(kind), saved = markers(kind);
+    let changed = false;
+    for (const [id, marker] of saved) {
+      const server = rows.get(id);
+      if (authoritative && server && sourceAtLeast(server, marker) &&
+          (number(server.version) > marker.version || number(server.updatedAt) > marker.updatedAt || (!marker.deleted && !!server.archivedAt === marker.archived))) {
+        saved.delete(id); changed = true;
+      } else if (!pending?.has(id) || marker.deleted || marker.archived !== archived) merged.delete(id);
+    }
+    if (changed) persistMarkers(kind);
     for (const [id, local] of pending || []) {
       const server = rows.get(id);
       const newer = server && isAtLeast(server, local.row) && !isAtLeast(local.row, server);
@@ -259,11 +309,69 @@
     const pending = overlays.get(kind), existing = pending.get(clean.id);
     if (existing && !isAtLeast(clean, existing.row)) return false;
     const archived = options.archived === true || clean.archivedAt > 0;
+    if (window.AiselCollectionWrites?.enabled === true) clean.publicationVersion = 0;
+    markConfirmed(kind, clean, archived, options.deleted === true);
     pending.set(clean.id, { row: clean, archived, deleted: options.deleted === true });
     for (const b of buckets.values()) if (b.kind === kind && b.available) {
       b.rows = mergeRemembered(kind, b.rows, b.archived, false); emit(kind, b.archived);
     }
     return true;
+  }
+  function canonicalSummary(kind, id, record) {
+    const stamp = value => typeof value === 'number' ? value : Date.parse(value || '') || 0;
+    const photos = Array.isArray(record.photos) ? record.photos : Object.values(record.photos || {});
+    const notes = kind === 'references' ? record.noteEntries || [] : Object.values(record.referenceNotes || {});
+    const archivedAt = stamp(kind === 'references' ? record.archivedAt : record.designMeetingDeletedAt);
+    return summary({ ...record, id, date: kind === 'references' ? record.date : record.meetingDate || record.date || '',
+      category: kind === 'references' ? record.category : 'product', contentType: kind === 'references' ? record.contentType : 'image',
+      status: archivedAt ? 'archived' : kind === 'references' ? 'active' : record.convertedCode ? 'linked' : record.decision === 'excluded' ? 'dropped' : 'planned',
+      thumbnail: photos[0]?.thumb || record.thumbnail || record.thumb || '',
+      version: kind === 'references' ? record.version : record.inputVersion || 1,
+      createdAt: stamp(record.createdAt), updatedAt: stamp(record.updatedAt), archivedAt, publicationVersion: 0,
+      noteCategoryIds: [...new Set(notes.map(note => note.categoryId).filter(id => /^cat_[a-f0-9]{64}$/.test(id || '')))], noteCategoryCoverage: true }, id);
+  }
+  function restoreConfirmed(kind, stamp) {
+    const saved = markers(kind);
+    if (!saved.size || !hasAuthority(kind)) return Promise.resolve();
+    if (confirmedFlights.has(kind)) return confirmedFlights.get(kind);
+    const grant = detailGrant(kind);
+    const task = Promise.all([...saved].map(async ([id, marker]) => {
+      const current = () => { assertSession(stamp); if (!hasAuthority(kind) || accessNeedsRefresh || access.role !== grant.role) throw error('permission_denied'); return saved.get(id) === marker; };
+      const accept = (row, archived, deleted) => {
+        if (!current()) return;
+        if (!overlays.has(kind)) overlays.set(kind, new Map());
+        overlays.get(kind).set(id, { row, archived, deleted });
+        markConfirmed(kind, row, archived, deleted);
+        for (const b of buckets.values()) if (b.kind === kind && b.available) {
+          b.rows = mergeRemembered(kind, b.sourceRows || b.rows, b.archived, true, b.meta); emit(kind, b.archived);
+        }
+      };
+      try {
+        const value = kind === 'references' ? await read('referenceRecords/' + id, stamp) : await read('moodboardRefs/' + id, stamp, '');
+        if (!current()) return;
+        if (!value || value.deleted === true || kind === 'meetings' && value.designMeeting !== true) {
+          accept({ ...marker, publicationVersion: 0 }, false, true); return;
+        }
+        const record = kind === 'references' ? await window.AiselCollectionWrites.normalizeReference(value, id, grant) : { ...value, id };
+        if (!current()) return;
+        const row = canonicalSummary(kind, id, record);
+        if (!row || !sourceAtLeast(row, marker)) throw error('detail_stale');
+        accept(row, row.archivedAt > 0, false);
+      } catch (cause) {
+        if (stamp !== epoch) return;
+        if (cause?.code === 'permission_denied') {
+          try {
+            // A record may be archived/denied while the team ACL remains valid.
+            await proveAccess(stamp, true, false);
+            accept({ ...marker, publicationVersion: 0 }, false, true); return;
+          } catch (denial) { handleFailure(denial, stamp, []); return; }
+        }
+        if (authFailure(cause?.code)) { handleFailure(cause, stamp, []); return; }
+        // Preserve the acknowledged ID on transient errors, never an unverified body.
+        if (saved.get(id) === marker) for (const b of buckets.values()) if (b.kind === kind) retryLater(b);
+      }
+    })).finally(() => { if (confirmedFlights.get(kind) === task) confirmedFlights.delete(kind); });
+    confirmedFlights.set(kind, task); return task;
   }
   function scheduleRefresh(kind, archived) {
     if (!enabled || !started) return;
@@ -404,6 +512,7 @@
     const revision = b.revision;
     const task = loadBucket(b, stamp).then(() => {
       assertSession(stamp); b.loadedRevision = revision; b.confirmedAt = now(); b.retryAt = b.retryCount = 0;
+      void restoreConfirmed(b.kind, stamp).catch(cause => handleFailure(cause, stamp, [b]));
     }).catch(cause => handleFailure(cause, stamp, [b])).finally(() => {
       if (b.flight === task) b.flight = null;
       // An SDK invalidation arriving during REST must not disappear when that
@@ -461,7 +570,7 @@
   }
   function detailGrant(kind) {
     if (!hasAuthority(kind)) throw error('permission_denied');
-    return { uid, role: access.role, accountKey: email, email,
+    return { uid, role: access.role, accountKey: email, email, generation: sessionGeneration,
       permissions: { canCreate: true, canManage: access.role === 'owner', automaticReview: true,
         referenceDetailVersion: 196, referenceDesignerVersion: 212, noteCategoriesVersion: 203, referenceJudgmentVersion: 203 } };
   }
@@ -504,17 +613,24 @@
     const task = (async () => {
       const grant = await authorize(kind), stamp = epoch;
       try {
-        const value = kind === 'references' ? await read('referenceDetails/' + id, stamp) : await read('moodboardRefs/' + id, stamp, '');
+        const canonicalReference = kind === 'references' && window.AiselCollectionWrites?.enabled === true;
+        const value = kind === 'references' ? await read((canonicalReference ? 'referenceRecords/' : 'referenceDetails/') + id, stamp) : await read('moodboardRefs/' + id, stamp, '');
         assertSession(stamp);
         if (!hasAuthority(kind) || accessNeedsRefresh || access.role !== grant.role) throw error('permission_denied');
         let record;
-        if (kind === 'references') record = referenceDetail(value, id, grant);
+        if (canonicalReference) {
+          record = await window.AiselCollectionWrites.normalizeReference(value, id, grant);
+          assertSession(stamp);
+          if (!hasAuthority(kind) || accessNeedsRefresh || access.role !== grant.role) throw error('permission_denied');
+          const known = [bucket('references').rows.get(id), bucket('references', true).rows.get(id), overlays.get('references')?.get(id)?.row].filter(Boolean);
+          if (known.some(row => number(row.version) > record.version)) throw error('detail_stale');
+        } else if (kind === 'references') record = referenceDetail(value, id, grant);
         else {
           if (!value || typeof value !== 'object' || Array.isArray(value) || value.designMeeting !== true) throw error('detail_unavailable');
           if (value.designMeetingDeletedAt && grant.role !== 'owner') throw error('permission_denied');
           record = { ...value, id };
         }
-        return { ...grant, record, source: 'firebase', detailProtocolVersion: 213 };
+        return { ...grant, record, source: 'firebase', detailProtocolVersion: canonicalReference ? 214 : 213 };
       } catch (cause) {
         if (stamp === epoch && authFailure(cause?.code)) handleFailure(cause, stamp, []);
         throw cause;

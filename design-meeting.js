@@ -57,7 +57,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  async function ensureRemoteCandidate(id,extra={}){
    if(creationFlights.has(id))return creationFlights.get(id);if(!localCandidate(id))return true;
    if([...(noteDrafts.get(id)?.values()||[])].some(note=>note.composing)||active===id&&$dm('#dmDetailTitle').dataset.composing==='true')throw Error('글자 입력을 마친 뒤 저장해주세요. 기기 초안은 유지했습니다.');syncNewDraft(id);if(!meaningfulCandidate({...localCandidate(id),...extra}))return false;
-   const stamp=authStamp();const task=(async()=>{await access();assertAuth(stamp);if(!['owner','designer'].includes(role))throw Error('디자인회의 저장 권한을 확인해주세요.');if([...(noteDrafts.get(id)?.values()||[])].some(note=>note.composing)||active===id&&$dm('#dmDetailTitle').dataset.composing==='true')throw Error('글자 입력을 마친 뒤 저장해주세요. 기기 초안은 유지했습니다.');syncNewDraft(id);const original=localCandidate(id);if(!original)return true;if(!original._creationBaseline&&!meaningfulCandidate({...original,...extra}))return false;const payload=original._creationBaseline?JSON.parse(JSON.stringify(original._creationBaseline)):{...original,...extra,updatedAt:Date.now()};delete payload._localDraft;delete payload._localOwner;delete payload._creationBaseline;if(!original._creationBaseline)writeNewDraft({...original,_creationBaseline:payload});
+   const stamp=authStamp();const task=(async()=>{await writeAccess();assertAuth(stamp);if(!['owner','designer'].includes(role))throw Error('디자인회의 저장 권한을 확인해주세요.');if([...(noteDrafts.get(id)?.values()||[])].some(note=>note.composing)||active===id&&$dm('#dmDetailTitle').dataset.composing==='true')throw Error('글자 입력을 마친 뒤 저장해주세요. 기기 초안은 유지했습니다.');syncNewDraft(id);const original=localCandidate(id);if(!original)return true;if(!original._creationBaseline&&!meaningfulCandidate({...original,...extra}))return false;const payload=original._creationBaseline?JSON.parse(JSON.stringify(original._creationBaseline)):{...original,...extra,updatedAt:Date.now()};delete payload._localDraft;delete payload._localOwner;delete payload._creationBaseline;if(!original._creationBaseline)writeNewDraft({...original,_creationBaseline:payload});
      await ensureNoteCategories(Object.values(payload.referenceNotes||{}));assertAuth(stamp);
      const out=await ROOT.child(id).transaction(c=>{assertAuth(stamp);if(c){if(c.creationToken!==payload.creationToken||creationSignature(c)!==creationSignature(payload))throw Error('다른 곳에서 새 회의 내용을 수정했습니다. 기기 초안을 유지했습니다. 저장된 회의를 먼저 확인해주세요.');return c;}return payload;},undefined,false);assertAuth(stamp);if(!out.committed)throw Error('새 회의 저장을 확인하지 못했습니다. 기기 초안을 유지했습니다.');const saved={...out.snapshot.val(),id};cards[id]=saved;
      // The creation snapshot is our own acknowledged base. Keep newer input
@@ -159,7 +159,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
        for(const change of changes)entries.get(change.id).saving=true;
        noteMessage(id,'저장 중…');
        try{
-         await ensureNoteCategories(changes.map(c=>c.next));assertAuth(ownerStamp);await access();assertAuth(ownerStamp);if(!['owner','designer'].includes(role))throw Error('로그인 권한을 확인해주세요. 입력한 참고는 유지했습니다.');
+         await ensureNoteCategories(changes.map(c=>c.next));assertAuth(ownerStamp);await writeAccess();assertAuth(ownerStamp);if(!['owner','designer'].includes(role))throw Error('로그인 권한을 확인해주세요. 입력한 참고는 유지했습니다.');
          const stamp=authStamp(),out=await ROOT.child(id).transaction(c=>{assertAuth(stamp);return N.apply(c,changes);},undefined,false);
          assertAuth(stamp);if(!out.committed)throw Error('참고 저장을 확인하지 못했습니다. 입력을 유지했습니다.');
          const saved={...out.snapshot.val(),id};cards[id]=saved;rememberGallery(saved);
@@ -173,7 +173,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  $dm('#dmReferenceRetry').onclick=async()=>{
    const id=active;if(!id)return;
    if(noteConflicts.has(id))try{
-     await access();const latest=(await ROOT.child(id).once('value')).val(),entries=noteState(id),remote=N.notes(latest);
+     const stamp=authStamp();await writeAccess();assertAuth(stamp);const latest=(await ROOT.child(id).once('value')).val();assertAuth(stamp);if(active!==id)return;const entries=noteState(id),remote=N.notes(latest);
      const changed=[...entries.values()].filter(note=>note.dirty),details=changed.map(note=>'최신 참고 ('+(remote[note.id]?.date||'삭제됨')+' · 분류 '+(window.AiselNoteCategories?.list().find(c=>c.id===remote[note.id]?.categoryId)?.name||remote[note.id]?.categoryId||'미분류')+')\n'+(remote[note.id]?.text||'(내용 없음)')+'\n\n현재 입력 ('+note.value.date+' · 분류 '+(window.AiselNoteCategories?.list().find(c=>c.id===note.value.categoryId)?.name||note.value.categoryId||'미분류')+')\n'+(note.deleted?'(삭제 요청)':note.value.text||'(내용 없음)')).join('\n\n────────\n\n');
      if(!window.confirm(details+'\n\n확인: 현재 입력으로 저장\n취소: 입력을 유지하고 돌아가기'))return;
      for(const note of changed)note.base=remote[note.id]?{...remote[note.id]}:null;
@@ -311,6 +311,16 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    const task=(async()=>{const started=performance.now();try{const data=await bridge('access',[]);measurePhase('access',started);assertAuth(stamp);role=data.role;applyRole();window.dispatchEvent(new CustomEvent('aisel-role-verified',{detail:{role,uid:stamp.uid,generation:stamp.generation}}));return data;}catch(e){if(sameAuth(stamp)&&hardAccessFailure(e)){role=null;applyRole();}throw e;}})();
    accessFlight={stamp,promise:task};try{return await task;}finally{if(accessFlight?.promise===task)accessFlight=null;}
  }
+ // Ordinary saves use live Firebase authority; the transaction below still
+ // owns conflict resolution and only its server ACK clears a local draft.
+ async function writeAccess(){
+   const writer=window.AiselCollectionWrites;
+   if(writer?.enabled===false)return access();
+   if(writer?.enabled!==true||typeof writer.authorize!=='function')throw Object.assign(Error('저장 연결을 확인하지 못했습니다. 입력은 기기에 유지했습니다.'),{code:'write_unavailable'});
+   const stamp=authStamp();
+   try{const grant=await writer.authorize('meetings');acceptDetailGrant(grant,stamp);return grant;}
+   catch(error){if(sameAuth(stamp)&&hardAccessFailure(error)){role=null;applyRole();}throw error;}
+ }
  function resetAuth(){const abandonedOpen=!!openingId,priorOwner=textDraftOwner;detailOpenEpoch++;openingId=null;detailLoading.hidden=true;stopListening();const priorLocalOwner=newDrafts.get(active)?._localOwner;authEpoch++;coverageEpoch++;accessFlight=null;detailSaveFlights.clear();noteSaveFlights.clear();for(const timer of noteSaveTimers.values())clearTimeout(timer);noteSaveTimers.clear();if(textDraftOwner!==(memberUser()?.uid||null))closeLinkEditor();ensureTextDraftOwner();restoreNewDrafts();role=null;legacyAllowed=false;summaryActive=false;summaryRows=[];galleryDenied=false;galleryHold=!!galleryIndex?.enabled;preloadOwner='';results=[];deletePreview=null;undoDeletion=null;deleteDialog.close();designerDialog.close();linkManager.close();if(abandonedOpen||priorOwner&&priorOwner!==(memberUser()?.uid||null)||priorLocalOwner&&priorLocalOwner!==memberUser()?.uid){restoreList();if(ownRoute(history.state))putRoute('list',null,{replace:true});}historyChecks.clear();resultChecks.clear();resultFlights.clear();resultFailures.clear();stopReviewPolling();applyRole();if(!pane.hidden&&memberUser())startListening();}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
  members.addEventListener('toggle',async()=>{if(members.open)try{showMembers((await bridge('members',[])).members);}catch(e){message(e.message,true);}});
@@ -337,7 +347,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    if(!active||deleteFlight)return;const localId=active;if(localCandidate(localId)){if(creationFlights.has(localId)||hasPending(localId)){message('저장 중인 사진과 입력을 확인한 뒤 삭제해주세요.',true);return;}if(!confirm('기기에 보관한 이 회의 초안을 삭제할까요?'))return;newDrafts.delete(localId);delete cards[localId];try{localStorage.removeItem(newDraftPrefix()+localId);const prefix=textDraftPrefix(localId);for(let n=localStorage.length-1;n>=0;n--){const key=localStorage.key(n);if(prefix&&key?.startsWith(prefix))localStorage.removeItem(key);}}catch(e){message('초안 삭제를 확인하지 못했습니다.',true);return;}noteDrafts.delete(localId);dirtyFields.clear();detailDirty=false;closeLinkEditor();restoreList();putRoute('list',null,{replace:true});return;}if(!await saveDetail())return;
    const id=active;
    try{
-     await access();if(role!=='owner')throw Error('디자인회의 삭제는 대표자만 사용할 수 있습니다.');
+     await writeAccess();if(role!=='owner')throw Error('디자인회의 삭제는 대표자만 사용할 수 있습니다.');
      if(active!==id||pane.hidden)return;const c=current(id);if(!c||isDeleted(c))throw deletionError();
      if(hasPending(id)||c.conversion?.state==='running')throw Error('사진 저장 또는 작업지시서 전환이 끝난 뒤 삭제해주세요.');
      deletePreview={id,updatedAt:c.updatedAt||0,inputVersion:c.inputVersion||1,signature:C.signature(c),stamp:authStamp()};
@@ -355,7 +365,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    const requested=restore?undoDeletion:deletePreview;if(!requested)return;
    const task=(async()=>{
      try{
-       await access();if(role!=='owner')throw Error('디자인회의 삭제와 복원은 대표자만 사용할 수 있습니다.');
+       await writeAccess();if(role!=='owner')throw Error('디자인회의 삭제와 복원은 대표자만 사용할 수 있습니다.');
        const stamp=authStamp();if(!restore)assertAuth(requested.stamp);
        const now=Date.now(),id=requested.id;
        const out=await ROOT.child(id).transaction(c=>{
@@ -417,29 +427,49 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  async function digest(file){const bytes=await file.arrayBuffer();return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');}
  async function thumbnail(file){
    const url=URL.createObjectURL(file);
-   try{const img=new Image();img.src=url;await img.decode();const scale=Math.min(1,480/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.78));if(!blob)throw Error('썸네일 생성 실패');return {blob,width:img.width,height:img.height};}finally{URL.revokeObjectURL(url);}
+   try{const img=new Image();img.src=url;await img.decode();const scale=Math.min(1,480/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);let blob;for(const quality of [.78,.65,.5,.35,.2]){blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',quality));if(!blob)throw Error('썸네일 생성 실패');if(blob.size<=100*1024)break;}if(blob.size>100*1024)throw Error('사진 미리보기 용량을 줄이지 못했습니다. 기기 사진은 유지했습니다.');return {blob,width:img.width,height:img.height};}finally{URL.revokeObjectURL(url);}
  }
  function upload(item){if(uploadItemFlights.has(item.id))return uploadItemFlights.get(item.id);const candidateId=item.candidateId||item.id,previous=uploadFlights.get(candidateId);const flight=(async()=>{if(previous)await previous;return uploadNow(item);})().finally(()=>{uploadItemFlights.delete(item.id);if(uploadFlights.get(candidateId)===flight)uploadFlights.delete(candidateId);});uploadItemFlights.set(item.id,flight);uploadFlights.set(candidateId,flight);return flight;}
  async function uploadNow(item){
    const candidateId=item.candidateId||item.id,uploadStamp=authStamp();
    pending.set(item.id,item);renderPending();
    try{
-     if(item.owner&&item.owner!==memberUser()?.uid)throw Error('사진을 선택한 계정으로 로그인한 뒤 다시 시도해주세요.');await access();assertAuth(uploadStamp);
-     const existing=(await ROOT.child(candidateId).once('value')).val();
+     if(item.owner&&item.owner!==memberUser()?.uid)throw Error('사진을 선택한 계정으로 로그인한 뒤 다시 시도해주세요.');await writeAccess();assertAuth(uploadStamp);
+     const existing=(await ROOT.child(candidateId).once('value')).val();assertAuth(uploadStamp);
      if(isDeleted(existing))throw deletionError();
      const uploaded=existing?C.photos(existing):[];
      const photos=item.replaceKey?[]:[...uploaded];
+     const reusePhoto=hash=>{
+       if(photos.some(p=>p.hash===hash))return true;
+       const reusable=Object.values(cards).flatMap(C.photos).find(p=>p.hash===hash&&p.original&&p.thumb);if(!reusable)return false;
+       const reused={...reusable},own=uploaded.find(p=>p.hash===reusable.hash&&p.original===reusable.original&&p.thumb===reusable.thumb);
+       // Public image URLs can be reused; private bookkeeping stays on its record.
+       if(own?.cloud)reused.cloud=own.cloud;else delete reused.cloud;
+       photos.push(reused);return true;
+     };
      for(let n=0;n<item.files.length;n++){
-       const file=item.files[n],hash=await digest(file);
-       if(photos.some(p=>p.hash===hash))continue;
-       const reusable=Object.values(cards).flatMap(C.photos).find(p=>p.hash===hash&&p.original&&p.thumb);
-       if(reusable){photos.push({...reusable});continue;}
-       const prepared=await AiselPhoto.prepare(file,'collection');
-       const thumb=await thumbnail(prepared.blob);
+       const file=item.files[n],sourceHash=await digest(file);assertAuth(uploadStamp);
+       // Older uploads used the source-file hash. Keep that deduplication, then
+       // bind every new upload to the exact resized/compressed bytes sent.
+       if(reusePhoto(sourceHash))continue;
+       const prepared=await AiselPhoto.prepare(file,'collection');assertAuth(uploadStamp);
+       const hash=prepared.blob===file?sourceHash:await digest(prepared.blob);assertAuth(uploadStamp);
+       if(hash!==sourceHash&&reusePhoto(hash))continue;
+       const thumb=await thumbnail(prepared.blob);assertAuth(uploadStamp);
        // Automatic bounds retain tall screenshots; existing stored originals are not rewritten.
        const encode=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});
-       const original=(await bridge('upload',[],{id:candidateId,hash,kind:'original',mime:prepared.blob.type,data:await encode(prepared.blob)})).photo.url;
-       const small=(await bridge('upload',[],{id:candidateId,hash,kind:'thumb.jpg',mime:'image/jpeg',data:await encode(thumb.blob)})).photo.url;
+       let original,small;const writer=window.AiselCollectionWrites;
+       if(writer?.enabled===false){
+         const originalData=await encode(prepared.blob);assertAuth(uploadStamp);
+         original=(await bridge('upload',[],{id:candidateId,hash,kind:'original',mime:prepared.blob.type,data:originalData})).photo.url;assertAuth(uploadStamp);
+         const thumbData=await encode(thumb.blob);assertAuth(uploadStamp);
+         small=(await bridge('upload',[],{id:candidateId,hash,kind:'thumb.jpg',mime:'image/jpeg',data:thumbData})).photo.url;assertAuth(uploadStamp);
+       }else{
+         if(writer?.enabled!==true||typeof writer.uploadPhotos!=='function')throw Object.assign(Error('사진 저장 연결을 확인하지 못했습니다. 기기 사진은 유지했습니다.'),{code:'write_unavailable'});
+         assertAuth(uploadStamp);
+         const uploaded=await writer.uploadPhotos('meetings',{id:candidateId,hash,original:prepared.blob,thumb:thumb.blob});assertAuth(uploadStamp);
+         original=C.httpUrl(uploaded?.original);small=C.httpUrl(uploaded?.thumb);if(!original||!small)throw Error('사진 업로드 확인이 필요합니다. 기기 사진은 유지했습니다.');
+       }
        photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});
      }
      assertAuth(uploadStamp);await ensureRemoteCandidate(candidateId,{photos,photo:photos[0]?.original||''});
@@ -632,7 +662,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
          const values=editor.values.map(value=>value.trim()).filter(Boolean);
          if(values.some(value=>!C.httpUrl(value))){editor.status.textContent='http 또는 https 주소를 입력해주세요.';return false;}
          const links=[...new Set(values.map(value=>C.httpUrl(value)))],revision=editor.revision;
-         await access();assertAuth(stamp);if(!['owner','designer'].includes(role))throw Error('링크를 저장할 권한이 없습니다.');editor.status.textContent='저장 중…';
+         await writeAccess();assertAuth(stamp);if(!['owner','designer'].includes(role))throw Error('링크를 저장할 권한이 없습니다.');editor.status.textContent='저장 중…';
          if(!await ensureRemoteCandidate(id,{links,link:links[0]||''})){
            writeNewDraft({...localCandidate(id),links,link:links[0]||''});
          }else{
@@ -702,7 +732,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    try{
      if(!await ensureRemoteCandidate(id)){settleLocalOnly(id);return true;}assertAuth(ownerStamp);
      const patch=Object.fromEntries([...draft.dirty].map(k=>[k,draft.values[k]])),expected=Object.fromEntries(draft.bases);
-     await access();assertAuth(ownerStamp);
+     await writeAccess();assertAuth(ownerStamp);
      if(role!=='owner'){delete patch.decision;delete patch.decisionReason;draft.dirty.delete('decision');draft.dirty.delete('decisionReason');}
      if(patch.meetingDate&&!N.validDate(patch.meetingDate))throw Error('회의 날짜를 확인해주세요.');
      if(patch.link&&!C.httpUrl(patch.link))throw Error('상품 링크는 http 또는 https 주소를 입력해주세요.');
@@ -737,9 +767,11 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    }
    if(action==='results'||action==='enqueue'){render();if(active&&!detailDirty)renderReview(current(active));}return data;
  }
- async function enqueueCandidate(id){if(localCandidate(id))return;try{const data=await bridge('enqueue',[id]);const saved=data.saved?.find(r=>r.id===id);if(!saved)throw Error('검토 대기 저장 확인 필요');await mutate(id,{reviewRequestedVersion:saved.version,reviewState:saved.state||'queued',sheetConfirmedAt:data.checkedAt});if(active===id)renderReview(current(id));}catch(e){if(active===id||!active&&!pane.hidden&&!openingId)message('사진/내용은 저장됐습니다. 검토 요청을 다시 시도해주세요. '+e.message,true);if(active===id)$dm('#dmRequest').hidden=false;}}
+ async function enqueueCandidate(id){if(localCandidate(id))return;try{const data=await bridge('enqueue',[id]);const saved=data.saved?.find(r=>r.id===id);if(!saved)throw Error('검토 대기 저장 확인 필요');// The verified enqueue writes review metadata on the server.
+     if(active===id)renderReview(current(id));}catch(e){if(active===id||!active&&!pane.hidden&&!openingId)message('사진/내용은 저장됐습니다. 검토 요청을 다시 시도해주세요. '+e.message,true);if(active===id)$dm('#dmRequest').hidden=false;}}
  async function requestReview(){if(!active||busy)return;if(!await saveDetail({flushCategories:true}))return;if(localCandidate(active)){message('사진이나 제목, 링크, 참고 내용을 먼저 입력해주세요.');return;}busy=true;$dm('#dmRequest').disabled=true;const id=active;
-   try{message('검토 대기 목록에 저장 중…');const data=await bridge('enqueue',[id]);const saved=data.saved.find(r=>r.id===id);if(!saved)throw Error('후보 저장 확인 없음');await mutate(id,{reviewRequestedVersion:saved.version,reviewState:saved.state||'queued',sheetConfirmedAt:data.checkedAt});message(saved.state==='done'?'저장된 검토 결과를 확인합니다.':'시트에 검토 요청을 저장했습니다.');renderReview(current(id));await refresh(true,[id]);}catch(e){message(e.message,true);}finally{busy=false;$dm('#dmRequest').disabled=false;render();}
+   try{message('검토 대기 목록에 저장 중…');const data=await bridge('enqueue',[id]);const saved=data.saved.find(r=>r.id===id);if(!saved)throw Error('후보 저장 확인 없음');// The verified enqueue writes review metadata on the server.
+     message(saved.state==='done'?'저장된 검토 결과를 확인합니다.':'시트에 검토 요청을 저장했습니다.');renderReview(current(id));await refresh(true,[id]);}catch(e){message(e.message,true);}finally{busy=false;$dm('#dmRequest').disabled=false;render();}
  }
  const resultChecks=new Map(),resultFlights=new Map(),resultFailures=new Set(),historyChecks=new Set();let resultNoticeText='';
  function updateResultButton(){const c=current(active),key=c?C.rowKey(c.id,Number(c.inputVersion)||1):'';checkResult.hidden=!c||(!resultFailures.has(key)&&(!!confirmedResult(c)||!(reviewPollKey===key&&reviewPollCount>=10)));}
@@ -1015,7 +1047,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  $dm('#dmFileInput').onchange=e=>{receive(e.target.files,e.target.dataset.target||null);e.target.value='';};
  $dm('#dmCameraInput').onchange=e=>{receive(e.target.files);e.target.value='';};
  $dm('#dmAddPhotos').onclick=()=>{$dm('#dmFileInput').dataset.target=active;$dm('#dmFileInput').click();};
- $dm('#dmAddLink').onclick=async()=>{const link=$dm('#dmNewLink').value.trim();if(!C.httpUrl(link)){newLinkError.textContent='http 또는 https 주소를 입력해주세요.';return;}newLinkError.textContent='';const id=uid();try{await access();const c={id,designMeeting:true,inputVersion:1,link,title:'',memo:'',createdAt:Date.now(),updatedAt:Date.now(),reviewState:'idle',decision:'unselected'};await ROOT.child(id).update(c);cards[id]=c;$dm('#dmNewLink').value='';await open(id);await enqueueCandidate(id);}catch(e){message(e.message,true);}};
+ $dm('#dmAddLink').onclick=async()=>{const link=$dm('#dmNewLink').value.trim();if(!C.httpUrl(link)){newLinkError.textContent='http 또는 https 주소를 입력해주세요.';return;}newLinkError.textContent='';const id=uid();try{await writeAccess();const c={id,designMeeting:true,inputVersion:1,link,title:'',memo:'',createdAt:Date.now(),updatedAt:Date.now(),reviewState:'idle',decision:'unselected'};await ROOT.child(id).update(c);cards[id]=c;$dm('#dmNewLink').value='';await open(id);await enqueueCandidate(id);}catch(e){message(e.message,true);}};
  $dm('#dmSearch').oninput=()=>{limit=40;updateListRoute();render();refresh();};
  $dm('#dmFilters').onclick=e=>{if(!e.target.dataset.filter)return;filter=e.target.dataset.filter;$dm('#dmFilters').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b===e.target));limit=40;updateListRoute();render();refresh();};
  $dm('#dmMore').onclick=more;
@@ -1023,7 +1055,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  $dm('#dmSaveDetail').onclick=async()=>{
    const id=active;if(!id)return;
    if(detailConflicts.has(id))try{
-     await access();const stamp=authStamp(),latest=(await ROOT.child(id).once('value')).val();assertAuth(stamp);if(active!==id)return;
+     const stamp=authStamp();await writeAccess();assertAuth(stamp);const latest=(await ROOT.child(id).once('value')).val();assertAuth(stamp);if(active!==id)return;
      const comparison=[...dirtyFields].map(k=>'저장된 내용: '+(latest?.[k]||'(비어 있음)')+'\n내 입력: '+$dm('[data-dm-field="'+k+'"]').value).join('\n\n');
      if(!confirm(comparison+'\n\n확인: 내 입력으로 저장\n취소: 입력을 유지하고 돌아가기'))return;
      for(const k of dirtyFields)detailBases.set(k,latest?.[k]??'');detailConflicts.delete(id);persistTextDraft(id);
@@ -1048,7 +1080,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  $dm('#dmDesigner').onchange=async e=>{const id=active;if(!id)return;designerDraftField.value=e.target.value;markDetailDraft('designer');renderDesigner(current(id));designerDialog.close();await saveDetail();};
  $dm('#dmDetailTitle').addEventListener('compositionstart',()=>{$dm('#dmDetailTitle').dataset.composing='true';});$dm('#dmDetailTitle').addEventListener('compositionend',()=>{delete $dm('#dmDetailTitle').dataset.composing;if(document.activeElement!==$dm('#dmDetailTitle'))setTimeout(saveDetail,0);});
  $dm('#dmDetailTitle').oninput=e=>{$dm('[data-dm-field="title"]').value=e.target.textContent.trim();markDetailDraft('title');};$dm('#dmDetailTitle').onblur=saveDetail;
- $dm('#dmDrop').onclick=async()=>{if(!active||!await saveDetail({flushCategories:true}))return;try{await access();if(role!=='owner')throw Error('대표자만 변경할 수 있습니다.');await mutate(active,{decision:current(active).decision==='excluded'?'unselected':'excluded'});renderReview(current(active));lastSig='';render();}catch(e){message(e.message,true);}};
+ $dm('#dmDrop').onclick=async()=>{const id=active,stamp=authStamp();if(!id||!await saveDetail({id,flushCategories:true}))return;try{assertAuth(stamp);await writeAccess();assertAuth(stamp);if(role!=='owner')throw Error('대표자만 변경할 수 있습니다.');const decision=current(id)?.decision||'unselected';await mutate(id,{decision:decision==='excluded'?'unselected':'excluded'},false,{decision});if(active===id)renderReview(current(id));lastSig='';render();}catch(e){if(active===id)message(e.message,true);}};
  $dm('#dmWorkorder').onclick=async()=>{const id=active;if(!id||busy)return;busy=true;applyEditingState();try{await prepareTransfer(id);await access();if(role!=='owner')throw Error('대표자만 사용할 수 있습니다.');if(active!==id)return;const c=current(id);if(c.convertedCode){await openConverted(c.convertedCode);return;}busy=false;await conversionDialog([id]);}catch(e){message(e.message,true);}finally{busy=false;applyEditingState();}};
  window.AiselNoteCategories?.subscribe(()=>{lastSig='';if(!pane.hidden&&!active)render();});
  applyEditingState();
