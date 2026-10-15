@@ -516,6 +516,23 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    const preview=[...$dm('#dmGrid').querySelectorAll('.dm-card')].find(node=>!localCandidate(node.dataset.id)&&node.querySelector('img'))?.querySelector('img');
    if(preview){const started=viewStartedAt;if(preview.complete&&preview.naturalWidth)measureViewPhase('first-preview',started);else if(preview.dataset.timed!==String(started)){preview.dataset.timed=String(started);preview.addEventListener('load',()=>measureViewPhase('first-preview',started),{once:true});}}
  }
+ // Detail reads use the server-proven Firebase ACL and canonical REST record.
+ // The lightweight gallery row is never promoted to an editable source.
+ function acceptDetailGrant(grant,stamp){assertAuth(stamp);if(grant?.uid!==stamp.uid||!['owner','designer'].includes(grant?.role))throw Object.assign(Error('디자인회의 열람 권한을 확인해주세요.'),{code:'permission_denied'});role=grant.role;applyRole();}
+ async function loadDetailCandidate(id,stamp){
+   restoreNewDrafts();const local=localCandidate(id);
+   if(galleryIndex?.enabled){
+     if(typeof galleryIndex.authorize!=='function'||typeof galleryIndex.detail!=='function')throw Object.assign(Error('디자인회의 연결을 새로고침한 뒤 다시 열어주세요.'),{code:'detail_unavailable'});
+     if(local){const grant=await galleryIndex.authorize('meetings');acceptDetailGrant(grant,stamp);return local;}
+     const started=performance.now(),data=await galleryIndex.detail('meetings',id);acceptDetailGrant(data,stamp);measurePhase('firebase-detail',started);
+     const value=data.record;if(!value?.designMeeting||value.id!==id)throw Object.assign(Error('이 디자인회의 자료를 확인하지 못했습니다.'),{code:'detail_unavailable'});
+     return cards[id]={...value,id};
+   }
+   // Existing installations with the Firebase detail feature disabled retain
+   // the original canonical access path. A denial never falls through to it.
+   await access();assertAuth(stamp);if(!['owner','designer'].includes(role))throw Error('디자인회의 열람 권한을 확인해주세요.');
+   let c=local||current(id);if(!c||summaryActive&&!local){const started=performance.now(),value=await deadline(ROOT.child(id).once('value'),'디자인회의');assertAuth(stamp);measurePhase('detail-query',started);c=value.val()?.designMeeting?cards[id]={...value.val(),id}:null;}return c;
+ }
  async function open(id,options={}){
    designerDialog.close();
    const started=performance.now(),epoch=showEpoch,request=++detailOpenEpoch,stamp=authStamp(),stillVisible=()=>request===detailOpenEpoch&&epoch===showEpoch&&!pane.hidden&&sameAuth(stamp);
@@ -525,11 +542,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    closeLinkEditor();stopActive();stopReviewPolling();active=null;detailDirty=false;dirtyFields=new Set();detailBases=new Map();openingId=id;
    $dm('#dmTools').close();message('');$dm('#dmList').hidden=true;$dm('.dm-toolbar').hidden=true;$dm('#dmDetail').hidden=true;detailLoading.hidden=false;applyEditingState();window.scrollTo(0,0);measurePhase('detail-feedback',started);
    try{
-     // A summary lease is for lists only; editable source access remains canonical.
-     await access();if(!stillVisible())return false;
-     if(!['owner','designer'].includes(role))throw Error('디자인회의 열람 권한을 확인해주세요.');
-     restoreNewDrafts();let c=localCandidate(id)||current(id);
-     if(!c||summaryActive&&!localCandidate(id)){const queryStarted=performance.now(),value=await deadline(ROOT.child(id).once('value'),'디자인회의');assertAuth(stamp);if(!stillVisible())return false;measurePhase('detail-query',queryStarted);if(value.val()?.designMeeting)c=cards[id]={...value.val(),id};else c=null;}
+     const c=await loadDetailCandidate(id,stamp);if(!stillVisible())return false;
      if(!c)throw Error('이 후보를 찾을 수 없습니다.');if(isDeleted(c))throw Error('삭제된 디자인회의입니다.');
      if(options.history!==false){let route=history.state;if(!ownRoute(route)||route.view!=='list'&&!wasActive)route=putRoute('list');const parentStep=route.view==='list'?route.step:route.parentStep;putRoute('detail',id,{replace:!!wasActive&&ownRoute(route)&&route.view==='detail',parentStep});}
      else if(!ownRoute(history.state)||history.state.view!=='detail'||history.state.id!==id)putRoute('detail',id,{replace:true});
@@ -860,7 +873,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  // Indexed chronological windows; key breaks equal timestamp ties.
  const PAGE=40;let latestQuery=null,latestCallback=null,olderCursor=null,hasOlder=false,loadingOlder=false,latestIds=new Set(),olderIds=new Set(),activeRef=null,activeCallback=null,activeWatchId=null,draftsLoaded=false,coverageEpoch=0,coverageFlight=null,olderFlight=null;
  function entries(snap){return Object.entries(snap.val()||{}).map(([id,c])=>({...c,id})).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)||(a.id<b.id?-1:a.id>b.id?1:0));}
- function accept(values){for(const c of values){if(c.designMeeting===true)cards[c.id]=c;else delete cards[c.id];}}
+ function accept(values){for(const c of values){if(galleryIndex?.enabled&&c.id===active&&activeWatchId===active)continue;if(c.designMeeting===true)cards[c.id]=c;else delete cards[c.id];}}
  function repaintActive(){if(!active||!cards[active])return;const c=cards[active];
    if(isDeleted(c)){
      undoDeletion={id:active,deletedAt:c.designMeetingDeletedAt,deletedBy:c.designMeetingDeletedBy};applyEditingState();
@@ -870,16 +883,34 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    renderMeetingDate(c);renderNotes(c);if(detailDirty)return;if(!pane.contains(document.activeElement)||!document.activeElement.matches('input,textarea,select,[contenteditable=true]')){renderDetailPhotos(c);renderLinks(c);renderDesigner(c);$dm('#dmDetailTitle').textContent=c.title||(localCandidate(c.id)?'':'후보 상세');}renderReview(c);}
  function stopActive(){if(activeRef)activeRef.off('value',activeCallback);activeRef=null;activeCallback=null;activeWatchId=null;}
  function watchActive(){
-   const id=active&&!localCandidate(active)&&!pane.hidden&&!document.hidden&&!latestIds.has(active)?active:null;if(id===activeWatchId)return;stopActive();if(!id)return;
+   const id=active&&!localCandidate(active)&&!pane.hidden&&!document.hidden&&(galleryIndex?.enabled||!latestIds.has(active))?active:null;if(id===activeWatchId)return;stopActive();if(!id)return;
    const stamp=authStamp();activeWatchId=id;activeRef=ROOT.child(id);
    const valid=()=>activeCallback===callback&&active===id&&!pane.hidden&&sameAuth(stamp);
-   const callback=snap=>{if(!valid())return;const c=snap.val();if(c){cards[id]={...c,id};repaintActive();}else message('이 후보를 찾을 수 없습니다.',true);};
+   let signalSignature='',refreshFlight=null,refreshAgain=false;
+   const refreshCanonical=()=>{
+     refreshAgain=true;if(refreshFlight)return refreshFlight;
+     refreshFlight=(async()=>{while(refreshAgain&&valid()){
+       refreshAgain=false;
+       try{const data=await galleryIndex.detail('meetings',id);if(!valid())return;acceptDetailGrant(data,stamp);if(!data.record?.designMeeting||data.record.id!==id)throw Object.assign(Error('이 후보를 찾을 수 없습니다.'),{code:'detail_unavailable'});cards[id]={...data.record,id};repaintActive();}
+       catch(e){if(valid()){if(hardAccessFailure(e)){persistTextDraft(id);role=null;restoreList();applyRole();}message(e.message,true);}return;}
+     }})().finally(()=>{refreshFlight=null;});return refreshFlight;
+   };
+   const callback=snap=>{if(!valid())return;const c=snap.val();
+     if(galleryIndex?.enabled){
+       // SDK snapshots only invalidate: a cached/offline value cannot replace
+       // the fresh REST source or establish a new editing base.
+       const signature=JSON.stringify(c);if(signature===signalSignature)return;signalSignature=signature;
+       if(c&&JSON.stringify({...c,id})===JSON.stringify(current(id)))return;
+       void refreshCanonical();return;
+     }
+     if(c){cards[id]={...c,id};repaintActive();}else message('이 후보를 찾을 수 없습니다.',true);
+   };
    activeCallback=callback;activeRef.on('value',callback,e=>{if(valid())message(e.message,true);});
  }
  function stopListening(){coverageEpoch++;if(latestQuery)latestQuery.off('value',latestCallback);latestQuery=null;latestCallback=null;listening=false;stopActive();stopReviewPolling();}
  function startListening(){
    if(listening||pane.hidden||document.hidden)return;
-   if(galleryIndex?.enabled){const state=galleryIndex.snapshot('meetings');if(readyGallery(state)){applyGallerySnapshot(state);void galleryIndex.warm('meetings',{preferCache:true});return;}if(state.authorized===false){applyGallerySnapshot(state);return;}if(!legacyAllowed){if(!indexFallbackFlight)indexFallbackFlight=(async()=>{const stamp=authStamp();await galleryIndex.warm('meetings',{preferCache:true});assertAuth(stamp);const fresh=galleryIndex.snapshot('meetings');if(readyGallery(fresh)||fresh.authorized===false){applyGallerySnapshot(fresh);return;}await access();assertAuth(stamp);legacyAllowed=true;galleryHold=false;startListening();})().catch(e=>{if(e.code!=='auth_changed')message(e.message,true);}).finally(()=>indexFallbackFlight=null);return indexFallbackFlight;}}
+   if(galleryIndex?.enabled){const state=galleryIndex.snapshot('meetings');if(readyGallery(state)){applyGallerySnapshot(state);void galleryIndex.warm('meetings',{preferCache:true});return;}if(state.authorized===false){applyGallerySnapshot(state);return;}if(!legacyAllowed){if(!indexFallbackFlight)indexFallbackFlight=(async()=>{const stamp=authStamp();await galleryIndex.warm('meetings',{preferCache:true});assertAuth(stamp);const fresh=galleryIndex.snapshot('meetings');if(readyGallery(fresh)||fresh.authorized===false){applyGallerySnapshot(fresh);return;}const grant=await galleryIndex.authorize('meetings');acceptDetailGrant(grant,stamp);legacyAllowed=true;galleryHold=false;startListening();})().catch(e=>{if(e.code!=='auth_changed')message(e.message,true);}).finally(()=>indexFallbackFlight=null);return indexFallbackFlight;}}
    listening=true;
    listRequestedAt=performance.now();latestQuery=ROOT.orderByChild('createdAt').limitToLast(PAGE);
    const epoch=coverageEpoch,stamp=authStamp(),valid=()=>listening&&epoch===coverageEpoch&&sameAuth(stamp);
@@ -907,7 +938,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  function readyGallery(value=galleryIndex?.snapshot('meetings')){return value?.available===true&&value.authorized===true&&value.complete===true&&value.uid===memberUser()?.uid;}
  function applyGallerySnapshot(value){
    if(!galleryIndex?.enabled)return;
-   if(value.authorized===false){stopListening();summaryActive=false;summaryRows=[];galleryDenied=true;galleryHold=false;legacyAllowed=false;role=null;for(const id of Object.keys(cards))if(!localCandidate(id)&&id!==active)delete cards[id];lastSig='';applyRole();return;}
+   if(value.authorized===false){if(active)persistTextDraft(active);stopListening();summaryActive=false;summaryRows=[];galleryDenied=true;galleryHold=false;legacyAllowed=false;role=null;if(active||openingId){restoreList();if(!pane.hidden&&ownRoute(history.state))putRoute('list',null,{replace:true});}for(const id of Object.keys(cards))if(!localCandidate(id))delete cards[id];lastSig='';applyRole();return;}
    if(readyGallery(value)){if(!summaryActive)stopListening();summaryActive=true;galleryDenied=false;galleryHold=false;summaryRows=value.records;role=value.role;hasOlder=false;$dm('#dmCoverageState').textContent='';lastSig='';applyRole();watchActive();return;}
    if(summaryActive){stopListening();summaryActive=false;summaryRows=[];galleryHold=true;legacyAllowed=false;lastSig='';render();if(!pane.hidden)startListening();}
  }
@@ -915,7 +946,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  async function preloadGallery(){
    if(preloadFlight)return preloadFlight;if(!pane.hidden||listening)return false;const user=memberUser();if(!user?.uid||!user.emailVerified||location.hash.startsWith('#design-meeting='))return false;const stamp=authStamp(),key=stamp.uid+':'+stamp.generation+':'+stamp.epoch;if(preloadOwner===key)return true;if(preloadFlight)return preloadFlight;
    preloadFlight=(async()=>{if(galleryIndex?.enabled){await galleryIndex.warm('meetings',{preferCache:true});assertAuth(stamp);const index=galleryIndex.snapshot('meetings');if(index.authorized===false)return false;if(readyGallery(index)){preloadOwner=key;return true;}}
-     await access();assertAuth(stamp);if(!pane.hidden||listening||!['owner','designer'].includes(role))return false;const snap=await ROOT.orderByChild('createdAt').limitToLast(PAGE).once('value');assertAuth(stamp);const values=entries(snap);accept(values);if(!listening){latestIds=new Set(values.map(c=>c.id));olderCursor=values[0]?{value:values[0].createdAt??null,id:values[0].id}:null;hasOlder=values.length===PAGE;}preloadOwner=key;return true;
+     if(galleryIndex?.enabled){const grant=await galleryIndex.authorize('meetings');acceptDetailGrant(grant,stamp);}else await access();assertAuth(stamp);if(!pane.hidden||listening||!['owner','designer'].includes(role))return false;const snap=await ROOT.orderByChild('createdAt').limitToLast(PAGE).once('value');assertAuth(stamp);const values=entries(snap);accept(values);if(!listening){latestIds=new Set(values.map(c=>c.id));olderCursor=values[0]?{value:values[0].createdAt??null,id:values[0].id}:null;hasOlder=values.length===PAGE;}preloadOwner=key;return true;
    })().catch(()=>false).finally(()=>preloadFlight=null);return preloadFlight;
  }
  async function more(){
@@ -941,7 +972,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
        // The initial list task owns canonical fallback access, including a
        // failed attempt. Reuse it instead of retrying during the same visit.
        if(!active&&galleryIndex?.enabled){await listReady;assertAuth(stamp);if(epoch!==showEpoch||pane.hidden)return;const index=galleryIndex.snapshot('meetings');if(readyGallery(index)||index.authorized===false)applyGallerySnapshot(index);return;}
-       await access();
+       if(galleryIndex?.enabled){const grant=await galleryIndex.authorize('meetings');if(epoch!==showEpoch||pane.hidden)return;acceptDetailGrant(grant,stamp);}else await access();
      }catch(e){if(epoch===showEpoch&&!pane.hidden&&e.code!=='auth_changed'){if(!sameAuth(stamp)||hardAccessFailure(e)){role=null;applyRole();}message(e.message,true);}}else applyRole();})();
      const review=refresh().catch(e=>{if(epoch===showEpoch&&!pane.hidden)message(e.message,true);});await permissions;if(['owner','designer'].includes(role))warmNoteCategories();
      // Opening a detail route can proceed after authorization while its review

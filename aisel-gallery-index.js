@@ -1,5 +1,6 @@
 /* AISEL gallery summary reader. Enable only after the index and read rules are deployed.
  * This module never writes Firebase or turns a summary into an editable detail record.
+ * v213 details come from a separate server-written snapshot or canonical meeting path.
  * SDK events invalidate; fresh authenticated REST responses establish authority/data.
  */
 (function () {
@@ -13,7 +14,8 @@
   let started = false, accessFlight = null, leaseTimer = null, authorityTimer = null, refreshTimer = null, retryTimer = null;
   let sessionUnsubscribe = null, listeners = [], listenerUid = '', sessionGeneration;
   let enrollment = null;
-  const overlays = new Map();
+  let strictAccessFlight = null, proofSequence = 0, acceptedProof = 0;
+  const overlays = new Map(), detailFlights = new Map(), provenUids = new Set();
   const refreshTargets = new Set();
   const bucketKey = (kind, archived) => kind + (archived ? ':archived' : ':active');
   const validKind = kind => { if (!KINDS.includes(kind)) throw Error('Unknown gallery kind'); return kind; };
@@ -61,6 +63,8 @@
   }
   function invalidate(code, denied = false, clearAccount = false) {
     epoch++; accessProved = false; accessNeedsRefresh = false; access = null; detach(); accessFlight = null;
+    strictAccessFlight = null; acceptedProof = ++proofSequence;
+    detailFlights.clear();
     if ((clearAccount || denied) && uid && app) {
       for (const kind of KINDS) for (const archived of [false, true]) {
         try { window.localStorage.removeItem(cacheKey(kind, archived)); } catch (_) {}
@@ -86,13 +90,13 @@
       catch (_) { return false; }
     }) || null;
   }
-  async function read(path, stamp) {
+  async function read(path, stamp, rootPath = ROOT) {
     assertSession(stamp); const user = canonical(), token = await user.getIdToken(); assertSession(stamp);
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), REQUEST_MS);
     let response;
     try {
       const base = app.options.databaseURL.replace(/\/$/, '');
-      response = await fetch(base + '/' + ROOT + '/' + path + '.json?auth=' + encodeURIComponent(token), {
+      response = await fetch(base + '/' + (rootPath ? rootPath + '/' : '') + path + '.json?auth=' + encodeURIComponent(token), {
         cache: 'no-store', credentials: 'omit', signal: controller.signal, headers: { Accept: 'application/json' }
       });
       assertSession(stamp);
@@ -135,11 +139,14 @@
       enrollment = { at: now(), provisioned: false, code }; throw error(code);
     }
   }
-  async function readAccess(stamp) {
+  async function readAccess(stamp, allowEnrollment = true) {
     let value;
     try { value = await read('access/' + encodeURIComponent(uid), stamp); }
-    catch (cause) { if (cause?.code !== 'permission_denied') throw cause; }
+    catch (cause) { if (cause?.code !== 'permission_denied' || !allowEnrollment || provenUids.has(uid)) throw cause; }
     if (validAccess(value)) return value;
+    // A revoked/expired known session must fail closed immediately; re-enrolling
+    // through Apps Script here would put its response back in the detail path.
+    if (!allowEnrollment || provenUids.has(uid) || value != null) throw error('permission_denied');
     await enroll(stamp);
     // Neither cached roles nor a bootstrap receipt can substitute for rules.
     value = await read('access/' + encodeURIComponent(uid), stamp);
@@ -356,13 +363,18 @@
     if (authFailure(code)) { invalidate(code, code === 'permission_denied' || code === 'lease_expired'); return; }
     for (const b of targets) failBucket(b, code);
   }
-  async function proveAccess(stamp, force = false) {
+  async function proveAccess(stamp, force = false, allowEnrollment = true) {
     if (!force && !accessNeedsRefresh && hasAuthority('references')) return access;
-    if (accessFlight) return accessFlight;
+    const flight = allowEnrollment ? accessFlight : strictAccessFlight;
+    if (flight) return flight;
+    const proof = ++proofSequence;
     const task = (async () => {
-      const value = await readAccess(stamp); assertSession(stamp);
+      const value = await readAccess(stamp, allowEnrollment); assertSession(stamp);
+      if (proof < acceptedProof) return access;
+      acceptedProof = proof;
       const previousRole = access?.role;
       access = value; accessProved = true; accessNeedsRefresh = false;
+      provenUids.add(uid);
       clearTimeout(leaseTimer); clearTimeout(authorityTimer);
       leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
       authorityTimer = setTimeout(() => {
@@ -376,10 +388,16 @@
         b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived);
       } else if (previousRole !== access.role && b.available) emit(b.kind, b.archived);
       return value;
-    })().catch(cause => { if (stamp === epoch) accessNeedsRefresh = true; throw cause; }).finally(() => {
+    })().catch(cause => {
+      // A slower enrollment/list proof cannot replace a newer strict proof.
+      if (stamp === epoch && proof < acceptedProof && accessProved) return access;
+      if (stamp === epoch) accessNeedsRefresh = true; throw cause;
+    }).finally(() => {
       if (accessFlight === task) accessFlight = null;
+      if (strictAccessFlight === task) strictAccessFlight = null;
     });
-    accessFlight = task; return task;
+    if (allowEnrollment) accessFlight = task; else strictAccessFlight = task;
+    return task;
   }
   function refreshBucket(b, stamp) {
     if (b.flight) return b.flight;
@@ -419,7 +437,7 @@
       return kind ? snapshot(kind, options) : null;
     }
     try {
-      await proveAccess(stamp, !options.preferCache); assertSession(stamp);
+      await proveAccess(stamp, !options.preferCache, options.noEnrollment !== true); assertSession(stamp);
       if (!options.authorityOnly) await Promise.all(targets.map(b => {
         if (options.preferCache && b.retryAt > now()) return null;
         return refreshBucket(b, stamp);
@@ -441,5 +459,68 @@
     }
     return warm(null, { preferCache: !first });
   }
-  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember });
+  function detailGrant(kind) {
+    if (!hasAuthority(kind)) throw error('permission_denied');
+    return { uid, role: access.role, accountKey: email, email,
+      permissions: { canCreate: true, canManage: access.role === 'owner', automaticReview: true,
+        referenceDetailVersion: 196, referenceDesignerVersion: 212, noteCategoriesVersion: 203, referenceJudgmentVersion: 203 } };
+  }
+  async function authorize(kind) {
+    validKind(kind);
+    if (!enabled) throw error('detail_unavailable');
+    // Fresh Firebase ACL proof is independent of slow Sheets/Apps Script reads.
+    // First-time enrollment alone may use the existing canonical membership API.
+    const user = canonical(), generation = window.AiselAuth?.generation;
+    if (!user?.uid || !user.emailVerified) throw error('permission_denied');
+    if (!online()) throw error('offline');
+    await warm(kind, { authorityOnly: true, noEnrollment: true });
+    if (canonical()?.uid !== user.uid || window.AiselAuth?.generation !== generation) throw error('auth_changed');
+    if (!hasAuthority(kind) || accessNeedsRefresh) {
+      const state = snapshot(kind);
+      throw error(state.error?.code || (state.authorized === false ? 'permission_denied' : 'network'));
+    }
+    return detailGrant(kind);
+  }
+  function referenceDetail(value, id, grant) {
+    if (value == null) throw error('detail_unavailable');
+    const record = value?.record;
+    if (value.deleted === true) throw Object.assign(Error('삭제된 레퍼런스입니다. 목록을 다시 확인해주세요.'), { code: 'detail_deleted' });
+    if (value.schemaVersion !== 1 || value.detailProtocolVersion !== 213 || value.id !== id ||
+        !record || Array.isArray(record) || record.id !== id || !Number.isSafeInteger(record.version) || record.version < 1 ||
+        value.version !== record.version || value.updatedAt !== record.updatedAt || !Number.isFinite(Date.parse(record.updatedAt)) ||
+        !Number.isSafeInteger(value.publicationVersion) || value.publicationVersion < 1) throw error('detail_stale');
+    if (record.archivedAt && grant.role !== 'owner') throw error('permission_denied');
+    const known = [bucket('references').rows.get(id), bucket('references', true).rows.get(id), overlays.get('references')?.get(id)?.row].filter(Boolean);
+    if (known.some(row => number(row.version) > record.version || number(row.version) === record.version &&
+        number(row.updatedAt) > Date.parse(record.updatedAt))) throw error('detail_stale');
+    return { ...record, permissions: { canEdit: grant.role === 'owner' || String(record.creator || '').toLowerCase() === grant.email,
+      canArchive: grant.role === 'owner' } };
+  }
+  async function detail(kind, id, options = {}) {
+    validKind(kind);
+    if (typeof id !== 'string' || !/^[-\w]{1,128}$/.test(id)) throw error('detail_unavailable');
+    const user = canonical(), key = String(user?.uid || '') + '|' + window.AiselAuth?.generation + '|' + kind + '|' + id;
+    if (!options.force && detailFlights.has(key)) return detailFlights.get(key);
+    const task = (async () => {
+      const grant = await authorize(kind), stamp = epoch;
+      try {
+        const value = kind === 'references' ? await read('referenceDetails/' + id, stamp) : await read('moodboardRefs/' + id, stamp, '');
+        assertSession(stamp);
+        if (!hasAuthority(kind) || accessNeedsRefresh || access.role !== grant.role) throw error('permission_denied');
+        let record;
+        if (kind === 'references') record = referenceDetail(value, id, grant);
+        else {
+          if (!value || typeof value !== 'object' || Array.isArray(value) || value.designMeeting !== true) throw error('detail_unavailable');
+          if (value.designMeetingDeletedAt && grant.role !== 'owner') throw error('permission_denied');
+          record = { ...value, id };
+        }
+        return { ...grant, record, source: 'firebase', detailProtocolVersion: 213 };
+      } catch (cause) {
+        if (stamp === epoch && authFailure(cause?.code)) handleFailure(cause, stamp, []);
+        throw cause;
+      }
+    })().finally(() => { if (detailFlights.get(key) === task) detailFlights.delete(key); });
+    detailFlights.set(key, task); return task;
+  }
+  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail });
 })();

@@ -266,16 +266,30 @@
  const hash=location.hash;
  if(/^#reference=/.test(hash))RC.show({id:decodeURIComponent(hash.slice(11)),history:false});
  else if(hash==='#references')show('references',{history:false});
- else if(/^#design-meeting(?:=|$)/.test(hash)){
-  // Reload a meeting list or detail through its existing owner, without adding a route.
-  show('designmeeting',{history:false}).then(ok=>{
-   if(ok===false)return;
-   if(hash.startsWith('#design-meeting='))DM.open(decodeURIComponent(hash.slice(16)),{history:false}).catch(error=>info(error.message));
-  }).catch(error=>info(error.message));
- }
+ else if(/^#design-meeting(?:=|$)/.test(hash))openInitialMeeting(hash).catch(error=>info(error.message));
  else if(new URLSearchParams(location.search).get('code'))select('editor');
  else if(/^#workorder=/.test(hash))show('editor',{history:false,code:decodeURIComponent(hash.slice(11))});
  else show(hash==='#sales'?'sales':hash==='#workorders'?'orders':hash==='#products'?'products':landingView(),{replace:true}).then(restoreLanding);
+ // An initial meeting URL must capture its detail epoch after the first
+ // canonical auth restoration; later account changes still cancel the open.
+ async function openInitialMeeting(initialHash){
+  const intent=navigationRevision,initialView=current;
+  const stillRequested=()=>navigationRevision===intent&&location.hash===initialHash&&current===initialView;
+  // initCommonSession below installs the shared session during this script turn.
+  await Promise.resolve();const session=window.AiselAuth,initialUid=session?.currentUser()?.uid||null;
+  let uid=null,generation=null;const sameSession=()=>!session||window.AiselAuth===session&&uid===(session.currentUser()?.uid||null)&&generation===session.generation;
+  if(session){
+   await session.initialized;
+   if(!stillRequested()||window.AiselAuth!==session||initialUid&&session.currentUser()?.uid!==initialUid)return false;
+   uid=session.currentUser()?.uid||null;generation=session.generation;
+   await session.ready();
+   if(!stillRequested()||!sameSession())return false;
+  }
+  if(!stillRequested()||await show('designmeeting',{history:false})===false)return false;
+  if(navigationRevision!==intent||location.hash!==initialHash||current!=='designmeeting'||!sameSession())return false;
+  if(initialHash.startsWith('#design-meeting='))return DM.open(decodeURIComponent(initialHash.slice(16)),{history:false});
+  return true;
+ }
  // Reuse existing Firebase auth restoration; do not perform another role lookup.
  // The member app is normally lazy. Restore it only when this device has a recent landing hint.
  try{
@@ -294,6 +308,7 @@
   dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselMeetingTools" hidden>디자인회의 관리 도구</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
   document.body.append(dialog);document.body.dataset.aiselCommonSession='ready';
   const google=$('aiselAccountGoogle'),logoutButton=$('aiselAccountLogout'),meetingTools=$('aiselMeetingTools'),status=$('aiselAccountStatus'),identity=$('aiselAccountIdentity');
+  let resolveInitialized;const initialized=new Promise(resolve=>{resolveInitialized=resolve;});
   let generation=0,previousUid,authReady=false,suppressMigration=false,migration=null,sessionBusy=false,loginFlight=null,resolveLogin=null,rejectLogin=null;
   let normalization=null,normalizedUid=null,loggingOut=false,normalizationError='',saveGuardDepth=0;
   const listeners=new Set(),sameProject=a=>a.options?.projectId===app.options?.projectId;
@@ -384,13 +399,13 @@
   meetingTools.addEventListener('click',async()=>{if(sessionBusy)return;dialog.close();if(current==='designmeeting'||await show('designmeeting'))DM.openTools?.();});
   $('aiselAccountClose').addEventListener('click',()=>{if(!sessionBusy)dialog.close();});
   dialog.addEventListener('cancel',event=>{if(sessionBusy)event.preventDefault();});dialog.addEventListener('close',()=>{if(loginFlight&&!sessionBusy)finishLogin(cancelled());});
-  window.AiselAuth={currentUser,ready,login,requestLogin,logout,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},syncFrame,get generation(){return generation;},get normalized(){return normalizedUid===(currentUser()?.uid||null)&&!normalizationError;}};
+  window.AiselAuth={currentUser,ready,initialized,login,requestLogin,logout,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},syncFrame,get generation(){return generation;},get normalized(){return normalizedUid===(currentUser()?.uid||null)&&!normalizationError;}};
   async function adoptExistingSession(){
    if(!authReady||currentUser()||suppressMigration||migration||loginFlight||sessionBusy||typeof auth.updateCurrentUser!=='function')return;
    const prior=sdk.apps.filter(a=>a!==app&&sameProject(a)&&a.name!=='aiselShootingSamples').map(a=>{try{return a.auth().currentUser;}catch(_){return null;}}).find(user=>user?.uid&&user.emailVerified);
    if(!prior)return;migration=Promise.resolve(auth.updateCurrentUser(prior));try{await migration;publish('restore');}catch(_){/* Existing session remains intact; sign-in can be retried from the common entry. */}finally{migration=null;}
   }
-  auth.onAuthStateChanged(()=>{authReady=true;publish('auth');if(!loggingOut)ready().then(scheduleGalleryWarm).catch(()=>{});adoptExistingSession();});
+  auth.onAuthStateChanged(()=>{authReady=true;publish('auth');if(!loggingOut)ready().then(scheduleGalleryWarm).catch(()=>{});Promise.resolve(adoptExistingSession()).then(resolveInitialized,resolveInitialized);});
   for(const other of sdk.apps.filter(a=>a!==app&&sameProject(a))){try{other.auth().onAuthStateChanged(()=>{adoptExistingSession();if(currentUser()&&!loggingOut)ready().catch(()=>{});});}catch(_){} }
   renderAccount();
  }
