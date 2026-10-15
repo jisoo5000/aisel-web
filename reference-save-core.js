@@ -10,11 +10,11 @@
   function inputs(record={}){
     const sourceLinks=Array.isArray(record.sourceLinks)?record.sourceLinks:record.sourceUrl?[record.sourceUrl]:[];
     const noteEntries=Array.isArray(record.noteEntries)?record.noteEntries.map(note=>({id:note.id,date:note.date||'',text:note.text||'',categoryId:note.categoryId||''})):[];
-    return {title:record.title||'',date:record.date||'',category:record.category||'product',contentType:record.contentType||'',categoryMode:record.categoryMode||'auto',sourceLinks:clone(sourceLinks),sourceUrl:sourceLinks[0]||'',photos:(record.photos||[]).map(photo=>Object.fromEntries(['hash','original','thumb','width','height','bytes','thumbBytes'].filter(key=>photo[key]!==undefined).map(key=>[key,clone(photo[key])]))),noteEntries,notes:noteEntries.length?noteEntries.map(note=>'['+note.date+'] '+note.text).join('\n\n'):record.notes||''};
+    return {title:record.title||'',designer:record.designer||'',date:record.date||'',category:record.category||'product',contentType:record.contentType||'',categoryMode:record.categoryMode||'auto',sourceLinks:clone(sourceLinks),sourceUrl:sourceLinks[0]||'',photos:(record.photos||[]).map(photo=>Object.fromEntries(['hash','original','thumb','width','height','bytes','thumbBytes'].filter(key=>photo[key]!==undefined).map(key=>[key,clone(photo[key])]))),noteEntries,notes:noteEntries.length?noteEntries.map(note=>'['+note.date+'] '+note.text).join('\n\n'):record.notes||''};
   }
   function patch(base,record){
     const current=inputs(record),before=base?inputs(base):null,out={};
-    for(const key of Object.keys(current))if(!before||!equal(before[key],current[key]))out[key]=current[key];
+    for(const key of Object.keys(current))if((key!=='designer'||Object.prototype.hasOwnProperty.call(record,'designer'))&&(!before||!equal(before[key],current[key])))out[key]=current[key];
     if(out.noteEntries)out.notes=current.notes;
     if(out.sourceLinks)out.sourceUrl=current.sourceUrl;
     return out;
@@ -27,7 +27,8 @@
     const conflicts=[];
     if(!remote||local.id!==remote.id||remote.archivedAt)return {ok:false,conflicts:['record']};
     if(confirmedAttempt(attempt,remote))base={...(base||attempt.base||{}),...clone(attempt.patch),id:remote.id,version:attempt.snapshot.version+1};
-    const desired=inputs(local),latest=inputs(remote);
+    // Legacy drafts never supplied a designer. Missing means unspecified; only an explicit empty string clears it.
+    const desired=inputs(Object.prototype.hasOwnProperty.call(local,'designer')?local:{...local,designer:base?.designer||remote.designer||''}),latest=inputs(remote);
     if(!base){if(equal(desired,latest))return {ok:true,record:clone(remote),patch:{}};return {ok:false,conflicts:['unknown_base']};}
     if(base.id!==local.id||Number(base.version)>Number(remote.version))return {ok:false,conflicts:['version']};
     const before=inputs(base),result={...latest};
@@ -36,7 +37,7 @@
       if(equal(theirs,previous)||equal(mine,theirs))return clone(mine);
       conflicts.push(path);return clone(mine);
     }
-    for(const key of ['title','date','categoryMode','sourceLinks','photos'])result[key]=choose(before[key],desired[key],latest[key],key);
+    for(const key of ['title','designer','date','categoryMode','sourceLinks','photos'])result[key]=choose(before[key],desired[key],latest[key],key);
     [result.category,result.contentType]=choose([before.category,before.contentType],[desired.category,desired.contentType],[latest.category,latest.contentType],'category');
     const oldNotes=new Map(before.noteEntries.map(note=>[note.id,note])),myNotes=new Map(desired.noteEntries.map(note=>[note.id,note])),theirNotes=new Map(latest.noteEntries.map(note=>[note.id,note]));
     result.noteEntries=[];

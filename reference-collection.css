@@ -189,9 +189,9 @@
  #referenceCollectionView .rc-title-actions #rcDelete{flex:0 0 40px;width:40px}
  #referenceCollectionView .rc-title-actions #rcComplete{flex:0 0 64px;width:64px;margin:0;padding:0 4px;white-space:nowrap;color:var(--aisel-ink)}
  #referenceCollectionView #rcDetail .rc-title-row input{font-size:16px!important;line-height:24px}
- /* v211: cap category width and give the remaining space to the link control. */
+ /* v212: date/category/designer share a row; source tools have their own row. */
  #referenceCollectionView .rc-metadata{grid-template-columns:88px minmax(0,128px) minmax(120px,1fr);gap:4px;align-items:start}
- #referenceCollectionView .rc-link-tools{grid-column:auto;grid-template-columns:minmax(0,1fr) 28px 28px;gap:4px;min-width:0;width:100%;justify-self:stretch;align-items:start}
+ #referenceCollectionView .rc-link-tools{grid-column:1/-1;grid-template-columns:minmax(0,1fr) 28px 28px;gap:4px;min-width:0;width:100%;justify-self:stretch;align-items:start}
  #referenceCollectionView .rc-link-tools :is(button,#rcSourceOpen){width:100%;margin:0;justify-self:stretch}
  #referenceCollectionView #rcCategory{padding:0 2px;gap:2px}
  #referenceCollectionView .rc-link-tools.is-editing{grid-template-columns:minmax(0,1fr)}
@@ -247,4 +247,21 @@
  #referenceCollectionView .rc-judgment-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px;line-height:18px;font-weight:400;color:#34383C}
  #referenceCollectionView .rc-judgment-table :is(th,td){border:1px solid #E3E5E7;padding:8px;vertical-align:top;text-align:left;overflow-wrap:anywhere}
  #referenceCollectionView .rc-judgment-table th{width:52px;font-weight:400}
+}
+
+/* v212: shared designer/date filters and responsive detail feedback. */
+@media screen {
+ #referenceCollectionView .rc-collection-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:0 0 8px}
+ #referenceCollectionView .rc-collection-filters select{height:32px;min-height:32px;margin:0;padding:0 8px;color:#6C727C;border:1px solid #E3E5E7;border-radius:3px;font-size:16px;font-weight:400;line-height:24px}
+ #referenceCollectionView .rc-designer-field{position:relative;display:flex;align-items:center;min-width:0;width:100%;height:28px;margin:0;padding:0 24px 0 8px;color:#6C727C;border:1px solid #E3E5E7;border-radius:3px;background:#FFF}
+ #referenceCollectionView #rcDesignerText{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:18px;font-weight:400;pointer-events:none}
+ #referenceCollectionView .rc-designer-field::after{content:"";position:absolute;right:10px;top:9px;width:6px;height:6px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:rotate(45deg);pointer-events:none}
+ #referenceCollectionView #rcDesigner{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;opacity:0;font-size:16px!important;line-height:24px;cursor:pointer;appearance:auto}
+ #referenceCollectionView .rc-designer-field:has(#rcDesigner:focus-visible){outline:2px solid #34383C;outline-offset:2px}
+ #referenceCollectionView .rc-designer-field:has(#rcDesigner:disabled){color:#9BA1AA}
+ #referenceCollectionView .rc-card-designer{display:block;margin:2px 0 0;font-size:12px;line-height:18px;font-weight:400;color:#6C727C}
+ #referenceCollectionView .rc-date-group{grid-column:1/-1;margin:0;font-size:12px;line-height:18px;font-weight:400;color:#6C727C}
+ #referenceCollectionView .rc-detail-loading{min-height:160px;padding:12px 0;color:#6C727C;font-size:13px;line-height:20px}
+ #referenceCollectionView .rc-detail-loading p{margin:0 0 12px}
+ #referenceCollectionView .rc-detail-loading button{margin:0}
 }

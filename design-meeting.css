@@ -209,3 +209,15 @@
 @media screen and (max-width:389px) {
  #designMeetingView .dm-assignee label {display:none;}
 }
+
+/* v212: date/designer stay together; link actions use their own full-width row. */
+@media screen {
+ html:root body #designMeetingView .dm-detail-meta {grid-template-columns:88px minmax(0,1fr);gap:4px;align-items:start;}
+ html:root body #designMeetingView #dmLinks {grid-column:1/-1;grid-template-columns:minmax(0,1fr) 28px 28px;gap:4px;width:100%;justify-self:stretch;}
+ html:root body #designMeetingView #dmLinks .dm-link-open {width:100%;min-width:0;max-width:none;}
+ html:root body #designMeetingView #dmLinks.is-editing {grid-column:1/-1;width:100%;}
+ #designMeetingView .dm-link-editor {width:100%;}
+ html:root body #designMeetingView .dm-link-editor>input {width:100%;max-width:none;}
+ #designMeetingView #dmDetailLoading {min-height:240px;padding:12px 0;color:var(--aisel-muted);font-size:12px;line-height:18px;}
+ #designMeetingView #dmDetailLoading p {margin:0 0 8px;}
+}

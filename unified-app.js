@@ -131,7 +131,7 @@
   // input is durable locally, the reference request can finish in its own pane.
   // Identity changes below still use the default server-confirmed save guard.
   if(current==='references'&&target!=='references'&&(!await RC.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
-  if(current==='designmeeting'&&target!=='designmeeting'&&(!await DM.canLeave()||!isCurrent()))return false;
+  if(current==='designmeeting'&&target!=='designmeeting'&&(!await DM.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   if(!isCurrent()||!await A.leave()||!isCurrent())return false;
   if(current==='references'&&target!=='references'&&(!isCurrent()||!await RC.leave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   return isCurrent();
