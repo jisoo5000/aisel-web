@@ -1,0 +1,17 @@
+.aisel-taxonomy-manager{box-sizing:border-box;flex:1 0 100%;width:100%;min-width:0;margin:8px 0;padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C;font-family:inherit;font-size:12px;line-height:18px;}
+.aisel-taxonomy-heading,.aisel-taxonomy-manager form,.aisel-taxonomy-rows>div{display:flex;align-items:center;gap:4px;}
+.aisel-taxonomy-heading{justify-content:space-between;margin-bottom:8px;}
+.aisel-taxonomy-heading strong{font-size:12px;font-weight:500;}
+.aisel-taxonomy-manager button,.aisel-taxonomy-manager input{box-sizing:border-box;height:28px;margin:0;padding:0 8px;border:1px solid #E3E5E7;border-radius:2px;background:#fff;color:#6C727C;font-family:inherit;font-size:12px;line-height:26px;}
+.aisel-taxonomy-manager input{flex:1 1 0;min-width:0;font-size:12px!important;}
+.aisel-taxonomy-manager button{flex:0 0 auto;white-space:nowrap;}
+.aisel-taxonomy-manager button:disabled{opacity:.5;}
+.aisel-taxonomy-rows{max-height:200px;overflow:auto;margin-top:8px;}
+.aisel-taxonomy-rows>div{justify-content:space-between;padding:4px 0;border-top:1px solid #E3E5E7;}
+.aisel-taxonomy-rows span{min-width:0;overflow-wrap:anywhere;}
+.aisel-taxonomy-status,.aisel-taxonomy-hint,.aisel-taxonomy-rows>p{margin:4px 0;font-size:12px;line-height:18px;}
+.aisel-taxonomy-status:empty{display:none;}
+.aisel-taxonomy-manager [hidden]{display:none!important;}
+/* Match the surrounding 12px collection controls despite the legacy mobile
+   body input:not(...) rule. This stays outside workorder and print fields. */
+body :is(#referenceCollectionView,#designMeetingView) .aisel-taxonomy-manager input{font-size:12px!important;}

@@ -46,6 +46,17 @@
       records: trusted && b.available ? [...b.rows.values()].map(row => ({ ...row })) : [],
       uid: enabled ? uid || null : null, role: trusted ? access.role : '', error: b.error ? { code: b.error.code } : null };
   }
+  function preview(kind, id) {
+    validKind(kind);
+    const b = bucket(kind), row = b.rows.get(id), stamp = epoch, accessVersion = number(access?.updatedAt);
+    const current = () => enabled && stamp === epoch && hasAuthority(kind) && !accessNeedsRefresh &&
+      number(access?.updatedAt) === accessVersion && b.available && b.rows.get(id) === row &&
+      row && !row.archivedAt && /^https:\/\//i.test(row.thumbnail || '');
+    // A proven list image can paint while the canonical detail request runs.
+    // This receipt grants no body/edit access and cannot outlive its list/ACL.
+    if (!current()) return null;
+    return Object.freeze({ id, thumbnail: row.thumbnail, isCurrent: () => !!current() });
+  }
   function emit(kind, archived = false) {
     const state = snapshot(kind, { archived });
     for (const callback of subscribers.get(bucketKey(kind, archived)) || []) { try { callback(state); } catch (_) {} }
@@ -411,6 +422,7 @@
         }
         if (number(value.updatedAt) > number(access?.updatedAt)) {
           accessNeedsRefresh = true;
+          for (const b of buckets.values()) emit(b.kind, b.archived);
           proveAccess(stamp, true).then(() => {
             if (stamp === epoch && accessNeedsRefresh) scheduleRefresh();
           }).catch(cause => handleFailure(cause, stamp, [...buckets.values()]));
@@ -638,5 +650,5 @@
     })().finally(() => { if (detailFlights.get(key) === task) detailFlights.delete(key); });
     detailFlights.set(key, task); return task;
   }
-  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail });
+  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail, preview });
 })();

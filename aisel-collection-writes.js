@@ -136,7 +136,7 @@
       const form=typeof FormData!=='undefined'&&body instanceof FormData;
       const response=await fetch(ENDPOINT,{method:'POST',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+token,...(form?{}:{'Content-Type':'application/json'})},body:form?body:JSON.stringify(body)});
       assert(ctx);const data=await response.json().catch(()=>({}));assert(ctx);
-      if(!response.ok||data.ok!==true)throw fail(data.code||([401,403].includes(response.status)?'permission_denied':'network'),data.error||data.message);
+      if(!response.ok||data.ok!==true){const code=data.code||(typeof data.error==='string'&&/^[a-z_]+$/.test(data.error)?data.error:null)||([401,403].includes(response.status)?'permission_denied':'network');const messages={category_deleted:'삭제된 분류입니다. 복원을 눌러 다시 추가할 수 있습니다.',designer_deleted:'삭제된 디자이너입니다. 복원을 눌러 다시 추가할 수 있습니다.',revision_conflict:'목록이 변경되었습니다. 관리 화면을 다시 열어주세요.',not_ready:'관리 기능 연결을 준비하고 있습니다.'};throw fail(code,messages[code]||data.message||(data.error!==code?data.error:undefined));}
       return data;
     }catch(error){if(error.code)throw error;throw fail('network');}finally{clearTimeout(timer);}
   }
@@ -150,10 +150,18 @@
   }
   async function categoryRequest(action,payload={}) {
     const ctx=await context('references');if(ctx.config.noteCategoryWriteVersion!==VERSION)throw fail('connection_pending');
-    if(action==='noteCategories'){const values=await read('noteCategories',ctx);return {ok:true,noteCategoriesVersion:203,categories:Object.values(values||{})};}
-    if(action==='noteCategoryUpsert')return functionRequest(ctx,{action:'upsertCategory',name:payload.name});
+    if(action==='noteCategories'){const values=await read('noteCategories',ctx);assert(ctx);return {ok:true,noteCategoriesVersion:203,canManage:ctx.role==='owner',categories:Object.values(values||{})};}
+    if(action==='noteCategoryUpsert')return functionRequest(ctx,{action:'upsertCategory',name:payload.name,...(payload.restore===true?{restore:true,expectedRevision:payload.expectedRevision}:{})});
+    if(action==='noteCategoryDelete'){if(ctx.role!=='owner')throw fail('permission_denied');return functionRequest(ctx,{action:'deleteCategory',id:payload.id,expectedRevision:payload.expectedRevision});}
     throw fail('invalid');
   }
+  async function designerRequest(action,payload={}) {
+    if(!['listDesigners','upsertDesigner','deleteDesigner'].includes(action))throw fail('invalid');
+    const ctx=await context('references');
+    if(action!=='listDesigners'&&ctx.role!=='owner')throw fail('permission_denied');
+    const data=await functionRequest(ctx,{action,...(action==='listDesigners'?{}:{name:payload.name}),...(action==='deleteDesigner'||payload.restore===true?{expectedRevision:payload.expectedRevision}:{}),...(payload.restore===true?{restore:true}:{})});
+    assert(ctx);return {...data,canManage:ctx.role==='owner'};
+  }
   window.addEventListener('aisel-session-change',()=>{configCache=null;});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference:verifiedRecord,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference:verifiedRecord,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest,designerRequest});
 })();

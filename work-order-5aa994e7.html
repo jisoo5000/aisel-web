@@ -1,3 +1,4 @@
+<!-- v216: shared designer/category management, compact collection controls and immediate authorized photo previews -->
 <!-- v215: readable workorder identity labels, full-width names and wider link controls -->
 <!-- v214: canonical Firebase collection save acknowledgements and asynchronous projections -->
 <!-- v213: authenticated Firebase detail reads for references and design meetings -->
@@ -327,6 +328,15 @@
 <title>AISEL 작업지시서</title>
 <link rel="stylesheet" href="aisel-ui.css?v=178">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<script id="aisel-ios-input-viewport">
+// iOS Safari otherwise zooms on compact inputs. Keep their visual size; leave
+// other platforms' viewport policy alone. Modern Safari still permits pinch zoom.
+(function(){
+  const ios=/iP(?:hone|ad|od)/.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(ios)document.querySelector('meta[name="viewport"]').setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1');
+})();
+</script>
 <meta name="robots" content="noindex,nofollow,noarchive" /><!-- 2026-09-20: 원본에 넣어둡니다. 발행 때 따로 넣던 줄이 257eca9 에서 빠져 배포본에 없었습니다 -->
 <style>
   :root {
@@ -5283,7 +5293,7 @@
 </script>
 
 <script src="workorder-draft-storage.js?v=189"></script>
-<script src="aisel-photo.js?v=189"></script>
+<script src="aisel-photo.js?v=216"></script>
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -16690,7 +16700,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=212">
+<link rel="stylesheet" href="design-meeting.css?v=216">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16712,13 +16722,15 @@ window.AiselDesignMeetingAdapter={
 </script>
 <!-- Enable only after server ACL, rules and summary backfill are deployed and verified. -->
 <script>window.AISEL_GALLERY_INDEX_ENABLED = true; window.AISEL_COLLECTION_WRITES_ENABLED = true;</script>
-<script src="aisel-gallery-index.js?v=214"></script>
-<script src="aisel-collection-writes.js?v=214"></script>
+<script src="aisel-gallery-index.js?v=216"></script>
+<script src="aisel-collection-writes.js?v=216"></script>
+<link rel="stylesheet" href="aisel-designers.css?v=216">
+<script src="aisel-designers.js?v=216"></script>
 <script src="design-meeting-core.js?v=190"></script>
 <script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
-<script src="aisel-note-categories.js?v=203"></script>
-<script src="design-meeting.js?v=214"></script>
+<script src="aisel-note-categories.js?v=216"></script>
+<script src="design-meeting.js?v=216"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 </script>
@@ -16734,7 +16746,7 @@ window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>wi
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=212">
+<link rel="stylesheet" href="reference-collection.css?v=216">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16749,7 +16761,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=214"></script>
+<script src="reference-collection.js?v=216"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=213"></script>
