@@ -191,16 +191,32 @@
  html:root body :is(#galleryView,#salesView,#editorView) {padding-bottom:80px;}
 }
 
-/* v187: only the editor's product heading and sample summary change. */
+/* v187: compact sample summary. Product heading follows the v215 rules below. */
 @media screen {
- html:root body #editorView .editor-mobile-head .editor-mobile-title {min-width:0;overflow:hidden;}
- html:root body #editorView .editor-mobile-head #mobileProductName {display:block;min-width:0;font-size:14px!important;line-height:20px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
  html:root body #editorView #mobileMeetingSummary {gap:4px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleStatus {display:flex;flex:1 1 0;min-width:0;flex-wrap:nowrap;gap:4px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {flex:0 0 28px;font-size:16px;}
  html:root body #editorView #mobileMeetingSummary #sampleNoteTitle {display:block;box-sizing:border-box;flex:1 1 128px;width:128px;min-width:0;max-width:128px;height:28px;min-height:28px;padding:2px 4px;border:1px solid var(--aisel-line);border-radius:3px;font-size:12px!important;font-weight:400;line-height:18px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleRecoveryDate {flex:0 0 88px;min-width:0;font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg {flex:0 0 auto;gap:4px;}
+}
+
+/* v215: give long product names their own row; keep link actions together. */
+@media screen {
+ html:root body #editorView .editor-mobile-head {grid-template-columns:minmax(0,1fr) auto;row-gap:8px;}
+ html:root body #editorView .editor-mobile-head .editor-mobile-title {display:grid;grid-template-columns:max-content minmax(0,1fr);grid-column:1 / -1;grid-row:1;align-items:baseline;gap:8px;min-width:0;overflow:visible;}
+ html:root body #editorView .editor-mobile-head .editor-identity-label {font-size:12px;font-weight:600;line-height:20px;color:var(--aisel-ink);white-space:nowrap;}
+ html:root body #editorView .editor-mobile-head #mobileProductName {display:block;min-width:0;font-size:16px!important;font-weight:600;line-height:24px!important;white-space:normal;word-break:keep-all;overflow-wrap:anywhere;overflow:visible;text-overflow:clip;}
+ html:root body #editorView .editor-mobile-head #mobileProductName[hidden] {display:none!important;}
+ html:root body #editorView .editor-mobile-head .mobile-title-input {grid-column:2;min-width:0;font-size:16px!important;font-weight:600;line-height:24px;}
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption {display:flex;grid-column:1;grid-row:2;align-self:center;align-items:baseline;gap:4px;min-width:0;}
+ html:root body #editorView .editor-mobile-head #mobileProductCode {min-width:0;font-size:13px;font-weight:400;line-height:20px;overflow-wrap:anywhere;}
+ html:root body #editorView .editor-mobile-head #refPanel {grid-column:2;grid-row:2;grid-template-columns:72px auto 30px;width:174px;max-width:100%;justify-self:end;align-self:center;gap:4px;}
+ html:root body #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {width:72px;min-width:72px;max-width:72px;justify-self:stretch;padding:0 6px;}
+}
+@media screen and (max-width:359px) {
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption {grid-column:1 / -1;}
+ html:root body #editorView .editor-mobile-head #refPanel {grid-column:1 / -1;grid-row:3;}
 }
 
 /* v194: keep equal contact columns inline with 8px clearance after the title. */
