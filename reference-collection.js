@@ -26,8 +26,8 @@
     if(pane)return pane;
     pane=document.createElement('section');pane.id='referenceCollectionView';pane.className='noprint';pane.hidden=true;pane.setAttribute('aria-label','레퍼런스 수집');
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
-      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">제목 검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="제목으로 검색" autocomplete="off"></label><button type="button" id="rcRestore" hidden>삭제 복원</button></div>
-      <label class="rc-note-filter"><span class="rc-sr-only">참고 분류로 찾기</span><select id="rcNoteCategoryFilter" aria-label="참고 분류로 찾기"><option value="">참고 분류 전체</option></select></label><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
+      <div class="rc-list-tools"><label class="rc-note-filter"><span class="rc-sr-only">참고 카테고리 선택</span><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select></label><label class="rc-search"><span class="rc-sr-only">제목 검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="제목으로 검색" autocomplete="off"></label><button type="button" id="rcRestore" hidden>삭제 복원</button></div>
+      <p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
       <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
       <div id="rcGrid" class="rc-grid"><button type="button" id="rcCreate" class="rc-card rc-create-card" aria-label="레퍼런스 추가">＋ 추가</button></div><p id="rcEmpty" hidden>등록된 콘텐츠 레퍼런스가 없습니다.</p><button type="button" id="rcMore" hidden>더 보기</button></div>
       <div id="rcDetail" hidden>
@@ -83,7 +83,7 @@
   }
   function renderCategoryFilter(value=$('#rcNoteCategoryFilter').value){
     const filter=$('#rcNoteCategoryFilter');if(!filter)return;const items=window.AiselNoteCategories?.list()||[];
-    const fragment=document.createDocumentFragment(),all=document.createElement('option');all.value='';all.textContent='참고 분류 전체';fragment.append(all);
+    const fragment=document.createDocumentFragment(),all=document.createElement('option');all.value='';all.textContent='카테고리';all.setAttribute('aria-label','전체 참고 카테고리');fragment.append(all);
     for(const category of items){const option=document.createElement('option');option.value=category.id;option.textContent=category.name;fragment.append(option);}
     if(value&&!items.some(item=>item.id===value)){const option=document.createElement('option');option.value=value;option.textContent='선택한 분류';fragment.append(option);}
     filter.replaceChildren(fragment);filter.value=value;

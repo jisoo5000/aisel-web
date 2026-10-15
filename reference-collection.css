@@ -15,10 +15,24 @@
  #referenceCollectionView input::placeholder,#referenceCollectionView textarea::placeholder{color:var(--aisel-muted);opacity:1}
  #referenceCollectionView select{appearance:auto}
  #referenceCollectionView textarea{resize:vertical;min-height:128px;height:auto;padding:8px;line-height:24px}
- #referenceCollectionView .rc-list-tools{display:flex;align-items:center;gap:4px;margin:0 0 8px}
+ /* v209: one shared control style for the reference list toolbar. */
+ #referenceCollectionView #rcList{container:rc-list / inline-size}
+ #referenceCollectionView .rc-list-tools{--rc-toolbar-category-width:104px;--rc-toolbar-restore-width:88px;--rc-toolbar-padding:8px;--rc-toolbar-search-padding:30px;--rc-toolbar-font-size:16px;--rc-toolbar-line-height:24px;display:flex;align-items:center;gap:4px;margin:0 0 8px}
+ #referenceCollectionView .rc-list-tools :is(#rcNoteCategoryFilter,#rcSearch,#rcRestore){display:block;min-width:0;height:var(--aisel-input-height);min-height:var(--aisel-input-height);margin:0;padding:0 var(--rc-toolbar-padding);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:#fff;color:var(--aisel-muted);font-size:var(--rc-toolbar-font-size);line-height:var(--rc-toolbar-line-height);font-weight:400}
+ #referenceCollectionView .rc-list-tools :is(#rcNoteCategoryFilter,#rcSearch,#rcRestore):not(:disabled):hover{border-color:var(--aisel-muted)}
+ #referenceCollectionView .rc-list-tools :is(#rcNoteCategoryFilter,#rcSearch,#rcRestore):disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
+ #referenceCollectionView .rc-list-tools input::placeholder{color:var(--aisel-muted);opacity:1}
+ #referenceCollectionView .rc-list-tools .rc-note-filter{display:block;position:relative;flex:0 0 var(--rc-toolbar-category-width);min-width:0;margin:0}
+ #referenceCollectionView .rc-list-tools .rc-note-filter::after{content:"";position:absolute;right:calc(var(--rc-toolbar-padding) + 2px);top:11px;width:6px;height:6px;border-right:1px solid var(--aisel-muted);border-bottom:1px solid var(--aisel-muted);transform:rotate(45deg);pointer-events:none}
+ #referenceCollectionView .rc-list-tools #rcNoteCategoryFilter{appearance:none;padding-right:calc(var(--rc-toolbar-padding) + 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ #referenceCollectionView .rc-list-tools #rcRestore{flex:0 0 var(--rc-toolbar-restore-width);white-space:nowrap}
  #referenceCollectionView .rc-search{display:block;position:relative;flex:1;min-width:0;margin:0}
- #referenceCollectionView .rc-search svg{position:absolute;left:10px;top:9px;color:var(--aisel-muted);pointer-events:none}
- #referenceCollectionView #rcSearch{display:block;margin:0;padding-left:30px}
+ #referenceCollectionView .rc-search svg{position:absolute;left:calc(var(--rc-toolbar-padding) + 2px);top:9px;color:var(--aisel-muted);pointer-events:none}
+ #referenceCollectionView .rc-list-tools #rcSearch{padding-left:var(--rc-toolbar-search-padding)}
+ @container rc-list (max-width:340px){
+  #referenceCollectionView .rc-list-tools{--rc-toolbar-category-width:96px;--rc-toolbar-restore-width:80px;--rc-toolbar-padding:4px;--rc-toolbar-search-padding:var(--rc-toolbar-padding)}
+  #referenceCollectionView .rc-search svg{display:none}
+ }
  #referenceCollectionView #rcCreate{width:56px;flex:none;padding:0 4px}
  #referenceCollectionView .rc-notice-actions{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 8px}
  #referenceCollectionView .rc-notice-actions:not(:has(>button:not([hidden]))){display:none}
@@ -132,12 +146,10 @@
 }
 @media screen {
  #referenceCollectionView #rcDetail .rc-title-row input{font-size:14px!important;font-weight:600;line-height:20px}
- #referenceCollectionView #rcRestore{margin:0 0 8px auto;display:flex}
 }
 /* v199: shared two-column entry cards and mobile reference detail controls. */
 @media screen {
  #referenceCollectionView #rcCreate.rc-create-card{display:flex;align-items:center;justify-content:center;width:100%;min-height:214px;height:100%;padding:8px;white-space:nowrap;font-size:12px;font-weight:400}
- #referenceCollectionView #rcRestore{flex:none;height:32px;min-height:32px;margin:0;padding:0 8px;white-space:nowrap}
  #referenceCollectionView .rc-title-row{gap:4px}
  #referenceCollectionView .rc-title-row #rcSave{width:48px;margin:0}
  #referenceCollectionView .rc-metadata{grid-template-columns:92px minmax(0,130px) 152px;gap:4px}
@@ -208,8 +220,6 @@
 }
 /* v203: inline capture, shared note classifications, and consistent note controls. */
 @media screen {
- #referenceCollectionView .rc-note-filter{display:block;margin:0 0 8px;min-width:0}
- #referenceCollectionView .rc-note-filter select{font-size:16px;line-height:22px;color:#6C727C;height:32px;min-height:32px}
  #referenceCollectionView .rc-filter-status{font-size:11px;line-height:16px;color:#6C727C;margin:0 0 8px}
  #referenceCollectionView .rc-note-head{grid-template-columns:26px minmax(0,1fr) 88px 28px 28px;gap:4px;margin-bottom:8px}
  #referenceCollectionView .rc-note-head strong{font-size:13px;line-height:20px;font-weight:600;color:#34383C;white-space:nowrap}
