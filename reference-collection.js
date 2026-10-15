@@ -8,6 +8,8 @@
   let galleryModule=null,galleryUnsubscribe=null,galleryState=null,galleryEpoch=0,galleryOwned=false,preloadFlight=null;
   let categoryUnsubscribe=null,categoryCoverageFlight=null;const categoryCoverageErrors=new Set(),notePickers=new Map(),reviewSourceKeys=new Map(),productReviews=new Map();
   const timings={},composing=new Set(),previewUrls=new Map();let linkEditor=null,noteRenderId='',suppressPhotoClickUntil=0;
+  let viewStartedAt=0;const measuredViewPhases=new Set();
+  function measureListPhase(name,start=viewStartedAt){if(!start||start!==viewStartedAt||measuredViewPhases.has(name)||!visible||pane.hidden||$('#rcList').hidden)return;measuredViewPhases.add(name);timings[name==='first-cards'?'firstCardsMs':'firstPreviewMs']=Math.round(performance.now()-start);try{performance.clearMeasures('aisel:reference:'+name);performance.measure('aisel:reference:'+name,{start,end:performance.now()});}catch(_){}}
   async function timed(name,task){const start=performance.now();try{return await task();}finally{timings[name]=Math.round(performance.now()-start);}}
   let photoSignature='',autoSaveTimer=null,localOnly=false,selectedPhoto=0,photoMode='append',replaceHash=null;
   const AI=window.AiselReferenceAnalysis,SaveCore=window.AiselReferenceSave;
@@ -146,7 +148,7 @@
     const stamp=authStamp();
     if(authorizedStamp){try{assertAuth(authorizedStamp);}catch(_){return false;}}
     const task=(async()=>{
-      if(galleryEnabled()){await window.AiselGalleryIndex.warm();assertAuth(stamp);if(galleryReady())return true;if(galleryState?.authorized===false)return false;}
+      if(galleryEnabled()){await window.AiselGalleryIndex.warm('references',{preferCache:true});assertAuth(stamp);if(galleryReady())return true;if(galleryState?.authorized===false)return false;}
       const prefetch=!authorizedStamp?{action:'refList',promise:timed('listMs',()=>call('refList',{limit:24})).then(data=>({data}),error=>({error}))}:null;
       await access();assertAuth(stamp);if(galleryReady())return true;
       if(!initialized||performance.now()-listReadAt>LIST_TTL)await refresh(false,prefetch,{repair:false});
@@ -227,6 +229,7 @@
   function rememberList(){if($('#rcDetail').hidden&&location.hash==='#references')history.replaceState({aiselReference:{id:null,scroll:window.scrollY,search:$('#rcSearch').value,category:selectedCategory(),noteCategory:$('#rcNoteCategoryFilter').value}},'',location.href);}
   function restoreList(state){if(!state)return;galleryScroll=state.scroll||0;$('#rcSearch').value=state.search||'';renderCategoryFilter(state.noteCategory||'');$('.rc-filters').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category===(categories[state.category]?state.category:'content'))));gallerySignature='';}
   async function show(options={}){
+    viewStartedAt=performance.now();measuredViewPhases.clear();delete timings.firstCardsMs;delete timings.firstPreviewMs;
     ensure();bindGalleryIndex();if(authorizedStamp){try{assertAuth(authorizedStamp);}catch(_){if(!await resetAuth())return false;}}
     if(config.beforeShow&&await config.beforeShow()===false)return false;
     const epoch=++showEpoch,stillVisible=()=>epoch===showEpoch&&visible&&!pane.hidden;
@@ -247,7 +250,7 @@
     const action=options.id?'refGet':'refList';
     const prefetch=!preloadFlight&&!authorizedStamp&&!localOnly&&(options.id||gallery&&!galleryEnabled())?{action,promise:timed(action==='refGet'?'detailMs':'listMs',()=>call(action,options.id?{id:options.id}:{limit:24})).then(data=>({data}),error=>({error}))}:null;
     const hydrate=async()=>{try{
-      if(gallery&&galleryEnabled()){await window.AiselGalleryIndex.warm();if(!stillVisible())return;if(galleryReady())return;if(galleryState?.authorized===false){message('레퍼런스 열람 권한을 다시 확인해주세요.',true);return;}}
+      if(gallery&&galleryEnabled()){await window.AiselGalleryIndex.warm('references',{preferCache:!options.forceRefresh});if(!stillVisible())return;if(galleryReady())return;if(galleryState?.authorized===false){message('레퍼런스 열람 권한을 다시 확인해주세요.',true);return;}}
       await access();if(!stillVisible())return;
       if(options.id){await open(options.id,{history:options.history!==false,prefetch});return;}
       if(gallery){if(options.forceRefresh||!initialized||performance.now()-listReadAt>LIST_TTL)await refresh(false,prefetch);return;}
@@ -326,6 +329,12 @@
       }
       $('#rcGrid').replaceChildren(frag);
     }
+    // Measure server-backed cards separately from local drafts so an instant
+    // draft cannot hide a slow list request. Reused DOM still counts on revisit.
+    if(list.some(record=>!record._draft))measureListPhase('first-cards');
+    const previewRecord=list.find(record=>!record._draft&&http(record.thumbnail));
+    const preview=previewRecord&&[...$('#rcGrid').children].find(node=>node.dataset.id===previewRecord.id)?.querySelector('img');
+    if(preview){const started=viewStartedAt;if(preview.complete&&preview.naturalWidth)measureListPhase('first-preview',started);else if(preview.dataset.timed!==String(started)){preview.dataset.timed=String(started);preview.addEventListener('load',()=>measureListPhase('first-preview',started),{once:true});}}
     $('#rcEmpty').hidden=true;$('#rcEmpty').textContent='';
     $('#rcMore').hidden=!cursor;
     const coverage=$('#rcCategoryCoverage');coverage.hidden=!noteCategory||!unknown.length&&!cursor;coverage.textContent=unknown.length?(unknown.some(r=>categoryCoverageErrors.has(r.id))?'일부 자료의 분류를 확인하지 못했습니다. 다시 연결하면 이어서 확인합니다.':'참고 분류 확인 중…'):cursor?'현재 불러온 자료에서 찾고 있습니다. 더 보기로 나머지 자료를 확인하세요.':'';

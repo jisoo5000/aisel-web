@@ -1,4 +1,4 @@
-/* v205: keep reference saves running after durable, account-scoped menu transitions. */
+/* v210: prepare verified lightweight galleries as soon as the shared session is ready. */
 (function(){
  'use strict';
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
@@ -36,7 +36,11 @@
    if(!['md','logistics'].includes(knownRole)&&DM.preloadGallery)calls.push(Promise.resolve().then(()=>DM.preloadGallery()));
    Promise.allSettled(calls).catch(()=>{});
   };
-  if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:2500});else setTimeout(run,750);
+  // Small authenticated indexes can start alongside the work-order index.
+  // Waiting for an idle slot leaves quick first tab visits without ready cards.
+  if(window.AiselGalleryIndex?.enabled)run();
+  else if(window.requestIdleCallback)window.requestIdleCallback(run,{timeout:2500});
+  else setTimeout(run,750);
  }
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGalleryWarm();});
  function role(){return A.isOwner()?'owner':knownRole||DM.getRole();}

@@ -7,13 +7,14 @@
   const enabled = window.AISEL_GALLERY_INDEX_ENABLED === true;
   const ROOT = 'aiselGallery/v1', KINDS = ['references', 'meetings'];
   const roles = { references: ['owner', 'designer', 'md'], meetings: ['owner', 'designer'] };
-  const CACHE = 'aisel.gallery.v1:', REQUEST_MS = 12000, RETRY_MS = 30000;
+  const CACHE = 'aisel.gallery.v1:', REQUEST_MS = 12000, RETRY_MS = 30000, RECHECK_MS = 60000;
   const buckets = new Map(), subscribers = new Map();
-  let epoch = 0, uid = '', email = '', app = null, access = null, accessProved = false;
-  let started = false, flight = null, leaseTimer = null, refreshTimer = null, retryTimer = null;
+  let epoch = 0, uid = '', email = '', app = null, access = null, accessProved = false, accessNeedsRefresh = false;
+  let started = false, accessFlight = null, leaseTimer = null, authorityTimer = null, refreshTimer = null, retryTimer = null;
   let sessionUnsubscribe = null, listeners = [], listenerUid = '', sessionGeneration;
   let enrollment = null;
   const overlays = new Map();
+  const refreshTargets = new Set();
   const bucketKey = (kind, archived) => kind + (archived ? ':archived' : ':active');
   const validKind = kind => { if (!KINDS.includes(kind)) throw Error('Unknown gallery kind'); return kind; };
   const error = code => Object.assign(Error(code), { code });
@@ -25,7 +26,8 @@
   function bucket(kind, archived = false) {
     validKind(kind); const key = bucketKey(kind, archived);
     if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), sourceRows: null, meta: null, available: false,
-      authorized: null, complete: false, mode: enabled ? 'unavailable' : 'disabled', error: null });
+      authorized: null, complete: false, mode: enabled ? 'unavailable' : 'disabled', error: null,
+      flight: null, revision: 0, loadedRevision: -1, confirmedAt: 0, retryAt: 0, retryCount: 0 });
     return buckets.get(key);
   }
   function hasAuthority(kind, archived = false) {
@@ -52,13 +54,13 @@
     return () => subscribers.get(key)?.delete(callback);
   }
   function detach() {
-    clearTimeout(leaseTimer); clearTimeout(refreshTimer); clearTimeout(retryTimer);
-    leaseTimer = refreshTimer = retryTimer = null;
+    clearTimeout(leaseTimer); clearTimeout(authorityTimer); clearTimeout(refreshTimer); clearTimeout(retryTimer);
+    leaseTimer = authorityTimer = refreshTimer = retryTimer = null; refreshTargets.clear();
     for (const stop of listeners.splice(0)) { try { stop(); } catch (_) {} }
     listenerUid = '';
   }
   function invalidate(code, denied = false, clearAccount = false) {
-    epoch++; accessProved = false; access = null; detach(); flight = null;
+    epoch++; accessProved = false; accessNeedsRefresh = false; access = null; detach(); accessFlight = null;
     if ((clearAccount || denied) && uid && app) {
       for (const kind of KINDS) for (const archived of [false, true]) {
         try { window.localStorage.removeItem(cacheKey(kind, archived)); } catch (_) {}
@@ -68,6 +70,7 @@
     for (const b of buckets.values()) {
       b.available = b.complete = false; b.authorized = denied ? false : null;
       b.mode = denied ? 'denied' : 'unavailable'; b.error = error(code); b.rows.clear(); b.sourceRows = null; b.meta = null;
+      b.flight = null; b.revision++; b.loadedRevision = -1; b.confirmedAt = b.retryAt = b.retryCount = 0;
       emit(b.kind, b.archived);
     }
   }
@@ -143,9 +146,19 @@
     if (!validAccess(value)) throw error('permission_denied');
     return value;
   }
-  function retryLater() {
-    if (!enabled || !started || !online() || !canonical()?.uid || retryTimer) return;
-    retryTimer = setTimeout(() => { retryTimer = null; warm().catch(() => {}); }, RETRY_MS);
+  function retryLater(b) {
+    if (!enabled || !started || !online() || !canonical()?.uid) return;
+    if (b) { b.retryCount++; b.retryAt = now() + RETRY_MS * Math.min(b.retryCount, 4); }
+    clearTimeout(retryTimer);
+    const pending = [...buckets.values()].filter(item => item.retryAt && item.retryCount <= 3);
+    if (!pending.length) { retryTimer = null; return; }
+    const stamp = epoch;
+    retryTimer = setTimeout(() => {
+      retryTimer = null; if (stamp !== epoch) return;
+      const due = pending.filter(item => item.retryAt && item.retryAt <= now());
+      for (const item of due) warm(item.kind, { archived: item.archived, preferCache: true, refresh: true }).catch(() => {});
+      if (!due.length) retryLater();
+    }, Math.max(0, Math.min(...pending.map(item => item.retryAt)) - now()));
   }
   function validMeta(value) {
     return value?.schemaVersion === 1 && value.protocolVersion === 207 && value.ready === true &&
@@ -225,6 +238,13 @@
     b.sourceRows = rows; b.rows = mergeRemembered(b.kind, rows, b.archived, true, meta); b.meta = meta;
     b.available = b.complete = true; b.authorized = true; b.mode = mode; b.error = null; emit(b.kind, b.archived);
   }
+  function failBucket(b, code) {
+    // A failed revision cannot erase a previously confirmed list or a sibling
+    // collection. The existing ACL lease still gates every snapshot and emit.
+    if (b.available && hasAuthority(b.kind, b.archived)) b.mode = 'stale';
+    else { b.available = b.complete = false; b.rows.clear(); b.mode = 'unavailable'; }
+    b.error = error(code); emit(b.kind, b.archived); retryLater(b);
+  }
   function remember(kind, row, options = {}) {
     validKind(kind); if (!enabled || !hasAuthority(kind)) return false;
     const clean = summary(row, String(row?.id || '')); if (!clean) return false;
@@ -238,9 +258,20 @@
     }
     return true;
   }
-  function scheduleRefresh() {
-    if (!enabled || !started || refreshTimer) return;
-    refreshTimer = setTimeout(() => { refreshTimer = null; warm().catch(() => {}); }, 180);
+  function scheduleRefresh(kind, archived) {
+    if (!enabled || !started) return;
+    const targets = typeof kind === 'string' ? [...buckets.values()].filter(b => b.kind === kind && (archived == null || b.archived === archived)) : [...buckets.values()];
+    targets.forEach(b => refreshTargets.add(bucketKey(b.kind, b.archived)));
+    if (refreshTimer) return;
+    const stamp = epoch;
+    refreshTimer = setTimeout(() => {
+      refreshTimer = null; if (stamp !== epoch) return;
+      const keys = [...refreshTargets]; refreshTargets.clear();
+      for (const key of keys) {
+        const b = buckets.get(key);
+        if (b) warm(b.kind, { archived: b.archived, preferCache: true, refresh: true }).catch(() => {});
+      }
+    }, 180);
   }
   function watch(ref, update, cancel) {
     listeners.push(() => ref.off('value', update)); ref.on('value', update, cancel);
@@ -252,12 +283,23 @@
     listenerUid = listenerKey;
     try {
       const db = app.database();
+      let firstAccess = true;
       watch(db.ref(ROOT + '/access/' + uid), snap => {
         if (stamp !== epoch) return;
-        const value = snap.val();
+        const value = snap.val(), initial = firstAccess; firstAccess = false;
         // A cached SDK value may revoke conservatively; it can never grant or extend a lease.
         if (!validAccess(value)) { invalidate('permission_denied', true); return; }
-        if (value.role !== access?.role || number(value.updatedAt) > number(access?.updatedAt)) scheduleRefresh();
+        if (value.role !== access?.role) {
+          // A role change revokes old-role views immediately. Only REST may grant
+          // the replacement role, even when the SDK value came from its cache.
+          invalidate('access_changed'); if (!initial) scheduleRefresh(); return;
+        }
+        if (number(value.updatedAt) > number(access?.updatedAt)) {
+          accessNeedsRefresh = true;
+          proveAccess(stamp, true).then(() => {
+            if (stamp === epoch && accessNeedsRefresh) scheduleRefresh();
+          }).catch(cause => handleFailure(cause, stamp, [...buckets.values()]));
+        }
       }, () => { if (stamp === epoch) invalidate('permission_denied', true); });
       if (stamp !== epoch) return;
       for (const kind of KINDS) if (roles[kind].includes(access.role)) {
@@ -266,10 +308,17 @@
         const paths = [kind + '/_meta'];
         for (const path of paths) {
           let first = true;
-          watch(db.ref(ROOT + '/' + path), () => {
+          watch(db.ref(ROOT + '/' + path), snap => {
             if (stamp !== epoch) return;
-            if (first) { first = false; return; } // Initial data is covered by the fresh REST snapshot.
-            scheduleRefresh();
+            if (first) {
+              first = false;
+              // Initial SDK data is normally covered by the REST read. If it
+              // arrives later with a different revision, retain that signal.
+              const value = snap.val();
+              if (![...buckets.values()].some(b => b.kind === kind && b.meta && (!validMeta(value) || !sameMeta(b.meta, value)))) return;
+            }
+            for (const b of buckets.values()) if (b.kind === kind) b.revision++;
+            scheduleRefresh(kind);
           }, () => { if (stamp === epoch) invalidate('permission_denied', true); });
         }
       }
@@ -280,9 +329,7 @@
       b.available = b.complete = false; b.authorized = false; b.rows.clear(); b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived); return;
     }
     let meta = await read(b.kind + '/_meta', stamp);
-    if (!validMeta(meta)) {
-      b.available = b.complete = false; b.authorized = true; b.rows.clear(); b.mode = 'unavailable'; b.error = error('index_not_ready'); emit(b.kind, b.archived); return;
-    }
+    if (!validMeta(meta)) throw error('index_not_ready');
     const saved = cachedRows(b, meta);
     if (saved) { applyRows(b, saved, meta, 'cache'); return; }
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -302,6 +349,52 @@
       invalidate('auth_changed', !canonical(), true); scheduleRefresh();
     });
   }
+  function authFailure(code) { return ['permission_denied', 'lease_expired', 'auth_changed', 'offline'].includes(code); }
+  function handleFailure(cause, stamp, targets) {
+    if (stamp !== epoch) return;
+    const code = cause?.code || 'network';
+    if (authFailure(code)) { invalidate(code, code === 'permission_denied' || code === 'lease_expired'); return; }
+    for (const b of targets) failBucket(b, code);
+  }
+  async function proveAccess(stamp, force = false) {
+    if (!force && !accessNeedsRefresh && hasAuthority('references')) return access;
+    if (accessFlight) return accessFlight;
+    const task = (async () => {
+      const value = await readAccess(stamp); assertSession(stamp);
+      const previousRole = access?.role;
+      access = value; accessProved = true; accessNeedsRefresh = false;
+      clearTimeout(leaseTimer); clearTimeout(authorityTimer);
+      leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
+      authorityTimer = setTimeout(() => {
+        authorityTimer = null;
+        if (stamp === epoch) warm(null, { authorityOnly: true }).catch(() => {});
+      }, Math.max(1000, Math.min(RECHECK_MS, number(access.expiresAt) - now() - 1000)));
+      attachListeners(stamp); assertSession(stamp);
+      // Publish role restrictions before any collection request can complete.
+      for (const b of buckets.values()) if (!hasAuthority(b.kind, b.archived)) {
+        b.available = b.complete = false; b.authorized = false; b.rows.clear(); b.sourceRows = null; b.meta = null;
+        b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived);
+      } else if (previousRole !== access.role && b.available) emit(b.kind, b.archived);
+      return value;
+    })().catch(cause => { if (stamp === epoch) accessNeedsRefresh = true; throw cause; }).finally(() => {
+      if (accessFlight === task) accessFlight = null;
+    });
+    accessFlight = task; return task;
+  }
+  function refreshBucket(b, stamp) {
+    if (b.flight) return b.flight;
+    const revision = b.revision;
+    const task = loadBucket(b, stamp).then(() => {
+      assertSession(stamp); b.loadedRevision = revision; b.confirmedAt = now(); b.retryAt = b.retryCount = 0;
+    }).catch(cause => handleFailure(cause, stamp, [b])).finally(() => {
+      if (b.flight === task) b.flight = null;
+      // An SDK invalidation arriving during REST must not disappear when that
+      // request finishes. Coalesce one follow-up for this collection only.
+      if (stamp === epoch && b.revision !== revision && !b.error) scheduleRefresh(b.kind, b.archived);
+      if (stamp === epoch) retryLater();
+    });
+    b.flight = task; return task;
+  }
   async function warm(kind, options = {}) {
     if (!enabled) return kind ? snapshot(kind, options) : null;
     if (kind) bucket(kind, options.archived === true);
@@ -316,32 +409,28 @@
     }
     if (!app) app = matchingApp(user);
     if (!app) { invalidate('auth_unavailable'); return null; }
-    if (flight) return flight;
+    if (accessProved && number(access?.expiresAt) <= now()) invalidate('lease_expired', true);
     const stamp = epoch;
-    const task = (async () => {
-      const value = await readAccess(stamp);
-      access = value; accessProved = true;
-      clearTimeout(leaseTimer);
-      leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
-      attachListeners(stamp); assertSession(stamp);
-      const results = await Promise.allSettled([...buckets.values()].map(b => loadBucket(b, stamp)));
-      assertSession(stamp);
-      const failure = results.find(result => result.status === 'rejected');
-      if (failure) throw failure.reason;
-      clearTimeout(retryTimer);
-      retryTimer = setTimeout(() => { retryTimer = null; warm().catch(() => {}); }, Math.max(1000, Math.min(60000, number(access.expiresAt) - now() - 1000)));
+    const targets = kind ? [bucket(kind, options.archived === true)] : [...buckets.values()];
+    if (options.preferCache && !options.refresh && targets.every(b => hasAuthority(b.kind, b.archived) && b.available)) {
+      for (const b of targets) if (accessNeedsRefresh || b.error || b.loadedRevision !== b.revision || now() - b.confirmedAt >= RECHECK_MS) {
+        if (!b.retryAt || b.retryAt <= now()) scheduleRefresh(b.kind, b.archived);
+      }
       return kind ? snapshot(kind, options) : null;
-    })().catch(cause => {
-      if (stamp !== epoch) return null;
-      const code = cause?.code || 'network'; invalidate(code, code === 'permission_denied' || code === 'lease_expired');
-      if (!['permission_denied', 'lease_expired', 'auth_changed', 'offline'].includes(code)) retryLater();
-      return null;
-    }).finally(() => { if (flight === task) flight = null; });
-    flight = task; return task;
+    }
+    try {
+      await proveAccess(stamp, !options.preferCache); assertSession(stamp);
+      if (!options.authorityOnly) await Promise.all(targets.map(b => {
+        if (options.preferCache && b.retryAt > now()) return null;
+        return refreshBucket(b, stamp);
+      }));
+      return stamp === epoch && kind ? snapshot(kind, options) : null;
+    } catch (cause) { handleFailure(cause, stamp, targets); return null; }
   }
   function start() {
     if (!enabled) return Promise.resolve(null);
-    if (!started) {
+    const first = !started;
+    if (first) {
       started = true;
       window.addEventListener('offline', () => invalidate('offline'));
       window.addEventListener('online', scheduleRefresh);
@@ -350,7 +439,7 @@
         bindSession(); scheduleRefresh();
       });
     }
-    return warm();
+    return warm(null, { preferCache: !first });
   }
   window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember });
 })();
