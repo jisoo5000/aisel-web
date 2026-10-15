@@ -189,8 +189,10 @@
  #referenceCollectionView .rc-title-actions #rcDelete{flex:0 0 40px;width:40px}
  #referenceCollectionView .rc-title-actions #rcComplete{flex:0 0 64px;width:64px;margin:0;padding:0 4px;white-space:nowrap;color:var(--aisel-ink)}
  #referenceCollectionView #rcDetail .rc-title-row input{font-size:16px!important;line-height:24px}
- #referenceCollectionView .rc-metadata{grid-template-columns:88px minmax(0,1fr) 120px;gap:4px;align-items:start}
- #referenceCollectionView .rc-link-tools{grid-column:auto;grid-template-columns:56px 28px 28px;gap:4px;width:120px;justify-self:end;align-items:start}
+ /* v211: cap category width and give the remaining space to the link control. */
+ #referenceCollectionView .rc-metadata{grid-template-columns:88px minmax(0,128px) minmax(120px,1fr);gap:4px;align-items:start}
+ #referenceCollectionView .rc-link-tools{grid-column:auto;grid-template-columns:minmax(0,1fr) 28px 28px;gap:4px;min-width:0;width:100%;justify-self:stretch;align-items:start}
+ #referenceCollectionView .rc-link-tools :is(button,#rcSourceOpen){width:100%;margin:0;justify-self:stretch}
  #referenceCollectionView #rcCategory{padding:0 2px;gap:2px}
  #referenceCollectionView .rc-link-tools.is-editing{grid-template-columns:minmax(0,1fr)}
  #referenceCollectionView #rcSourceOpen[hidden],#referenceCollectionView #rcLinkEdit[hidden],#referenceCollectionView #rcLinkDelete[hidden],#referenceCollectionView #rcLinkEditor[hidden]{display:none!important}
@@ -215,8 +217,8 @@
  #referenceCollectionView .rc-card time{font-size:12px;line-height:18px;font-weight:400;color:#6C727C}
  #referenceCollectionView .rc-title-row{margin-bottom:4px}
  #referenceCollectionView .rc-date,#referenceCollectionView .rc-note-date{font-size:12px;line-height:18px;font-weight:400;color:#6C727C}
- #referenceCollectionView #rcLinkEditor{display:block;height:28px;width:120px}
- #referenceCollectionView #rcLinkInput{display:block;height:28px;min-height:28px;max-height:28px;width:120px;padding:2px 4px;font-size:16px;line-height:22px}
+ #referenceCollectionView #rcLinkEditor{display:block;height:28px;width:100%}
+ #referenceCollectionView #rcLinkInput{display:block;height:28px;min-height:28px;max-height:28px;width:100%;padding:2px 4px;font-size:16px;line-height:22px}
 }
 /* v203: inline capture, shared note classifications, and consistent note controls. */
 @media screen {
