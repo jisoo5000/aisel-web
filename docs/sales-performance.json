@@ -2189,5 +2189,38 @@
       "scope": "live_sheet_header_not_full_reconciliation",
       "backendPathStillBlocked": true
     }
+  },
+  "comfortSeriesAndCoreSku20261016": {
+    "date": "2026-10-16",
+    "classification": {
+      "status": "user_confirmed",
+      "field": "product_name",
+      "match": "contains",
+      "keyword": "컴포트",
+      "examples": [
+        "컴포트팬츠",
+        "컴포트스커트",
+        "컴포트데님"
+      ],
+      "all_matching_categories": true,
+      "core_sku_membership": "separate_performance_decision"
+    },
+    "managementProposal": {
+      "status": "proposed_not_implemented",
+      "name": "핵심 SKU 관리",
+      "salesDays": 30,
+      "trendDays": 7,
+      "stabilityDays": 90,
+      "shareDenominator": "whole_store_same_period;quantity_and_revenue_separate",
+      "returnMetric": "same_receipt_cohort_7day_request_rate_only_after_7day_observation;exchange_excluded;sample_size_required",
+      "sheetDesign": "daily_summary_values_from_existing_collector",
+      "existingHiddenSheetIds": [
+        2026100703,
+        2026100511
+      ]
+    },
+    "canonical_md": "docs/sales-performance.md",
+    "runtimeChanges": false,
+    "backup": "minor_documentation_addendum;existing_full_skill_backup_retained"
   }
 }
