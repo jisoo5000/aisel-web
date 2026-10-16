@@ -10,10 +10,22 @@
   const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
   const fail = (code, message) => Object.assign(Error(message || ({permission_denied:'이 자료의 저장 권한을 확인해주세요.',auth_changed:'로그인 계정이 변경되었습니다. 입력은 기기에 보관됩니다.',offline:'인터넷 연결 후 다시 저장해주세요. 입력은 기기에 보관됩니다.',conflict:'다른 곳에서 변경된 내용을 확인하고 있습니다.',connection_pending:'저장 연결을 확인하지 못했습니다. 입력은 기기에 보관됩니다.',network:'저장 확인이 지연되고 있습니다. 입력은 기기에 보관됩니다.',not_found:'자료를 찾을 수 없습니다.'}[code] || code)), {code});
   const current = () => window.AiselAuth?.currentUser?.();
-  const same = (a,b) => JSON.stringify(stable(a)) === JSON.stringify(stable(b));
   function stable(value) { if (Array.isArray(value)) return value.map(stable); if(value && typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])); return value; }
   const list = value => value == null ? [] : Array.isArray(value) ? value : Object.keys(value).sort((a,b)=>Number(a)-Number(b)).map(key=>value[key]);
   let configCache = null;
+  // Only canonical reads and completed SDK writes enter this session-local cache.
+  // The server version rule, not this cache, decides whether the next edit wins.
+  const confirmed = new Map(), CONFIRMED_LIMIT = 64;
+  const confirmedKey = (id,ctx) => [ctx.uid,ctx.email,ctx.generation,id].join('|');
+  function remember(raw,id,ctx) {
+    assert(ctx);const key=confirmedKey(id,ctx),prior=confirmed.get(key);
+    if(prior&&prior.version>raw.version)return;
+    confirmed.delete(key);confirmed.set(key,clone(raw));
+    while(confirmed.size>CONFIRMED_LIMIT)confirmed.delete(confirmed.keys().next().value);
+  }
+  async function normalizeReference(raw,id,ctx) {
+    const value=await verifiedRecord(raw,id,ctx);assert(ctx);remember(raw,id,ctx);return value;
+  }
   function assert(ctx) {
     const user=current();
     if(!user?.emailVerified||user.uid!==ctx.uid||String(user.email||'').toLowerCase()!==ctx.email||window.AiselAuth?.generation!==ctx.generation)throw fail('auth_changed');
@@ -65,12 +77,12 @@
     return value;
   }
   function idCheck(id) {if(!/^ref_[-\w]{8,96}$/.test(id||''))throw fail('invalid','레퍼런스 기록을 확인해주세요.');}
-  async function getReference(id) {idCheck(id);const ctx=await context('references');return {ok:true,record:await verifiedRecord(await read('referenceRecords/'+id,ctx),id,ctx)};}
+  async function getReference(id) {idCheck(id);const ctx=await context('references');return {ok:true,record:await normalizeReference(await read('referenceRecords/'+id,ctx),id,ctx)};}
   async function listReferences(options={}) {
     const ctx=await context('references');if(options.archived&&ctx.role!=='owner')throw fail('permission_denied');
     const query=options.archived?'':'&orderBy='+encodeURIComponent(JSON.stringify('archivedAt'))+'&equalTo='+encodeURIComponent(JSON.stringify(''));
     const values=await read('referenceRecords',ctx,query);assert(ctx);
-    const items=(await Promise.all(Object.entries(values||{}).map(([id,value])=>verifiedRecord(value,id,ctx)))).filter(value=>!!value.archivedAt===!!options.archived&&(!options.category||value.category===options.category)&&(!options.updatedSince||value.updatedAt>options.updatedSince)).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||b.id.localeCompare(a.id));
+    const items=(await Promise.all(Object.entries(values||{}).map(([id,value])=>normalizeReference(value,id,ctx)))).filter(value=>!!value.archivedAt===!!options.archived&&(!options.category||value.category===options.category)&&(!options.updatedSince||value.updatedAt>options.updatedSince)).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))||b.id.localeCompare(a.id));
     assert(ctx);
     return {ok:true,items,nextCursor:null,checkedAt:new Date().toISOString()};
   }
@@ -86,24 +98,23 @@
     if(patch.sourceUrl!==undefined&&!Object.prototype.hasOwnProperty.call(patch,'sourceLinks')&&old?.sourceLinks?.length&&patch.sourceUrl!==old.sourceUrl){patch.sourceLinks=patch.sourceUrl?[patch.sourceUrl,...old.sourceLinks.slice(1).filter(link=>link!==patch.sourceUrl)]:old.sourceLinks.slice(1);patch.sourceUrl=patch.sourceLinks[0]||'';}
     return patch;
   }
-  function patchMatches(raw,patch) {
-    if(!raw)return false;
-    return Object.entries(patch).every(([key,value])=>same(['photos','sourceLinks','noteEntries'].includes(key)?list(raw[key]):raw[key]??'',value));
-  }
   async function writeReference({id,version,patch,archived},archive=false) {
     idCheck(id);if(!Number.isSafeInteger(version)||version<0)throw fail('invalid');
     const ctx=await context('references'),path='referenceRecords/'+id;
     if(archive&&ctx.role!=='owner')throw fail('permission_denied');
-    const initial=await read(path,ctx);assert(ctx);
+    const key=confirmedKey(id,ctx),known=confirmed.get(key);
+    // Opening a record already fetched this exact base. Reusing it saves a REST
+    // round trip; atomic version rules still reject remote edits or deletion.
+    const initial=!archive&&known?.version===version?clone(known):!archive&&version===0?null:await read(path,ctx);assert(ctx);
     if(initial&&initial.writeProtocolVersion!==VERSION)throw fail('connection_pending');
     if(initial&&ctx.role!=='owner'&&String(initial.creator||'').toLowerCase()!==ctx.email)throw fail('permission_denied');
     if(archive&&(!initial||typeof archived!=='boolean'))throw fail('invalid');
     const clean=archive?null:checkedPatch(patch,initial);
     const mutationId='save_'+await digest(JSON.stringify(stable({id,version,change:archive?{archived}:clean})));assert(ctx);
-    if(initial?.lastMutationId===mutationId&&initial.version>version)return {ok:true,record:await verifiedRecord(initial,id,ctx)};
+    if(initial?.lastMutationId===mutationId&&initial.version>version)return {ok:true,record:await normalizeReference(initial,id,ctx)};
     if((initial?.version||0)!==version)throw fail('conflict');
     if(initial?.archivedAt&&!archive)throw fail('archived','보관함에서 자료를 복원한 뒤 수정해주세요.');
-    if(archive&&!!initial.archivedAt===archived)return {ok:true,record:await verifiedRecord(initial,id,ctx)};
+    if(archive&&!!initial.archivedAt===archived)return {ok:true,record:await normalizeReference(initial,id,ctx)};
     const at=new Date(Math.max(Date.now(),Date.parse(initial?.updatedAt||'')+1||0)).toISOString();
     const base=initial||{id,writeProtocolVersion:VERSION,creator:ctx.email,createdAt:at,archivedAt:'',title:'',designer:'',date:'',category:'product',categoryMode:'auto',contentType:'',sourceUrl:'',sourceLinks:[],photos:[],noteEntries:[],notes:'',analysisSignature:'',analysisState:'idle',reviewedAt:'',analysisReceipt:''};
     const changes=archive?{archivedAt:archived?at:''}:clean;
@@ -114,17 +125,22 @@
     try{await ctx.app.database().ref(ROOT+'/'+path).update(outgoing);assert(ctx);}
     catch(error){
       assert(ctx);
+      confirmed.delete(key);
       if(/permission[_-]denied/i.test(error.code||error.message||'')){
         const latestCtx=await context('references'),latest=await read(path,latestCtx);assert(ctx);
-        if(latest?.lastMutationId===mutationId&&latest.version>version)return {ok:true,record:await verifiedRecord(latest,id,latestCtx)};
+        if(latest?.lastMutationId===mutationId&&latest.version>version)return {ok:true,record:await normalizeReference(latest,id,latestCtx)};
         if((latest?.version||0)!==version)throw fail('conflict');
         throw fail('permission_denied');
       }
       throw fail('network');
     }
-    const saved=await read(path,ctx);assert(ctx);
-    if(!saved||saved.version<version+1||!Number.isFinite(saved.committedAt)||saved.lastMutationId!==mutationId&&!(archive?!!saved.archivedAt===archived:patchMatches(saved,clean)))throw fail('conflict');
-    return {ok:true,record:await verifiedRecord(saved,id,ctx)};
+    // Firebase update() resolves only after the server commits the write. A
+    // second download is not another commit receipt and must not delay save UI.
+    // Do not invent the resolved ServerValue timestamp: the next canonical read
+    // supplies committedAt; this response explicitly identifies its SDK ACK.
+    const saved={...clone(base),...clone(outgoing)};delete saved.committedAt;
+    const value=await verifiedRecord(saved,id,ctx);assert(ctx);remember(saved,id,ctx);
+    return {ok:true,record:value,receipt:{kind:'firebase-sdk-ack',version:version+1,mutationId}};
   }
   const saveReference=options=>writeReference(options);
   const archiveReference=options=>writeReference(options,true);
@@ -162,6 +178,6 @@
     const data=await functionRequest(ctx,{action,...(action==='listDesigners'?{}:{name:payload.name}),...(action==='deleteDesigner'||payload.restore===true?{expectedRevision:payload.expectedRevision}:{}),...(payload.restore===true?{restore:true}:{})});
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
-  window.addEventListener('aisel-session-change',()=>{configCache=null;});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference:verifiedRecord,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest,designerRequest});
+  window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest,designerRequest});
 })();

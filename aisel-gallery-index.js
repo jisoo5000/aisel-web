@@ -7,6 +7,7 @@
   'use strict';
   const enabled = window.AISEL_GALLERY_INDEX_ENABLED === true;
   const native = window.AISEL_NATIVE_ENABLED === true;
+  const atomicSnapshots = native && window.AISEL_GALLERY_SNAPSHOTS_ENABLED === true;
   const ROOT = 'aiselGallery/v1', KINDS = ['references', 'meetings'];
   const roles = { references: ['owner', 'designer', 'md'], meetings: ['owner', 'designer'] };
   const CACHE = 'aisel.gallery.v1:', REQUEST_MS = 12000, RETRY_MS = 30000, RECHECK_MS = 60000;
@@ -15,7 +16,7 @@
   let started = false, accessFlight = null, leaseTimer = null, authorityTimer = null, refreshTimer = null, retryTimer = null;
   let sessionUnsubscribe = null, listeners = [], listenerUid = '', sessionGeneration;
   let enrollment = null;
-  let strictAccessFlight = null, proofSequence = 0, acceptedProof = 0;
+  let strictAccessFlight = null, proofSequence = 0, acceptedProof = 0, accessProvedAt = 0;
   const overlays = new Map(), detailFlights = new Map(), provenUids = new Set();
   const confirmedMarkers = new Map(), confirmedFlights = new Map(), CONFIRMED = 'aisel.gallery.confirmed.v214:';
   const refreshTargets = new Set();
@@ -29,7 +30,7 @@
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   function bucket(kind, archived = false) {
     validKind(kind); const key = bucketKey(kind, archived);
-    if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), sourceRows: null, meta: null, available: false,
+    if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), sourceRows: null, meta: null, observedMeta: null, available: false,
       authorized: null, complete: false, mode: enabled ? 'unavailable' : 'disabled', error: null,
       flight: null, revision: 0, loadedRevision: -1, confirmedAt: 0, retryAt: 0, retryCount: 0 });
     return buckets.get(key);
@@ -58,6 +59,7 @@
     if (!current()) return null;
     return Object.freeze({ id, thumbnail: row.thumbnail, isCurrent: () => !!current() });
   }
+  function canPreview(kind) { return enabled && KINDS.includes(kind) && hasAuthority(kind) && !accessNeedsRefresh; }
   function emit(kind, archived = false) {
     const state = snapshot(kind, { archived });
     for (const callback of subscribers.get(bucketKey(kind, archived)) || []) { try { callback(state); } catch (_) {} }
@@ -75,7 +77,7 @@
     listenerUid = '';
   }
   function invalidate(code, denied = false, clearAccount = false) {
-    epoch++; accessProved = false; accessNeedsRefresh = false; access = null; detach(); accessFlight = null;
+    epoch++; accessProved = false; accessProvedAt = 0; accessNeedsRefresh = false; access = null; detach(); accessFlight = null;
     strictAccessFlight = null; acceptedProof = ++proofSequence;
     detailFlights.clear(); confirmedFlights.clear();
     if (window.AiselCollectionWrites?.enabled === true) overlays.clear();
@@ -87,7 +89,7 @@
     if (clearAccount) { overlays.clear(); confirmedMarkers.clear(); enrollment = null; uid = ''; email = ''; app = null; }
     for (const b of buckets.values()) {
       b.available = b.complete = false; b.authorized = denied ? false : null;
-      b.mode = denied ? 'denied' : 'unavailable'; b.error = error(code); b.rows.clear(); b.sourceRows = null; b.meta = null;
+      b.mode = denied ? 'denied' : 'unavailable'; b.error = error(code); b.rows.clear(); b.sourceRows = null; b.meta = b.observedMeta = null;
       b.flight = null; b.revision++; b.loadedRevision = -1; b.confirmedAt = b.retryAt = b.retryCount = 0;
       emit(b.kind, b.archived);
     }
@@ -279,6 +281,13 @@
       return parseRows(saved.records, meta, b.archived);
     } catch (_) { return null; }
   }
+  function retainedMeta(b) {
+    if (b.sourceRows && validMeta(b.meta)) return b.meta;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(cacheKey(b.kind, b.archived)) || 'null');
+      return saved?.uid === uid && saved.email === email && validMeta(saved.meta) ? saved.meta : null;
+    } catch (_) { return null; }
+  }
   function persist(b, meta, rows) {
     if (!hasAuthority(b.kind, b.archived)) return;
     try { window.localStorage.setItem(cacheKey(b.kind, b.archived), JSON.stringify({ uid, email, meta,
@@ -449,11 +458,12 @@
           let first = true;
           watch(db.ref(ROOT + '/' + path), snap => {
             if (stamp !== epoch) return;
+            const value = snap.val();
+            for (const b of buckets.values()) if (b.kind === kind) b.observedMeta = value;
             if (first) {
               first = false;
               // Initial SDK data is normally covered by the REST read. If it
               // arrives later with a different revision, retain that signal.
-              const value = snap.val();
               if (![...buckets.values()].some(b => b.kind === kind && b.meta && (!validMeta(value) || !sameMeta(b.meta, value)))) return;
             }
             for (const b of buckets.values()) if (b.kind === kind) b.revision++;
@@ -467,7 +477,31 @@
     if (!roles[b.kind].includes(access.role) || (b.archived && access.role !== 'owner')) {
       b.available = b.complete = false; b.authorized = false; b.rows.clear(); b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived); return;
     }
-    let meta = await read(b.kind + '/_meta', stamp);
+    let meta = null;
+    if (atomicSnapshots) {
+      const retained = retainedMeta(b);
+      // Reloads and periodic freshness checks need only the small metadata when
+      // a complete body is already cached. SDK metadata is never proof, but a
+      // different observed revision can skip this check and fetch its envelope.
+      if (retained && (!validMeta(b.observedMeta) || sameMeta(retained, b.observedMeta))) {
+        meta = await read(b.kind + '/_meta', stamp);
+        if (!validMeta(meta)) throw error('index_not_ready');
+        const saved = cachedRows(b, meta);
+        if (saved) { applyRows(b, saved, meta, 'cache'); return; }
+      }
+      // The server writes this role-scoped envelope in the same transaction as
+      // rows + metadata. One authenticated read therefore proves a complete
+      // revision; no second metadata round trip or parent/archived read is needed.
+      const envelope = await read(b.kind + '/snapshots/' + (b.archived ? 'archived' : 'active'), stamp);
+      if (envelope !== null) {
+        if (envelope.schemaVersion !== 1 || envelope.protocolVersion !== 218 || !validMeta(envelope.meta)) throw error('index_not_ready');
+        const rows = parseRows(envelope.rows ?? null, envelope.meta, b.archived); assertSession(stamp);
+        persist(b, envelope.meta, rows); applyRows(b, rows, envelope.meta, 'live'); return;
+      }
+      // During a staged rollout only an absent envelope uses the old protocol.
+      // Permission/network/schema failures must not try a more permissive path.
+    }
+    if (!meta) meta = await read(b.kind + '/_meta', stamp);
     if (!validMeta(meta)) throw error('index_not_ready');
     const saved = cachedRows(b, meta);
     if (saved) { applyRows(b, saved, meta, 'cache'); return; }
@@ -504,8 +538,8 @@
       const value = await readAccess(stamp, allowEnrollment); assertSession(stamp);
       if (proof < acceptedProof) return access;
       acceptedProof = proof;
-      const previousRole = access?.role;
-      access = value; accessProved = true; accessNeedsRefresh = false;
+      const previousRole = access?.role, wasRefreshing = accessNeedsRefresh;
+      access = value; accessProved = true; accessProvedAt = now(); accessNeedsRefresh = false;
       provenUids.add(uid);
       clearTimeout(leaseTimer); clearTimeout(authorityTimer);
       if(!native)leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
@@ -518,7 +552,7 @@
       for (const b of buckets.values()) if (!hasAuthority(b.kind, b.archived)) {
         b.available = b.complete = false; b.authorized = false; b.rows.clear(); b.sourceRows = null; b.meta = null;
         b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived);
-      } else if (previousRole !== access.role && b.available) emit(b.kind, b.archived);
+      } else if ((previousRole !== access.role || wasRefreshing) && b.available) emit(b.kind, b.archived);
       return value;
     })().catch(cause => {
       // A slower enrollment/list proof cannot replace a newer strict proof.
@@ -601,11 +635,16 @@
   async function authorize(kind) {
     validKind(kind);
     if (!enabled) throw error('detail_unavailable');
-    // Fresh Firebase ACL proof is independent of slow Sheets/Apps Script reads.
-    // First-time enrollment alone may use the existing canonical membership API.
+    // Native sessions reuse only this page's recent REST proof, while the ACL
+    // listener invalidates revocation/role changes immediately. Each subsequent
+    // record request/write still passes Firebase's current membership rules.
+    // No persistent cache, initial SDK event, or enrollment receipt grants access.
     const user = canonical(), generation = window.AiselAuth?.generation;
     if (!user?.uid || !user.emailVerified) throw error('permission_denied');
     if (!online()) throw error('offline');
+    const age = now() - accessProvedAt;
+    if (native && age >= 0 && age < RECHECK_MS && hasAuthority(kind) && !accessNeedsRefresh &&
+        !accessFlight && !strictAccessFlight && listenerUid === uid + '|' + access.role) return detailGrant(kind);
     await warm(kind, { authorityOnly: true, noEnrollment: true });
     if (canonical()?.uid !== user.uid || window.AiselAuth?.generation !== generation) throw error('auth_changed');
     if (!hasAuthority(kind) || accessNeedsRefresh) {
@@ -662,5 +701,5 @@
     })().finally(() => { if (detailFlights.get(key) === task) detailFlights.delete(key); });
     detailFlights.set(key, task); return task;
   }
-  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail, preview });
+  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail, preview, canPreview });
 })();

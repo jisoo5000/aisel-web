@@ -6,7 +6,7 @@
  const BRIDGE=window.AISEL_DESIGN_MEETING_BRIDGE||'';
  const OWNER='sooana1214@gmail.com';
  let cards={},results=[],active=null,filter='planned',dateFilter='',designerFilter='',noteCategoryFilter='',limit=40,lastSig='',listening=false,busy=false,detailDirty=false,role=null,authEpoch=0;
- let dirtyFields=new Set();const pending=new Map(),uploadFlights=new Map(),uploadItemFlights=new Map(),conversionFlights=new Map();let linkEditor=null,editIntent=0;
+ let dirtyFields=new Set();const pending=new Map(),uploadFlights=new Map(),uploadItemFlights=new Map(),conversionFlights=new Map(),pendingPreviewUrls=new Map(),uploadedPreviews=new Map();let linkEditor=null,editIntent=0;
  const compactDate=value=>N.validDate(String(value||''))?String(value).slice(2).replaceAll('-','. '):'미정';
  const meetingDate=c=>N.validDate(String(c?.meetingDate||''))?c.meetingDate:'';
  function openCalendar(input){try{input.showPicker?.();}catch(_){input.focus();}}
@@ -339,7 +339,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    try{const grant=await writer.authorize('meetings');acceptDetailGrant(grant,stamp);return grant;}
    catch(error){if(sameAuth(stamp)&&hardAccessFailure(error)){role=null;applyRole();}throw error;}
  }
- function resetAuth(){const abandonedOpen=!!openingId,priorOwner=textDraftOwner;detailOpenEpoch++;openingId=null;detailLoading.hidden=true;clearDetailPreview();stopListening();const priorLocalOwner=newDrafts.get(active)?._localOwner;authEpoch++;coverageEpoch++;accessFlight=null;detailSaveFlights.clear();noteSaveFlights.clear();for(const timer of noteSaveTimers.values())clearTimeout(timer);noteSaveTimers.clear();if(textDraftOwner!==(memberUser()?.uid||null))closeLinkEditor();ensureTextDraftOwner();restoreNewDrafts();role=null;legacyAllowed=false;summaryActive=false;summaryRows=[];galleryDenied=false;galleryHold=!!galleryIndex?.enabled;preloadOwner='';results=[];deletePreview=null;undoDeletion=null;deleteDialog.close();closeDesignerPickers();linkManager.close();if(abandonedOpen||priorOwner&&priorOwner!==(memberUser()?.uid||null)||priorLocalOwner&&priorLocalOwner!==memberUser()?.uid){restoreList();if(ownRoute(history.state))putRoute('list',null,{replace:true});}historyChecks.clear();resultChecks.clear();resultFlights.clear();resultFailures.clear();stopReviewPolling();applyRole();if(!pane.hidden&&memberUser())startListening();}
+ function resetAuth(){const abandonedOpen=!!openingId,priorOwner=textDraftOwner;detailOpenEpoch++;openingId=null;detailLoading.hidden=true;clearDetailPreview();stopListening();const priorLocalOwner=newDrafts.get(active)?._localOwner;authEpoch++;releasePendingPreviews(true);$dm('#dmPending').replaceChildren();renderPending();coverageEpoch++;accessFlight=null;detailSaveFlights.clear();noteSaveFlights.clear();for(const timer of noteSaveTimers.values())clearTimeout(timer);noteSaveTimers.clear();if(textDraftOwner!==(memberUser()?.uid||null))closeLinkEditor();ensureTextDraftOwner();restoreNewDrafts();role=null;legacyAllowed=false;summaryActive=false;summaryRows=[];galleryDenied=false;galleryHold=!!galleryIndex?.enabled;preloadOwner='';results=[];deletePreview=null;undoDeletion=null;deleteDialog.close();closeDesignerPickers();linkManager.close();if(abandonedOpen||priorOwner&&priorOwner!==(memberUser()?.uid||null)||priorLocalOwner&&priorLocalOwner!==memberUser()?.uid){restoreList();if(ownRoute(history.state))putRoute('list',null,{replace:true});}historyChecks.clear();resultChecks.clear();resultFlights.clear();resultFailures.clear();stopReviewPolling();applyRole();if(!pane.hidden&&memberUser())startListening();}
  function showMembers(items){const box=$dm('#dmMemberList');box.replaceChildren();for(const m of items){const row=document.createElement('p');row.textContent=m.email+' · '+(m.active?'사용 중':'사용 중지');const b=document.createElement('button');b.type='button';b.textContent=m.active?'사용 중지':'다시 허용';b.onclick=async()=>{try{const data=await bridge('setMember',[],{email:m.email,active:!m.active});showMembers(data.members);message('참여자 권한을 저장했습니다.');}catch(e){message(e.message,true);}};row.append(b);box.append(row);}}
  members.addEventListener('toggle',async()=>{if(members.open)try{showMembers((await bridge('members',[])).members);}catch(e){message(e.message,true);}});
  $dm('#dmMemberAdd').onclick=async()=>{try{const data=await bridge('setMember',[],{email:$dm('#dmMemberEmail').value,active:true});showMembers(data.members);$dm('#dmMemberEmail').value='';message('참여자를 등록했습니다. 해당 계정으로 Google 로그인하면 사용할 수 있습니다.');}catch(e){message(e.message,true);}};
@@ -469,11 +469,11 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
        const file=item.files[n],sourceHash=await digest(file);assertAuth(uploadStamp);
        // Older uploads used the source-file hash. Keep that deduplication, then
        // bind every new upload to the exact resized/compressed bytes sent.
-       if(reusePhoto(sourceHash))continue;
+       if(reusePhoto(sourceHash)){rememberUploadedPreview(candidateId,photos.find(photo=>photo.hash===sourceHash)?.thumb,file);continue;}
        const pair=typeof AiselPhoto.preparePair==='function'?await AiselPhoto.preparePair(file,'collection'):null;assertAuth(uploadStamp);
        const prepared=pair?.prepared||await AiselPhoto.prepare(file,'collection');assertAuth(uploadStamp);
        const hash=prepared.blob===file?sourceHash:await digest(prepared.blob);assertAuth(uploadStamp);
-       if(hash!==sourceHash&&reusePhoto(hash))continue;
+       if(hash!==sourceHash&&reusePhoto(hash)){rememberUploadedPreview(candidateId,photos.find(photo=>photo.hash===hash)?.thumb,file);continue;}
        const thumb=pair?.thumb||await thumbnail(prepared.blob);assertAuth(uploadStamp);
        // Automatic bounds retain tall screenshots; existing stored originals are not rewritten.
        const encode=blob=>new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});
@@ -489,7 +489,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
          const uploaded=await writer.uploadPhotos('meetings',{id:candidateId,hash,original:prepared.blob,thumb:thumb.blob});assertAuth(uploadStamp);
          original=C.httpUrl(uploaded?.original);small=C.httpUrl(uploaded?.thumb);if(!original||!small)throw Error('사진 업로드 확인이 필요합니다. 기기 사진은 유지했습니다.');
        }
-       photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});
+       photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});rememberUploadedPreview(candidateId,small,file);
      }
      assertAuth(uploadStamp);await ensureRemoteCandidate(candidateId,{photos,photo:photos[0]?.original||''});
      const out=await ROOT.child(candidateId).transaction(c=>{
@@ -500,10 +500,39 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
        return {id:candidateId,designMeeting:true,inputVersion:1,photos,photo:photos[0]?.original||'',title:'',link:'',memo:'',development:'',createdAt:Date.now(),updatedAt:Date.now(),reviewState:'idle',decision:'unselected',meetingDate:'',convertedCode:''};
      },undefined,false);
      assertAuth(uploadStamp);if(!out.committed)throw Error('카드 저장 확인 실패');
-     cards[candidateId]={...out.snapshot.val(),id:candidateId};rememberGallery(cards[candidateId]);pending.delete(item.id);await local('delete',item.id);renderPending();render();if(active===candidateId){renderDetailPhotos(cards[candidateId]);renderReview(cards[candidateId]);}if(active===candidateId||!active&&!pane.hidden&&!openingId)message('사진과 후보를 저장했습니다.');enqueueCandidate(candidateId);
-   }catch(e){item.error=e.message;pending.set(item.id,item);renderPending();if(active===candidateId||!active&&!pane.hidden&&!openingId)message('사진을 보관했습니다. 실패한 항목을 다시 시도해주세요. '+e.message,true);}
+     cards[candidateId]={...out.snapshot.val(),id:candidateId};rememberGallery(cards[candidateId]);pending.delete(item.id);await local('delete',item.id);if(!sameAuth(uploadStamp))return;renderPending();render();if(active===candidateId){renderDetailPhotos(cards[candidateId]);renderReview(cards[candidateId]);}if(active===candidateId||!active&&!pane.hidden&&!openingId)message('사진과 후보를 저장했습니다.');enqueueCandidate(candidateId);
+   }catch(e){item.error=e.message;pending.set(item.id,item);renderPending();if(sameAuth(uploadStamp)&&(active===candidateId||!active&&!pane.hidden&&!openingId))message('사진을 보관했습니다. 실패한 항목을 다시 시도해주세요. '+e.message,true);}
  }
- function renderPending(){const box=$dm('#dmPending');box.replaceChildren();for(const item of pending.values()){if(item.owner&&item.owner!==memberUser()?.uid)continue;const row=document.createElement('div');row.className='dm-pending';row.textContent=`${item.files.length}장 · ${item.error||'저장 중…'}`;if(item.error){const b=document.createElement('button');b.textContent='다시 시도';b.onclick=()=>upload(item);row.append(b);}box.append(row);}}
+ function releasePendingPreviews(all=false){
+   for(const [src,entry]of uploadedPreviews)if(all||entry.ready)uploadedPreviews.delete(src);const files=new Set([...pending.values()].filter(item=>!item.owner||item.owner===memberUser()?.uid).flatMap(item=>item.files));
+   for(const [file,url]of pendingPreviewUrls)if(all||!files.has(file)&&![...uploadedPreviews.values()].some(entry=>entry.url===url)){URL.revokeObjectURL(url);pendingPreviewUrls.delete(file);}
+ }
+ function pendingPhotoUrl(file){if(!pendingPreviewUrls.has(file))pendingPreviewUrls.set(file,URL.createObjectURL(file));return pendingPreviewUrls.get(file);}
+ function rememberUploadedPreview(id,src,file){
+   if(!C.httpUrl(src)||!file)return;for(const [key,entry]of uploadedPreviews)if(entry.ready)uploadedPreviews.delete(key);
+   uploadedPreviews.set(src,{id,url:pendingPhotoUrl(file),bytes:file.size||0,stamp:authStamp(),ready:false,flight:null});
+   while(uploadedPreviews.size>1&&(uploadedPreviews.size>8||[...uploadedPreviews.values()].reduce((sum,entry)=>sum+entry.bytes,0)>32*1024*1024))uploadedPreviews.delete(uploadedPreviews.keys().next().value);
+ }
+ function bindUploadedPreview(img,src,id){
+   const entry=uploadedPreviews.get(src),binding={src,id};img._aiselPhotoBinding=binding;
+   if(!entry||entry.id!==id||!sameAuth(entry.stamp)||entry.ready){img.src=src;return;}
+   img.src=entry.url;
+   if(!entry.flight)entry.flight=(window.AiselGalleryImages?.preload?.(src,'meetings')||Promise.resolve(false)).then(ok=>{if(ok)entry.ready=true;return ok;}).catch(()=>false).finally(()=>entry.flight=null);
+   entry.flight.then(ok=>{if(ok&&uploadedPreviews.get(src)===entry&&img._aiselPhotoBinding===binding&&img.isConnected!==false&&sameAuth(entry.stamp))img.src=src;});
+ }
+ function renderPending(){
+   const box=$dm('#dmPending'),items=[...pending.values()].filter(item=>!item.owner||item.owner===memberUser()?.uid),keep=new Set(items.map(item=>item.id));
+   box.classList.add('dm-grid');for(const row of [...box.children])if(!keep.has(row.dataset.pendingId))row.remove();
+   for(const [position,item]of items.entries()){
+     let row=[...box.children].find(node=>node.dataset.pendingId===item.id);
+     if(!row){row=document.createElement('article');row.className='dm-card';row.dataset.pendingId=item.id;const photos=document.createElement('div');photos.className='dm-open';
+       for(const file of item.files.slice(0,1)){const img=document.createElement('img');img.src=pendingPhotoUrl(file);img.alt='저장 중인 후보 사진';img.decoding='async';img.loading=position<3?'eager':'lazy';photos.append(img);}
+       const status=document.createElement('div');status.className='dm-pending';status.setAttribute('role','status');row.append(photos,status);box.append(row);}
+     const status=row.querySelector('.dm-pending');status.replaceChildren(document.createTextNode(`${item.files.length}장 · ${item.error||'저장 중…'}`));
+     if(item.error){const retry=document.createElement('button');retry.type='button';retry.textContent='다시 시도';retry.onclick=()=>{item.error='';renderPending();upload(item);};status.append(retry);}
+   }
+   releasePendingPreviews();
+ }
  async function receive(files,target=null,replaceKey=null){
    editIntent++;
    const images=[...files].filter(f=>f.type.startsWith('image/'));const usable=replaceKey?images.slice(0,1):images;if(!usable.length)return;
@@ -545,12 +574,12 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    const keep=new Set(shown.slice(0,limit).map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();if(grid.firstElementChild!==addMeeting)grid.prepend(addMeeting);let previous=addMeeting;
    for(const [position,c] of shown.slice(0,limit).entries()){
      const result=c._summary?null:confirmedResult(c),photo=c._summary?{thumb:c.thumbnail}:C.photos(c)[0];let card=[...grid.children].find(n=>n.dataset.id===c.id);if(!card){card=document.createElement('article');card.className='dm-card';card.dataset.id=c.id;
-     card.innerHTML=`<button class="dm-open" type="button">${photo?.thumb?`<img loading="lazy" decoding="async" src="${safe(photo.thumb)}" alt="후보 사진">`:'<span class="dm-no-photo">사진 없음</span>'}<div class="dm-card-info"><strong>${esc(c.title||'사진 후보')}</strong><div class="dm-colors"></div><span class="dm-card-designer"></span><time>${esc(C.dateLabel(c.createdAt))}</time></div></button>`;
+     card.innerHTML=`<button class="dm-open" type="button">${photo?.thumb?`<img loading="lazy" decoding="async" alt="후보 사진">`:'<span class="dm-no-photo">사진 없음</span>'}<div class="dm-card-info"><strong>${esc(c.title||'사진 후보')}</strong><div class="dm-colors"></div><span class="dm-card-designer"></span><time>${esc(C.dateLabel(c.createdAt))}</time></div></button>`;
      }
      const opener=card.querySelector('.dm-open'),src=C.httpUrl(photo?.thumb),oldImg=opener.querySelector('img');
-     if(src){if(oldImg){if(oldImg.getAttribute('src')!==src)oldImg.src=src;}else{opener.querySelector('.dm-no-photo')?.remove();const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.alt='후보 사진';img.src=src;opener.prepend(img);}}
+     if(src){if(oldImg){if(oldImg._aiselPhotoBinding?.src!==src)bindUploadedPreview(oldImg,src,c.id);}else{opener.querySelector('.dm-no-photo')?.remove();const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.alt='후보 사진';bindUploadedPreview(img,src,c.id);opener.prepend(img);}}
      else if(oldImg){const empty=document.createElement('span');empty.className='dm-no-photo';empty.textContent='사진 없음';oldImg.replaceWith(empty);}
-     const preview=opener.querySelector('img');if(preview){preview.loading=position<3?'eager':'lazy';preview.fetchPriority=position===0?'high':'auto';}
+     const preview=opener.querySelector('img');if(preview){if(preview._aiselPhotoBinding?.src!==src)bindUploadedPreview(preview,src,c.id);preview.loading=position<3?'eager':'lazy';preview.fetchPriority=position===0?'high':'auto';}
      card.querySelector('strong').textContent=c.title||'사진 후보';card.querySelector('time').textContent=compactDate(meetingDate(c));card.querySelector('.dm-card-designer').textContent=c.designer||'미지정';
      const colors=card.querySelector('.dm-colors');colors.replaceChildren();renderColors(colors,c,result);
      card.querySelector('.dm-open').onclick=()=>open(c.id);
@@ -720,16 +749,16 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    }));
  }
  window.addEventListener('pageshow',()=>{externalNavigation=false;restoreExternalPosition();});
- function setDetailPhotoSource(img,photo){
+ function setDetailPhotoSource(img,photo,id){
    // Show the existing lightweight preview in this 240px frame. Keep the
    // original for source/AI use and fetch it here only if the preview fails.
    const thumb=C.httpUrl(photo?.thumb),original=C.httpUrl(photo?.original),src=thumb||original;
    img.onerror=null;
    if(!src)return;
    if(thumb&&original&&thumb!==original)img.onerror=()=>{img.onerror=null;img.src=original;};
-   img.src=src;
+   if(id)bindUploadedPreview(img,src,id);else img.src=src;
  }
- function renderDetailPhotos(c){const box=$dm('#dmPhotos');const photos=C.photos(c),signature=JSON.stringify([c.id,photos.map(p=>[p.hash,p.original,p.thumb])]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();$dm('#dmAddPhotos').hidden=photos.length>0;$dm('#dmAddPhotos').classList.toggle('dm-empty-photo',!photos.length);$dm('#dmAddPhotos').textContent='＋ 사진';photos.forEach((p,i)=>{const button=document.createElement('button');button.type='button';button.className='dm-photo';button.dataset.photoKey=p.hash||p.original;button.setAttribute('aria-label','참고 사진 '+(i+1)+' 변경');button.onclick=()=>{const input=$dm('#dmReplaceInput');input.dataset.target=c.id;input.dataset.key=p.hash||p.original;input.click();};const img=document.createElement('img');img.loading=i===0?'eager':'lazy';img.fetchPriority=i===0?'high':'auto';img.decoding='async';img.alt='참고 사진 '+(i+1);setDetailPhotoSource(img,p);button.append(img);box.append(button);});}
+ function renderDetailPhotos(c){const box=$dm('#dmPhotos');const photos=C.photos(c),signature=JSON.stringify([c.id,photos.map(p=>[p.hash,p.original,p.thumb])]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();$dm('#dmAddPhotos').hidden=photos.length>0;$dm('#dmAddPhotos').classList.toggle('dm-empty-photo',!photos.length);$dm('#dmAddPhotos').textContent='＋ 사진';photos.forEach((p,i)=>{const button=document.createElement('button');button.type='button';button.className='dm-photo';button.dataset.photoKey=p.hash||p.original;button.setAttribute('aria-label','참고 사진 '+(i+1)+' 변경');button.onclick=()=>{const input=$dm('#dmReplaceInput');input.dataset.target=c.id;input.dataset.key=p.hash||p.original;input.click();};const img=document.createElement('img');img.loading=i===0?'eager':'lazy';img.fetchPriority=i===0?'high':'auto';img.decoding='async';img.alt='참고 사진 '+(i+1);setDetailPhotoSource(img,p,c.id);button.append(img);box.append(button);});}
  function renderReview(c){if(!c)return;const result=confirmedResult(c),previous=result?null:C.previousResult(c,results),shown=result||previous,status=state(c),box=$dm('#dmReview');scheduleReviewPoll();updateResultButton();const signature=JSON.stringify([c.id,c.createdAt,c.decision,c.inputVersion,c.convertedCode,result,previous,status,C.reviewRow(c,results),resultFailures.has(C.rowKey(c.id,Number(c.inputVersion)||1))]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();renderMeetingDate(c);$dm('#dmDrop').textContent=c.decision==='excluded'?'복원':'드롭';$dm('#dmWorkorder').textContent='작업지시서';
    if(previous){const label=document.createElement('p');label.className='dm-previous-review';const d=new Date(previous.reviewedAt);const stamp=Number.isFinite(d.getTime())?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(d):C.dateLabel(previous.reviewedAt);label.textContent='이전 검토 · '+stamp;box.append(label);}
    {const summary=shown?C.reviewSummary(shown):{demand:'—',supply:'—',differentiation:'—',additional:''},table=document.createElement('table');table.className='dm-evidence';for(const [label,key] of [['수요','demand'],['공급','supply'],['차별성','differentiation']]){const tr=table.insertRow();const th=document.createElement('th');th.scope='row';th.textContent=label;const td=document.createElement('td');td.textContent=summary[key];tr.append(th,td);}box.append(table);if(summary.additional){const p=document.createElement('p');p.className='dm-additional';const strong=document.createElement('strong');strong.textContent='추가 고려사항';p.append(strong,document.createTextNode(summary.additional));box.append(p);}}
