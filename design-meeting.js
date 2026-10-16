@@ -413,7 +413,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  }
  function state(c){return c?._summary?c.reviewState:C.status(c,results);}
  function galleryRecords(){const rows=galleryDenied||galleryHold?[]:summaryActive?summaryRows.map(row=>({...row,_summary:true,designMeeting:true,meetingDate:row.date,reviewState:row.reviewStatus||'idle',inputVersion:row.version})):Object.values(cards);const merged=new Map(rows.map(c=>[c.id,c]));for(const [id,c]of newDrafts)if(c._localOwner===memberUser()?.uid)merged.set(id,c);return [...merged.values()];}
- function rememberGallery(c){if(!c||localCandidate(c.id))return;galleryIndex?.remember('meetings',{id:c.id,title:c.title||'',date:meetingDate(c),designer:c.designer||'',status:c.convertedCode?'linked':c.decision==='excluded'?'dropped':'planned',reviewStatus:C.status(c,results),decision:c.decision||'',convertedCode:c.convertedCode||'',thumbnail:C.photos(c)[0]?.thumb||'',version:c.inputVersion||1,createdAt:c.createdAt||0,updatedAt:c.updatedAt||0,noteCategoryIds:noteCategoryIds(c)},{deleted:isDeleted(c)});if(galleryIndex?.enabled){const stamp=authStamp();clearTimeout(galleryQueueTimers.get(c.id));galleryQueueTimers.set(c.id,setTimeout(()=>{galleryQueueTimers.delete(c.id);if(sameAuth(stamp))void bridge('galleryQueueMeeting',[],{id:c.id}).catch(()=>{});},750));}}
+ function rememberGallery(c){if(!c||localCandidate(c.id))return;galleryIndex?.remember('meetings',{id:c.id,title:c.title||'',date:meetingDate(c),designer:c.designer||'',status:c.convertedCode?'linked':c.decision==='excluded'?'dropped':'planned',reviewStatus:C.status(c,results),decision:c.decision||'',convertedCode:c.convertedCode||'',thumbnail:C.photos(c)[0]?.thumb||'',version:c.inputVersion||1,createdAt:c.createdAt||0,updatedAt:c.updatedAt||0,noteCategoryIds:noteCategoryIds(c)},{deleted:isDeleted(c)});if(galleryIndex?.enabled&&window.AISEL_NATIVE_ENABLED!==true){const stamp=authStamp();clearTimeout(galleryQueueTimers.get(c.id));galleryQueueTimers.set(c.id,setTimeout(()=>{galleryQueueTimers.delete(c.id);if(sameAuth(stamp))void bridge('galleryQueueMeeting',[],{id:c.id}).catch(()=>{});},750));}}
  function confirmedResult(c){return C.confirmedResult(c,results);}
  async function mutate(id,patch,material=false,expected=null){
    const stamp=authStamp();
@@ -775,8 +775,15 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    if(action==='enqueue'&&ids.some(id=>isDeleted(current(id))))throw deletionError();
    // Reference requests include Apps Script cold starts, photo storage and verified Sheet readback.
    const timeoutMs=['refAccess','refEnsure','refList','refGet','refSave','refUpload','refArchive','refJudgment','refSelectForWorkorder','refPrepareJudgment','noteCategories','noteCategoryUpsert'].includes(action)?60000:15000;
-   const response=await fetch(BRIDGE,{signal:AbortSignal.timeout(timeoutMs),method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...extra,action,ids,token}),redirect:'follow'});
-   if(!response.ok)throw Error('시트 응답 확인 실패');const data=await response.json();assertAuth(stamp);if(!data.ok)throw Object.assign(Error(data.error||'시트 저장 확인 실패'),{code:data.code});
+   let data;
+   if(window.AISEL_NATIVE_ENABLED===true){
+     if(!window.AiselNativeBridge)throw Object.assign(Error('Firebase 연결을 확인해주세요.'),{code:'connection_pending'});
+     data=await window.AiselNativeBridge.request(action,ids,extra);
+   }else{
+     const response=await fetch(BRIDGE,{signal:AbortSignal.timeout(timeoutMs),method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...extra,action,ids,token}),redirect:'follow'});
+     if(!response.ok)throw Error('시트 응답 확인 실패');data=await response.json();
+   }
+   assertAuth(stamp);if(!data.ok)throw Object.assign(Error(data.error||'시트 저장 확인 실패'),{code:data.code});
    if(Array.isArray(data.results)&&data.results.length){
      const merged=new Map(results.map(row=>[C.rowKey(row.id,row.version),row]));
      for(const row of data.results){const key=C.rowKey(row.id,row.version),previous=merged.get(key),verified=value=>value?.state==='done'&&value.receipt&&value.reviewedAt;

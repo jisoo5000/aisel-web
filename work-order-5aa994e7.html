@@ -1,3 +1,4 @@
+<!-- v217: Firebase membership and event projections; native review queue and async Sheet workers -->
 <!-- v216: shared designer/category management, compact collection controls and immediate authorized photo previews -->
 <!-- v215: readable workorder identity labels, full-width names and wider link controls -->
 <!-- v214: canonical Firebase collection save acknowledgements and asynchronous projections -->
@@ -6054,8 +6055,8 @@
   // ---------- 공장/디자이너 연락처 자동완성 ----------
   let factoryContactsMap_ = {};
   let designerContactsMap_ = {};
-  fetch(ORDER_WEBAPP_URL + "?type=contacts")
-    .then(res => res.json())
+  window.aiselContactsRequest_=window.aiselContactsRequest_||fetch(ORDER_WEBAPP_URL + "?type=contacts").then(res=>{if(!res.ok)throw Error("contacts unavailable");return res.json();}).catch(error=>{window.aiselContactsRequest_=null;throw error;});
+  window.aiselContactsRequest_
     .then(data => {
       (data.factory || []).forEach(c => { factoryContactsMap_[c.name] = c.phone; });
       (data.designer || []).forEach(c => { designerContactsMap_[c.name] = c.phone; });
@@ -14405,8 +14406,7 @@ const FABRIC_SAVE_URL = "https://script.google.com/macros/s/AKfycbwj_D_abLONQAP2
 
 // ---------- 원단처 연락처 자동완성 ----------
 let fabricContactsMap_ = {};
-fetch(FABRIC_SAVE_URL + "?type=contacts")
-  .then(res => res.json())
+(window.aiselContactsRequest_||(window.aiselContactsRequest_=fetch(FABRIC_SAVE_URL + "?type=contacts").then(res=>{if(!res.ok)throw Error("contacts unavailable");return res.json();}).catch(error=>{window.aiselContactsRequest_=null;throw error;})))
   .then(data => {
     (data.fabric || []).forEach(c => { fabricContactsMap_[c.name] = c.phone; });
   })
@@ -16722,7 +16722,9 @@ window.AiselDesignMeetingAdapter={
 </script>
 <!-- Enable only after server ACL, rules and summary backfill are deployed and verified. -->
 <script>window.AISEL_GALLERY_INDEX_ENABLED = true; window.AISEL_COLLECTION_WRITES_ENABLED = true;</script>
-<script src="aisel-gallery-index.js?v=216"></script>
+<script>window.AISEL_NATIVE_ENABLED=true;</script>
+<script src="aisel-native-bridge.js?v=217"></script>
+<script src="aisel-gallery-index.js?v=217"></script>
 <script src="aisel-collection-writes.js?v=216"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=216">
 <script src="aisel-designers.js?v=216"></script>
@@ -16730,7 +16732,7 @@ window.AiselDesignMeetingAdapter={
 <script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=216"></script>
-<script src="design-meeting.js?v=216"></script>
+<script src="design-meeting.js?v=217"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 </script>

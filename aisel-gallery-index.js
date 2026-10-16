@@ -6,6 +6,7 @@
 (function () {
   'use strict';
   const enabled = window.AISEL_GALLERY_INDEX_ENABLED === true;
+  const native = window.AISEL_NATIVE_ENABLED === true;
   const ROOT = 'aiselGallery/v1', KINDS = ['references', 'meetings'];
   const roles = { references: ['owner', 'designer', 'md'], meetings: ['owner', 'designer'] };
   const CACHE = 'aisel.gallery.v1:', REQUEST_MS = 12000, RETRY_MS = 30000, RECHECK_MS = 60000;
@@ -37,7 +38,7 @@
     const user = canonical();
     return !!(accessProved && online() && user?.uid === uid && user.emailVerified &&
       String(user.email || '').toLowerCase() === email && window.AiselAuth?.generation === sessionGeneration &&
-      access?.active === true && number(access.expiresAt) > now() && roles[kind].includes(access.role) && (!archived || access.role === 'owner'));
+      access?.active === true && (native && access.mode === 'firebase217' || number(access.expiresAt) > now()) && roles[kind].includes(access.role) && (!archived || access.role === 'owner'));
   }
   function snapshot(kind, options = {}) {
     const b = bucket(kind, options.archived === true), trusted = enabled && hasAuthority(kind, b.archived);
@@ -123,7 +124,7 @@
   }
   function validAccess(value) {
     return value?.active === true && String(value.email || '').toLowerCase() === email &&
-      ['owner', 'designer', 'md'].includes(value.role) && number(value.expiresAt) > now();
+      ['owner', 'designer', 'md'].includes(value.role) && (native && value.mode === 'firebase217' || number(value.expiresAt) > now());
   }
   async function enroll(stamp) {
     // A never-enrolled UID cannot read its ACL yet. The canonical source API
@@ -134,7 +135,7 @@
       if (enrollment.code) throw error(enrollment.code);
       return enrollment.provisioned;
     }
-    const bridge = window.AiselDesignMeeting?.bridge;
+    const bridge = native ? window.AiselNativeBridge?.request : window.AiselDesignMeeting?.bridge;
     if (!bridge) throw error('index_unavailable');
     enrollment = { at: now(), provisioned: false };
     try {
@@ -153,6 +154,17 @@
     }
   }
   async function readAccess(stamp, allowEnrollment = true) {
+    if(native){
+      let value;
+      try{value=await read('access/'+encodeURIComponent(uid),stamp);}catch(cause){if(cause?.code!=='permission_denied')throw cause;}
+      if(validAccess(value)&&value.mode==='firebase217')return value;
+      // The native endpoint checks authoritative membership and revoked tokens.
+      // Its response is only enrollment; current Firebase rules must still pass.
+      await enroll(stamp);
+      value=await read('access/'+encodeURIComponent(uid),stamp);
+      if(!validAccess(value)||value.mode!=='firebase217')throw error('permission_denied');
+      return value;
+    }
     let value;
     try { value = await read('access/' + encodeURIComponent(uid), stamp); }
     catch (cause) { if (cause?.code !== 'permission_denied' || !allowEnrollment || provenUids.has(uid)) throw cause; }
@@ -496,11 +508,11 @@
       access = value; accessProved = true; accessNeedsRefresh = false;
       provenUids.add(uid);
       clearTimeout(leaseTimer); clearTimeout(authorityTimer);
-      leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
+      if(!native)leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
       authorityTimer = setTimeout(() => {
         authorityTimer = null;
         if (stamp === epoch) warm(null, { authorityOnly: true }).catch(() => {});
-      }, Math.max(1000, Math.min(RECHECK_MS, number(access.expiresAt) - now() - 1000)));
+      }, native ? RECHECK_MS : Math.max(1000, Math.min(RECHECK_MS, number(access.expiresAt) - now() - 1000)));
       attachListeners(stamp); assertSession(stamp);
       // Publish role restrictions before any collection request can complete.
       for (const b of buckets.values()) if (!hasAuthority(b.kind, b.archived)) {
@@ -548,7 +560,7 @@
     }
     if (!app) app = matchingApp(user);
     if (!app) { invalidate('auth_unavailable'); return null; }
-    if (accessProved && number(access?.expiresAt) <= now()) invalidate('lease_expired', true);
+    if (accessProved && !native && number(access?.expiresAt) <= now()) invalidate('lease_expired', true);
     const stamp = epoch;
     const targets = kind ? [bucket(kind, options.archived === true)] : [...buckets.values()];
     if (options.preferCache && !options.refresh && targets.every(b => hasAuthority(b.kind, b.archived) && b.available)) {
