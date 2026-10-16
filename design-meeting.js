@@ -250,8 +250,8 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const designerSelect=$dm('#dmDesigner');designerSelect.setAttribute('aria-label','디자이너 선택');
  $dm('.dm-assignee label').htmlFor='dmDesigner';$dm('.dm-assignee label').textContent='디자이너';
  const designerManager=document.createElement('div');designerManager.id='dmDesignerManager';detailControls.after(designerManager);
- let detailDesignerPicker=null,listDesignerPicker=null,listCategoryPicker=null;
- function closeDesignerPickers(){detailDesignerPicker?.close?.();listDesignerPicker?.close?.();listCategoryPicker?.close?.();}
+ let detailDesignerPicker=null,listDesignerPicker=null,listCategoryPicker=null,listDatePicker=null;
+ function closeDesignerPickers(){detailDesignerPicker?.close?.();listDesignerPicker?.close?.();listCategoryPicker?.close?.();listDatePicker?.close();}
  async function selectDetailDesigner(value){const id=active;if(!id)return;designerDraftField.value=value;markDetailDraft('designer');renderDesigner(current(id));await saveDetail({id});}
  const meetingDateBox=$dm('#dmDates');meetingDateBox.innerHTML='<span id="dmMeetingDateLabel">미정</span><input id="dmMeetingDate" type="date" aria-label="회의 날짜 (등록일과 별도)">';
  const meetingDateInput=$dm('#dmMeetingDate');meetingDateInput.onclick=()=>openCalendar(meetingDateInput);
@@ -264,11 +264,11 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const searchRow=document.createElement('div');searchRow.className='dm-search-row';
  const searchField=$dm('.dm-search');searchField.before(searchRow);searchRow.append(searchField);
  const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.className='dm-add-card';addMeeting.textContent='＋ 추가';addMeeting.setAttribute('aria-label','디자인회의 추가');addMeeting.onclick=openNewDraft;$dm('#dmGrid').prepend(addMeeting);
- const filterRow=document.createElement('div');filterRow.className='dm-organize-filters';filterRow.innerHTML='<div class="dm-filter-date"><span id="dmDateFilterLabel">날짜 전체</span><input id="dmDateFilter" type="date" aria-label="회의 날짜 필터"><button id="dmDateFilterClear" type="button" aria-label="날짜 전체 보기" title="날짜 전체" hidden>×</button></div><select id="dmNoteCategoryFilter" aria-label="카테고리 필터"><option value="">카테고리 전체</option></select><select id="dmDesignerFilter" aria-label="디자이너 필터"><option value="">디자이너 전체</option><option value="__missing__">미지정</option></select><span id="dmCoverageState" role="status" aria-live="polite"></span>';searchRow.after(filterRow);
+ const filterRow=document.createElement('div');filterRow.className='dm-organize-filters';filterRow.innerHTML='<div class="dm-filter-date"></div><select id="dmNoteCategoryFilter" aria-label="카테고리 필터"><option value="">카테고리 전체</option></select><select id="dmDesignerFilter" aria-label="디자이너 필터"><option value="">디자이너 전체</option><option value="__missing__">미지정</option></select><span id="dmCoverageState" role="status" aria-live="polite"></span>';searchRow.after(filterRow);
  const filterManager=document.createElement('div');filterManager.id='dmFilterManager';filterRow.after(filterManager);
  function selectOrganizationFilter(key,value){if(key==='date')dateFilter=N.validDate(value)?value:'';else if(key==='designer')designerFilter=value;else noteCategoryFilter=value;limit=40;lastSig='';updateListRoute();render();ensureCoverage();refresh();}
- const dateFilterInput=$dm('#dmDateFilter');dateFilterInput.onclick=()=>openCalendar(dateFilterInput);dateFilterInput.onchange=()=>selectOrganizationFilter('date',dateFilterInput.value);
- $dm('#dmDateFilterClear').onclick=()=>selectOrganizationFilter('date','');
+ listDatePicker=window.AiselDateFilter.mount($dm('.dm-filter-date'),{inputId:'dmDateFilter',labelId:'dmDateFilterLabel',label:'회의 날짜 필터',format:compactDate,onChange:value=>selectOrganizationFilter('date',value)});
+ const dateFilterInput=listDatePicker.input;
  $dm('#dmNoteCategoryFilter').addEventListener('focus',()=>window.AiselNoteCategories?.load().catch(error=>{$dm('#dmCoverageState').textContent=error.message;}));
  $dm('#dmNoteCategoryFilter').addEventListener('blur',()=>{lastSig='';render();});
  const dateHeading=document.createElement('h3');dateHeading.id='dmDateHeading';dateHeading.className='dm-date-heading';dateHeading.hidden=true;$dm('#dmGrid').before(dateHeading);
@@ -282,8 +282,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  function renderOrganizationFilters(all){
    if(listCategoryPicker)listCategoryPicker.refresh({value:noteCategoryFilter});
    else{const categorySelect=$dm('#dmNoteCategoryFilter'),categories=window.AiselNoteCategories?.list()||[],categorySignature=JSON.stringify([categories,noteCategoryFilter]);if(categorySelect.dataset.signature!==categorySignature&&document.activeElement!==categorySelect){categorySelect.dataset.signature=categorySignature;categorySelect.replaceChildren(new Option('카테고리 전체',''),...categories.map(c=>new Option(c.name,c.id)));if(noteCategoryFilter&&!categories.some(c=>c.id===noteCategoryFilter))categorySelect.add(new Option('선택한 카테고리',noteCategoryFilter));categorySelect.value=noteCategoryFilter;}}
-   if(document.activeElement!==dateFilterInput)dateFilterInput.value=N.validDate(dateFilter)?dateFilter:'';
-   $dm('#dmDateFilterLabel').textContent=dateFilter==='__missing__'?'날짜 미정':dateFilter?compactDate(dateFilter):'날짜 전체';$dm('#dmDateFilterClear').hidden=!dateFilter;
+   if(document.activeElement!==dateFilterInput)listDatePicker.setValue(dateFilter,dateFilter==='__missing__'?'날짜 미정':'');
    const designers=[...new Set([...(window.AiselDesigners?.list?.()||window.AiselDesignMeetingAdapter.designers?.()||[]),...all.map(c=>c.designer||'')].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
    if(listDesignerPicker)listDesignerPicker.refresh({value:designerFilter,includeNames:designers});
    else{const select=$dm('#dmDesignerFilter'),signature=JSON.stringify(designers);if(select.dataset.signature!==signature&&document.activeElement!==select){select.dataset.signature=signature;select.replaceChildren(new Option('디자이너 전체',''),new Option('미지정','__missing__'),...designers.map(value=>new Option(value,value)));}if(designerFilter&&!designers.includes(designerFilter)&&designerFilter!=='__missing__'&&![...select.options].some(option=>option.value===designerFilter))select.add(new Option(designerFilter,designerFilter));select.value=designerFilter;}
@@ -1096,7 +1095,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
      lastRoute=target;
    }finally{navigationBusy=false;}
  });
- new MutationObserver(()=>{if(pane.hidden){detailOpenEpoch++;openingId=null;detailLoading.hidden=true;clearDetailPreview();stopListening();}else startListening();}).observe(pane,{attributes:true,attributeFilter:['hidden']});
+ new MutationObserver(()=>{if(pane.hidden){listDatePicker.close();detailOpenEpoch++;openingId=null;detailLoading.hidden=true;clearDetailPreview();stopListening();}else startListening();}).observe(pane,{attributes:true,attributeFilter:['hidden']});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopListening();else if(!pane.hidden){startListening();watchActive();refresh();}});
  $dm('#dmMainTab').onclick=()=>show();
 

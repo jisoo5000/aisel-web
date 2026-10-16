@@ -15,24 +15,16 @@
  #referenceCollectionView input::placeholder,#referenceCollectionView textarea::placeholder{color:var(--aisel-muted);opacity:1}
  #referenceCollectionView select{appearance:auto}
  #referenceCollectionView textarea{resize:vertical;min-height:128px;height:auto;padding:8px;line-height:24px}
- /* v209: one shared control style for the reference list toolbar. */
- #referenceCollectionView #rcList{container:rc-list / inline-size}
- #referenceCollectionView .rc-list-tools{--rc-toolbar-category-width:104px;--rc-toolbar-restore-width:88px;--rc-toolbar-padding:8px;--rc-toolbar-search-padding:30px;--rc-toolbar-font-size:16px;--rc-toolbar-line-height:24px;display:flex;align-items:center;gap:4px;margin:0 0 8px}
- #referenceCollectionView .rc-list-tools :is(#rcNoteCategoryFilter,#rcSearch,#rcRestore){display:block;min-width:0;height:var(--aisel-input-height);min-height:var(--aisel-input-height);margin:0;padding:0 var(--rc-toolbar-padding);border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:#fff;color:var(--aisel-muted);font-size:var(--rc-toolbar-font-size);line-height:var(--rc-toolbar-line-height);font-weight:400}
- #referenceCollectionView .rc-list-tools :is(#rcNoteCategoryFilter,#rcSearch,#rcRestore):not(:disabled):hover{border-color:var(--aisel-muted)}
- #referenceCollectionView .rc-list-tools :is(#rcNoteCategoryFilter,#rcSearch,#rcRestore):disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
+ /* v219: the list toolbar follows the design-meeting search/filter rhythm. */
+ #referenceCollectionView .rc-list-tools{--rc-toolbar-padding:8px;display:flex;align-items:center;gap:4px;margin:0 0 4px}
+ html:root body #referenceCollectionView .rc-list-tools :is(#rcSearch,#rcRestore){display:block;min-width:0;height:32px;min-height:32px;margin:0;padding:0 8px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:#fff;color:var(--aisel-muted);font-size:12px!important;line-height:18px;font-weight:400}
+ #referenceCollectionView .rc-list-tools :is(#rcSearch,#rcRestore):not(:disabled):hover{border-color:var(--aisel-muted)}
+ #referenceCollectionView .rc-list-tools :is(#rcSearch,#rcRestore):disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
  #referenceCollectionView .rc-list-tools input::placeholder{color:var(--aisel-muted);opacity:1}
- #referenceCollectionView .rc-list-tools .rc-note-filter{display:block;position:relative;flex:0 0 var(--rc-toolbar-category-width);min-width:0;margin:0}
- #referenceCollectionView .rc-list-tools .rc-note-filter::after{content:"";position:absolute;right:calc(var(--rc-toolbar-padding) + 2px);top:11px;width:6px;height:6px;border-right:1px solid var(--aisel-muted);border-bottom:1px solid var(--aisel-muted);transform:rotate(45deg);pointer-events:none}
- #referenceCollectionView .rc-list-tools #rcNoteCategoryFilter{appearance:none;padding-right:calc(var(--rc-toolbar-padding) + 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- #referenceCollectionView .rc-list-tools #rcRestore{flex:0 0 var(--rc-toolbar-restore-width);white-space:nowrap}
+ #referenceCollectionView .rc-list-tools #rcRestore{flex:0 0 56px;white-space:nowrap}
  #referenceCollectionView .rc-search{display:block;position:relative;flex:1;min-width:0;margin:0}
- #referenceCollectionView .rc-search svg{position:absolute;left:calc(var(--rc-toolbar-padding) + 2px);top:9px;color:var(--aisel-muted);pointer-events:none}
- #referenceCollectionView .rc-list-tools #rcSearch{padding-left:var(--rc-toolbar-search-padding)}
- @container rc-list (max-width:340px){
-  #referenceCollectionView .rc-list-tools{--rc-toolbar-category-width:96px;--rc-toolbar-restore-width:80px;--rc-toolbar-padding:4px;--rc-toolbar-search-padding:var(--rc-toolbar-padding)}
-  #referenceCollectionView .rc-search svg{display:none}
- }
+ #referenceCollectionView .rc-search svg{position:absolute;left:10px;top:9px;color:var(--aisel-muted);pointer-events:none}
+ html:root body #referenceCollectionView .rc-list-tools #rcSearch{padding-left:30px}
  #referenceCollectionView #rcCreate{width:56px;flex:none;padding:0 4px}
  #referenceCollectionView .rc-notice-actions{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 8px}
  #referenceCollectionView .rc-notice-actions:not(:has(>button:not([hidden]))){display:none}
@@ -272,15 +264,8 @@
  #referenceCollectionView .rc-title-actions button{height:28px;min-height:28px;font-size:12px;font-weight:400;line-height:18px}
  #referenceCollectionView .rc-title-actions #rcDelete{color:var(--aisel-muted)}
  #referenceCollectionView #rcAIExtra{display:none!important}
- #referenceCollectionView .rc-collection-filters{gap:4px}
- #referenceCollectionView .rc-collection-filters select{height:28px;min-height:28px;padding:0 8px;font-size:12px!important;line-height:18px}
- #referenceCollectionView .rc-date-filter{display:grid;grid-template-columns:minmax(0,1fr) 28px;gap:4px;min-width:0}
- #referenceCollectionView .rc-date-filter-picker{display:grid;place-items:center;position:relative;min-width:0;height:28px;border:1px solid var(--aisel-line);border-radius:3px;background:#fff;color:var(--aisel-muted);font-size:12px;line-height:18px;overflow:hidden}
- #referenceCollectionView #rcDateFilterText{pointer-events:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 4px}
- #referenceCollectionView #rcDateFilter{position:absolute;inset:0;width:100%;height:28px;min-height:28px;margin:0;padding:0;opacity:0;cursor:pointer}
- #referenceCollectionView #rcDateFilter::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
- #referenceCollectionView .rc-date-filter-picker:focus-within{outline:2px solid var(--aisel-ink,#34383C);outline-offset:2px}
- #referenceCollectionView #rcDateFilterClear{width:28px;padding:0;color:var(--aisel-muted);font-size:16px;font-weight:400}
+ #referenceCollectionView .rc-collection-filters{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+ #referenceCollectionView .rc-collection-filters select{height:28px;min-height:28px;padding:0 4px;font-size:12px!important;line-height:18px}
  #referenceCollectionView .rc-note-category :is(select,input){font-size:12px!important;line-height:18px;color:var(--aisel-muted)}
  #referenceCollectionView .rc-note-entry textarea{font-size:12px!important;font-weight:400;line-height:18px;color:var(--aisel-muted)}
  #referenceCollectionView .rc-note-entry textarea::placeholder{font-size:12px;color:var(--aisel-muted);opacity:1}

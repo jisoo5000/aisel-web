@@ -6,7 +6,7 @@
   let draftRows=new Map(),draftRead=0,accessAt=0,accessFlight=null,listFlight=null,createFlight=false,openEpoch=0,listReadAt=0,detailLoading=null;
   const detailCache=new Map(),detailFlights=new Map(),LIST_TTL=30000,DETAIL_TTL=60000;
   let galleryModule=null,galleryUnsubscribe=null,galleryState=null,galleryEpoch=0,galleryOwned=false,preloadFlight=null;
-  let designerUnsubscribe=null,designerPicker=null,designerFilterPicker=null,designerPickerIdentity='',workorderFlight=null;
+  let designerUnsubscribe=null,designerPicker=null,designerFilterPicker=null,designerPickerIdentity='',workorderFlight=null,dateFilterPicker=null;
   let categoryUnsubscribe=null,categoryFilterPicker=null,categoryCoverageFlight=null,summaryPhotoPreview=null;const categoryCoverageErrors=new Set(),notePickers=new Map(),reviewSourceKeys=new Map(),productReviews=new Map();
   const timings={},composing=new Set(),previewUrls=new Map(),uploadedPreviews=new Map();let linkEditor=null,noteRenderId='',suppressPhotoClickUntil=0;
   let viewStartedAt=0;const measuredViewPhases=new Set();
@@ -29,8 +29,8 @@
     if(pane)return pane;
     pane=document.createElement('section');pane.id='referenceCollectionView';pane.className='noprint';pane.hidden=true;pane.setAttribute('aria-label','레퍼런스 수집');
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
-      <div class="rc-list-tools"><label class="rc-note-filter"><span class="rc-sr-only">참고 카테고리 선택</span><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select></label><label class="rc-search"><span class="rc-sr-only">제목 검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="제목으로 검색" autocomplete="off"></label><button type="button" id="rcRestore" hidden>삭제 복원</button></div>
-      <div class="rc-collection-filters"><div class="rc-date-filter"><label class="rc-date-filter-picker"><span id="rcDateFilterText">날짜 전체</span><input id="rcDateFilter" type="date" aria-label="레퍼런스 날짜 필터"></label><button id="rcDateFilterClear" type="button" aria-label="날짜 전체로 보기" title="날짜 전체" disabled>×</button></div><select id="rcDesignerFilter" aria-label="레퍼런스 디자이너 필터"><option value="">디자이너 전체</option></select></div>
+      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">제목 검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="제목으로 검색" autocomplete="off"></label><button type="button" id="rcRestore" hidden>복원</button></div>
+      <div class="rc-collection-filters"><div class="rc-date-filter"></div><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리 전체</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 디자이너 필터"><option value="">디자이너 전체</option></select></div>
       <div id="rcListTaxonomyManager"></div><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
       <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
       <div id="rcGrid" class="rc-grid"><button type="button" id="rcCreate" class="rc-card rc-create-card" aria-label="레퍼런스 추가">＋ 추가</button></div><p id="rcEmpty" hidden>등록된 콘텐츠 레퍼런스가 없습니다.</p><button type="button" id="rcMore" hidden>더 보기</button></div>
@@ -45,6 +45,7 @@
       <dialog id="rcDialog"><form method="dialog"><div id="rcDialogBody"></div><div class="rc-dialog-actions"><button type="button" id="rcDialogCancel">취소</button><button type="button" id="rcDialogConfirm">확인</button></div></form></dialog></div>`;
     document.body.append(pane);pane.append($('#rcDialog'));
     const detailWait=document.createElement('div');detailWait.id='rcDetailLoading';detailWait.className='rc-detail-loading';detailWait.hidden=true;detailWait.innerHTML='<p id="rcDetailProgress" role="status" aria-live="polite">자료를 불러오는 중…</p><section id="rcReadPreview" aria-label="레퍼런스 미리보기" hidden></section><button type="button" id="rcDetailCancel">목록으로</button>';pane.append(detailWait);$('#rcDetailCancel').onclick=cancelDetailLoad;
+    dateFilterPicker=window.AiselDateFilter.mount($('.rc-date-filter'),{inputId:'rcDateFilter',labelId:'rcDateFilterText',label:'레퍼런스 날짜 필터',format:shortDate,onChange:()=>{gallerySignature='';renderList();rememberList();}});
     bindGalleryIndex();bindNoteCategories();bindDesigners();
     $('#rcLogin').onclick=async()=>{try{if(config.login)await config.login();else if(window.AiselDesignMeeting?.login)await window.AiselDesignMeeting.login({scope:'reference'});else throw Error('상단 디자인회의에서 로그인한 뒤 다시 열어주세요.');await access();await refresh();}catch(e){message(errorText(e),true);}};
     $('#rcSetup').onclick=async()=>{if(role!=='owner')return;try{await call('refEnsure');$('#rcSetup').hidden=true;await refresh();}catch(e){message(errorText(e),true);}};
@@ -72,8 +73,6 @@
     };
     $('#rcMore').onclick=()=>refresh(true);$('#rcCreate').onclick=createEntry;$('#rcRestore').onclick=restoreDialog;$('#rcSave').onclick=()=>save();$('#rcCategory').onclick=chooseCategory;$('#rcLinkEdit').onclick=chooseLinkEditor;$('#rcLinkDelete').onclick=deleteLink;$('#rcSourceOpen').onclick=openSource;$('#rcLinkInput').oninput=captureLinkDraft;$('#rcLinkInput').onblur=()=>{const editor=linkEditor;queueMicrotask(()=>{if(editor&&linkEditor===editor&&active?.id===editor.id&&!isComposing())finishLinkEditor();});};$('#rcLinkInput').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&!isComposing()){e.preventDefault();finishLinkEditor();}else if(e.key==='Escape'&&!e.isComposing){e.preventDefault();cancelLinkEditor();}};$('#rcDelete').onclick=()=>archiveRecord();$('#rcWorkorder').onclick=openProductWorkorder;$('#rcDate').oninput=()=>{if(!active||!canEdit()||$('#rcDate').value&&!/^\d{4}-\d{2}-\d{2}$/.test($('#rcDate').value))return;active.date=$('#rcDate').value;$('#rcDateText').textContent=shortDate(active.date);markDirty();};$('#rcDialogCancel').onclick=()=>$('#rcDialog').close();$('#rcDialog form').onsubmit=e=>{e.preventDefault();$('#rcDialogConfirm').click();};
     if(!categoryFilterPicker)$('#rcNoteCategoryFilter').onchange=()=>{gallerySignature='';renderList();rememberList();};$('#rcNoteCategoryFilter').onfocus=()=>window.AiselNoteCategories?.load().catch(()=>{});
-    $('#rcDateFilter').onchange=()=>{renderDateFilter();gallerySignature='';renderList();rememberList();};
-    $('#rcDateFilterClear').onclick=()=>{renderDateFilter('');gallerySignature='';renderList();rememberList();};
     $('#rcDesignerFilter').onchange=()=>{if(window.AiselDesigners)return;gallerySignature='';renderList();rememberList();};
     $('#rcDesigner').onchange=()=>{if(window.AiselDesigners||!active||!canEdit()||permissions.referenceDesignerVersion!==212)return;active.designer=$('#rcDesigner').value;renderDesigner();markDirty();};
     $('#rcSearch').oninput=()=>{gallerySignature='';renderList();rememberList();};
@@ -117,8 +116,7 @@
   }
   function referenceDateKey(record){const value=String(record.date||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(value)?value:'';}
   function renderDateFilter(value=$('#rcDateFilter').value){
-    const input=$('#rcDateFilter');input.value=/^\d{4}-\d{2}-\d{2}$/.test(value)?value:'';
-    $('#rcDateFilterText').textContent=input.value?shortDate(input.value):'날짜 전체';$('#rcDateFilterClear').disabled=!input.value;
+    dateFilterPicker.setValue(value);
   }
   function renderCollectionFilters(rows){
     const names=[...new Set([...designerNames(),...rows.map(row=>row.designer||'').filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -136,12 +134,12 @@
   function renderCategoryFilter(value=$('#rcNoteCategoryFilter').value){
     const filter=$('#rcNoteCategoryFilter');if(!filter)return;
     if(window.AiselNoteCategories?.mountFilter){
-      if(!categoryFilterPicker)categoryFilterPicker=window.AiselNoteCategories.mountFilter(filter,{value,placeholder:'카테고리',managerHost:$('#rcListTaxonomyManager'),onChange:()=>{gallerySignature='';renderList();rememberList();},onError:error=>message(error?.message||String(error),true)});
+      if(!categoryFilterPicker)categoryFilterPicker=window.AiselNoteCategories.mountFilter(filter,{value,placeholder:'카테고리 전체',managerHost:$('#rcListTaxonomyManager'),onChange:()=>{gallerySignature='';renderList();rememberList();},onError:error=>message(error?.message||String(error),true)});
       else categoryFilterPicker.refresh({value});
       return;
     }
     const items=window.AiselNoteCategories?.list()||[];
-    const fragment=document.createDocumentFragment(),all=document.createElement('option');all.value='';all.textContent='카테고리';all.setAttribute('aria-label','전체 참고 카테고리');fragment.append(all);
+    const fragment=document.createDocumentFragment(),all=document.createElement('option');all.value='';all.textContent='카테고리 전체';all.setAttribute('aria-label','전체 참고 카테고리');fragment.append(all);
     for(const category of items){const option=document.createElement('option');option.value=category.id;option.textContent=category.name;fragment.append(option);}
     if(value&&!items.some(item=>item.id===value)){const option=document.createElement('option');option.value=value;option.textContent='선택한 분류';fragment.append(option);}
     filter.replaceChildren(fragment);filter.value=value;
@@ -403,7 +401,7 @@
     const finished=await Promise.race([save(),new Promise(resolve=>{timeout=setTimeout(()=>resolve(false),15000);})]);clearTimeout(timeout);
     if(!finished||active?.id!==id||editRevision!==revision){if(!finished&&saveFlight)message('저장 확인이 늦어지고 있습니다. 입력은 유지됩니다. 잠시 후 다시 이동해주세요.',true);return false;}return !options.isCurrent||options.isCurrent();
   }
-  async function leave(options={}){if(!await canLeave(options)||options.isCurrent&&!options.isCurrent())return false;showEpoch++;finishDetailLoad();designerPicker?.close();designerFilterPicker?.close();categoryFilterPicker?.close();pane.hidden=true;visible=false;return true;}
+  async function leave(options={}){if(!await canLeave(options)||options.isCurrent&&!options.isCurrent())return false;showEpoch++;finishDetailLoad();designerPicker?.close();designerFilterPicker?.close();categoryFilterPicker?.close();dateFilterPicker?.close();pane.hidden=true;visible=false;return true;}
   function summary(record){const {id,version,title,date,designer,category,contentType,creator,createdAt,updatedAt,archivedAt,permissions:recordPermissions,analysis,analysisSignature,analysisState,analysisReceipt,reviewedAt,categoryMode}=record;return {id,version,title,date,designer,category,contentType,creator,createdAt,updatedAt,archivedAt,analysis,analysisSignature,analysisState,analysisReceipt,reviewedAt,categoryMode,permissions:recordPermissions,...noteCategorySummary(record),thumbnail:record.thumbnail||record.photos?.[0]?.thumb||''};}
   async function refresh(more=false,prefetch=null,options={}){
     ensure();categoryCoverageErrors.clear();if(galleryReady()){await acceptGalleryState(galleryState);return;}if(listFlight)return listFlight;const epoch=authEpoch;loading=true;$('#rcMore').disabled=true;
@@ -528,10 +526,10 @@
       if(document.activeElement!==text&&!composing.has(text)&&text.value!==note.text)text.value=note.text||'';text.disabled=!edit;section.querySelectorAll('.rc-note-head>button').forEach(button=>button.disabled=!edit);
     }
   }
-  async function restoreDialog(){if(!permissions.canManage||localOnly)return;try{const data=await referenceRequest('refList',{archived:true,limit:40});dialog('삭제 복원',box=>{if(!data.items?.length){const p=document.createElement('p');p.textContent='삭제한 자료가 없습니다.';box.append(p);}for(const record of data.items||[]){const button=document.createElement('button');button.type='button';button.textContent=(record.title||'제목 없음')+' · 복원';button.onclick=async()=>{button.disabled=true;try{const result=await referenceRequest('refArchive',{id:record.id,version:record.version,archived:false});if(!result.record||result.record.archivedAt)throw Error('복원을 확인하지 못했습니다.');rememberRecord(result.record,true);gallerySignature='';renderList();button.remove();}catch(e){button.disabled=false;message(errorText(e),true);}};box.append(button);}});}catch(e){message(errorText(e),true);}}
+  async function restoreDialog(){if(!permissions.canManage||localOnly)return;try{const data=await referenceRequest('refList',{archived:true,limit:40});dialog('복원',box=>{if(!data.items?.length){const p=document.createElement('p');p.textContent='삭제한 자료가 없습니다.';box.append(p);}for(const record of data.items||[]){const button=document.createElement('button');button.type='button';button.textContent=(record.title||'제목 없음')+' · 복원';button.onclick=async()=>{button.disabled=true;try{const result=await referenceRequest('refArchive',{id:record.id,version:record.version,archived:false});if(!result.record||result.record.archivedAt)throw Error('복원을 확인하지 못했습니다.');rememberRecord(result.record,true);gallerySignature='';renderList();button.remove();}catch(e){button.disabled=false;message(errorText(e),true);}};box.append(button);}});}catch(e){message(errorText(e),true);}}
   async function archiveRecord(completed=false){
     if(!active||isComposing())return;if(linkEditor?.id===active.id&&!finishLinkEditor())return;
-    if(!confirm(completed?'참고를 완료한 레퍼런스를 보관할까요? 삭제 복원에서 다시 볼 수 있습니다.':'이 레퍼런스를 삭제할까요? 저장된 자료는 보관함에서 복원할 수 있습니다.'))return;
+    if(!confirm(completed?'참고를 완료한 레퍼런스를 보관할까요? 복원에서 다시 볼 수 있습니다.':'이 레퍼런스를 삭제할까요? 저장된 자료는 보관함에서 복원할 수 있습니다.'))return;
     const id=active.id,epoch=showEpoch,selection=openEpoch,startRevision=revision;
     const sameIntent=()=>active?.id===id&&epoch===showEpoch&&selection===openEpoch&&revision===startRevision;
     clearTimeout(autoSaveTimer);
@@ -542,14 +540,14 @@
       const data=await referenceRequest('refArchive',{id,version,archived:true});if(!data.record?.archivedAt)throw Error('삭제 저장을 확인하지 못했습니다.');rememberRecord(data.record,true);
       if(active?.id!==id||revision===startRevision)await removeDraft(id);
       gallerySignature='';
-      if(sameIntent()){active=null;dirty=false;pendingFiles=[];showList();setRoute(null,true);message(completed?'참고 완료로 보관했습니다. 삭제 복원에서 다시 볼 수 있습니다.':'삭제한 자료를 시트에 보관했습니다.');}
+      if(sameIntent()){active=null;dirty=false;pendingFiles=[];showList();setRoute(null,true);message(completed?'참고 완료로 보관했습니다. 복원에서 다시 볼 수 있습니다.':'삭제한 자료를 시트에 보관했습니다.');}
       else renderList();
     }catch(e){if(active?.id===id&&epoch===showEpoch)message(errorText(e),true);}
   }
   function captureList(){if($('#rcList').hidden)return;galleryScroll=window.scrollY;rememberList();}
   function showList(){finishDetailLoad();releasePreviews();$('#rcDetail').hidden=true;$('#rcList').hidden=false;$('#rcLatest').hidden=true;$('#rcSaveCopy').hidden=true;$('.rc-list-tools').after($('#rcNotices'));renderList();renderDrafts();const epoch=showEpoch;requestAnimationFrame(()=>{if(epoch===showEpoch&&visible&&!pane.hidden&&!$('#rcList').hidden)window.scrollTo(0,galleryScroll);});}
   function beginDetailLoad(selection){
-    designerPicker?.close();designerFilterPicker?.close();categoryFilterPicker?.close();clearReadPreview();$('#rcDetailProgress').textContent='자료를 불러오는 중…';detailLoading=selection;$('#rcList').hidden=true;$('#rcDetail').hidden=true;$('#rcDetailLoading').hidden=false;pane.setAttribute('aria-busy','true');
+    designerPicker?.close();designerFilterPicker?.close();categoryFilterPicker?.close();dateFilterPicker?.close();clearReadPreview();$('#rcDetailProgress').textContent='자료를 불러오는 중…';detailLoading=selection;$('#rcList').hidden=true;$('#rcDetail').hidden=true;$('#rcDetailLoading').hidden=false;pane.setAttribute('aria-busy','true');
     // The old editable record stays hidden while its own save owns the state.
     // Never put a new record ID on that form before its data is confirmed.
     $('#rcDialog').close();window.scrollTo(0,0);
@@ -881,7 +879,7 @@
   }
   window.addEventListener('popstate',async e=>{if(!pane||!visible)return;const match=location.hash.match(/^#reference=(.+)$/);if(match){await open(decodeURIComponent(match[1]),{history:false});return;}if(location.hash==='#references'){if(!await canLeave()){setRoute(active?.id,true);return;}active=null;dirty=false;pendingFiles=[];restoreList(e.state?.aiselReference);showList();return;}if(!await leave()){setRoute(active?.id,true);return;}config.onExit?.();});
   async function resetAuth(){
-    const epoch=++authEpoch;designerPicker?.destroy();designerPicker=null;designerPickerIdentity='';designerFilterPicker?.destroy();designerFilterPicker=null;categoryFilterPicker?.destroy();categoryFilterPicker=null;for(const picker of notePickers.values())picker.destroy();notePickers.clear();noteRenderId='';saveStatuses.clear();galleryEpoch++;galleryState=null;galleryOwned=false;preloadFlight=null;categoryCoverageErrors.clear();categoryCoverageFlight=null;reviewSourceKeys.clear();productReviews.clear();openEpoch++;authorizedStamp=null;accessAt=0;accessFlight=null;listFlight=null;detailCache.clear();detailFlights.clear();listReadAt=0;draftRead++;role=null;permissions={};loading=false;if(!pane)return true;finishDetailLoad();$('#rcCreate').disabled=true;$('#rcSave').disabled=true;$('#rcDelete').disabled=true;$('#rcWorkorder').disabled=true;$('#rcWorkorder').hidden=true;$('#rcCategory').disabled=true;$('#rcDesigner').disabled=true;fields.forEach(k=>$('[data-rc-field="'+k+'"]').disabled=true);$('#rcPhotos').querySelectorAll('button').forEach(button=>button.disabled=true);
+    const epoch=++authEpoch;dateFilterPicker?.close();designerPicker?.destroy();designerPicker=null;designerPickerIdentity='';designerFilterPicker?.destroy();designerFilterPicker=null;categoryFilterPicker?.destroy();categoryFilterPicker=null;for(const picker of notePickers.values())picker.destroy();notePickers.clear();noteRenderId='';saveStatuses.clear();galleryEpoch++;galleryState=null;galleryOwned=false;preloadFlight=null;categoryCoverageErrors.clear();categoryCoverageFlight=null;reviewSourceKeys.clear();productReviews.clear();openEpoch++;authorizedStamp=null;accessAt=0;accessFlight=null;listFlight=null;detailCache.clear();detailFlights.clear();listReadAt=0;draftRead++;role=null;permissions={};loading=false;if(!pane)return true;finishDetailLoad();$('#rcCreate').disabled=true;$('#rcSave').disabled=true;$('#rcDelete').disabled=true;$('#rcWorkorder').disabled=true;$('#rcWorkorder').hidden=true;$('#rcCategory').disabled=true;$('#rcDesigner').disabled=true;fields.forEach(k=>$('[data-rc-field="'+k+'"]').disabled=true);$('#rcPhotos').querySelectorAll('button').forEach(button=>button.disabled=true);
     // The common shell saves before a user-driven identity change. Preserve any
     // remaining input locally before clearing the previous account's view.
     if((dirty||pendingFiles.length)&&!await persistDraft())return false;

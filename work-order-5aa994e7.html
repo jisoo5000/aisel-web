@@ -1,3 +1,4 @@
+<!-- v219: aligned collection filters, integrated date reset, single designer entry and PDF print label -->
 <!-- v218: atomic gallery snapshots, warmed photo cache and continuous upload previews -->
 <!-- v217: Firebase membership and event projections; native review queue and async Sheet workers -->
 <!-- v216: shared designer/category management, compact collection controls and immediate authorized photo previews -->
@@ -3539,7 +3540,7 @@
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
-      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장/인쇄</span><span class="mobile-print-label">인쇄</span></button>
+      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 인쇄</span><span class="mobile-print-label">PDF 인쇄</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
 
@@ -16701,7 +16702,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=216">
+<link rel="stylesheet" href="design-meeting.css?v=219">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16729,12 +16730,14 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-gallery-images.js?v=218"></script>
 <script src="aisel-collection-writes.js?v=218"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=216">
-<script src="aisel-designers.js?v=216"></script>
+<script src="aisel-designers.js?v=219"></script>
+<link rel="stylesheet" href="aisel-date-filter.css?v=219">
+<script src="aisel-date-filter.js?v=219"></script>
 <script src="design-meeting-core.js?v=190"></script>
 <script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=216"></script>
-<script src="design-meeting.js?v=218"></script>
+<script src="design-meeting.js?v=219"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 </script>
@@ -16750,7 +16753,7 @@ window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>wi
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=216">
+<link rel="stylesheet" href="reference-collection.css?v=219">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16765,7 +16768,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=218"></script>
+<script src="reference-collection.js?v=219"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=213"></script>

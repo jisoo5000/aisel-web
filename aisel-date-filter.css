@@ -1,0 +1,11 @@
+/* The two collection lists share the same compact date control. */
+@media screen {
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date{position:relative;display:block;min-width:0;height:28px;border:0;background:transparent;overflow:visible;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date :is(button,input){box-sizing:border-box;min-width:0;height:28px;min-height:28px;margin:0;padding:0 4px;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;color:#6C727C;font-family:var(--aisel-font,sans-serif);font-size:12px!important;font-weight:400;line-height:18px;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date-toggle{display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date-toggle span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date-options{position:absolute;top:32px;left:0;z-index:10;display:grid;gap:8px;width:200px;max-width:calc(100vw - 24px);padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;box-shadow:0 3px 10px #00000014;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date-options[hidden]{display:none!important;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date-options input{position:static;inset:auto;display:block;width:100%;max-width:100%;opacity:1;appearance:auto;cursor:pointer;}
+ html:root body :is(#referenceCollectionView,#designMeetingView) .aisel-list-date-options .aisel-list-date-all{display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer;}
+}
