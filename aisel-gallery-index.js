@@ -203,7 +203,7 @@
   function summary(row, id) {
     if (!row || typeof row !== 'object' || !id || /[.#$\[\]/]/.test(id)) return null;
     const result = { schemaVersion: 1, id, title: text(row.title), date: /^\d{4}-\d{2}-\d{2}$/.test(row.date || '') ? row.date : '',
-      designer: text(row.designer, 100), category: text(row.category, 50), contentType: text(row.contentType, 50),
+      designer: text(row.designer, 100), category: text(row.category, 100), contentType: text(row.contentType, 50),
       status: text(row.status, 60), reviewStatus: text(row.reviewStatus, 60), decision: text(row.decision, 60), convertedCode: text(row.convertedCode, 100),
       thumbnail: /^https:\/\//i.test(row.thumbnail || '') ? text(row.thumbnail, 4096) : '',
       version: number(row.version), createdAt: number(row.createdAt), updatedAt: number(row.updatedAt),

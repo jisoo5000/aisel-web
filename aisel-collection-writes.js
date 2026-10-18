@@ -152,7 +152,7 @@
       const form=typeof FormData!=='undefined'&&body instanceof FormData;
       const response=await fetch(ENDPOINT,{method:'POST',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{Authorization:'Bearer '+token,...(form?{}:{'Content-Type':'application/json'})},body:form?body:JSON.stringify(body)});
       assert(ctx);const data=await response.json().catch(()=>({}));assert(ctx);
-      if(!response.ok||data.ok!==true){const code=data.code||(typeof data.error==='string'&&/^[a-z_]+$/.test(data.error)?data.error:null)||([401,403].includes(response.status)?'permission_denied':'network');const messages={category_deleted:'삭제된 분류입니다. 복원을 눌러 다시 추가할 수 있습니다.',designer_deleted:'삭제된 디자이너입니다. 복원을 눌러 다시 추가할 수 있습니다.',revision_conflict:'목록이 변경되었습니다. 관리 화면을 다시 열어주세요.',not_ready:'관리 기능 연결을 준비하고 있습니다.'};throw fail(code,messages[code]||data.message||(data.error!==code?data.error:undefined));}
+      if(!response.ok||data.ok!==true){const code=data.code||(typeof data.error==='string'&&/^[a-z_]+$/.test(data.error)?data.error:null)||([401,403].includes(response.status)?'permission_denied':'network');const messages={category_deleted:'삭제된 항목입니다. 복원을 눌러 다시 추가할 수 있습니다.',designer_deleted:'삭제된 디자이너입니다. 복원을 눌러 다시 추가할 수 있습니다.',revision_conflict:'목록이 변경되었습니다. 목록을 다시 열어주세요.',not_ready:'목록 연결을 준비하고 있습니다.'};throw fail(code,messages[code]||data.message||(data.error!==code?data.error:undefined));}
       return data;
     }catch(error){if(error.code)throw error;throw fail('network');}finally{clearTimeout(timer);}
   }
@@ -178,6 +178,19 @@
     const data=await functionRequest(ctx,{action,...(action==='listDesigners'?{}:{name:payload.name}),...(action==='deleteDesigner'||payload.restore===true?{expectedRevision:payload.expectedRevision}:{}),...(payload.restore===true?{restore:true}:{})});
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
+  async function referenceCategoryRequest(action,payload={}) {
+    if(!['listReferenceCategories','upsertReferenceCategory','deleteReferenceCategory'].includes(action))throw fail('invalid');
+    const ctx=await context('references');
+    if(ctx.config.referenceCategoryWriteVersion!==220)throw fail('connection_pending');
+    if(action==='listReferenceCategories'){
+      const values=await read('referenceCategories',ctx);assert(ctx);
+      const entries=Object.values(values||{});
+      return {ok:true,referenceCategoriesVersion:220,canManage:ctx.role==='owner',entries,categories:entries.filter(entry=>!entry.deletedAt)};
+    }
+    if(ctx.role!=='owner')throw fail('permission_denied');
+    const data=await functionRequest(ctx,{action,...(action==='deleteReferenceCategory'?{id:payload.id,expectedRevision:payload.expectedRevision}:{name:payload.name,...(payload.restore===true?{restore:true,expectedRevision:payload.expectedRevision}:{})})});
+    assert(ctx);return {...data,canManage:ctx.role==='owner'};
+  }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest,designerRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest,designerRequest,referenceCategoryRequest});
 })();

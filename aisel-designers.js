@@ -35,21 +35,68 @@
     const api={configure,state,list,get,isRemoved,load,add,remove,subscribe,refreshSession:sync};return api;
   }
 
-  // A compact inline manager shared by designer and note-category controls.
+  // One inline add/delete panel. Catalog changes remain server-acknowledged,
+  // and undo restores the catalog entry without changing an assigned record.
   function openManager(host,options){
-    const document=host.ownerDocument,panel=document.createElement('section');panel.className='aisel-taxonomy-manager';panel.setAttribute('aria-label',options.label+' 관리');
-    const heading=document.createElement('div'),title=document.createElement('strong'),closeButton=document.createElement('button'),form=document.createElement('form'),input=document.createElement('input'),addButton=document.createElement('button'),restoreButton=document.createElement('button'),status=document.createElement('p'),rows=document.createElement('div'),hint=document.createElement('p');
-    heading.className='aisel-taxonomy-heading';title.textContent=options.label+' 관리';closeButton.type='button';closeButton.textContent='닫기';closeButton.setAttribute('aria-label',options.label+' 관리 닫기');heading.append(title,closeButton);
-    input.type='text';input.maxLength=options.maxLength||80;input.placeholder='새 '+options.label+' 이름';input.setAttribute('aria-label',input.placeholder);input.autocomplete='off';input.setAttribute('enterkeyhint','done');addButton.type='submit';addButton.textContent='추가';restoreButton.type='button';restoreButton.textContent='복원';restoreButton.hidden=true;form.append(input,addButton,restoreButton);status.className='aisel-taxonomy-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');hint.className='aisel-taxonomy-hint';hint.textContent=options.hint||'목록에서 삭제해도 기존 자료의 내용은 유지됩니다.';rows.className='aisel-taxonomy-rows';panel.append(heading,form,status,rows,hint);host.append(panel);
-    let closed=false,busy=false,composing=false,restoreName='',listSignature='',stop=()=>{};const initialSession=JSON.stringify(options.session?.()??null);
-    const alive=()=>!closed&&panel.isConnected;
+    const document=host.ownerDocument,panel=document.createElement('section'),panelTitle=options.title||options.label+' 관리';
+    panel.className='aisel-taxonomy-manager';panel.setAttribute('aria-label',panelTitle);
+    const heading=document.createElement('div'),title=document.createElement('strong'),closeButton=document.createElement('button'),form=document.createElement('form'),input=document.createElement('input'),addButton=document.createElement('button'),restoreButton=document.createElement('button'),status=document.createElement('p'),undoButton=document.createElement('button'),rows=document.createElement('div'),hint=document.createElement('p');
+    heading.className='aisel-taxonomy-heading';title.textContent=panelTitle;closeButton.type='button';closeButton.textContent='닫기';closeButton.setAttribute('aria-label',panelTitle+' 닫기');heading.append(title,closeButton);
+    input.type='text';input.maxLength=options.maxLength||80;input.placeholder='새 '+options.label+' 이름';input.setAttribute('aria-label',input.placeholder);input.autocomplete='off';input.setAttribute('enterkeyhint','done');
+    addButton.type='submit';addButton.textContent='추가';restoreButton.type='button';restoreButton.textContent='복원';restoreButton.className='aisel-taxonomy-restore';restoreButton.hidden=true;form.append(input,addButton,restoreButton);
+    status.className='aisel-taxonomy-status';status.setAttribute('role','status');status.setAttribute('aria-live','polite');undoButton.type='button';undoButton.textContent='되돌리기';undoButton.className='aisel-taxonomy-undo';undoButton.hidden=true;
+    hint.className='aisel-taxonomy-hint';hint.textContent=options.hint||'목록에서 삭제해도 기존 자료의 내용은 유지됩니다.';rows.className='aisel-taxonomy-rows';panel.append(heading,form,status,undoButton,rows,hint);host.append(panel);
+    let closed=false,busy=false,composing=false,restoreName='',lastDeleted=null,listSignature='',editRevision=0,operationFlight=null,stop=()=>{};
+    const initialSession=JSON.stringify(options.session?.()??null),canUndo=typeof options.restore==='function'||options.undo===true;
+    const sameSession=()=>initialSession===JSON.stringify(options.session?.()??null),alive=()=>!closed&&panel.isConnected;
     function report(error){if(!alive())return;status.textContent=error?.message||'';if(error)options.onError?.(error);}
-    function render(){if(!alive())return;if(initialSession!==JSON.stringify(options.session?.()??null)){close();return;}const permissions=options.permissions?.()||{canAdd:true,canRemove:true},items=options.list(),signature=JSON.stringify([items,busy,permissions]);hint.textContent=permissions.canRemove?(options.hint||'목록에서 삭제해도 기존 자료의 내용은 유지됩니다.'):(permissions.canAdd?'삭제·복원은 대표자 계정에서 할 수 있습니다.':'추가·삭제는 대표자 계정에서 할 수 있습니다.');input.disabled=busy||!permissions.canAdd;addButton.disabled=busy||!permissions.canAdd;restoreButton.disabled=busy||!permissions.canRemove;if(signature===listSignature)return;listSignature=signature;rows.replaceChildren();for(const item of items){const row=document.createElement('div'),name=document.createElement('span'),button=document.createElement('button');name.textContent=item.name;button.type='button';button.textContent='삭제';button.setAttribute('aria-label',item.name+' 삭제');button.disabled=busy||!permissions.canRemove;button.onclick=()=>run(async()=>{await options.remove(item);if(alive())status.textContent=item.name+' 삭제 완료';});row.append(name,button);rows.append(row);}if(!items.length){const empty=document.createElement('p');empty.textContent='등록된 '+options.label+'가 없습니다.';rows.append(empty);}}
-    async function run(fn){if(busy||!alive())return;busy=true;report(null);render();try{await fn();}catch(error){report(error);}finally{if(alive()){busy=false;render();}}}
-    async function add(restore=false){if(composing||!input.value.trim())return;const name=input.value;await run(async()=>{try{const item=await options.add(name,{restore});if(!alive())return;restoreName='';restoreButton.hidden=true;input.value='';status.textContent=item.name+' 추가 완료';options.onSelect?.(item);if(options.closeOnSelect)close();}catch(error){if(alive()&&['category_deleted','designer_deleted'].includes(error.code)){restoreName=name;restoreButton.hidden=false;}throw error;}});}
+    const restoreItem=name=>options.restore?options.restore(name):options.add(name,{restore:true});
+    function render(){
+      if(!alive())return;if(!sameSession()){close();return;}
+      const permissions=options.permissions?.()||{canAdd:true,canRemove:true},items=options.list(),signature=JSON.stringify([items,busy,permissions]);
+      hint.textContent=permissions.canRemove?(options.hint||'목록에서 삭제해도 기존 자료의 내용은 유지됩니다.'):(permissions.canAdd?'삭제·복원은 대표자 계정에서 할 수 있습니다.':'추가·삭제는 대표자 계정에서 할 수 있습니다.');
+      input.disabled=busy||!permissions.canAdd;addButton.disabled=busy||!permissions.canAdd;restoreButton.disabled=busy||!permissions.canRemove;undoButton.disabled=busy||!permissions.canRemove;undoButton.hidden=!canUndo||!lastDeleted;
+      if(signature===listSignature)return;listSignature=signature;rows.replaceChildren();
+      for(const item of items){
+        const row=document.createElement('div'),name=document.createElement('span'),button=document.createElement('button');
+        name.textContent=item.name+(item.deletedAt?' (삭제됨)':'');button.type='button';button.setAttribute('aria-label',item.name+(item.deletedAt?' 복원':' 삭제'));button.disabled=busy||!permissions.canRemove;
+        if(item.deletedAt){button.className='aisel-taxonomy-restore';button.textContent='복원';button.onclick=()=>void run(async()=>{await restoreItem(item.name);if(alive()&&sameSession()){if(lastDeleted?.name===item.name)lastDeleted=null;status.textContent=item.name+' 복원 완료';}return true;});}
+        else{
+          button.className='aisel-taxonomy-delete';
+          if(options.iconActions){button.classList.add('aisel-taxonomy-icon');button.innerHTML='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>';}
+          else button.textContent='삭제';
+          button.onclick=()=>void run(async()=>{await options.remove(item);if(alive()&&sameSession()){lastDeleted={...item};status.textContent=item.name+' 삭제 완료';}return true;});
+        }
+        row.append(name,button);rows.append(row);
+      }
+      if(!items.length){const empty=document.createElement('p');empty.textContent='등록된 '+options.label+'가 없습니다.';rows.append(empty);}
+    }
+    function run(fn){
+      if(operationFlight)return operationFlight;if(!alive()||!sameSession())return Promise.resolve(false);
+      busy=true;report(null);render();
+      const task=(async()=>{try{const result=await fn();return result!==false;}catch(error){report(error);return false;}finally{if(alive()){busy=false;render();}}})();
+      operationFlight=task;task.finally(()=>{if(operationFlight===task)operationFlight=null;});return task;
+    }
+    function add(restore=false){
+      if(operationFlight)return operationFlight;if(composing)return Promise.resolve(false);if(!input.value.trim())return Promise.resolve(true);
+      if(!(options.permissions?.()||{canAdd:true}).canAdd)return Promise.resolve(false);
+      const name=input.value,atRevision=editRevision;
+      return run(async()=>{
+        try{
+          const item=await options.add(name,{restore});
+          if(!alive()||!sameSession()||composing||atRevision!==editRevision||input.value!==name)return false;
+          restoreName='';restoreButton.hidden=true;input.value='';status.textContent=item.name+' 추가 완료';options.onSelect?.(item);if(options.closeOnSelect)close();return true;
+        }catch(error){if(alive()&&['category_deleted','designer_deleted','reference_category_deleted'].includes(error.code)){restoreName=name;restoreButton.hidden=false;}throw error;}
+      });
+    }
     function close(){if(closed)return;closed=true;stop();panel.remove();options.onClose?.();}
-    closeButton.onclick=close;form.onsubmit=event=>{event.preventDefault();void add();};restoreButton.onclick=()=>{if(input.value===restoreName)void add(true);};input.oninput=()=>{restoreName='';restoreButton.hidden=true;};input.addEventListener('compositionstart',()=>{composing=true;});input.addEventListener('compositionend',()=>{composing=false;});input.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close();}if((event.isComposing||composing||event.keyCode===229)&&event.key==='Enter')event.preventDefault();});
-    stop=options.subscribe?.(render)||stop;render();Promise.resolve(options.load?.()).then(()=>{if(alive()){render();if(options.addOnly)input.focus({preventScroll:true});}},report);return {close,panel,input};
+    closeButton.onclick=close;form.onsubmit=event=>{event.preventDefault();void add();};restoreButton.onclick=()=>{if(input.value===restoreName)void add(true);};
+    undoButton.onclick=()=>{const entry=lastDeleted;if(entry)void run(async()=>{await restoreItem(entry.name);if(alive()&&sameSession()){lastDeleted=null;status.textContent=entry.name+' 복원 완료';}return true;});};
+    input.oninput=()=>{editRevision++;restoreName='';restoreButton.hidden=true;};input.addEventListener('compositionstart',()=>{composing=true;editRevision++;});input.addEventListener('compositionend',()=>{composing=false;});
+    input.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();close();}if((event.isComposing||composing||event.keyCode===229)&&event.key==='Enter')event.preventDefault();});
+    stop=options.subscribe?.(render)||stop;render();Promise.resolve(options.load?.()).then(()=>{if(alive()){render();if(options.addOnly)input.focus({preventScroll:true});}},report);
+    async function flush(){if(composing)return false;if(operationFlight&&!await operationFlight)return false;if(!alive())return !input.value.trim();return add();}
+    return {close,panel,input,flush,hasDraft:()=>!closed&&(!!operationFlight||composing||!!input.value.trim()),isComposing:()=>!closed&&composing};
   }
 
   const store=createStore();

@@ -15,3 +15,8 @@
 /* Match the surrounding 12px collection controls despite the legacy mobile
    body input:not(...) rule. This stays outside workorder and print fields. */
 body :is(#referenceCollectionView,#designMeetingView) .aisel-taxonomy-manager input{font-size:12px!important;}
+
+/* Shared category panels keep the existing 28px controls and four-pixel gaps. */
+.aisel-taxonomy-manager .aisel-taxonomy-icon{display:inline-flex;align-items:center;justify-content:center;width:28px;padding:0;}
+.aisel-taxonomy-icon svg{pointer-events:none;flex:0 0 auto;}
+.aisel-taxonomy-manager .aisel-taxonomy-undo{margin:4px 0 0;}

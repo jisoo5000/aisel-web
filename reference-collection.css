@@ -8,8 +8,9 @@
  #referenceCollectionView button:disabled{color:#9ba1aa;border-color:#e4e7eb;cursor:default}
  #referenceCollectionView button:not(:disabled):hover{border-color:var(--aisel-muted)}
  #referenceCollectionView :is(button,input,textarea,select,a):focus-visible{outline:2px solid var(--aisel-ink,#34383C);outline-offset:2px}
- #referenceCollectionView .rc-filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;height:28px;margin:0 0 8px;border:0}
- #referenceCollectionView .rc-filters button{width:100%;white-space:nowrap;border:0;border-bottom:1px solid var(--aisel-line);border-radius:0;color:var(--aisel-muted);font-weight:400}
+ #referenceCollectionView .rc-filters{display:flex;gap:0;height:28px;margin:0 0 8px;border:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+ #referenceCollectionView .rc-filters::-webkit-scrollbar{display:none}
+ #referenceCollectionView .rc-filters button{display:block;flex:1 0 80px;max-width:100%;width:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:0;border-bottom:1px solid var(--aisel-line);border-radius:0;color:var(--aisel-muted);font-weight:400}
  #referenceCollectionView .rc-filters button[aria-pressed=true]{background:var(--aisel-soft);border-bottom-color:var(--aisel-ink,#34383C);color:var(--aisel-ink,#34383C);font-weight:550}
  #referenceCollectionView input:not([type=checkbox]):not([type=file]),#referenceCollectionView select,#referenceCollectionView textarea{width:100%;max-width:100%;min-width:0;height:32px;min-height:32px;border:1px solid var(--aisel-line);border-radius:3px;background:#fff;padding:0 8px;font-size:16px;font-weight:400;line-height:24px;appearance:none}
  #referenceCollectionView input::placeholder,#referenceCollectionView textarea::placeholder{color:var(--aisel-muted);opacity:1}
@@ -184,7 +185,7 @@
  #referenceCollectionView .rc-metadata{grid-template-columns:88px minmax(0,128px) minmax(120px,1fr);gap:4px;align-items:start}
  #referenceCollectionView .rc-link-tools{grid-column:1/-1;grid-template-columns:minmax(0,1fr) 28px 28px;gap:4px;min-width:0;width:100%;justify-self:stretch;align-items:start}
  #referenceCollectionView .rc-link-tools :is(button,#rcSourceOpen){width:100%;margin:0;justify-self:stretch}
- #referenceCollectionView #rcCategory{padding:0 2px;gap:2px}
+ #referenceCollectionView #rcCategory{padding:0 2px;text-align:center;text-overflow:ellipsis;color:var(--aisel-muted);font-size:12px!important}
  #referenceCollectionView .rc-link-tools.is-editing{grid-template-columns:minmax(0,1fr)}
  #referenceCollectionView #rcSourceOpen[hidden],#referenceCollectionView #rcLinkEdit[hidden],#referenceCollectionView #rcLinkDelete[hidden],#referenceCollectionView #rcLinkEditor[hidden]{display:none!important}
  #referenceCollectionView #rcLinkEditor{display:grid;gap:4px;min-width:0;width:100%}
@@ -224,13 +225,6 @@
  #referenceCollectionView .rc-note-entry textarea{font-size:16px!important;line-height:24px}
  #referenceCollectionView .rc-empty-photo-actions{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;padding:8px}
  #referenceCollectionView .rc-empty-photo-actions button{color:#6C727C;min-width:88px;height:28px;min-height:28px;padding:0 8px;background:#FFF}
- #referenceCollectionView #rcDialog.rc-category-dialog form{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:8px;row-gap:12px}
- #referenceCollectionView #rcDialog.rc-category-dialog #rcDialogBody{display:contents}
- #referenceCollectionView #rcDialog.rc-category-dialog h3{grid-column:1;grid-row:1;margin:0;align-self:center;font-size:16px;line-height:24px}
- #referenceCollectionView #rcDialog.rc-category-dialog .rc-dialog-actions{grid-column:2;grid-row:1;gap:4px;margin:0}
- #referenceCollectionView #rcDialog.rc-category-dialog .rc-dialog-actions button{height:28px;min-height:28px}
- #referenceCollectionView #rcDialog.rc-category-dialog #rcCategorySelect{grid-column:1/-1;grid-row:2}
- #referenceCollectionView #rcDialog.rc-category-dialog .rc-dialog-error{grid-column:1/-1}
  #referenceCollectionView #rcAIExtra{margin-top:12px;color:#34383C}
  #referenceCollectionView .rc-analysis h3{font-size:13px;line-height:20px;font-weight:600;color:#34383C;margin:0 0 4px}
  #referenceCollectionView .rc-analysis p,#referenceCollectionView .rc-reactions{font-size:12px;line-height:18px;font-weight:400;color:#34383C}

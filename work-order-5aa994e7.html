@@ -1,4 +1,4 @@
-<!-- v219: aligned collection filters, integrated date reset, single designer entry and PDF print label -->
+<!-- v220: shared category add/delete/restore controls with persistent custom reference categories -->
 <!-- v218: atomic gallery snapshots, warmed photo cache and continuous upload previews -->
 <!-- v217: Firebase membership and event projections; native review queue and async Sheet workers -->
 <!-- v216: shared designer/category management, compact collection controls and immediate authorized photo previews -->
@@ -16726,20 +16726,22 @@ window.AiselDesignMeetingAdapter={
 <script>window.AISEL_GALLERY_INDEX_ENABLED = true; window.AISEL_COLLECTION_WRITES_ENABLED = true;</script>
 <script>window.AISEL_NATIVE_ENABLED=true; window.AISEL_GALLERY_SNAPSHOTS_ENABLED=true;</script>
 <script src="aisel-native-bridge.js?v=217"></script>
-<script src="aisel-gallery-index.js?v=218"></script>
+<script src="aisel-gallery-index.js?v=220"></script>
 <script src="aisel-gallery-images.js?v=218"></script>
-<script src="aisel-collection-writes.js?v=218"></script>
-<link rel="stylesheet" href="aisel-designers.css?v=216">
-<script src="aisel-designers.js?v=219"></script>
+<script src="aisel-collection-writes.js?v=220"></script>
+<link rel="stylesheet" href="aisel-designers.css?v=220">
+<script src="aisel-designers.js?v=220"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=219">
 <script src="aisel-date-filter.js?v=219"></script>
 <script src="design-meeting-core.js?v=190"></script>
 <script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
-<script src="aisel-note-categories.js?v=216"></script>
+<script src="aisel-note-categories.js?v=220"></script>
+<script src="aisel-reference-categories.js?v=220"></script>
 <script src="design-meeting.js?v=219"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
+window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
 </script>
 
 <style id="aisel-v171-white-surfaces">
@@ -16753,7 +16755,7 @@ window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>wi
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=219">
+<link rel="stylesheet" href="reference-collection.css?v=220">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16768,7 +16770,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=219"></script>
+<script src="reference-collection.js?v=220"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=213"></script>
