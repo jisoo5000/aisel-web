@@ -41,7 +41,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  // v231: human planning notes; no model verdict, gate or numeric threshold.
  const manualSaveTimers=new Map();
  const manualFields=['marketDemand','substituteSupply','uspValue','engagementLevel'];
- const manualChoices={marketDemand:[['high','높음'],['low','낮음'],['unknown','미확인']],substituteSupply:[['many','많음'],['few','적음'],['unknown','미확인']],engagementLevel:[['high','높음'],['low','낮음'],['unknown','미확인']]};
+ const manualChoices={marketDemand:[['high','높음'],['low','낮음'],['niche','틈새'],['unknown','확인필요']],substituteSupply:[['many','많음'],['few','적음'],['unknown','확인필요']],engagementLevel:[['high','높음'],['low','낮음'],['unknown','확인필요']]};
  const manualTable=document.createElement('table');manualTable.className='dm-evidence dm-manual-table';
  manualTable.innerHTML='<tbody><tr><th scope="row">수요·공급</th><td><div class="dm-manual-group" data-manual-group="marketDemand" role="group" aria-label="수요"><span>수요</span></div><div class="dm-manual-group" data-manual-group="substituteSupply" role="group" aria-label="대체품"><span>대체품</span></div></td></tr><tr><th scope="row">USP<small>가격 프리미엄</small></th><td><textarea id="dmUspValue" data-dm-field="uspValue" rows="2" maxlength="4000" aria-label="USP와 가격 프리미엄" placeholder="살 이유 → 더 지불할 가치&#10;예: 허리 스트랩 → 비율을 조절해 날씬해 보이는 연출"></textarea></td></tr><tr><th scope="row">반응도</th><td><div class="dm-manual-group" data-manual-group="engagementLevel" role="group" aria-label="반응도"></div></td></tr></tbody>';
  $dm('#dmReview').replaceChildren(manualTable);
@@ -671,11 +671,9 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    layoutFrame=requestAnimationFrame(()=>{
      layoutFrame=0;
      if(pane.hidden||$dm('#dmDetail').hidden)return;
-     const detail=$dm('#dmDetail'),viewport=window.visualViewport;
-     const bottom=(viewport?.height||innerHeight)+(viewport?.offsetTop||0);
-     const height=Math.max(240,Math.floor(bottom-detail.getBoundingClientRect().top-4));
-     if(Math.abs(parseFloat(detail.style.getPropertyValue('--dm-height'))-height)>=2||!detail.style.getPropertyValue('--dm-height'))detail.style.setProperty('--dm-height',height+'px');
-     // Same-width browser toolbar or keyboard changes resize the scroll area, not the photo.
+     const detail=$dm('#dmDetail');
+     // v232: the document owns scrolling. Keyboard/auto-save updates must not
+     // resize a second scroll viewport or move the user's current reading position.
      const key=active+':'+Math.round(detail.clientWidth);
      if(photoSizingKey!==key){
        // Detail photos use the approved taller composition; list photos stay 160px.
