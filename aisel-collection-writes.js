@@ -144,6 +144,64 @@
   }
   const saveReference=options=>writeReference(options);
   const archiveReference=options=>writeReference(options,true);
+  function meetingId(id) {if(typeof id!=='string'||!/^[-A-Za-z0-9_]{8,100}$/.test(id))throw fail('invalid','디자인회의 자료를 확인해주세요.');}
+  async function meetingContext() {const ctx=await context('meetings');if(!['owner','designer'].includes(ctx.role))throw fail('permission_denied');return ctx;}
+  function meetingRecord(value,id) {
+    if(value!==null&&(!value||Array.isArray(value)||value.id!==id||value.designMeeting!==true))throw fail('invalid','디자인회의 자료를 확인해주세요.');
+    return clone(value);
+  }
+  // REST detail reads do not warm the SDK transaction cache. Use the same
+  // authenticated account for a server ETag and conditional write instead of
+  // treating an initial SDK null as a missing record or seeding it from UI data.
+  async function meetingRequest(id,ctx,method='GET',body,etag) {
+    assert(ctx);const token=await current().getIdToken();assert(ctx);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+    try{
+      const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/moodboardRefs/'+encodeURIComponent(id)+'.json?auth='+encodeURIComponent(token),{
+        method,cache:'no-store',credentials:'omit',signal:controller.signal,
+        headers:{Accept:'application/json',...(method==='GET'?{'X-Firebase-ETag':'true'}:{'Content-Type':'application/json','If-Match':etag})},
+        ...(method==='GET'?{}:{body})
+      });
+      assert(ctx);if([401,403].includes(response.status))throw fail('permission_denied');
+      if(response.status===412)return {conflict:true};
+      if(!response.ok)throw fail('network');
+      const value=await response.json();assert(ctx);
+      const record=meetingRecord(value,id);if(method==='PUT'&&record===null)throw fail('network');
+      return {value:record,etag:response.headers?.get('etag')||''};
+    }catch(error){assert(ctx);if(['permission_denied','invalid','auth_changed','offline','network'].includes(error.code))throw error;throw fail('network');}finally{clearTimeout(timer);}
+  }
+  async function getMeeting(id) {meetingId(id);const ctx=await meetingContext();return (await meetingRequest(id,ctx)).value;}
+  const meetingReceipt=(committed,value)=>{const saved=clone(value);return {committed,snapshot:{val:()=>clone(saved)}};};
+  async function mutateMeeting(id,transform,options={}) {
+    meetingId(id);if(typeof transform!=='function')throw fail('invalid');
+    const ctx=await meetingContext();let observedExisting=false;
+    for(let attempt=0;attempt<5;attempt++){
+      const before=await meetingRequest(id,ctx);assert(ctx);
+      if(before.value===null&&(options.allowCreate!==true||observedExisting))throw fail('not_found');
+      observedExisting=observedExisting||before.value!==null;
+      const proposed=transform(clone(before.value));assert(ctx);
+      if(proposed===undefined)return meetingReceipt(false,before.value);
+      // Deletion is an explicit tombstone handled by the caller, never a null
+      // PUT. Existing server-owned fields must survive the caller's merge.
+      if(!proposed||typeof proposed!=='object'||Array.isArray(proposed)||typeof proposed.then==='function')throw fail('invalid');
+      const next=meetingRecord(proposed,id),body=JSON.stringify(next),signature=JSON.stringify(stable(next));
+      if(signature===JSON.stringify(stable(before.value)))return meetingReceipt(true,before.value);
+      if(!before.etag)throw fail('network');
+      let result;
+      try{result=await meetingRequest(id,ctx,'PUT',body,before.etag);}
+      catch(error){
+        assert(ctx);if(error.code!=='network')throw error;
+        // A timeout may follow a committed PUT. Only an exact canonical
+        // readback acknowledges it; an unknown outcome never starts a new PUT.
+        const proof=await meetingRequest(id,ctx);assert(ctx);
+        if(JSON.stringify(stable(proof.value))===signature)return meetingReceipt(true,proof.value);
+        throw fail('network');
+      }
+      if(result.conflict)continue;
+      return meetingReceipt(true,result.value);
+    }
+    throw fail('conflict','다른 곳에서 계속 수정 중입니다. 입력은 기기에 유지했습니다. 잠시 후 다시 저장해주세요.');
+  }
   async function functionRequest(ctx,body) {
     assert(ctx);if(ctx.config.mediaEndpoint!==ENDPOINT)throw fail('connection_pending');
     const token=await current().getIdToken();assert(ctx);
@@ -192,5 +250,5 @@
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,uploadPhotos,categoryRequest,designerRequest,referenceCategoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,uploadPhotos,categoryRequest,designerRequest,referenceCategoryRequest});
 })();

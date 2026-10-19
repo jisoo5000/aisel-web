@@ -1,4 +1,4 @@
-<!-- v225: assignee filter empty-state guidance and marked selection width -->
+<!-- v226: canonical meeting save acknowledgement and visible retry status -->
 <!-- v224: Firebase product-reference linking; shared photo URLs and durable meeting decisions -->
 <!-- v223: readable production screening and nightly queue explanation (2026-10-19) -->
 <!-- v221: bounded thumbnails delivered with gallery indexes and reused for detail previews -->
@@ -3273,12 +3273,12 @@
   <div id="dmList"><div class="dm-filters" id="dmFilters"><button type="button" data-filter="planned" class="active">예정</button><button type="button" data-filter="drop">드롭</button><button type="button" data-filter="all">전체</button></div>
   <label class="aisel-search-field dm-search"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="dmSearch" type="search" aria-label="제품명 검색" placeholder="제품명 검색"></label><p id="dmCount" class="dm-sr-only"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><div id="dmSession" class="dm-session"></div></div>
   <aside id="dmDetail" class="dm-detail" aria-label="후보 상세" hidden>
-    <div class="dm-detail-header"><div class="dm-heading"><h3 id="dmDetailTitle" contenteditable="true" role="textbox" aria-label="제품명" spellcheck="false">후보 상세</h3><div id="dmDates" class="dm-dates"></div></div><div class="dm-detail-controls"><div id="dmLinks" class="dm-links"></div><div class="dm-assignee"><label for="dmDesigner">담당자</label><select id="dmDesigner" aria-label="담당자"><option value="">미지정</option></select></div></div></div>
+    <div class="dm-detail-header"><div class="dm-heading"><h3 id="dmDetailTitle" contenteditable="true" role="textbox" aria-label="제품명" spellcheck="false">후보 상세</h3><div id="dmDates" class="dm-dates"></div></div><div class="dm-detail-controls"><div id="dmLinks" class="dm-links"></div><div class="dm-assignee"><label for="dmDesigner">담당자</label><select id="dmDesigner" aria-label="담당자"><option value="">미지정</option></select></div></div><div class="dm-detail-save"><small id="dmDetailSaveState" role="status" aria-live="polite" aria-atomic="true"></small><button id="dmSaveDetail" type="button" hidden>다시 저장</button></div></div>
     
     <div class="dm-detail-body"><div id="dmPhotos" class="dm-photos"></div><button id="dmAddPhotos" type="button">사진</button>
     <div hidden id="dmLegacyFields"><input data-dm-field="title"><input data-dm-field="link"><textarea data-dm-field="memo"></textarea><textarea data-dm-field="development"></textarea><select data-dm-field="decision"><option value="unselected">미선택</option><option value="selected">선택</option><option value="progress">진행</option><option value="excluded">드롭</option><option value="held">보류</option></select><textarea data-dm-field="decisionReason"></textarea><input data-dm-field="meetingDate"><textarea data-dm-field="meetingMemo"></textarea></div>
     <h3 class="dm-section-title">판단 근거</h3><div id="dmReview"></div><p id="dmReviewState" class="dm-review-status"></p>
-    <small id="dmDetailSaveState" role="status"></small><button id="dmSaveDetail" type="button" hidden>다시 저장</button><button id="dmRequest" type="button" hidden>검토 요청</button>
+    <button id="dmRequest" type="button" hidden>검토 요청</button>
     </div><div class="dm-detail-actions"><button type="button" id="dmDrop">드롭</button><button type="button" id="dmWorkorder">작업지시서</button></div><button id="dmOpenWorkorder" hidden type="button">작업지시서</button><button id="dmCloseDetail" hidden type="button">닫기</button>
   </aside>
 </section>
@@ -16706,7 +16706,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=225">
+<link rel="stylesheet" href="design-meeting.css?v=226">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16732,7 +16732,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-native-bridge.js?v=217"></script>
 <script src="aisel-gallery-index.js?v=221"></script>
 <script src="aisel-gallery-images.js?v=221"></script>
-<script src="aisel-collection-writes.js?v=220"></script>
+<script src="aisel-collection-writes.js?v=226"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=220">
 <script src="aisel-designers.js?v=222"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=219">
@@ -16742,7 +16742,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=220"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
-<script src="design-meeting.js?v=225"></script>
+<script src="design-meeting.js?v=226"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
