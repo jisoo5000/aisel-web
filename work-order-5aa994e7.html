@@ -1,3 +1,4 @@
+<!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
 <!-- v229: meeting date, outfit category and assignee toolbar -->
 <!-- v228: shared assignee and note category drag ordering -->
@@ -16709,7 +16710,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=229">
+<link rel="stylesheet" href="design-meeting.css?v=231">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16747,7 +16748,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
 <script src="aisel-look-categories.js?v=229"></script>
-<script src="design-meeting.js?v=230"></script>
+<script src="design-meeting.js?v=231"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});

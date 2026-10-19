@@ -267,3 +267,20 @@
 @media screen and (max-width:363px) {
  html:root body #designMeetingView .dm-detail-meta {grid-template-columns:84px minmax(0,1fr) minmax(0,1.22fr);}
 }
+
+/* v231: compact human planning fields, within the existing meeting surface. */
+#designMeetingView .dm-manual-table th{width:104px;box-sizing:border-box;vertical-align:middle}
+#designMeetingView .dm-manual-table th small{display:block;font-size:11px;font-weight:400;line-height:16px;color:#6C727C}
+#designMeetingView .dm-manual-table td{white-space:normal;vertical-align:middle}
+#designMeetingView .dm-manual-group{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
+#designMeetingView .dm-manual-group+.dm-manual-group{margin-top:6px}
+#designMeetingView .dm-manual-group>span{flex:0 0 36px;font-size:12px}
+#designMeetingView .dm-choice{height:28px;min-height:28px;min-width:48px;padding:3px 8px;border:1px solid #DDE1E6;border-radius:4px;background:#FFF;color:#2F3B52;font:inherit;font-size:12px;line-height:20px;box-shadow:none}
+#designMeetingView .dm-choice.selected{background:#2F3B52;color:#FFF;border-color:#2F3B52}
+#designMeetingView .dm-choice:focus-visible{outline:2px solid #65768D;outline-offset:2px}
+#designMeetingView .dm-choice:disabled{opacity:.5;cursor:default}
+#designMeetingView #dmUspValue{display:block;box-sizing:border-box;width:100%;min-width:0;height:60px;min-height:60px;resize:vertical;border:0;border-radius:0;padding:0;background:#FFF;color:#34383C;font-family:inherit;font-size:12px;line-height:20px}
+#designMeetingView #dmUspValue::placeholder{color:#858C96}
+#designMeetingView #dmUspValue:focus{outline:1px solid #65768D;outline-offset:3px}
+#designMeetingView #dmReviewState,#designMeetingView .dm-review-actions,#designMeetingView #dmRefresh{display:none!important}
+@media(max-width:480px){#designMeetingView .dm-manual-table th{width:88px}#designMeetingView .dm-manual-table td{padding:8px 6px}#designMeetingView .dm-manual-group{gap:4px}#designMeetingView .dm-choice{padding:3px 6px}}
