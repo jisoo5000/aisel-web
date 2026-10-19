@@ -860,7 +860,7 @@
         dirty=Object.keys(SaveCore.patch(activeBase,active)).length>0||pendingFiles.length>0||!!linkEditor;
         if(dirty)await persistDraft();else await removeDraft(id,{revision});assertCurrent();
         gallerySignature='';renderList();if(detailVisible())renderDetail();
-        if(data.record.category==='product'&&(data.record.photos?.length||data.record.sourceLinks?.length)&&(snapshot.version===0||sourceKey(data.record)!==priorSource)&&permissions.referenceJudgmentVersion===203)void prepareProductJudgment(data.record);
+        if(window.AISEL_NATIVE_ENABLED!==true&&data.record.category==='product'&&(data.record.photos?.length||data.record.sourceLinks?.length)&&(snapshot.version===0||sourceKey(data.record)!==priorSource)&&permissions.referenceJudgmentVersion===203)void prepareProductJudgment(data.record);
         saveMessage(id,dirty?'입력 중':'저장됨');return !dirty;
       }catch(e){
         try{assertCurrent();}catch(_){return false;}
