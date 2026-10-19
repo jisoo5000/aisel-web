@@ -64,7 +64,7 @@
   const close=document.createElement('button');close.type='button';close.textContent='닫기';close.addEventListener('click',()=>dialog.close());dialog.append(close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
  }
  async function read(endpoint,group='new'){
-  if(!root.AiselAccess?.session)throw Error('로그인 후 판매성과를 확인해주세요.');
+  if(!root.AiselAccess?.allowed('sales'))throw Error('로그인 후 판매성과를 확인해주세요.');
   const snapshot=await root.AiselAccess.request('sales',{group});
   if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해주세요.');
   returnMetric(snapshot);return snapshot;
@@ -106,7 +106,7 @@
    return !document.hidden&&(!root.AiselUnified||root.AiselUnified.view==='sales')&&view&&!view.hidden&&getComputedStyle(view).display!=='none';
   }
   function load(){
-   if(!root.AiselAccess?.session){host.textContent='로그인 후 판매성과를 확인해주세요.';return Promise.resolve(false);}
+   if(!root.AiselAccess?.allowed('sales')){host.textContent='로그인 후 판매성과를 확인해주세요.';return Promise.resolve(false);}
    if(inFlight)return inFlight;
    const expected=generation,selected=group;
    lastAttempt=Date.now();refresh.disabled=true;
