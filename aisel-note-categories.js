@@ -28,7 +28,7 @@
     const stamp=()=>({epoch,uid,generation:generation(),workspace:config.workspace});
     function assertSession(expected){if(expected.epoch!==epoch||expected.uid!==user()?.uid||expected.generation!==generation()||expected.workspace!==config.workspace)throw failure('auth_changed','로그인 계정이 변경되었습니다. 입력한 분류는 해당 계정의 기기 초안에 유지했습니다.');}
     function state(){syncSession();return {ready,uid:uid||null,generation:sessionGeneration,workspace:config.workspace||'',pending:pending.size,error,lastLoaded,canManage,categories:list(false)};}
-    function list(sync=true){if(sync)syncSession();return [...new Map([...canonical,...pending]).values()].filter(entry=>!entry.deletedAt).map(entry=>({...entry})).sort((a,b)=>a.name.localeCompare(b.name,'ko'));}
+    function list(sync=true){if(sync)syncSession();const rows=[...new Map([...canonical,...pending]).values()].filter(entry=>!entry.deletedAt).map(entry=>({...entry}));return root.AiselCatalogOrder?.sort('noteCategories',rows)||rows.sort((a,b)=>a.name.localeCompare(b.name,'ko'));}
     function emit(){const snapshot={ready,uid:uid||null,generation:sessionGeneration,workspace:config.workspace||'',pending:pending.size,error,lastLoaded,canManage,categories:list(false)};for(const listener of listeners)try{listener(snapshot);}catch(_){} }
     function persistedPending(){if(!scope)return [];try{const saved=JSON.parse(storage().getItem(scope)||'null');if(saved?.schema===1&&saved.uid===uid&&saved.workspace===config.workspace)return Array.isArray(saved.pending)?saved.pending:[];}catch(_){}return [];}
     function validDraft(entry){return entry&&ID.test(entry.id)&&typeof entry.name==='string'&&entry.normalized===normalizeName(entry.name);}
@@ -58,7 +58,7 @@
       requireConfigured();if(flight)return flight;if(ready&&!force&&Date.now()-lastLoaded<30000)return state();const expected=stamp(),atRevision=mutationRevision;
       const task=(async()=>{
         try{
-          const response=await config.request('noteCategories',{});assertSession(expected);checkCapability(response);
+          const [response]=await Promise.all([config.request('noteCategories',{}),root.AiselCatalogOrder?.load('noteCategories',{force})]);assertSession(expected);checkCapability(response);
           if(!Array.isArray(response.categories))throw failure('category_response','참고 분류 목록을 확인하지 못했습니다.');
           const entries=await Promise.all(response.categories.map(checkedEntry));assertSession(expected);if(atRevision!==mutationRevision)return state();canonical=new Map(entries.map(entry=>[entry.id,entry]));canManage=response.canManage===true;
           for(const id of canonical.keys())pending.delete(id);ready=true;error=null;lastLoaded=Date.now();persist();emit();return state();
@@ -101,12 +101,13 @@
     function configure(next){config={...config,...next};syncSession();return api;}
     function subscribe(listener){syncSession();listeners.add(listener);listener(state());return ()=>listeners.delete(listener);}
     function refreshSession(){const changed=syncSession();if(!changed&&uid){for(const entry of persistedPending())try{if(validDraft(entry)&&!canonical.has(entry.id))pending.set(entry.id,{...entry,pending:true});}catch(_){}emit();}}
+    root.AiselCatalogOrder?.subscribe(emit);
     const api={configure,list,get,state,subscribe,load,add,remove,restore,ensure,flush,refreshSession,idsFromNotes,matches};return api;
   }
   const store=createStore();
   function manage(host,options={}){
     if(!root.AiselTaxonomyManager)throw failure('category_unavailable','분류 추가 화면을 준비하고 있습니다.');
-    return root.AiselTaxonomyManager.open(host,{label:'분류',title:'분류',iconActions:true,restore:name=>store.restore(name),load:()=>store.load({force:true}),subscribe:store.subscribe,session:()=>{const s=store.state();return [s.uid,s.generation,s.workspace];},list:()=>store.list().filter(entry=>!entry.pending),permissions:()=>({canAdd:!!store.state().uid,canRemove:store.state().canManage}),add:async(name,{restore=false}={})=>{if(restore)return store.restore(name);await store.load({force:true});const draft=await store.add(name),entry=await store.ensure(draft.id);if(entry.deletedAt)throw failure('category_deleted','삭제된 분류입니다. 복원을 눌러 다시 추가할 수 있습니다.');return entry;},remove:entry=>store.remove(entry.id),...options});
+    return root.AiselTaxonomyManager.open(host,{label:'분류',title:'분류',iconActions:true,restore:name=>store.restore(name),load:()=>store.load({force:true}),subscribe:store.subscribe,session:()=>{const s=store.state();return [s.uid,s.generation,s.workspace];},list:()=>store.list().filter(entry=>!entry.pending),reorder:items=>root.AiselCatalogOrder.save('noteCategories',items.map(item=>item.id)),permissions:()=>({canAdd:!!store.state().uid,canRemove:store.state().canManage}),add:async(name,{restore=false}={})=>{if(restore)return store.restore(name);await store.load({force:true});const draft=await store.add(name),entry=await store.ensure(draft.id);if(entry.deletedAt)throw failure('category_deleted','삭제된 분류입니다. 복원을 눌러 다시 추가할 수 있습니다.');return entry;},remove:entry=>store.remove(entry.id),...options});
   }
   function mountFilter(select,options={}){
     const document=select.ownerDocument;let config={...options},selected=String(options.value??select.value??''),destroyed=false,manager=null,signature='',prior=select.onchange;

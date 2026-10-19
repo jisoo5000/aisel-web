@@ -222,6 +222,32 @@
     if(![data.original,data.thumb].every(url=>typeof url==='string'&&url.startsWith('https://firebasestorage.googleapis.com/v0/b/aisel-workorder.firebasestorage.app/o/moodboardRefPhotos%2F')))throw fail('network','사진 저장 주소를 확인하지 못했습니다. 원본은 기기에 보관됩니다.');
     return {original:data.original,thumb:data.thumb};
   }
+  async function catalogOrderRequest(kind,change) {
+    if(!['designers','noteCategories'].includes(kind))throw fail('invalid');
+    const ctx=await context('references'),path='catalogOrder/'+kind;
+    if(!change)return read(path,ctx);
+    if(ctx.role!=='owner')throw fail('permission_denied','순서 변경은 대표자 계정에서 할 수 있습니다.');
+    const {ids,expectedRevision}=change;
+    if(!Array.isArray(ids)||!ids.length||ids.length>500||new Set(ids).size!==ids.length||ids.some(id=>typeof id!=='string'||!id||id.length>160)||!Number.isSafeInteger(expectedRevision)||expectedRevision<0)throw fail('invalid');
+    const token=await current().getIdToken();assert(ctx);
+    const patch={ids,revision:expectedRevision+1},controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+    try {
+      const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/'+ROOT+'/'+path+'.json?auth='+encodeURIComponent(token),{method:'PATCH',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
+      assert(ctx);
+      if(!response.ok){
+        const latest=await read(path,ctx);assert(ctx);
+        if((latest?.revision||0)!==expectedRevision)throw fail('revision_conflict','다른 기기에서 순서를 변경했습니다. 최신 순서를 확인하고 다시 이동해주세요.');
+        throw fail([401,403].includes(response.status)?'permission_denied':'network');
+      }
+      const saved=await response.json();assert(ctx);return saved;
+    } catch(error) {
+      assert(ctx);
+      if(error.code)throw error;
+      // An interrupted response may follow a committed write. Reconcile once.
+      try {const saved=await read(path,ctx);assert(ctx);if(saved?.revision===patch.revision&&JSON.stringify(saved.ids)===JSON.stringify(ids))return saved;}catch(_){}
+      throw fail('network','순서를 저장하지 못했습니다. 확인된 순서로 되돌렸습니다. 다시 시도해주세요.');
+    } finally {clearTimeout(timer);}
+  }
   async function categoryRequest(action,payload={}) {
     const ctx=await context('references');if(ctx.config.noteCategoryWriteVersion!==VERSION)throw fail('connection_pending');
     if(action==='noteCategories'){const values=await read('noteCategories',ctx);assert(ctx);return {ok:true,noteCategoriesVersion:203,canManage:ctx.role==='owner',categories:Object.values(values||{})};}
@@ -250,5 +276,5 @@
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,uploadPhotos,categoryRequest,designerRequest,referenceCategoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,uploadPhotos,catalogOrderRequest,categoryRequest,designerRequest,referenceCategoryRequest});
 })();
