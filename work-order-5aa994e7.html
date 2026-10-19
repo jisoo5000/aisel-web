@@ -1,4 +1,4 @@
-<!-- v233: unified mobile UI, secure conversion, USP/PDF separation and staged account handover -->
+<!-- v234: preserve cached workorder index through account initialization; owner list recovery -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
 <!-- v229: meeting date, outfit category and assignee toolbar -->
@@ -11381,10 +11381,7 @@
       }
     }, 250);
   }
-  // The owner keeps the live index. Protected designers receive only the
-  // server-selected assignment index, never the company index plus a filter.
-  window.AiselAccess.watchLegacy(woIndexRoot,"value",acceptAuthorizedWorkorderIndex_);
-  let accessIndexFlight_=null,accessIndexEpoch_=0,accessIndexScope_=null,assignmentRefreshedAt_=0;
+  let accessIndexFlight_=null,accessIndexEpoch_=0,accessIndexScope_=null,assignmentRefreshedAt_=0,liveIndexDelivered_=false;
   async function refreshAssignedIndex_(){
     if(!window.AiselAccess.session||(!window.AiselAccess.ownOnly&&!window.AiselAccess.isOwner)||document.hidden)return;
     if(!window.AiselAccess.ownOnly&&Date.now()-assignmentRefreshedAt_<300000)return;
@@ -11393,7 +11390,7 @@
     const flight=window.AiselAccess.request('listWorkorders').then(result=>{
       if(expected!==accessIndexEpoch_)return;
       workorderAssignments_=result.assignments||{};assignmentRefreshedAt_=Date.now();
-      if(!window.AiselAccess.ownOnly){acceptAuthorizedWorkorderIndex_({val:()=>authorizedIndexRecords_});return;}
+      if(!window.AiselAccess.ownOnly){acceptAuthorizedWorkorderIndex_({val:()=>liveIndexDelivered_?authorizedIndexRecords_:(result.items||{})});return;}
       acceptAuthorizedWorkorderIndex_({val:()=>result.items||{}});
       window.dispatchEvent(new CustomEvent('aisel-assigned-index-change',{detail:{codes:Object.keys(result.items||{})}}));
       if(currentCode&&!result.items?.[currentCode]&&!newOrderMode_&&!initialCreationWrite_&&!pendingSaveWrites_.size){
@@ -11406,7 +11403,7 @@
   window.AiselAccess.subscribe(session=>{
     const scope=session?session.uid+':'+!!session.permissions?.ownOnly+':'+!!session.legacy:'';
     if(scope===accessIndexScope_)return;accessIndexScope_=scope;
-    accessIndexEpoch_++;accessIndexFlight_=null;assignmentRefreshedAt_=0;authorizedIndexRecords_={};workorderAssignments_={};
+    accessIndexEpoch_++;accessIndexFlight_=null;assignmentRefreshedAt_=0;liveIndexDelivered_=false;authorizedIndexRecords_={};workorderAssignments_={};
     document.body.dataset.aiselAccess=!session?'pending':session.permissions?.ownOnly?'restricted':'ready';
     allWorkOrders={};lastGallerySig_=null;window.AiselWorkorderListFilters?.set?.({});renderGallery();
     if(!session){
@@ -11417,6 +11414,13 @@
       document.getElementById('editorView').style.display='none';
     }
     if(session?.permissions?.ownOnly||session?.role==='owner')refreshAssignedIndex_();
+  });
+  // Reset the account scope before attaching Firebase: a cached value may be
+  // delivered synchronously by on(). Never erase that freshly delivered index.
+  // A verified owner API result seeds a still-undelivered index only; subsequent
+  // live snapshots (including an empty one) always remain authoritative.
+  window.AiselAccess.watchLegacy(woIndexRoot,"value",snapshot=>{
+    liveIndexDelivered_=true;acceptAuthorizedWorkorderIndex_(snapshot);
   });
   setInterval(refreshAssignedIndex_,30000);
   document.addEventListener('visibilitychange',refreshAssignedIndex_);
