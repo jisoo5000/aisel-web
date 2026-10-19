@@ -16,7 +16,7 @@
  const orders=main.querySelector('[data-main="orders"]');orders.textContent='작업지시서';
  const products=document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='제품진행';
  const refs=document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
- const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
+ const sales=main.querySelector('[data-main="sales"]');sales.textContent='리오더';
  main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),orders);
  function info(s=''){notice.textContent=s;}
  // Warm each collection without changing the visible pane or waiting in navigation.
@@ -117,7 +117,7 @@
  function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=199';pane.append(frame);}
  function select(view){
   current=view;
-  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'리오더',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(view!=='products')unmount();pane.hidden=view!=='products';

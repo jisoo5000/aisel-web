@@ -4,9 +4,9 @@
  function performance(item){
   const valid=value=>Number.isFinite(value)&&value>=0&&value<=100;
   const shareKnown=valid(item.share),returnsKnown=valid(item.returns);
-  if((returnsKnown&&item.returns>=20)||(shareKnown&&item.share<10))return {key:'low',label:'저조'};
+  if((returnsKnown&&item.returns>=20)||(shareKnown&&item.share<10))return {key:'low',label:'드랍'};
   if(!shareKnown||!returnsKnown)return null;
-  return item.share>=20?{key:'good',label:'좋음'}:{key:'normal',label:'보통'};
+  return item.share>=20?{key:'good',label:'리오더'}:{key:'normal',label:'보통'};
  }
  function returnMetric(snapshot){
   const key=snapshot.returnMetric?.key;
@@ -84,7 +84,6 @@
   const scope=document.getElementById('salesScopeNote');if(scope)info.append(scope);
   info.append(period,updated);
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';refresh.id='sheetSalesRefresh';meta.append(refresh);
-  const readState=document.createElement('span');readState.className='sheet-sales-read-state';readState.id='sheetSalesReadState';readState.hidden=true;readState.setAttribute('role','status');meta.append(readState);
   search.addEventListener('input',show);
   function compact(value){
    if(!value||value.ok!==true||value.source!=='operations-sheet'||!Array.isArray(value.items)||value.items.length>2000||!Number.isFinite(Date.parse(value.readAt)))return null;
@@ -112,13 +111,12 @@
    }catch(error){/* Sales remain usable when browser storage is unavailable. */}
   }
   function showCheckedTime(failed=false){
-   readState.hidden=!failed||!snapshot;readState.textContent=failed&&snapshot?'연결 실패 · 이전 자료 표시 중':'';
-   if(!snapshot){updated.textContent='연결 확인 필요';return;}
+   if(!snapshot){updated.textContent='시트 연결 확인 필요';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
    const valid=Number.isFinite(checked.getTime());
    const oldDate=valid&&checked.toLocaleDateString('ko-KR',zone)!==now.toLocaleDateString('ko-KR',zone);
    const stamp=valid?checked.toLocaleString('ko-KR',{...zone,...(oldDate?{month:'2-digit',day:'2-digit'}:{}),hour:'2-digit',minute:'2-digit'}):'시간 확인 필요';
-   updated.textContent='확인 '+stamp;
+   updated.textContent='시트 확인 '+stamp+(failed?' · 연결 실패, 이전 자료':'');
   }
   function contentKey(value){
    return JSON.stringify([value.periodLabel,returnMetric(value).key,value.items.map(x=>[x.rank,x.name,x.designer,x.factory,x.share,x.returns])]);
