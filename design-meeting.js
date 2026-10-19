@@ -247,8 +247,8 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const detailPreviewImage=document.createElement('img');detailPreviewImage.className='dm-loading-photo';detailPreviewImage.alt='선택한 디자인회의 사진 미리보기';detailPreviewImage.decoding='async';detailPreviewImage.fetchPriority='high';detailPreviewImage.hidden=true;detailLoading.prepend(detailPreviewImage);let detailPreview=null;
  function clearDetailPreview(){detailPreview=null;detailPreviewImage.onload=null;detailPreviewImage.onerror=null;detailPreviewImage.hidden=true;detailPreviewImage.removeAttribute('src');}
  function showDetailPreview(id,isCurrent){clearDetailPreview();const preview=galleryIndex?.preview?.('meetings',id);if(!preview||!C.httpUrl(preview.thumbnail)||!isCurrent()||preview.isCurrent?.()===false)return;const intent={id,isCurrent:()=>isCurrent()&&preview.isCurrent?.()!==false};detailPreview=intent;detailPreviewImage.onload=()=>{if(detailPreview!==intent)return;if(intent.isCurrent())detailPreviewImage.hidden=false;else clearDetailPreview();};detailPreviewImage.onerror=()=>{if(detailPreview===intent)clearDetailPreview();};detailPreviewImage.src=preview.source||preview.thumbnail;}
- const designerSelect=$dm('#dmDesigner');designerSelect.setAttribute('aria-label','디자이너 선택');
- $dm('.dm-assignee label').htmlFor='dmDesigner';$dm('.dm-assignee label').textContent='디자이너';
+ const designerSelect=$dm('#dmDesigner');designerSelect.setAttribute('aria-label','담당자 선택');
+ $dm('.dm-assignee label').htmlFor='dmDesigner';$dm('.dm-assignee label').textContent='담당자';
  const designerManager=document.createElement('div');designerManager.id='dmDesignerManager';detailControls.after(designerManager);
  let detailDesignerPicker=null,listDesignerPicker=null,listCategoryPicker=null,listDatePicker=null;
  function closeDesignerPickers(){detailDesignerPicker?.close?.();listDesignerPicker?.close?.();listCategoryPicker?.close?.();listDatePicker?.close();}
@@ -264,7 +264,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const searchRow=document.createElement('div');searchRow.className='dm-search-row';
  const searchField=$dm('.dm-search');searchField.before(searchRow);searchRow.append(searchField);
  const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.className='dm-add-card';addMeeting.textContent='＋ 추가';addMeeting.setAttribute('aria-label','디자인회의 추가');addMeeting.onclick=openNewDraft;$dm('#dmGrid').prepend(addMeeting);
- const filterRow=document.createElement('div');filterRow.className='dm-organize-filters';filterRow.innerHTML='<div class="dm-filter-date"></div><select id="dmNoteCategoryFilter" aria-label="카테고리 필터"><option value="">카테고리 전체</option></select><select id="dmDesignerFilter" aria-label="디자이너 필터"><option value="">디자이너 전체</option><option value="__missing__">미지정</option></select><span id="dmCoverageState" role="status" aria-live="polite"></span>';searchRow.after(filterRow);
+ const filterRow=document.createElement('div');filterRow.className='dm-organize-filters';filterRow.innerHTML='<div class="dm-filter-date"></div><select id="dmNoteCategoryFilter" aria-label="카테고리 필터"><option value="">카테고리 전체</option></select><select id="dmDesignerFilter" aria-label="담당자 필터"><option value="">담당자 전체</option><option value="__missing__">미지정</option></select><span id="dmCoverageState" role="status" aria-live="polite"></span>';searchRow.after(filterRow);
  const filterManager=document.createElement('div');filterManager.id='dmFilterManager';filterRow.after(filterManager);
  function selectOrganizationFilter(key,value){if(key==='date')dateFilter=N.validDate(value)?value:'';else if(key==='designer')designerFilter=value;else noteCategoryFilter=value;limit=40;lastSig='';updateListRoute();render();ensureCoverage();refresh();}
  listDatePicker=window.AiselDateFilter.mount($dm('.dm-filter-date'),{inputId:'dmDateFilter',labelId:'dmDateFilterLabel',label:'회의 날짜 필터',format:compactDate,onChange:value=>selectOrganizationFilter('date',value)});
@@ -275,7 +275,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  if(window.AiselNoteCategories?.mountFilter)listCategoryPicker=window.AiselNoteCategories.mountFilter($dm('#dmNoteCategoryFilter'),{value:noteCategoryFilter,placeholder:'카테고리 전체',managerHost:filterManager,onChange:value=>selectOrganizationFilter('category',value),onError:error=>{$dm('#dmCoverageState').textContent=error.message;}});
  else $dm('#dmNoteCategoryFilter').onchange=event=>selectOrganizationFilter('category',event.target.value);
  if(window.AiselDesigners?.mountPicker){
-   listDesignerPicker=window.AiselDesigners.mountPicker($dm('#dmDesignerFilter'),{value:designerFilter,placeholder:'디자이너 전체',emptyOptions:[['__missing__','미지정']],managerHost:filterManager,onChange:value=>selectOrganizationFilter('designer',value),onError:error=>{$dm('#dmCoverageState').textContent=error.message;}});
+   listDesignerPicker=window.AiselDesigners.mountPicker($dm('#dmDesignerFilter'),{value:designerFilter,placeholder:'담당자 전체',emptyOptions:[['__missing__','미지정']],managerHost:filterManager,onChange:value=>selectOrganizationFilter('designer',value),onError:error=>{$dm('#dmCoverageState').textContent=error.message;}});
    detailDesignerPicker=window.AiselDesigners.mountPicker(designerSelect,{value:'',placeholder:'미지정',managerHost:designerManager,onChange:selectDetailDesigner,onError:error=>detailMessage(active,error.message)});
  }else $dm('#dmDesignerFilter').onchange=event=>selectOrganizationFilter('designer',event.target.value);
  function noteCategoryIds(c){return c?._summary?c.noteCategoryCoverage===false?null:Array.isArray(c.noteCategoryIds)?c.noteCategoryIds:null:[...new Set(Object.values(c?.referenceNotes||{}).map(n=>n.categoryId).filter(Boolean))];}
@@ -285,7 +285,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    if(document.activeElement!==dateFilterInput)listDatePicker.setValue(dateFilter,dateFilter==='__missing__'?'날짜 미정':'');
    const designers=[...new Set([...(window.AiselDesigners?.list?.()||window.AiselDesignMeetingAdapter.designers?.()||[]),...all.map(c=>c.designer||'')].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
    if(listDesignerPicker)listDesignerPicker.refresh({value:designerFilter,includeNames:designers});
-   else{const select=$dm('#dmDesignerFilter'),signature=JSON.stringify(designers);if(select.dataset.signature!==signature&&document.activeElement!==select){select.dataset.signature=signature;select.replaceChildren(new Option('디자이너 전체',''),new Option('미지정','__missing__'),...designers.map(value=>new Option(value,value)));}if(designerFilter&&!designers.includes(designerFilter)&&designerFilter!=='__missing__'&&![...select.options].some(option=>option.value===designerFilter))select.add(new Option(designerFilter,designerFilter));select.value=designerFilter;}
+   else{const select=$dm('#dmDesignerFilter'),signature=JSON.stringify(designers);if(select.dataset.signature!==signature&&document.activeElement!==select){select.dataset.signature=signature;select.replaceChildren(new Option('담당자 전체',''),new Option('미지정','__missing__'),...designers.map(value=>new Option(value,value)));}if(designerFilter&&!designers.includes(designerFilter)&&designerFilter!=='__missing__'&&![...select.options].some(option=>option.value===designerFilter))select.add(new Option(designerFilter,designerFilter));select.value=designerFilter;}
  }
  const newLinkError=document.createElement('small');newLinkError.id='dmNewLinkError';newLinkError.className='dm-link-error';newLinkError.setAttribute('role','status');$dm('#dmNewLink').after(newLinkError);$dm('#dmNewLink').addEventListener('input',()=>{newLinkError.textContent='';});
  const galleryButton=document.createElement('button');galleryButton.type='button';galleryButton.id='dmGallery';galleryButton.textContent='사진 선택';galleryButton.onclick=()=>{$dm('#dmTools').close();$dm('#dmFileInput').dataset.target='';$dm('#dmFileInput').click();};$dm('#dmToolsClose').after(galleryButton);
@@ -652,7 +652,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  }
  window.addEventListener('resize',fitDetail);window.visualViewport?.addEventListener('resize',fitDetail);
  function renderColors(box,c,result){const source=c.selectedColors||C.evidence(result).colors||[];const raw=Array.isArray(source)?source:[];const names=window.colorNames_?window.colorNames_(raw):raw.filter(x=>typeof x==='string');for(const name of names){const chip=document.createElement('span');chip.className='gcard-color-chip';chip.textContent=name;const info=window.colorHex_?.(name);if(info&&/^#[0-9a-f]{3,8}$/i.test(info.hex)){chip.style.backgroundColor=info.hex;if(/^#[0-9a-f]{3,8}$/i.test(info.text))chip.style.color=info.text;}box.append(chip);}}
- function renderDesigner(c){if(!c)return;const selected=active===c.id&&dirtyFields.has('designer')?designerDraftField.value:(c.designer||''),names=[...new Set([...(window.AiselDesigners?.list?.()||window.AiselDesignMeetingAdapter.designers?.()||[]),selected].filter(Boolean))];designerSelect.title=selected||'미지정';designerSelect.setAttribute('aria-label','디자이너 선택 · '+(selected||'미지정'));
+ function renderDesigner(c){if(!c)return;const selected=active===c.id&&dirtyFields.has('designer')?designerDraftField.value:(c.designer||''),names=[...new Set([...(window.AiselDesigners?.list?.()||window.AiselDesignMeetingAdapter.designers?.()||[]),selected].filter(Boolean))];designerSelect.title=selected||'미지정';designerSelect.setAttribute('aria-label','담당자 선택 · '+(selected||'미지정'));
    if(detailDesignerPicker){detailDesignerPicker.refresh({value:selected,includeNames:names});return;}
    const signature=JSON.stringify([names,selected]);if(designerSelect.dataset.signature===signature||document.activeElement===designerSelect)return;designerSelect.dataset.signature=signature;designerSelect.replaceChildren(new Option('미지정',''));for(const name of names)designerSelect.add(new Option(name,name));designerSelect.value=selected;
  }
@@ -1019,7 +1019,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  }
  async function ensureCoverage(){
    if(summaryActive||galleryDenied||galleryHold||coverageFlight||pane.hidden||document.hidden||!hasOlder)return coverageFlight;
-   const epoch=coverageEpoch,state=$dm('#dmCoverageState');state.textContent=noteCategoryFilter?'참고 분류 확인 중…':'날짜·디자이너 확인 중…';
+   const epoch=coverageEpoch,state=$dm('#dmCoverageState');state.textContent=noteCategoryFilter?'참고 분류 확인 중…':'날짜·담당자 확인 중…';
    coverageFlight=(async()=>{try{while(hasOlder&&epoch===coverageEpoch&&!pane.hidden&&!document.hidden){if(!await loadOlderPage())break;}if(epoch===coverageEpoch)state.textContent='';}
      catch(e){if(epoch===coverageEpoch&&e.code!=='auth_changed')state.textContent='이전 자료 확인 실패 · 더 보기로 다시 시도해주세요.';}
    })().finally(()=>{coverageFlight=null;if(epoch!==coverageEpoch&&hasOlder&&!pane.hidden&&!document.hidden)queueMicrotask(ensureCoverage);});return coverageFlight;

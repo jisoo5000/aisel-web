@@ -1,3 +1,4 @@
+<!-- v222: neutral assignee picker with shared add/delete controls and typography (2026-10-19) -->
 <!-- v221: bounded thumbnails delivered with gallery indexes and reused for detail previews -->
 <!-- v220: shared category add/delete/restore controls with persistent custom reference categories -->
 <!-- v218: atomic gallery snapshots, warmed photo cache and continuous upload previews -->
@@ -16731,7 +16732,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-gallery-images.js?v=221"></script>
 <script src="aisel-collection-writes.js?v=220"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=220">
-<script src="aisel-designers.js?v=220"></script>
+<script src="aisel-designers.js?v=222"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=219">
 <script src="aisel-date-filter.js?v=219"></script>
 <script src="design-meeting-core.js?v=190"></script>
@@ -16739,7 +16740,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=220"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
-<script src="design-meeting.js?v=221"></script>
+<script src="design-meeting.js?v=222"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -16756,7 +16757,7 @@ window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:(
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=220">
+<link rel="stylesheet" href="reference-collection.css?v=222">
 <link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
@@ -16771,7 +16772,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=221"></script>
+<script src="reference-collection.js?v=222"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=213"></script>
