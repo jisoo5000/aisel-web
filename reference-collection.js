@@ -582,7 +582,7 @@
   function showSummaryPhotoPreview(id,selection,started){
     const receipt=window.AiselGalleryIndex?.preview?.('references',id);
     if(!receipt||receipt.id!==id||typeof receipt.isCurrent!=='function'||!receipt.isCurrent()||detailLoading!==selection||!visible||pane.hidden)return;
-    const url=http(receipt.thumbnail);if(!url)return;
+    const url=receipt.source||http(receipt.thumbnail);if(!url)return;
     const box=$('#rcReadPreview'),frame=document.createElement('div'),img=document.createElement('img');
     clearReadPreview();summaryPhotoPreview=receipt;frame.className='rc-photos';img.alt='참고 사진 미리보기';img.decoding='async';img.fetchPriority='high';
     img.onload=()=>{if(summaryPhotoPreview===receipt&&(!receipt.isCurrent()||detailLoading!==selection||!visible||pane.hidden))clearReadPreview();};
@@ -593,7 +593,7 @@
     if(detailLoading!==selection||!visible||pane.hidden||!record)return;
     summaryPhotoPreview=null;const box=$('#rcReadPreview');box.replaceChildren();const title=document.createElement('h3');title.textContent=AI.title(record);box.append(title);
     const photo=record.photos?.[0],url=http(photo?.thumb||photo?.original);
-    if(url){const frame=document.createElement('div');frame.className='rc-photos';const img=document.createElement('img');img.src=url;img.alt='참고 사진';img.decoding='async';img.fetchPriority='high';if(photo.original&&photo.original!==url)img.onerror=()=>{img.onerror=null;img.src=http(photo.original);};frame.append(img);box.append(frame);}
+    if(url){const frame=document.createElement('div');frame.className='rc-photos';const img=document.createElement('img');bindUploadedPreview(img,url,record.id);img.alt='참고 사진';img.decoding='async';img.fetchPriority='high';if(photo.original&&photo.original!==url)img.onerror=()=>{img.onerror=null;img.src=http(photo.original);};frame.append(img);box.append(frame);}
     for(const note of record.noteEntries||[]){if(!note.text)continue;const paragraph=document.createElement('p');paragraph.textContent=note.text;box.append(paragraph);}
     box.hidden=false;$('#rcDetailProgress').textContent=active&&active.id!==record.id&&(dirty||saveFlight||pendingFiles.length)?'이전 자료 저장 중 · 먼저 확인할 수 있습니다.':'입력 준비 중…';
     timings.detailPreviewMs=Math.round(performance.now()-started);
@@ -729,9 +729,9 @@
     while(uploadedPreviews.size>1&&(uploadedPreviews.size>8||[...uploadedPreviews.values()].reduce((sum,entry)=>sum+entry.bytes,0)>32*1024*1024)){const key=uploadedPreviews.keys().next().value;uploadedPreviews.delete(key);}
   }
   function bindUploadedPreview(img,src,id){
-    const entry=uploadedPreviews.get(src),binding={src,id};img._aiselPhotoBinding=binding;
+    const entry=uploadedPreviews.get(src),binding={src,id,source:window.AiselGalleryIndex?.imageSource?.('references',id,src)||src};img._aiselPhotoBinding=binding;
     let current=false;try{if(entry){assertAuth(entry.stamp);current=entry.id===id;}}catch(_){}
-    if(!current||entry.ready){img.src=src;return;}
+    if(!current||entry.ready){const fallback=img.onerror;img.onerror=()=>{if(img.src!==src){img.src=src;img.onerror=fallback;}else fallback?.();};img.src=binding.source;return;}
     img.src=entry.url;
     // A failed remote read leaves the local image visible. A later render may retry.
     if(!entry.flight)entry.flight=(window.AiselGalleryImages?.preload?.(src,'references')||Promise.resolve(false)).then(ok=>{if(ok)entry.ready=true;return ok;}).catch(()=>false).finally(()=>entry.flight=null);

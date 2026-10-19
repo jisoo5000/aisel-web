@@ -1,3 +1,4 @@
+<!-- v221: bounded thumbnails delivered with gallery indexes and reused for detail previews -->
 <!-- v220: shared category add/delete/restore controls with persistent custom reference categories -->
 <!-- v218: atomic gallery snapshots, warmed photo cache and continuous upload previews -->
 <!-- v217: Firebase membership and event projections; native review queue and async Sheet workers -->
@@ -16726,8 +16727,8 @@ window.AiselDesignMeetingAdapter={
 <script>window.AISEL_GALLERY_INDEX_ENABLED = true; window.AISEL_COLLECTION_WRITES_ENABLED = true;</script>
 <script>window.AISEL_NATIVE_ENABLED=true; window.AISEL_GALLERY_SNAPSHOTS_ENABLED=true;</script>
 <script src="aisel-native-bridge.js?v=217"></script>
-<script src="aisel-gallery-index.js?v=220"></script>
-<script src="aisel-gallery-images.js?v=218"></script>
+<script src="aisel-gallery-index.js?v=221"></script>
+<script src="aisel-gallery-images.js?v=221"></script>
 <script src="aisel-collection-writes.js?v=220"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=220">
 <script src="aisel-designers.js?v=220"></script>
@@ -16738,7 +16739,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=220"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
-<script src="design-meeting.js?v=219"></script>
+<script src="design-meeting.js?v=221"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -16770,7 +16771,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=220"></script>
+<script src="reference-collection.js?v=221"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=213"></script>

@@ -37,7 +37,7 @@
     // Only warm the first screen. Scroll-driven images retain normal lazy loading.
     for(const kind of states.keys()){const state=gallery.snapshot(kind);if(state.uid===owner&&state.available&&state.authorized===true){
       const rows=[...state.records].filter(r=>!r.archivedAt).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));
-      for(const row of rows.slice(0,PER_KIND))if(gallery.preview(kind,row.id)?.isCurrent())preload(row.thumbnail,kind);
+      for(const row of rows.slice(0,PER_KIND)){const receipt=gallery.preview(kind,row.id);if(receipt?.isCurrent()&&!receipt.source?.startsWith('data:image/jpeg;base64,'))preload(row.thumbnail,kind);}
     }}drain();
   }
   for(const kind of ['references','meetings'])gallery.subscribe(kind,state=>{

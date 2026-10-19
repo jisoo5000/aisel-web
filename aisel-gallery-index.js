@@ -28,6 +28,7 @@
   const online = () => window.navigator?.onLine !== false;
   const text = (value, max = 500) => typeof value === 'string' ? value.slice(0, max) : '';
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+  const inlineThumbnail = value => typeof value==='string'&&value.length<=136559&&/^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]*={0,2}$/.test(value)?value:'';
   function bucket(kind, archived = false) {
     validKind(kind); const key = bucketKey(kind, archived);
     if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), sourceRows: null, meta: null, observedMeta: null, available: false,
@@ -57,8 +58,9 @@
     // A proven list image can paint while the canonical detail request runs.
     // This receipt grants no body/edit access and cannot outlive its list/ACL.
     if (!current()) return null;
-    return Object.freeze({ id, thumbnail: row.thumbnail, isCurrent: () => !!current() });
+    return Object.freeze({ id, thumbnail: row.thumbnail, source: inlineThumbnail(row.thumbnailData)||row.thumbnail, isCurrent: () => !!current() });
   }
+  function imageSource(kind,id,url){const receipt=preview(kind,id);return receipt?.isCurrent()&&receipt.thumbnail===url?receipt.source:url;}
   function canPreview(kind) { return enabled && KINDS.includes(kind) && hasAuthority(kind) && !accessNeedsRefresh; }
   function emit(kind, archived = false) {
     const state = snapshot(kind, { archived });
@@ -206,6 +208,7 @@
       designer: text(row.designer, 100), category: text(row.category, 100), contentType: text(row.contentType, 50),
       status: text(row.status, 60), reviewStatus: text(row.reviewStatus, 60), decision: text(row.decision, 60), convertedCode: text(row.convertedCode, 100),
       thumbnail: /^https:\/\//i.test(row.thumbnail || '') ? text(row.thumbnail, 4096) : '',
+      thumbnailData: inlineThumbnail(row.thumbnailData),
       version: number(row.version), createdAt: number(row.createdAt), updatedAt: number(row.updatedAt),
       archivedAt: number(row.archivedAt), publicationVersion: number(row.publicationVersion) };
     // RTDB omits empty arrays. An explicit coverage receipt distinguishes a
@@ -340,6 +343,8 @@
     if (!overlays.has(kind)) overlays.set(kind, new Map());
     const pending = overlays.get(kind), existing = pending.get(clean.id);
     if (existing && !isAtLeast(clean, existing.row)) return false;
+    const previous = bucket(kind, false).rows.get(clean.id);
+    if (!clean.thumbnailData && previous?.thumbnail === clean.thumbnail) clean.thumbnailData = previous.thumbnailData || '';
     const archived = options.archived === true || clean.archivedAt > 0;
     if (window.AiselCollectionWrites?.enabled === true) clean.publicationVersion = 0;
     markConfirmed(kind, clean, archived, options.deleted === true);
@@ -701,5 +706,5 @@
     })().finally(() => { if (detailFlights.get(key) === task) detailFlights.delete(key); });
     detailFlights.set(key, task); return task;
   }
-  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail, preview, canPreview });
+  window.AiselGalleryIndex = Object.freeze({ enabled, start, warm, snapshot, subscribe, remember, authorize, detail, preview, canPreview, imageSource });
 })();
