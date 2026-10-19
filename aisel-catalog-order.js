@@ -8,7 +8,7 @@
     const request=(...args)=>options.request?options.request(...args):root.AiselCollectionWrites.catalogOrderRequest(...args);
     function sync(){const next=sessionKey();if(next!==session){session=next;epoch++;states.clear();emit();}}
     function emit(){for(const fn of listeners)try{fn();}catch(_){} }
-    function state(kind){sync();if(!['designers','noteCategories'].includes(kind))throw fail('invalid','순서 목록을 확인해주세요.');if(!states.has(kind))states.set(kind,{revision:0,ids:[],ready:false,flight:null,saving:false,loaded:0});return states.get(kind);}
+    function state(kind){sync();if(!['designers','noteCategories','lookCategories'].includes(kind))throw fail('invalid','순서 목록을 확인해주세요.');if(!states.has(kind))states.set(kind,{revision:0,ids:[],ready:false,flight:null,saving:false,loaded:0});return states.get(kind);}
     function checked(raw){if(raw==null)return {revision:0,ids:[]};if(!Number.isSafeInteger(raw.revision)||raw.revision<1||!Array.isArray(raw.ids)||raw.ids.length>500||raw.ids.some(id=>typeof id!=='string'||!id||id.length>160)||new Set(raw.ids).size!==raw.ids.length)throw fail('order_response','저장된 순서를 확인하지 못했습니다.');return {revision:raw.revision,ids:[...raw.ids]};}
     function guard(e){sync();if(e!==epoch)throw fail('auth_changed','로그인 계정이 변경되었습니다.');}
     async function load(kind,{force=false}={}){const s=state(kind);if(s.flight)return s.flight;if(s.ready&&!force&&Date.now()-s.loaded<30000)return s;const e=epoch,revision=s.revision;const task=(async()=>{const raw=await request(kind);guard(e);if(revision===s.revision&&!s.saving){Object.assign(s,checked(raw),{ready:true,loaded:Date.now()});emit();}return s;})();s.flight=task;try{return await task;}finally{if(s.flight===task)s.flight=null;}}

@@ -34,7 +34,8 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const textDraftSession=crypto.randomUUID(),textDraftSources=new Map(),detailStates=new Map(),linkEditors=new Map(),textDraftFailures=new Set(),detailConflicts=new Set();
  let detailBases=new Map();
  let textDraftOwner=null;const newDrafts=new Map(),creationFlights=new Map();let newDraftOwner=null;
- const detailKeys=['title','link','memo','development','meetingDate','designer','decision','decisionReason','meetingMemo'];
+ const detailKeys=['title','link','memo','development','meetingDate','designer','lookCategoryId','decision','decisionReason','meetingMemo'];
+ const lookDraftField=document.createElement('input');lookDraftField.dataset.dmField='lookCategoryId';$dm('#dmLegacyFields').append(lookDraftField);
  const designerDraftField=document.createElement('input');designerDraftField.dataset.dmField='designer';$dm('#dmLegacyFields').append(designerDraftField);
  // Each candidate owns its draft and queue even after a menu or record change.
  function detailState(id){let state=detailStates.get(id);if(!state){state={dirty:new Set(),bases:new Map(),values:{}};detailStates.set(id,state);}return state;}
@@ -246,16 +247,21 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  // Reuse the existing fields so only the header layout changes.
  const detailControls=$dm('.dm-detail-controls');
  detailControls.classList.add('dm-detail-meta');
- detailControls.replaceChildren($dm('#dmDates'),$dm('.dm-assignee'),$dm('#dmLinks'));
+ const lookSelect=document.createElement('select');lookSelect.id='dmLookCategory';lookSelect.setAttribute('aria-label','룩 분류');
+ detailControls.replaceChildren($dm('#dmDates'),lookSelect,$dm('.dm-assignee'),$dm('#dmLinks'));
+ const lookManager=document.createElement('div');lookManager.id='dmLookManager';detailControls.after(lookManager);
+ const lookPicker=window.AiselLookCategories.mountPicker(lookSelect,{managerHost:lookManager,onChange:async value=>{const id=active;if(!id)return;lookDraftField.value=value;markDetailDraft('lookCategoryId');detailMessage(id,'저장 중…');await saveDetail({id});},onError:error=>detailMessage(active,error.message,true)});
+ function renderLook(c){if(!c)return;lookPicker.setValue(active===c.id&&dirtyFields.has('lookCategoryId')?lookDraftField.value:(c.lookCategoryId||''));window.AiselLookCategories.load().catch(error=>{if(active===c.id)detailMessage(c.id,error.message,true);});}
  const detailLoading=document.createElement('section');detailLoading.id='dmDetailLoading';detailLoading.hidden=true;detailLoading.setAttribute('role','status');detailLoading.setAttribute('aria-live','polite');detailLoading.innerHTML='<p>디자인회의를 불러오는 중…</p><button type="button">목록</button>';detailLoading.querySelector('button').onclick=()=>{restoreList();putRoute('list',null,{replace:true});};$dm('#dmDetail').before(detailLoading);
  const detailPreviewImage=document.createElement('img');detailPreviewImage.className='dm-loading-photo';detailPreviewImage.alt='선택한 디자인회의 사진 미리보기';detailPreviewImage.decoding='async';detailPreviewImage.fetchPriority='high';detailPreviewImage.hidden=true;detailLoading.prepend(detailPreviewImage);let detailPreview=null;
  function clearDetailPreview(){detailPreview=null;detailPreviewImage.onload=null;detailPreviewImage.onerror=null;detailPreviewImage.hidden=true;detailPreviewImage.removeAttribute('src');}
  function showDetailPreview(id,isCurrent){clearDetailPreview();const preview=galleryIndex?.preview?.('meetings',id);if(!preview||!C.httpUrl(preview.thumbnail)||!isCurrent()||preview.isCurrent?.()===false)return;const intent={id,isCurrent:()=>isCurrent()&&preview.isCurrent?.()!==false};detailPreview=intent;detailPreviewImage.onload=()=>{if(detailPreview!==intent)return;if(intent.isCurrent())detailPreviewImage.hidden=false;else clearDetailPreview();};detailPreviewImage.onerror=()=>{if(detailPreview===intent)clearDetailPreview();};detailPreviewImage.src=preview.source||preview.thumbnail;}
  const designerSelect=$dm('#dmDesigner');designerSelect.setAttribute('aria-label','담당자 선택');
  $dm('.dm-assignee label').htmlFor='dmDesigner';$dm('.dm-assignee label').textContent='담당자';
+ const headerSave=document.createElement('button');headerSave.id='dmHeaderSave';headerSave.type='button';headerSave.textContent='저장';headerSave.onclick=()=> $dm('#dmSaveDetail').click();$dm('.dm-heading').append(headerSave);
  const designerManager=document.createElement('div');designerManager.id='dmDesignerManager';detailControls.after(designerManager);
  let detailDesignerPicker=null,listDesignerPicker=null,listCategoryPicker=null,listDatePicker=null;
- function closeDesignerPickers(){detailDesignerPicker?.close?.();listDesignerPicker?.close?.();listCategoryPicker?.close?.();listDatePicker?.close();}
+ function closeDesignerPickers(){lookPicker.close();detailDesignerPicker?.close?.();listDesignerPicker?.close?.();listCategoryPicker?.close?.();listDatePicker?.close();}
  async function selectDetailDesigner(value){const id=active;if(!id)return;const stamp=authStamp();designerDraftField.value=value;markDetailDraft('designer');renderDesigner(current(id));detailMessage(id,'저장 중…');const saved=await saveDetail({id});if(!saved&&sameAuth(stamp)&&active===id&&detailState(id).dirty.size){if($dm('#dmDetailSaveState').textContent==='저장 중…')detailMessage(id,'아직 저장되지 않았습니다. 입력을 마친 뒤 다시 저장해주세요.',true);$dm('#dmSaveDetail').hidden=false;}}
  const meetingDateBox=$dm('#dmDates');meetingDateBox.innerHTML='<span id="dmMeetingDateLabel">미정</span><input id="dmMeetingDate" type="date" aria-label="회의 날짜 (등록일과 별도)">';
  const meetingDateInput=$dm('#dmMeetingDate');meetingDateInput.onclick=()=>openCalendar(meetingDateInput);
@@ -310,7 +316,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  function assertAuth(stamp){const current=authStamp();if(stamp.uid!==current.uid||stamp.generation!==current.generation||stamp.epoch!==current.epoch)throw Object.assign(Error('로그인 상태가 변경되었습니다. 다시 확인해주세요.'),{code:'auth_changed'});}
  function applyEditingState(){
    manageLinksButton.disabled=!active||!['owner','designer'].includes(role);
-   const editable=(role==='owner'||role==='designer')&&!openingId&&!isDeleted(current(active))&&!deleteFlight;
+   const editable=(role==='owner'||role==='designer')&&!openingId&&!isDeleted(current(active))&&!deleteFlight;lookPicker.setDisabled(!editable);headerSave.disabled=!editable;
    pane.querySelectorAll('#dmAddMeeting,#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmDesignerTrigger,#dmNewLink,#dmMeetingDate,#dmLinks input,#dmLinks button:not([data-dm-readonly]),.dm-photo,#dmPending button,.dm-reference-control,#dmReferenceRetry').forEach(el=>el.disabled=!editable);
    if($dm('#dmDetailTitle').contentEditable!==String(editable))$dm('#dmDetailTitle').contentEditable=String(editable);
    for(const el of $dm('#dmDetail').querySelectorAll('[data-dm-field]'))el.disabled=!editable||(['decision','decisionReason'].includes(el.dataset.dmField)&&role!=='owner');
@@ -660,7 +666,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  }
  window.addEventListener('resize',fitDetail);window.visualViewport?.addEventListener('resize',fitDetail);
  function renderColors(box,c,result){const source=c.selectedColors||C.evidence(result).colors||[];const raw=Array.isArray(source)?source:[];const names=window.colorNames_?window.colorNames_(raw):raw.filter(x=>typeof x==='string');for(const name of names){const chip=document.createElement('span');chip.className='gcard-color-chip';chip.textContent=name;const info=window.colorHex_?.(name);if(info&&/^#[0-9a-f]{3,8}$/i.test(info.hex)){chip.style.backgroundColor=info.hex;if(/^#[0-9a-f]{3,8}$/i.test(info.text))chip.style.color=info.text;}box.append(chip);}}
- function renderDesigner(c){if(!c)return;const selected=active===c.id&&dirtyFields.has('designer')?designerDraftField.value:(c.designer||''),names=[...new Set([...(window.AiselDesigners?.list?.()||window.AiselDesignMeetingAdapter.designers?.()||[]),selected].filter(Boolean))];designerSelect.title=selected||'미지정';designerSelect.setAttribute('aria-label','담당자 선택 · '+(selected||'미지정'));
+ function renderDesigner(c){if(!c)return;renderLook(c);const selected=active===c.id&&dirtyFields.has('designer')?designerDraftField.value:(c.designer||''),names=[...new Set([...(window.AiselDesigners?.list?.()||window.AiselDesignMeetingAdapter.designers?.()||[]),selected].filter(Boolean))];designerSelect.title=selected||'미지정';designerSelect.setAttribute('aria-label','담당자 선택 · '+(selected||'미지정'));
    if(detailDesignerPicker){detailDesignerPicker.refresh({value:selected,includeNames:names});return;}
    const signature=JSON.stringify([names,selected]);if(designerSelect.dataset.signature===signature||document.activeElement===designerSelect)return;designerSelect.dataset.signature=signature;designerSelect.replaceChildren(new Option('미지정',''));for(const name of names)designerSelect.add(new Option(name,name));designerSelect.value=selected;
  }

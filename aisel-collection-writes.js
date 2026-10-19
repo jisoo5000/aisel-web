@@ -223,7 +223,7 @@
     return {original:data.original,thumb:data.thumb};
   }
   async function catalogOrderRequest(kind,change) {
-    if(!['designers','noteCategories'].includes(kind))throw fail('invalid');
+    if(!['designers','noteCategories','lookCategories'].includes(kind))throw fail('invalid');
     const ctx=await context('references'),path='catalogOrder/'+kind;
     if(!change)return read(path,ctx);
     if(ctx.role!=='owner')throw fail('permission_denied','순서 변경은 대표자 계정에서 할 수 있습니다.');
@@ -247,6 +247,23 @@
       try {const saved=await read(path,ctx);assert(ctx);if(saved?.revision===patch.revision&&JSON.stringify(saved.ids)===JSON.stringify(ids))return saved;}catch(_){}
       throw fail('network','순서를 저장하지 못했습니다. 확인된 순서로 되돌렸습니다. 다시 시도해주세요.');
     } finally {clearTimeout(timer);}
+  }
+  // Dedicated outfit catalog: tiny metadata only, isolated from reference types/notes.
+  async function lookCategoryRequest(change) {
+    const ctx=await context('meetings'),path='lookCategories';
+    if(!change)return {entries:await read(path,ctx)||{},canManage:ctx.role==='owner'};
+    if(ctx.role!=='owner')throw fail('permission_denied','룩 분류 편집은 대표자 계정에서 할 수 있습니다.');
+    const {entry,expectedRevision}=change;
+    if(!entry||!/^look_[0-9a-f]{64}$/.test(entry.id)||!Number.isSafeInteger(expectedRevision)||expectedRevision<0||entry.revision!==expectedRevision+1)throw fail('invalid');
+    const token=await current().getIdToken();assert(ctx);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+    try{
+      const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/'+ROOT+'/'+path+'/'+entry.id+'.json?auth='+encodeURIComponent(token),{method:'PATCH',credentials:'omit',cache:'no-store',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(entry)});
+      assert(ctx);
+      if(!response.ok){const latest=await read(path+'/'+entry.id,ctx);assert(ctx);if((latest?.revision||0)!==expectedRevision)throw fail('revision_conflict','다른 기기에서 변경했습니다. 목록을 다시 열어 확인해주세요.');throw fail([401,403].includes(response.status)?'permission_denied':'network');}
+      const saved=await response.json();assert(ctx);return saved;
+    }catch(error){assert(ctx);if(error.code)throw error;try{const saved=await read(path+'/'+entry.id,ctx);assert(ctx);if(JSON.stringify(stable(saved))===JSON.stringify(stable(entry)))return saved;}catch(_){}throw fail('network','룩 분류 저장을 확인하지 못했습니다. 다시 시도해주세요.');}
+    finally{clearTimeout(timer);}
   }
   async function categoryRequest(action,payload={}) {
     const ctx=await context('references');if(ctx.config.noteCategoryWriteVersion!==VERSION)throw fail('connection_pending');
@@ -276,5 +293,5 @@
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,uploadPhotos,catalogOrderRequest,categoryRequest,designerRequest,referenceCategoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest});
 })();

@@ -1,3 +1,4 @@
+<!-- v229: meeting date, outfit category and assignee toolbar -->
 <!-- v228: shared assignee and note category drag ordering -->
 <!-- v226: canonical meeting save acknowledgement and visible retry status -->
 <!-- v224: Firebase product-reference linking; shared photo URLs and durable meeting decisions -->
@@ -16707,7 +16708,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=226">
+<link rel="stylesheet" href="design-meeting.css?v=229">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16733,9 +16734,9 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-native-bridge.js?v=217"></script>
 <script src="aisel-gallery-index.js?v=221"></script>
 <script src="aisel-gallery-images.js?v=221"></script>
-<script src="aisel-collection-writes.js?v=228"></script>
+<script src="aisel-collection-writes.js?v=229"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=228">
-<script src="aisel-catalog-order.js?v=228"></script>
+<script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=228"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=219">
 <script src="aisel-date-filter.js?v=219"></script>
@@ -16744,7 +16745,8 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
-<script src="design-meeting.js?v=226"></script>
+<script src="aisel-look-categories.js?v=229"></script>
+<script src="design-meeting.js?v=229"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
