@@ -33,3 +33,32 @@
  html:root body #aiselAccountDialog button:disabled {color:#9ba1aa;background:#fff;border-color:#e4e7eb;}
  html:root body :is(#aiselSessionButton,#aiselAccountDialog button):focus-visible {outline:2px solid var(--aisel-ink,#34383c);outline-offset:2px;}
 }
+
+/* v233: one compact navigation, search and list filter system. */
+@media screen {
+ html:root body {--aisel-toolbar-inset:10px;}
+ html:root body #mainBar {display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:4px;}
+ html:root body #mainBar>.maintab {width:100%;font-size:12px;letter-spacing:-.35px;}
+ html:root body :is(#gallerySearchRow,.dm-search-row,.rc-list-tools) {display:flex;gap:4px;align-items:center;margin:0 0 4px;min-width:0;}
+ html:root body :is(#galleryView,#salesView,#designMeetingView,#referenceCollectionView) :is(.aisel-search-field,.rc-search) {display:flex;position:relative;align-items:center;flex:1;min-width:0;height:32px;min-height:32px;margin:0;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;}
+ html:root body :is(#galleryView,#salesView,#designMeetingView,#referenceCollectionView) :is(.aisel-search-field,.rc-search)>svg {position:absolute;left:var(--aisel-toolbar-inset);top:50%;transform:translateY(-50%);width:14px;height:14px;margin:0;flex:none;color:#6C727C;pointer-events:none;}
+ html:root body :is(#galleryView,#salesView,#designMeetingView,#referenceCollectionView) :is(#gallerySearchInput,#salesSearchInput,#dmSearch,#rcSearch) {box-sizing:border-box;width:100%;min-width:0;height:30px;min-height:30px;margin:0;padding:0 8px 0 32px;border:0;border-radius:3px;background:transparent;font-size:12px!important;font-weight:400;line-height:18px;color:#6C727C;}
+ html:root body :is(#gallerySearchInput,#salesSearchInput,#dmSearch,#rcSearch)::placeholder {color:#6C727C;opacity:1;}
+ html:root body :is(#galleryView,#designMeetingView,#referenceCollectionView) .aisel-list-date .aisel-list-date-toggle {justify-content:flex-start;padding-left:var(--aisel-toolbar-inset);}
+ html:root body :is(#galleryView,#designMeetingView,#referenceCollectionView) :is(#galleryTrashBtn,#dmRestore,#rcRestore) {flex:0 0 52px;box-sizing:border-box;width:52px;min-width:52px;height:32px;min-height:32px;margin:0;padding:0 4px;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;color:#6C727C;font-size:12px!important;font-weight:400;line-height:18px;}
+ html:root body #galleryFilters {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:4px;margin:0 0 8px;}
+ html:root body #galleryFilters[hidden] {display:none!important;}
+ html:root body #galleryFilters>select {width:100%;min-width:0;height:28px;min-height:28px;margin:0;padding:0 4px;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;color:#6C727C;font-size:12px;font-weight:400;line-height:18px;}
+ html:root body #galleryView .gallery-tabs-row {display:block;margin:0 0 8px;}
+ html:root body #galleryView #galleryTabs {margin:0;}
+ html:root body #galleryView #galleryTabs .gtab {border-bottom:1px solid #E3E5E7;font-weight:400;}
+ html:root body #galleryView #galleryTabs .gtab.active {font-weight:600;}
+ html:root body #galleryView #galleryTabs .gtab-count {margin-left:2px;font-size:10px;}
+}
+@media screen and (max-width:359px) {
+ html:root body #mainBar>.maintab {font-size:11px;}
+ html:root body #galleryView #galleryTabs .gtab {font-size:11px!important;letter-spacing:-.4px;}
+}
+@media screen {
+ html:root body #mainBar:has(>[data-main="moodboards"]:not([hidden]))>.maintab {font-size:11px;letter-spacing:-.4px;}
+}

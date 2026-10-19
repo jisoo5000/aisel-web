@@ -202,6 +202,92 @@
     }
     throw fail('conflict','다른 곳에서 계속 수정 중입니다. 입력은 기기에 유지했습니다. 잠시 후 다시 저장해주세요.');
   }
+  // Conversion uses the same verified Firebase identity as detail saves. The
+  // default SDK app can be signed out even while AiselAuth is authenticated.
+  // Every write remains subject to the deployed RTDB rules; no admin endpoint.
+  async function conversionStore() {
+    const ctx=await meetingContext();if(ctx.role!=='owner')throw fail('permission_denied');
+    const codeCheck=code=>{if(!/^AS-[A-Za-z0-9]+-[A-Za-z0-9]+-[0-9]+$/.test(code||''))throw fail('invalid');};
+    // RTDB removes null/empty objects and arrays. Compare the stored shape,
+    // otherwise an empty selectedColors array makes a real ACK look like loss.
+    const stored=value=>{
+      if(value==null)return null;
+      if(Array.isArray(value)){const out=value.map(stored);return out.some(item=>item!==null)?out:null;}
+      if(typeof value==='object'){const out=Object.fromEntries(Object.entries(value).map(([key,item])=>[key,stored(item)]).filter(([,item])=>item!==null));return Object.keys(out).length?out:null;}
+      return value;
+    };
+    const signatureOf=value=>JSON.stringify(stable(stored(value)));
+    async function request(path,method='GET',value,etag,query='') {
+      assert(ctx);const token=await current().getIdToken();assert(ctx);
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+      try {
+        const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/'+path+'.json?auth='+encodeURIComponent(token)+query,{
+          method,cache:'no-store',credentials:'omit',signal:controller.signal,
+          headers:{Accept:'application/json',...(method==='GET'?{'X-Firebase-ETag':'true'}:{'Content-Type':'application/json','If-Match':etag})},
+          ...(method==='GET'?{}:{body:JSON.stringify(value)})
+        });
+        assert(ctx);if([401,403].includes(response.status))throw fail('permission_denied');
+        if(response.status===412)return {conflict:true};if(!response.ok)throw fail('network');
+        const result=await response.json();assert(ctx);return {value:result,etag:response.headers?.get('etag')||''};
+      } catch(error) {assert(ctx);if(error.code)throw error;throw fail('network');} finally {clearTimeout(timer);}
+    }
+    async function transaction(path,transform) {
+      for(let attempt=0;attempt<5;attempt++){
+        const before=await request(path);assert(ctx);const next=transform(clone(before.value));
+        if(next===undefined)return meetingReceipt(false,before.value);
+        if(next===null||typeof next?.then==='function')throw fail('invalid');
+        const signature=signatureOf(next);
+        if(signature===signatureOf(before.value))return meetingReceipt(true,before.value);
+        if(!before.etag)throw fail('network');
+        let result;
+        try {result=await request(path,'PUT',next,before.etag);}
+        catch(error){
+          if(error.code!=='network')throw error;
+          // A lost response may hide a successful PUT. Never replay the write
+          // until an exact canonical read proves the outcome.
+          const proof=await request(path);
+          if(signatureOf(proof.value)===signature)return meetingReceipt(true,proof.value);
+          throw error;
+        }
+        if(result.conflict)continue;return meetingReceipt(true,result.value);
+      }
+      throw fail('conflict');
+    }
+    async function ensureWorkorderActive(code){
+      codeCheck(code);
+      const query='&orderBy='+encodeURIComponent(JSON.stringify('code'))+'&equalTo='+encodeURIComponent(JSON.stringify(code))+'&limitToFirst=2';
+      const archived=(await request('workorderTrashIndex','GET',undefined,undefined,query)).value||{};
+      if(Object.values(archived).some(item=>item?.code===code&&item.phase!=='restored'))throw fail('archived','삭제한 작업지시서입니다. 작업지시서의 삭제 복원에서 원본을 복원한 뒤 다시 연결해주세요.');
+    }
+    return Object.freeze({
+      ensureWorkorderActive,
+      creator:Object.freeze({uid:ctx.uid,name:String(current().displayName||current().email||'')}),
+      assert:()=>assert(ctx),
+      getWorkorder:async code=>{codeCheck(code);return (await request('workorders/'+code)).value;},
+      indexKeys:async()=>Object.keys((await request('workorderIndex','GET',undefined,undefined,'&shallow=true')).value||{}),
+      listDeletedMeetings:async()=>{
+        const query='&orderBy='+encodeURIComponent(JSON.stringify('designMeetingDeletedAt'))+'&startAt=1&limitToFirst=101';
+        const raw=(await request('moodboardRefs','GET',undefined,undefined,query)).value||{};
+        const entries=Object.entries(raw),records=entries.filter(([id,value])=>value?.id===id&&value.designMeeting===true&&Number(value.designMeetingDeletedAt)>0)
+          .map(([,value])=>clone(value)).sort((a,b)=>Number(a.designMeetingDeletedAt)-Number(b.designMeetingDeletedAt)||a.id.localeCompare(b.id));
+        return {records:records.slice(0,100),hasMore:entries.length>100};
+      },
+      reserveSequence:async(key,min)=>{
+        if(!/^[A-Za-z0-9]+_[A-Za-z0-9]+$/.test(key)||!Number.isSafeInteger(min)||min<0)throw fail('invalid');
+        const out=await transaction('designMeetingCodeCounters/'+key,value=>Math.max(Number(value)||0,min)+1);
+        return out.snapshot.val();
+      },
+      createWorkorder:async(code,value)=>{codeCheck(code);if(!value?.designMeetingCandidateId)throw fail('invalid');await ensureWorkorderActive(code);return transaction('workorders/'+code,old=>old===null?value:undefined);},
+      syncIndex:async(code,entry)=>{
+        codeCheck(code);if(!entry||typeof entry!=='object'||Array.isArray(entry))throw fail('invalid');
+        const out=await transaction('workorderIndex/'+code,old=>Number(old?.updatedAt)>Number(entry.updatedAt)?undefined:{...old,...clone(entry)});
+        const proof=(await request('workorderIndex/'+code)).value;
+        if(!out.committed||!proof||Object.entries(entry).some(([key,value])=>signatureOf(proof[key])!==signatureOf(value)))throw fail('conflict','목록이 변경되었습니다. 같은 품번으로 다시 연결해주세요.');
+        return proof;
+      }
+    });
+  }
+  async function listDeletedMeetings(){return (await conversionStore()).listDeletedMeetings();}
   async function functionRequest(ctx,body) {
     assert(ctx);if(ctx.config.mediaEndpoint!==ENDPOINT)throw fail('connection_pending');
     const token=await current().getIdToken();assert(ctx);
@@ -293,5 +379,5 @@
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,conversionStore,listDeletedMeetings,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest});
 })();

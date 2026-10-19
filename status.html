@@ -100,7 +100,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 <link rel="stylesheet" href="aisel-ui.css?v=178" />
-<link rel="stylesheet" href="status-samples.css?v=197" />
+<link rel="stylesheet" href="status-samples.css?v=233" />
 
 <style id="aisel-status-embedded-style">
 @media screen {
@@ -133,7 +133,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
     </div>
     <label class="search-wrap aisel-search-field">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input class="search" id="search" type="search" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off" />
+      <input class="search" id="search" type="search" placeholder="검색" aria-label="검색" autocomplete="off" />
     </label>
   </section>
 
@@ -145,7 +145,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
     <div class="sample-search-row" role="search" aria-label="샘플 검색">
       <label class="aisel-search-field">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-        <input id="sampleSearch" class="sample-search-input" type="search" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off" />
+        <input id="sampleSearch" class="sample-search-input" type="search" placeholder="검색" aria-label="검색" autocomplete="off" />
       </label>
     </div>
     <p id="sampleError" class="sample-error" role="alert" hidden></p>
@@ -775,7 +775,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
 </script>
 <script src="status-samples-flow.js?v=samples-office-20261004-v16-4"></script>
 <script src="status-samples-data.js?v=samples-office-20261004-v16-4"></script>
-<script src="status-samples.js?v=20261009-v26"></script>
+<script src="status-samples.js?v=233"></script>
 
 <script id="aisel-status-embed-bridge">
 (function(){

@@ -1,0 +1,19 @@
+@media screen {
+ .aisel-usp {min-width:0;color:#34383c;font-size:12px;}
+ .aisel-usp-row {display:flex;flex-flow:row nowrap;gap:4px;min-width:0;width:100%;}
+ #designMeetingView .aisel-usp-row > .aisel-usp-keyword, #workorderUsp .aisel-usp-row > .aisel-usp-keyword {flex:1 1 0;min-width:0;padding:6px 2px;min-height:30px;border:1px solid #dedede;border-radius:3px;background:#fff;color:#34383c;font:inherit;font-size:clamp(11px,3vw,12px);font-weight:400;line-height:1.4;text-align:center;white-space:normal;overflow-wrap:anywhere;box-sizing:border-box;}
+ .aisel-usp-edit {display:flex;flex-wrap:wrap;align-items:center;gap:4px;padding-top:6px;}
+ .aisel-usp-edit input {flex:1 1 140px;min-width:0;height:30px;font:inherit;}
+ .aisel-usp-edit button {min-height:30px;padding:4px 8px;font:inherit;border:1px solid #dedede;border-radius:3px;background:#fff;color:inherit;}
+ .aisel-usp-edit small {flex-basis:100%;color:#6c727c;font-size:11px;}
+ .aisel-usp-legacy {white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0;font:inherit;}
+ .aisel-usp [hidden] {display:none!important;}
+ #designMeetingView #dmReview .dm-manual-table tr:has(#dmUspKeywords) {grid-template-columns:minmax(0,1fr);}
+ #designMeetingView #dmReview .dm-usp-cell {padding:8px;min-width:0;}
+ #designMeetingView #dmUspValue:placeholder-shown {display:none!important;}
+ #workorderUsp {margin:12px 0 8px;padding:8px;border:1px solid #dedede;border-radius:3px;}
+ #workorderUsp .aisel-usp-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;font-weight:600;}
+ #workorderUsp .aisel-usp-heading button {font:inherit;font-size:11px;padding:3px 6px;border:1px solid #dedede;border-radius:3px;background:#fff;color:inherit;}
+ #workorderUspNotice {font-size:11px;color:#6c727c;margin-top:6px;}
+}
+@media print {.aisel-usp,#workorderUsp {display:none!important;}}

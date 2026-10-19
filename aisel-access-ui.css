@@ -1,0 +1,28 @@
+@media screen {
+ .aisel-access-dialog {box-sizing:border-box;width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:12px;border:1px solid #dedede;border-radius:3px;color:#34383c;background:#fff;font-family:inherit;font-size:12px;line-height:1.5;}
+ .aisel-access-dialog::backdrop {background:#0005;}
+ .aisel-access-dialog .access-heading {display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:-12px;background:#fff;padding:8px 0;z-index:1;}
+ .aisel-access-dialog h2 {font-size:14px;margin:0;}
+ .aisel-access-dialog button,.aisel-access-dialog input,.aisel-access-dialog select,#aiselEmailLogin input,#aiselEmailLogin button {box-sizing:border-box;min-height:32px;border:1px solid #dedede;border-radius:3px;background:#fff;color:#34383c;font:inherit;padding:5px 8px;min-width:0;}
+ .aisel-access-dialog button:disabled {opacity:.45;}
+ .aisel-access-dialog .access-field {display:grid;gap:4px;margin-bottom:10px;}
+ .aisel-access-dialog .access-field input,.aisel-access-dialog select {width:100%;}
+ .aisel-access-dialog .access-actions {display:flex;gap:4px;flex-wrap:wrap;margin:8px 0;}
+ .aisel-access-dialog .access-staff-row {border-bottom:1px solid #dedede;padding:10px 0;}
+ .aisel-access-dialog .access-staff-row small {margin-left:8px;color:#6c727c;}
+ .aisel-access-dialog p {overflow-wrap:anywhere;}
+ .aisel-access-dialog .access-hint {color:#6c727c;}
+ .aisel-access-dialog .access-check {display:flex;align-items:center;gap:8px;border-bottom:1px solid #eee;padding:5px 0;}
+ .aisel-access-dialog .access-check input {flex:none;width:18px;}
+ #aiselEmailLogin {display:grid;gap:6px;margin:10px 0;}
+ #aiselEmailLogin[hidden] {display:none;}
+ #aiselWorkorderAttribution {display:flex;flex-wrap:wrap;gap:5px 12px;margin:8px 0;color:#6c727c;font-size:11px;}
+ #aiselWorkorderAttribution details {flex-basis:100%;}
+ #aiselWorkorderAttribution button {font:inherit;border:1px solid #dedede;background:#fff;border-radius:3px;}
+ body[data-aisel-access="pending"] :is(#galleryGrid,#salesTableBody) {visibility:hidden;}
+ body[data-aisel-access="restricted"] #salesGroupTabs [data-group="core"] {display:none!important;}
+}
+
+@media screen { html:root body #salesView #salesGroupTabs {display:flex!important;gap:0;} html:root body #salesView #salesGroupTabs [hidden] {display:none!important;} }
+
+@media screen { body[data-aisel-access="restricted"] :is(#deleteBtn,#galleryTrashBtn,#moveCodeBtn,#workOrderTrashPanel) {display:none!important;} }

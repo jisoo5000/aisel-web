@@ -13,18 +13,36 @@
  const pane=document.createElement('section');pane.id='productProgressView';pane.className='noprint';pane.hidden=true;
  const notice=document.createElement('p');notice.id='unifiedNotice';notice.className='noprint';notice.setAttribute('role','status');
  main.after(notice,pane);
+ document.title='에이슬 앱';
  const orders=main.querySelector('[data-main="orders"]');orders.textContent='작업지시서';
  const products=document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='제품진행';
  const refs=document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
- const sales=main.querySelector('[data-main="sales"]');sales.textContent='리오더';
- main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),orders);
+ const boards=document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='moodboards';boards.textContent='무드보드';
+ const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
+ main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),boards,orders);
+ // Workorder filters use only the authorized lightweight index already loaded.
+ const galleryFilters=window.AiselWorkorderListFilters;
+ if(galleryFilters&&window.AiselDateFilter){
+  const row=document.createElement('div');row.id='galleryFilters';
+  row.innerHTML='<div class="gallery-date-filter"></div><select id="galleryCategoryFilter" aria-label="카테고리"><option value="">카테고리</option></select><select id="galleryDesignerFilter" aria-label="담당자"><option value="">담당자</option></select>';
+  $('gallerySearchRow').after(row);$('galleryTrashBtn').textContent='복원';
+  const category=$('galleryCategoryFilter'),designer=$('galleryDesignerFilter');
+  const change=patch=>galleryFilters.set({...galleryFilters.snapshot(),...patch});
+  const date=window.AiselDateFilter.mount(row.firstElementChild,{inputId:'galleryDateFilter',labelId:'galleryDateFilterLabel',label:'작업지시서 날짜 필터',format:value=>value.slice(2).replaceAll('-','. '),onChange:value=>change({date:value})});
+  category.onchange=()=>change({category:category.value});designer.onchange=()=>change({designer:designer.value});
+  function options(select,items,value){
+   if(value&&!items.some(item=>item[0]===value))items.push([value,value]);
+   const signature=JSON.stringify(items);if(select.dataset.signature!==signature){select.replaceChildren(...items.map(([key,label])=>new Option(label,key)));select.dataset.signature=signature;}select.value=value;
+  }
+  galleryFilters.subscribe(()=>{const state=galleryFilters.snapshot(),choices=galleryFilters.options();date.setValue(state.date);options(category,[['','카테고리'],...choices.categories],state.category);options(designer,[['','담당자'],['__unassigned__','미지정'],...choices.designers.map(name=>[name,name])],state.designer);});
+ }
  function info(s=''){notice.textContent=s;}
  // Warm each collection without changing the visible pane or waiting in navigation.
  // Modules authorize their own requests; the landing-role hint is never an access grant.
  let galleryWarmKey='';
  function scheduleGalleryWarm(){
   const session=window.AiselAuth,user=session?.currentUser();
-  if(!user?.uid||!user.emailVerified||!session.normalized||document.hidden)return;
+  if(!user?.uid||!user.emailVerified||!session.normalized||document.hidden||!window.AiselAccess?.session||window.AiselAccess.ownOnly)return;
   const key=user.uid+':'+session.generation;
   if(galleryWarmKey===key)return;galleryWarmKey=key;
   const run=()=>{
@@ -43,15 +61,33 @@
   else setTimeout(run,750);
  }
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGalleryWarm();});
- function role(){return A.isOwner()?'owner':knownRole||DM.getRole();}
+ function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
  function allowedWorkorder(){return ['owner','designer'].includes(role());}
- function allowedView(view){return !((['md','logistics'].includes(role())&&['orders','editor','designmeeting'].includes(view))||(role()==='logistics'&&view==='references'));}
+ function allowedView(view){return window.AiselAccess?.allowed(view)===true;}
  function applyRole(){
-  const limited=['md','logistics'].includes(role());
-  orders.hidden=limited;
-  const meeting=main.querySelector('[data-main="designmeeting"]');if(meeting)meeting.hidden=limited;
-  refs.hidden=role()==='logistics';post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
+  for(const button of main.querySelectorAll('[data-main]'))button.hidden=!allowedView(button.dataset.main);
+  post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
  }
+ let accessIdentity=null,accessRestore=null,initialRoutePending=true;
+ window.addEventListener('aisel-access-change',event=>{
+  const session=event.detail?.session;
+  knownRole=session?.role||null;applyRole();
+  const hash=location.hash,code=requestedLocation()?.code;
+  if(!session){
+   if(accessIdentity&&current)accessRestore={uid:accessIdentity,view:current,code};
+   info(event.detail?.error||'로그인 후 자료를 확인해주세요.');A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();unmount();current='';return;
+  }
+  const changedIdentity=accessIdentity&&accessIdentity!==session.uid,restore=accessRestore?.uid===session.uid?accessRestore:null;
+  accessIdentity=session.uid;accessRestore=null;
+  if(initialRoutePending){initialRoutePending=false;openInitialLocation().catch(error=>info(error.message));}
+  else if(restore&&allowedView(restore.view))show(restore.view,{replace:true,code:restore.code});
+  else if(changedIdentity)show(landingView(),{replace:true});
+  else if(!allowedView(current)){
+   const initial=code&&allowedView('editor')?'editor':hash==='#moodboards'&&allowedView('moodboards')?'moodboards':landingView();
+   show(initial,{replace:true,code});
+  }else restoreLanding();
+  scheduleGalleryWarm();
+ });
  // A tiny account-scoped preference selects a landing page only. It never grants access.
  const landingKey='aisel.unified.landing.v1',validRoles=['owner','designer','md','logistics'];
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
@@ -63,7 +99,7 @@
  // Resuming input cancels a destination chosen before that input. A delayed save
  // acknowledgement must never hide the form the user has continued editing.
  for(const name of ['input','change','compositionstart'])document.addEventListener(name,event=>{
-  const form=event.target?.closest?.('#editorView,#designMeetingView,#referenceCollectionView');
+  const form=event.target?.closest?.('#editorView,#designMeetingView,#referenceCollectionView,#aiselMoodboardsView');
   if(!form||form.hidden||getComputedStyle(form).display==='none')return;
   navigationRevision++;
   if(busy&&pendingNavigation){pendingNavigation.resolve(false);pendingNavigation=null;}
@@ -114,17 +150,18 @@
  },{passive:false});
  for(const name of ['touchend','touchcancel'])document.addEventListener(name,()=>{productTouch=null;},{passive:true});
 
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=199';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=233';pane.append(frame);}
  function select(view){
   current=view;
-  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'리오더',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(view!=='products')unmount();pane.hidden=view!=='products';
   if(view!=='references')$('referenceCollectionView').hidden=true;
   if(view!=='designmeeting')$('designMeetingView').hidden=true;
+  if(view!=='moodboards')window.AiselMoodboards?.hide();
  }
- function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
+ function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
  async function guard(target,intent=navigationRevision){
   const isCurrent=()=>intent===navigationRevision;
   // A menu switch keeps the same account and document alive. Once the current
@@ -132,6 +169,7 @@
   // Identity changes below still use the default server-confirmed save guard.
   if(current==='references'&&target!=='references'&&(!await RC.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   if(current==='designmeeting'&&target!=='designmeeting'&&(!await DM.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
+  if(current==='moodboards'&&target!=='moodboards'&&(!await window.AiselMoodboards.save()||!isCurrent()))return false;
   if(!isCurrent()||!await A.leave()||!isCurrent())return false;
   if(current==='references'&&target!=='references'&&(!isCurrent()||!await RC.leave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   return isCurrent();
@@ -147,27 +185,38 @@
   A.hide();select(view);
   if(view==='designmeeting')window.AiselDesignMeetingAdapter.restore();
   else if(view==='references')await RC.show({history:false,preserveDetail:true,background:true});
+  else if(view==='moodboards')await window.AiselMoodboards.show();
   else if(view==='products')mount();
   else if(view==='sales')await A.sales();
   else if(view==='editor'&&previousCode)await A.open(previousCode);
   else{await A.orders();select('orders');}
   restoreLocation(previousLocation);
  }
- async function show(view,{history:writeHistory=true,replace=false,code}={}){
-  if(!['products','orders','sales','editor','references','designmeeting'].includes(view))return false;
+ async function show(view,{history:writeHistory=true,replace=false,code,id}={}){
+  if(!['products','orders','sales','editor','references','designmeeting','moodboards'].includes(view))return false;
   if(!allowedView(view)){info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return false;}
+  if(view==='moodboards'&&current===view&&window.AiselMoodboards?.visible)return true;
   if(view==='editor'&&(typeof code!=='string'||!code.trim()||code.length>160||/[.#$\[\]\/\u0000-\u001f]/.test(code)))return false;
   // Keep the latest destination while an input save is finishing.
-  if(busy)return new Promise(resolve=>{pendingNavigation?.resolve(false);pendingNavigation={view,options:{history:writeHistory,replace,code},resolve};});
+  if(busy)return new Promise(resolve=>{pendingNavigation?.resolve(false);pendingNavigation={view,options:{history:writeHistory,replace,code,id},resolve};});
   const previousView=current,previousCode=window.AiselWorkorderMeetingPhotos?.currentCode,previousLocation={state:history.state,url:location.href},intent=navigationRevision;
   busy=true;let completed=false,openingEditor=false;
   try{
    if(!await guard(view,intent)||intent!==navigationRevision)return false;info();if(view!=='editor')returnToProducts=false;
-   if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:false})===false)return false;select(view);completed=true;return true;}
+   if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:!!id,...(id?{id}:{})})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
    if(intent!==navigationRevision)return false;
    A.hide();select(view);
    if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='제품 진행 현황';document.body.dataset.aiselListView='products';}
+   else if(view==='moodboards'){
+    const openingUid=window.AiselAccess.session?.uid;
+    if(!window.AiselMoodboards)throw Error('무드보드 화면을 불러오지 못했습니다. 새로고침 후 다시 열어주세요.');
+    const opened=await window.AiselMoodboards.show();
+    if(openingUid!==window.AiselAccess.session?.uid||!allowedView(view)){window.AiselMoodboards.hide();return false;}
+    if(opened===false){await restoreAfterOpenFailure(previousView,previousCode,previousLocation);return false;}
+    if(intent!==navigationRevision)return false;
+    document.body.dataset.aiselListView='moodboards';
+   }
    else if(view==='orders')await A.orders();
    else if(view==='sales'){await A.sales();window.AiselSheetSalesSource?.refreshIfStale?.();}
    else if(view==='editor'){
@@ -221,6 +270,7 @@
  function historyTarget(state,hash){
   if(state?.aiselReference||/^#references?$|^#reference=/.test(hash))return {owner:'reference',view:'references'};
   if(state?.aiselDesignMeeting||/^#design-meeting(?:=|$)/.test(hash))return {owner:'meeting',view:'designmeeting'};
+  if(hash==='#moodboards')return {owner:'unified',view:'moodboards'};
   if(state?.aiselUnified)return {owner:'unified',view:state.view,code:state.code};
   if(state?.aisel)return {owner:'legacy',view:state.view==='editor'?'editor':state.view==='sales'?'sales':'orders'};
   return null;
@@ -263,33 +313,33 @@
  // acknowledged editor load as every other cross-menu workorder navigation.
  if(window.AiselDesignMeetingAdapter)window.AiselDesignMeetingAdapter.open=code=>show('editor',{code});
  applyRole();
- const hash=location.hash;
- if(/^#reference=/.test(hash))RC.show({id:decodeURIComponent(hash.slice(11)),history:false});
- else if(hash==='#references')show('references',{history:false});
- else if(/^#design-meeting(?:=|$)/.test(hash))openInitialMeeting(hash).catch(error=>info(error.message));
- else if(new URLSearchParams(location.search).get('code'))select('editor');
- else if(/^#workorder=/.test(hash))show('editor',{history:false,code:decodeURIComponent(hash.slice(11))});
- else show(hash==='#sales'?'sales':hash==='#workorders'?'orders':hash==='#products'?'products':landingView(),{replace:true}).then(restoreLanding);
- // An initial meeting URL must capture its detail epoch after the first
- // canonical auth restoration; later account changes still cancel the open.
- async function openInitialMeeting(initialHash){
-  const intent=navigationRevision,initialView=current;
-  const stillRequested=()=>navigationRevision===intent&&location.hash===initialHash&&current===initialView;
-  // initCommonSession below installs the shared session during this script turn.
-  await Promise.resolve();const session=window.AiselAuth,initialUid=session?.currentUser()?.uid||null;
-  let uid=null,generation=null;const sameSession=()=>!session||window.AiselAuth===session&&uid===(session.currentUser()?.uid||null)&&generation===session.generation;
-  if(session){
-   await session.initialized;
-   if(!stillRequested()||window.AiselAuth!==session||initialUid&&session.currentUser()?.uid!==initialUid)return false;
-   uid=session.currentUser()?.uid||null;generation=session.generation;
-   await session.ready();
-   if(!stillRequested()||!sameSession())return false;
-  }
-  if(!stillRequested()||await show('designmeeting',{history:false})===false)return false;
-  if(navigationRevision!==intent||location.hash!==initialHash||current!=='designmeeting'||!sameSession())return false;
-  if(initialHash.startsWith('#design-meeting='))return DM.open(decodeURIComponent(initialHash.slice(16)),{history:false});
-  return true;
+ // An initial URL is opened only after the access grant arrives. Opening a
+ // collection earlier races auth restoration and can replace its detail hash
+ // with the role's landing page.
+ function requestedLocation(){
+  const hash=location.hash;
+  try{
+   if(/^#reference=/.test(hash))return {view:'references',id:decodeURIComponent(hash.slice(11))};
+   if(/^#references?$/.test(hash))return {view:'references'};
+   if(/^#design-meeting(?:=|$)/.test(hash))return {view:'designmeeting',id:hash.startsWith('#design-meeting=')?decodeURIComponent(hash.slice(16)):null};
+   if(hash==='#moodboards')return {view:'moodboards'};
+   if(/^#workorder=/.test(hash))return {view:'editor',code:decodeURIComponent(hash.slice(11))};
+   if(hash==='#workorders')return {view:'orders'};
+   if(hash==='#sales')return {view:'sales'};
+   if(hash==='#products')return {view:'products'};
+   const code=new URLSearchParams(location.search).get('code');if(code)return {view:'editor',code};
+  }catch(_){}
+  return null;
  }
+ async function openInitialLocation(){
+  const requested=requestedLocation(),target=requested&&allowedView(requested.view)?requested:{view:landingView()};
+  const hash=location.hash,intent=navigationRevision,uid=window.AiselAccess.session?.uid;
+  const opened=await show(target.view,{history:target!==requested,replace:true,code:target.code,id:target.id});
+  if(!opened||target.view!=='designmeeting'||!target.id)return opened;
+  if(intent!==navigationRevision||hash!==location.hash||uid!==window.AiselAccess.session?.uid||current!=='designmeeting'||!allowedView('designmeeting'))return false;
+  return DM.open(target.id,{history:false});
+ }
+ if(window.AiselAccess?.session){initialRoutePending=false;openInitialLocation().catch(error=>info(error.message));}
  // Reuse existing Firebase auth restoration; do not perform another role lookup.
  // The member app is normally lazy. Restore it only when this device has a recent landing hint.
  try{
@@ -305,7 +355,7 @@
   try{app=sdk.apps.find(a=>a.name==='aiselSalesReadOnly')||sdk.initializeApp(sdk.app().options,'aiselSalesReadOnly');auth=app.auth();}catch(_){return;}
   const header=$('appBrandHeader'),button=document.createElement('button');button.id='aiselSessionButton';button.type='button';button.textContent='로그인';button.setAttribute('aria-haspopup','dialog');header.append(button);
   const dialog=document.createElement('dialog');dialog.id='aiselAccountDialog';dialog.className='noprint';dialog.setAttribute('aria-labelledby','aiselAccountTitle');
-  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselMeetingTools" hidden>디자인회의 관리 도구</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
+  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><form id="aiselEmailLogin"><label for="aiselLoginEmail">이메일</label><input id="aiselLoginEmail" type="email" autocomplete="username" required><label for="aiselLoginPassword">비밀번호</label><input id="aiselLoginPassword" type="password" autocomplete="current-password" required><button type="submit">이메일로 로그인</button><button id="aiselResetPassword" type="button">비밀번호 재설정</button></form><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselMeetingTools" hidden>디자인회의 관리 도구</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
   document.body.append(dialog);document.body.dataset.aiselCommonSession='ready';
   const google=$('aiselAccountGoogle'),logoutButton=$('aiselAccountLogout'),meetingTools=$('aiselMeetingTools'),status=$('aiselAccountStatus'),identity=$('aiselAccountIdentity');
   let resolveInitialized;const initialized=new Promise(resolve=>{resolveInitialized=resolve;});
@@ -314,7 +364,7 @@
   const listeners=new Set(),sameProject=a=>a.options?.projectId===app.options?.projectId;
   const currentUser=()=>auth.currentUser||null;
   const cancelled=()=>Object.assign(Error('로그인을 취소했습니다.'),{code:'auth/popup-closed-by-user'});
-  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;meetingTools.hidden=!user||!allowedWorkorder();meetingTools.disabled=sessionBusy;}
+  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;meetingTools.hidden=!user||!allowedView('designmeeting');$('aiselEmailLogin').hidden=!!user;meetingTools.disabled=sessionBusy;}
   function sessionDetail(reason){const user=currentUser();return {uid:user?.uid||null,email:user?.email||'',generation,reason};}
   function clearNormalizationError(){if(normalizationError&&notice.textContent===normalizationError)info();normalizationError='';}
   function syncFrame(reason='sync',requestId){post('aisel-session-change',{...sessionDetail(reason),requestId});}
@@ -324,7 +374,7 @@
    const detail={...sessionDetail(reason),previousUid:old||null};
    window.dispatchEvent(new CustomEvent('aisel-session-change',{detail}));listeners.forEach(fn=>{try{fn(detail);}catch(_){}});syncFrame(reason);
   }
-  async function settle(){saveGuardDepth++;try{if(!await A.leave())return false;if(!await DM.canLeave())return false;if(!await RC.canLeave())return false;return true;}finally{saveGuardDepth--;}}
+  async function settle(){saveGuardDepth++;try{if(!await A.leave())return false;if(!await DM.canLeave())return false;if(!await RC.canLeave())return false;if(window.AiselMoodboards&&!await window.AiselMoodboards.save())return false;return true;}finally{saveGuardDepth--;}}
   function conflictingSessions(uid){return sdk.apps.filter(a=>a!==app&&sameProject(a)).filter(a=>{try{const other=a.auth().currentUser;return other?.uid&&!other.isAnonymous&&other.uid!==uid;}catch(_){return false;}});}
   function ready(options={}){
    const user=currentUser(),uid=user?.uid||null;if(!uid){normalizedUid=null;return Promise.resolve(null);}
@@ -355,6 +405,18 @@
    Promise.all([settle(),migration||Promise.resolve()]).then(([ok])=>{if(!loginFlight)return;if(ok&&currentUser()){finishLogin(null,{user:currentUser()});dialog.close();}else if(ok){status.textContent='';google.disabled=false;}else{status.textContent='입력한 내용을 저장한 뒤 다시 로그인해주세요.';finishLogin(Object.assign(Error(status.textContent),{code:'save_pending'}));}}).catch(error=>{status.textContent=error.message||'입력한 내용을 확인하지 못했습니다.';finishLogin(error);});
    return result;
   }
+  $('aiselEmailLogin').addEventListener('submit',event=>{
+   event.preventDefault();if(sessionBusy||!loginFlight||!event.target.reportValidity())return;
+   sessionBusy=true;suppressMigration=true;status.textContent='로그인 중…';renderAccount();
+   const password=$('aiselLoginPassword');
+   auth.signInWithEmailAndPassword($('aiselLoginEmail').value.trim(),password.value).then(async result=>{
+    password.value='';publish('login');await ready();await verifySession();finishLogin(null,result);dialog.close();
+   }).catch(error=>{status.textContent=/too-many-requests/.test(error.code||'')?'로그인 시도가 많습니다. 잠시 후 다시 시도해주세요.':'이메일과 비밀번호를 확인해주세요.';}).finally(()=>{password.value='';sessionBusy=false;renderAccount();});
+  });
+  $('aiselResetPassword').addEventListener('click',()=>{
+   if(sessionBusy)return;const email=$('aiselLoginEmail');if(!email.reportValidity())return;
+   sessionBusy=true;auth.sendPasswordResetEmail(email.value.trim()).then(()=>{status.textContent='등록된 계정이면 비밀번호 재설정 메일이 발송됩니다.';}).catch(()=>{status.textContent='메일을 보내지 못했습니다. 이메일을 확인한 뒤 다시 시도해주세요.';}).finally(()=>{sessionBusy=false;});
+  });
   google.addEventListener('click',()=>{
    if(sessionBusy||google.disabled)return;
    if(currentUser()){
@@ -386,12 +448,12 @@
   }
   async function verifySession(){
    const expected=generation,uid=currentUser()?.uid;if(!uid)return;
-   try{if(DM.verifyAccess)await DM.verifyAccess();}
-   catch(error){
+   try{
+    const access=await window.AiselAccess.refresh();
     if(expected!==generation||uid!==currentUser()?.uid)return;
-    if(error?.code==='forbidden'){try{await referenceBridge('refAccess',{});}catch(other){if(expected===generation)info(other.message||'메뉴 권한을 확인하지 못했습니다.');}}
-    else info(error.message||'메뉴 권한을 확인하지 못했습니다.');
-   }
+    knownRole=access.role;rememberRole(knownRole);applyRole();restoreLanding();
+    if(!access.permissions?.ownOnly&&currentUser()?.emailVerified&&DM.verifyAccess)await DM.verifyAccess();
+   }catch(error){if(expected===generation&&uid===currentUser()?.uid)info(error.message||'메뉴 권한을 확인하지 못했습니다.');}
   }
   function requestLogin(){return login().then(async result=>{await verifySession();return result;});}
   button.addEventListener('click',()=>{if(currentUser()){renderAccount();status.textContent=normalizationError;dialog.showModal();}else requestLogin().catch(error=>{if(!/popup-closed-by-user|cancelled-popup-request/.test(error?.code||''))info(error.message||'로그인하지 못했습니다.');});});
@@ -400,6 +462,7 @@
   $('aiselAccountClose').addEventListener('click',()=>{if(!sessionBusy)dialog.close();});
   dialog.addEventListener('cancel',event=>{if(sessionBusy)event.preventDefault();});dialog.addEventListener('close',()=>{if(loginFlight&&!sessionBusy)finishLogin(cancelled());});
   window.AiselAuth={currentUser,ready,initialized,login,requestLogin,logout,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},syncFrame,get generation(){return generation;},get normalized(){return normalizedUid===(currentUser()?.uid||null)&&!normalizationError;}};
+  window.dispatchEvent(new CustomEvent('aisel-session-ready'));
   async function adoptExistingSession(){
    if(!authReady||currentUser()||suppressMigration||migration||loginFlight||sessionBusy||typeof auth.updateCurrentUser!=='function')return;
    const prior=sdk.apps.filter(a=>a!==app&&sameProject(a)&&a.name!=='aiselShootingSamples').map(a=>{try{return a.auth().currentUser;}catch(_){return null;}}).find(user=>user?.uid&&user.emailVerified);

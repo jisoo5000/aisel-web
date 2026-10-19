@@ -1,4 +1,4 @@
-<!-- v232: niche demand, 64px choices and single-document detail scrolling -->
+<!-- v233: unified mobile UI, secure conversion, USP/PDF separation and staged account handover -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
 <!-- v229: meeting date, outfit category and assignee toolbar -->
@@ -110,7 +110,7 @@
  }
  const initial=history.state;
  history.replaceState(tagged(initial,entryId(initial)||newId()),'');
- let active=false,committedEntry=entry();
+ let active=false,interacted=false,restoreBlocked=reloaded,committedEntry=entry();
  // Tag actual entries, including identical routes pushed more than once.
  // Keep the caller's fields intact; replacing metadata keeps this entry's ID,
  // while pushing always starts a new one even if the caller copied old state.
@@ -119,6 +119,7 @@
   history[method]=function(state,...args){
    const id=method==='replaceState'?entryId(history.state)||newId():newId();
    const result=original.call(this,tagged(state,id),...args);
+   if(method==='pushState'&&interacted)restoreBlocked=false;
    if(active)committedEntry=entry();
    return result;
   };
@@ -127,7 +128,7 @@
  const events=new AbortController(),frames=new Set();
  let recoveryQueued=false;active=true;
  history.scrollRestoration='manual';
- window.AiselReloadStartup={get active(){return active;},release};
+ window.AiselReloadStartup={get active(){return active;},get skipRestore(){return restoreBlocked;},release};
  function release(){
   if(!active)return;active=false;events.abort();
   frames.forEach(cancelAnimationFrame);frames.clear();
@@ -144,19 +145,21 @@
    document.getElementById('appBrandHeader')?.scrollIntoView({block:'start',behavior:'instant'});
  }
  function nextFrame(callback){const id=requestAnimationFrame(()=>{frames.delete(id);if(active)callback();});frames.add(id);}
- function userIntent(event){if(event.isTrusted)release();}
+ function userIntent(event){if(event.isTrusted){interacted=true;release();}}
  for(const type of ['pointerdown','touchstart','wheel','keydown','input'])
   window.addEventListener(type,userIntent,{capture:true,passive:true,signal:events.signal});
  window.addEventListener('popstate',event=>{
   const current=entry();
-  if(current.url!==committedEntry.url||current.id!==committedEntry.id||current.state!==committedEntry.state)release();
+  if(current.url!==committedEntry.url||current.id!==committedEntry.id||current.state!==committedEntry.state){restoreBlocked=false;release();}
   else {
    // A duplicate startup event must not also reopen a stale legacy route.
    event.stopImmediatePropagation();
    recoverLate();
   }
  },{capture:true,signal:events.signal});
- window.addEventListener('pagehide',release,{capture:true,signal:events.signal});
+ window.addEventListener('pagehide',()=>{restoreBlocked=false;release();},{capture:true});
+ // A real Back/Forward after the first touch must still restore its own position.
+ window.addEventListener('popstate',()=>{if(!active)restoreBlocked=false;},{capture:true});
  // Mobile Safari can restore more than once as the route, photos and viewport settle.
  // Keep startup at the header until the first real gesture; history traversal and
  // active typing/reading release this immediately, without a polling scroll lock.
@@ -245,6 +248,7 @@
 })(window);
 </script>
 <script>window.AiselSheetSalesMode=true;</script>
+<script src="aisel-access-core.js?v=233"></script>
 <meta name="google" content="notranslate">
 <!-- AISEL 작업지시서 v114 (2026-10-08)
      [v114] 운영 시트 작성일순·드롭 제외·개별 원본 바로가기·로그인 없는 시트 갱신.
@@ -3260,10 +3264,10 @@
 }
 </style>
 <header class="aisel-app-header noprint notranslate" id="appBrandHeader" lang="ko" translate="no" hidden>
-  <h1><span class="app-brand">AISEL</span><span class="app-page-title" id="appPageTitle">리오더</span></h1>
+  <h1><span class="app-brand">AISEL</span><span class="app-page-title" id="appPageTitle">판매성과</span></h1>
 </header>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
-  <button type="button" class="maintab active" data-main="sales">리오더</button>
+  <button type="button" class="maintab active" data-main="sales">판매성과</button>
   <button type="button" class="maintab" data-main="orders">작업지시서</button>
   <button type="button" class="maintab" id="dmMainTab" data-main="designmeeting">디자인회의</button>
   <div class="mainbar-order-col" hidden>
@@ -3276,7 +3280,7 @@
   <input id="dmReplaceInput" type="file" accept="image/*" hidden><input id="dmFileInput" type="file" accept="image/*" multiple hidden><input id="dmCameraInput" type="file" accept="image/*" capture="environment" hidden>
   <div id="dmStatus" role="status"></div><div id="dmPending"></div>
   <div id="dmList"><div class="dm-filters" id="dmFilters"><button type="button" data-filter="planned" class="active">예정</button><button type="button" data-filter="drop">드롭</button><button type="button" data-filter="all">전체</button></div>
-  <label class="aisel-search-field dm-search"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="dmSearch" type="search" aria-label="제품명 검색" placeholder="제품명 검색"></label><p id="dmCount" class="dm-sr-only"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><div id="dmSession" class="dm-session"></div></div>
+  <label class="aisel-search-field dm-search"><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="dmSearch" type="search" aria-label="검색" placeholder="검색"></label><p id="dmCount" class="dm-sr-only"></p><div class="dm-grid" id="dmGrid"></div><button id="dmMore" type="button" hidden>더 보기</button><div id="dmSession" class="dm-session"></div></div>
   <aside id="dmDetail" class="dm-detail" aria-label="후보 상세" hidden>
     <div class="dm-detail-header"><div class="dm-heading"><h3 id="dmDetailTitle" contenteditable="true" role="textbox" aria-label="제품명" spellcheck="false">후보 상세</h3><div id="dmDates" class="dm-dates"></div></div><div class="dm-detail-controls"><div id="dmLinks" class="dm-links"></div><div class="dm-assignee"><label for="dmDesigner">담당자</label><select id="dmDesigner" aria-label="담당자"><option value="">미지정</option></select></div></div><div class="dm-detail-save"><small id="dmDetailSaveState" role="status" aria-live="polite" aria-atomic="true"></small><button id="dmSaveDetail" type="button" hidden>다시 저장</button></div></div>
     
@@ -3288,7 +3292,7 @@
   </aside>
 </section>
 <dialog id="dmAdoptDialog" class="dm-dialog"><h3>기존 레퍼런스 연결</h3><p>선택한 카드와 사진 주소를 그대로 사용합니다. 과거 승인·메모·원가는 유지합니다.</p><div id="dmAdoptList"></div><button id="dmAdoptConfirm" type="button">선택한 레퍼런스 연결</button><button id="dmAdoptCancel" type="button">닫기</button></dialog>
-<dialog id="dmConversionDialog" class="dm-dialog"><h3>선택 후보 작업지시서 전환</h3><p>필요한 시즌·카테고리를 선택해주세요. 저장이 확인된 후보만 작업지시서에 연결합니다.</p><div id="dmConversionList"></div><p id="dmConversionStatus" role="status"></p><button id="dmConversionConfirm" type="button">작업지시서로 보내기</button><button id="dmConversionCancel" type="button">닫기</button></dialog>
+<dialog id="dmConversionDialog" class="dm-dialog" aria-labelledby="dmConversionTitle"><div class="dm-conversion-heading"><h3 id="dmConversionTitle">선택 후보 작업지시서 전환</h3><button id="dmConversionCancel" type="button">닫기</button></div><p>필요한 시즌·카테고리를 선택해주세요. 저장이 확인된 후보만 작업지시서에 연결합니다.</p><div id="dmConversionList"></div><p id="dmConversionStatus" role="status" aria-live="polite"></p><div class="dm-conversion-actions"><button id="dmConversionConfirm" type="button">작업지시서 생성</button></div></dialog>
 <div class="gallery" id="sampleMgmtView" style="display:none">
   <div class="gallery-head">
     <h2>🧵 샘플관리</h2>
@@ -3319,17 +3323,17 @@
 </div>
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no">
-  <div class="gallery-head"><h2>리오더</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
+  <div class="gallery-head"><h2>판매성과</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
   <div class="gallery-tabs" id="salesTabs" aria-label="판매 상태">
     <button type="button" class="gtab active" data-status="sale" aria-pressed="true">판매 중</button>
     <button type="button" class="gtab" data-status="prep" aria-pressed="false">판매 준비</button>
     <button type="button" class="gtab" data-status="all" aria-pressed="false">전체</button>
   </div>
-  <div class="gallery-tabs" id="salesGroupTabs" aria-label="분석 대상"><button type="button" class="gtab active" data-group="all" aria-pressed="true">전체</button><button type="button" class="gtab" data-group="new" aria-pressed="false">신상</button><button type="button" class="gtab" data-group="steady" aria-pressed="false">스테디셀러</button><button type="button" class="gtab" data-group="unclassified" aria-pressed="false">분류 확인</button></div>
+  <div class="gallery-tabs" id="salesGroupTabs" aria-label="판매성과 구분"><button type="button" class="gtab" data-group="core" aria-pressed="false">핵심 SKU</button><button type="button" class="gtab active" data-group="new" aria-pressed="true">신상성과</button></div>
   <div class="sales-toolbar">
     <label class="aisel-search-field">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input id="salesSearchInput" type="search" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off">
+      <input id="salesSearchInput" type="search" placeholder="검색" aria-label="검색" autocomplete="off">
     </label>
     <select id="salesSort" aria-label="상품성과 정렬"><option value="quantity">판매순</option><option value="recent">최근 수정순</option></select>
   </div>
@@ -3364,7 +3368,7 @@
   <div class="gallery-search" id="gallerySearchRow">
     <label class="aisel-search-field">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input type="search" id="gallerySearchInput" placeholder="품명 또는 품번으로 검색" aria-label="품명 또는 품번으로 검색" autocomplete="off">
+      <input type="search" id="gallerySearchInput" placeholder="검색" aria-label="검색" autocomplete="off">
     </label>
     <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제 복원</button>
   </div>
@@ -3549,7 +3553,7 @@
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
-      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 인쇄</span><span class="mobile-print-label">PDF 인쇄</span></button>
+      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장</span><span class="mobile-print-label">PDF 저장</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
 
@@ -5281,8 +5285,7 @@
     return String(name || "").trim().replace(/[.#$/\[\]]/g, "_");
   }
   let designerListCache_ = null;   // { 이름: 전화번호 } 전체를 한 번만 받아 메모리에 둠
-  designerRoot.once("value").then(snap=>{ designerListCache_ = snap.val() || {}; }).catch(()=>{ designerListCache_ = {}; });
-  designerRoot.on("value", snap=>{ designerListCache_ = snap.val() || {}; });   // 다른 사람이 새로 등록해도 실시간 반영
+  window.AiselAccess.watchLegacy(designerRoot,"value", snap=>{ designerListCache_ = snap.val() || {}; });   // 다른 사람이 새로 등록해도 실시간 반영
   window.saveDesignerPhone_ = function(name, phone){
     const key = designerKeyOf_(name);
     if(!key || !String(phone||"").trim()) return;
@@ -5306,6 +5309,8 @@
 
 <script src="workorder-draft-storage.js?v=189"></script>
 <script src="aisel-photo.js?v=216"></script>
+<link rel="stylesheet" href="aisel-usp.css?v=233">
+<script src="aisel-usp.js?v=233"></script>
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -5464,7 +5469,19 @@
   // 한 번 쓴 번호는 다시 안 나오게 항상 뒤에 붙임 (중간에 삭제로 빈 번호가 생겨도 재사용하지 않음)
   const nextSeq = ()=> Math.max(maxUsedSeqFromData_(), getCounters()[seqKey()]||0) + 1;
   function bumpUsed(n){ const c=getCounters(), k=seqKey(); c[k]=Math.max(c[k]||0, n||0); setCounters(c); }
-  function suggestSeq(){ $("#seq").value = String(nextSeq()).padStart(3,"0"); genCode(); }
+  let accessSequenceRequest_=null;
+  function suggestSeq(){
+    if(!window.AiselAccess?.session||!newOrderMode_){$("#seq").value=String(nextSeq()).padStart(3,"0");genCode();return;}
+    const season=$("#season").value,category=currentCat().code,key=season+':'+category;
+    if(accessSequenceRequest_?.key===key&&accessSequenceRequest_.flight)return accessSequenceRequest_.flight;
+    const entry=accessSequenceRequest_?.key===key?accessSequenceRequest_:{key,requestId:crypto.randomUUID()};accessSequenceRequest_=entry;
+    loading=true;$("#codeView").textContent='품번 확인 중';
+    entry.flight=window.AiselAccess.request('nextWorkorderCode',{season,category,requestId:entry.requestId}).then(result=>{
+      if(accessSequenceRequest_!==entry||!newOrderMode_||$("#season").value!==season||currentCat().code!==category)return;
+      $("#seq").value=String(result.sequence).padStart(3,'0');accessSequenceRequest_=null;genCode();
+    }).catch(error=>{if(accessSequenceRequest_===entry){$("#codeView").textContent='품번 확인 필요';const notice=document.getElementById('unifiedNotice');if(notice)notice.textContent=error.message;}}).finally(()=>{entry.flight=null;});
+    return entry.flight;
+  }
 
   // ---------- 이미 쓰인 품번 경고 ----------
   // 새 작지를 만드는 중인지 여부. 새 작지 모드에서는 이미 있는 품번의 내용을 화면에 불러오지 않고,
@@ -6483,25 +6500,54 @@
 
   const CAFE24_REGISTRATION_URL = "https://cafe24-weekly-insights.spaceit-aisel.chatgpt.site/api/workorder-registration";
   let printRegistrationBusy_ = false;
-  function registrationNotice_(message, ok){
+  const orderRegistrationFlights_=new Map();
+  function registrationNotice_(message, ok, retry){
     let notice = document.getElementById("cafe24RegistrationNotice");
     if(!notice){
       notice = document.createElement("div"); notice.id = "cafe24RegistrationNotice";
       notice.className = "noprint"; notice.setAttribute("role", "status"); notice.setAttribute("aria-live", "polite");
-      notice.style.cssText = "padding:9px 12px;font-size:13px;line-height:1.5;";
+      notice.style.cssText = "padding:9px 12px;font-size:12px;line-height:1.5;";
       $("#printBtn").closest(".tb-row").insertAdjacentElement("afterend", notice);
     }
     notice.style.color = ok ? "#1E7A46" : "#9B382A"; notice.textContent = message;
+    if(retry){const button=document.createElement('button');button.type='button';button.className='small-btn';button.textContent='등록 다시 확인';button.onclick=retry;notice.append(' ',button);}
   }
-  async function registerPrintedWorkorder_(code){
-    await firebase.database().ref("workorderRegistrationRequests/" + code).set({ requestedAt: firebase.database.ServerValue.TIMESTAMP });
+  async function registerOrderedWorkorder_(code){
+    // The server reads only the stored allowlisted fields, locks by product code,
+    // and looks up an existing product before any create. Never publish a page.
+    const user=window.AiselAuth?.currentUser?.()||firebase.auth().currentUser;
+    if(!user?.emailVerified)throw Error('대표자 계정으로 로그인한 뒤 등록을 확인해주세요.');
+    const token=await user.getIdToken();
+    const marker=await fetch('https://aisel-workorder-default-rtdb.asia-southeast1.firebasedatabase.app/workorderRegistrationRequests/'+encodeURIComponent(code)+'.json?auth='+encodeURIComponent(token),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestedAt:{'.sv':'timestamp'}}),signal:AbortSignal.timeout(15000)});
+    if(!marker.ok)throw Error('등록 요청 권한을 확인하지 못했습니다. 발주 저장은 유지됩니다.');
     const response = await fetch(CAFE24_REGISTRATION_URL, {
-      method:"POST", mode:"cors", credentials:"omit", headers:{"Content-Type":"application/json"},
+      method:"POST", mode:"cors", credentials:"omit", headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
       body:JSON.stringify({code}), signal:AbortSignal.timeout(90000)
     });
     const result = await response.json();
     if(!response.ok || result.ok !== true) throw new Error(result.message || "카페24 등록 결과를 확인하지 못했습니다.");
     return result;
+  }
+  function requestOrderRegistration_(code,ref){
+    if(orderRegistrationFlights_.has(code))return orderRegistrationFlights_.get(code);
+    const task=(async()=>{
+      try{
+        const source=(await ref.once('value')).val();
+        if(source?.status!=='order'||source.cafe24Done)return true;
+        if(window.AiselUnifiedAdapter?.isOwner&&!window.AiselUnifiedAdapter.isOwner()){
+          if(currentCode===code)registrationNotice_('발주 저장됨 · 카페24 등록은 대표자 계정에서 확인해주세요.',true);return false;
+        }
+        if(currentCode===code)registrationNotice_('발주 저장됨 · 카페24 기본 상품 등록 중…',true);
+        const result=await registerOrderedWorkorder_(code);
+        await ref.update({cafe24Done:true});
+        await woIndexRoot.child(code).update({cafe24Done:true});
+        if(currentCode===code&&woRef===ref){$('#cafe24Done').checked=true;if(lastSavedState_)lastSavedState_.cafe24Done=true;if(editorContentBaseline_)editorContentBaseline_.cafe24Done=true;registrationNotice_(result.message,true);}
+        return true;
+      }catch(error){
+        if(currentCode===code&&woRef===ref)registrationNotice_('발주는 저장됐습니다. '+(error.message||'카페24 등록을 다시 확인해주세요.'),false,()=>requestOrderRegistration_(code,ref));
+        return false;
+      }finally{orderRegistrationFlights_.delete(code);}
+    })();orderRegistrationFlights_.set(code,task);return task;
   }
   $("#printBtn").addEventListener("click", async ()=>{
     if(printRegistrationBusy_) return;
@@ -6511,44 +6557,17 @@
     const printCode = currentCode, printRef = woRef;
     printRegistrationBusy_ = true; $("#printBtn").disabled = true;
     try{
-    if(!await waitForEditorComposition_()){
-      registrationNotice_("한글 입력을 마친 뒤 다시 인쇄해주세요.", false); return;
-    }
-    if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
-    if(window.validateCostPrint_ && !window.validateCostPrint_())return;
-    // 2026-08-29 추가: 인쇄(=작업지시서 확정) 시점에 상태를 PDP로 자동 전환.
-    // 이미 PDP·판매·드롭이면 되돌리지 않음(재인쇄 시 상태가 거꾸로 가지 않게).
-    // 상세설명 카피생성기(onPdpStageReached_)는 여기서 부르지 않음 — 상태 탭 버튼과 분리해서 유지.
-    if(currentStatus !== "pdp" && currentStatus !== "sale" && currentStatus !== "drop"){
-      currentStatus = "pdp";
-      updateStatusButtons();
-      refreshCafe24Bar_();
-    }
-    const saved = await save();
-    const pending = await Promise.all([...pendingSaveWrites_]);
-    if(saved === false || pending.includes(false)) throw new Error("작업지시서 저장에 실패했습니다. 인터넷 연결을 확인해주세요.");
-    if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
-    const eligible = currentStatus !== "drop";
-    const sheets = syncToAiselSheets_();
-    if(eligible){
-      registrationNotice_("카페24 상품 등록 중…", true);
-      // Start before opening the print dialog; cancelling print does not cancel registration.
-      try{
-        const result = await registerPrintedWorkorder_(printCode);
-        if(currentCode === printCode && woRef === printRef){
-          $("#cafe24Done").checked = true;
-          await save();
-          registrationNotice_(result.message, true);
-        }
-      }catch(err){
-        if(currentCode === printCode) registrationNotice_(err.message || "카페24 연결을 확인한 뒤 다시 눌러주세요.", false);
+      if(!await waitForEditorComposition_()){
+        registrationNotice_("한글 입력을 마친 뒤 다시 PDF를 저장해주세요.", false); return;
       }
-      if(currentCode === printCode && woRef === printRef && !loading) window.print();
-      await sheets;
-    }else{
-      registrationNotice_("드롭한 작업지시서는 카페24에 새로 등록하지 않습니다.", true);
-      window.print(); await sheets;
-    }
+      if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
+      if(window.validateCostPrint_ && !window.validateCostPrint_())return;
+      const saved = await save();
+      const pending = await Promise.all([...pendingSaveWrites_]);
+      if(saved === false || pending.includes(false)) throw new Error("작업지시서 저장에 실패했습니다. 인터넷 연결을 확인해주세요.");
+      if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
+      // PDF is an export of the confirmed document. No stage change or commerce request.
+      window.print();
     }catch(err){
       registrationNotice_(err.message || "저장 상태를 확인한 뒤 다시 눌러주세요.", false);
     }finally{
@@ -6628,11 +6647,7 @@
     const input=document.getElementById(id);
     input.addEventListener("input",renderSampleDateLabels_);
     input.addEventListener("change",renderSampleDateLabels_);
-    input.addEventListener("click",()=>{
-      if(typeof input.showPicker === "function"){
-        try { input.showPicker(); } catch (_) { /* Native tap/focus remains available. */ }
-      }
-    });
+    // Picker activation is shared across all date inputs.
   });
   function resampleToday_(){ return new Date(Date.now() - new Date().getTimezoneOffset()*60000).toISOString().slice(0,10); }
   function resetResampleDraft_(){
@@ -6781,8 +6796,10 @@
       statusChanging_ = true;
       document.querySelectorAll(".status-btn").forEach(b=> b.disabled = true);
       try{
+        if(!await waitForEditorComposition_())throw Error('한글 입력을 마쳐주세요.');
         clearTimeout(saveT); saveT = null;
-        await Promise.all([...pendingSaveWrites_]);
+        const saved=await save(null,{beforeStatusChange:true}),writes=await Promise.all([...pendingSaveWrites_]);
+        if(saved===false||writes.includes(false))throw Error('최신 내용 저장을 확인하지 못했습니다.');
         if(currentCode !== code) return;
         // 원본·목록·제품 진행 현황을 함께 바꿔 세 화면의 상태가 어긋나지 않게 합니다.
         const now = Date.now();
@@ -6810,6 +6827,7 @@
         updateStatusButtons();
         refreshCafe24Bar_();
         if(next === "sampling") ensureSampleMgmtRow_(code, pumInput.value.trim());
+        if(next === "order")void requestOrderRegistration_(code,woRef);
         // PDP 진입 시 기존 상세설명 생성 동작은 유지합니다.
         if(next === "pdp" && window.onPdpStageReached_) window.onPdpStageReached_();
       }catch(err){
@@ -7071,6 +7089,37 @@
   },true);
 
 
+  let workorderPlanning_ = null,workorderUspPanel_=null,workorderUspRefreshBusy_=false;
+  function renderWorkorderUsp_(){
+    if(!workorderUspPanel_)return;
+    const plan=workorderPlanning_,section=document.getElementById('workorderUsp');
+    section.hidden=!plan;
+    workorderUspPanel_.update({key:currentCode,serialized:plan?.uspKeywordsJson,legacy:plan?.uspValue});
+    document.getElementById('workorderUspRefresh').hidden=!plan?.candidateId||!window.AiselUnifiedAdapter?.isOwner?.();
+    document.getElementById('workorderUspRefresh').disabled=workorderUspRefreshBusy_;
+    const note=document.getElementById('workorderUspNotice');
+    if(!workorderUspRefreshBusy_)note.textContent=plan?.descriptionNeedsReview?'상품명·USP가 바뀌었습니다. 기존 상세설명을 확인해주세요.':'';
+  }
+  async function refreshWorkorderUsp_(){
+    if(workorderUspRefreshBusy_||!workorderPlanning_?.candidateId||!window.AiselUnifiedAdapter?.isOwner?.())return;
+    const code=currentCode,ref=woRef,id=workorderPlanning_.candidateId,expected=JSON.stringify(workorderPlanning_);
+    workorderUspRefreshBusy_=true;renderWorkorderUsp_();
+    try{
+      if(!await waitForEditorComposition_()||await save()===false)throw Error('현재 작업지시서 저장을 먼저 확인해주세요.');
+      const candidate=await window.AiselCollectionWrites.getMeeting(id);
+      if(currentCode!==code||woRef!==ref)return;
+      const value=candidate?.val?candidate.val():candidate;
+      if(!value||value.id&&value.id!==id||value.convertedCode&&value.convertedCode!==code)throw Error('연결된 디자인회의를 확인해주세요.');
+      if(JSON.stringify(workorderPlanning_)!==expected)throw Error('다른 곳에서 USP가 변경됐습니다. 다시 확인해주세요.');
+      const next=window.AiselUsp.refreshed(workorderPlanning_,value,id,pumInput.value,document.getElementById('output')?.value);
+      // Update only this source snapshot. Product names, revisions and manually
+      // written descriptions are never replaced by the meeting's current title.
+      workorderPlanning_=next;markEditorSavePending_();
+      if(await save()===false)throw Error('USP 저장을 확인하지 못했습니다. 입력은 초안에 유지했습니다.');
+      document.getElementById('workorderUspNotice').textContent='USP를 최신 내용으로 가져왔습니다.';
+    }catch(error){if(currentCode===code)document.getElementById('workorderUspNotice').textContent=error.message;}
+    finally{workorderUspRefreshBusy_=false;if(currentCode===code){document.getElementById('workorderUspRefresh').disabled=false;workorderUspPanel_.update({key:code,serialized:workorderPlanning_?.uspKeywordsJson,legacy:workorderPlanning_?.uspValue});}}
+  }
   let manualModifiedDate_ = '', blendNormalizePending_ = false;
   function collect(){
     syncFabricFromMemo_();
@@ -7081,6 +7130,11 @@
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
     st.modifiedDate = manualModifiedDate_;
+    if(workorderPlanning_){
+      const priorName=editorContentBaseline_?.pumMyeong;
+      if(priorName!==undefined&&priorName!==st.pumMyeong&&String(st.output||'').trim())workorderPlanning_.descriptionNeedsReview=true;
+      st.designMeetingPlanning=AiselDraftStorage.clone(workorderPlanning_);
+    }
     // v87: 첫 두 칸은 예전 앱과 호환하고, 추가 링크는 배열로 함께 저장합니다.
     st.refLinks = collectReferenceLinks_();
     st.refLink = st.refLinks[0] || "";
@@ -7206,7 +7260,7 @@
   const draftIgnored_ = new Set(['updatedAt','createdAt','myy','mmm','mdd']);
   function draftOwner_(){
     try{
-      const primary=firebase.app().auth().currentUser;
+      const primary=window.AiselAuth?.currentUser?.()||firebase.app().auth().currentUser;
       const owner=(firebase.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');
       return (primary?.uid||'local-browser')+':'+(owner?.uid||'designer');
     }catch(_){return 'local-browser:designer';}
@@ -7607,9 +7661,9 @@
   const pendingSaveWrites_ = new Set();
   let initialCreationWrite_=null,initialCreationRef_=null;
   function rejectEditorSave_(reason){const state=editorSaveState_();state.queued=false;state.result=false;state.confirmed=false;state.blockReason=reason;renderEditorSaveState_(state);return false;}
-  function save(event){
+  function save(event,options={}){
     if(event?.type==='input'){saveSoon();return false;}
-    if(loading || !woRef || statusChanging_)return false;
+    if(loading || !woRef || (statusChanging_&&!options.beforeStatusChange))return false;
     normalizePendingBlend_();
     const draftContext=captureDraft_();
     if(newOrderMode_ && initialCreationWrite_&&initialCreationRef_===woRef)return initialCreationWrite_;
@@ -7642,6 +7696,10 @@
       return result;
     }
     const targetRef=woRef,targetCode=currentCode,st=collect();
+    if(newOrderMode_&&!editorContentBaseline_&&window.AiselAccess?.session){
+      st.createdByUid=window.AiselAccess.session.uid;
+      st.createdByName=window.AiselAccess.session.displayName||window.AiselAccess.session.email||'';
+    }
     if(woRef!==targetRef || currentCode!==targetCode)return false;
     const state=editorSaveState_(),id=++state.serial,revision=state.revision;
     state.latest=id;state.queued=false;state.result="pending";state.blockReason='';
@@ -7674,6 +7732,7 @@
     const writePromise=Promise.resolve().then(async()=>{
       if(draftContext){if(!draftContext.loaded)await draftContext.ready;await draftContext.chain;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.remotePending||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
       if(creating){
+        if(window.AiselAccess?.session)await window.AiselAccess.request('claimWorkorder',{code:targetCode});
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
       }else if(keys.length)await targetRef.update(patch);
@@ -7689,6 +7748,7 @@
       if(isCurrentSaveState_(state)&&state.latest===id){
         if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
         state.indexFailed=false;
+        window.dispatchEvent(new CustomEvent("aisel-access-workorders-changed"));
         try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
       }
       if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);}
@@ -7730,6 +7790,7 @@
       if(result===null)return; // The write and local draft remain pending; a late server acknowledgement still resolves them.
       originalSaved=result===true;
       if(!originalSaved || !isCurrentSaveState_(state)){if(isCurrentSaveState_(state)&&state.result!=='pending'&&!state.queued)rejectEditorSave_(state.blockReason||'저장 조건을 확인한 뒤 다시 저장해 주세요.');return;}
+      if(currentStatus==="order")void requestOrderRegistration_(currentCode,woRef);
       // External transfers start only after this record's original write succeeded.
       if(window.saveFabricMaster_)Promise.resolve(window.saveFabricMaster_({
         supplier:$("#fabricSupplier").value,name:$("#fabricName").value,price:$("#fabricPrice").value,
@@ -7779,6 +7840,8 @@
     }
   }
   function applyState(st){
+    workorderPlanning_=st.designMeetingPlanning?AiselDraftStorage.clone(st.designMeetingPlanning):null;
+    renderWorkorderUsp_();
     manualModifiedDate_=validDateInput_(st.modifiedDate);
     blendNormalizePending_=false;
     const resetSampleDraft=!sampleChangeBaseline_ || sampleChangeBaselineCode_ !== currentCode;
@@ -8429,6 +8492,7 @@
   // 2026-08-25 추가: 화면을 떠날 때 예약된 자동저장을 취소하고 연결을 끊습니다.
   // 이 세 줄이 없어서 "작지가 사라짐 · 품명이 다른 이름으로 바뀜" 사고가 났습니다.
   function detachWoRefNow_(reason){
+    window.dispatchEvent(new CustomEvent("aisel-workorder-detached"));
     window.AiselWorkorderMeetingPhotos?.clear();
     captureDraft_();activeDraft_=null;renderDraft_();
     try{ clearTimeout(saveT); }catch(e){}
@@ -8441,6 +8505,7 @@
     lastSavedState_ = null;   // 2026-08-25 추가: 비교 기준도 함께 비웁니다
   }
   function attachWoRef(code){
+    if(!window.AiselAccess?.allowed('editor'))return false;
     if(!code || code === currentCode) return;
     window.AiselWorkorderMeetingPhotos?.clear();
     captureDraft_();
@@ -8475,6 +8540,7 @@
     woListener = (snapshot)=>{
       if(woRef!==subscribedRef||currentCode!==code)return;
       const st = snapshot.val();
+      if(st)window.dispatchEvent(new CustomEvent("aisel-workorder-loaded",{detail:{code}}));
       // 2026-08-25 추가: 목록에서 연 직후 첫 응답은 "불러오기"입니다.
       // 내용이 비어 있어도 저장 잠금을 반드시 풀어야 화면이 멈추지 않습니다.
       const isFirst = firstSnapshot;
@@ -8528,11 +8594,15 @@
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
       if(isFirst) syncIndexFromFull_(code, st);
     };
-    woRef.on("value", woListener,error=>{
+    const onReadError=error=>{
       if(woRef!==subscribedRef||currentCode!==code)return;
-      window.AiselWorkorderMeetingPhotos?.failed(code,error);
-      draftReadFailed_(error);
-    });
+      window.AiselWorkorderMeetingPhotos?.failed(code,error);draftReadFailed_(error);
+    };
+    const subscribe=()=>{if(woRef===subscribedRef&&currentCode===code)subscribedRef.on("value",woListener,onReadError);};
+    // Claiming records the actual author and current assignee before the first
+    // save. The server refuses existing records and does not invent authors.
+    if(newOrderMode_&&window.AiselAccess?.session)window.AiselAccess.request('claimWorkorder',{code}).then(subscribe,onReadError);
+    else subscribe();
   }
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
   document.addEventListener("focusout", ()=>{
@@ -8985,7 +9055,6 @@
     const control=document.createElement('span');control.className='header-date-control';
     const label=document.createElement('span');label.id=input.id+'Label';label.className='header-date-value';label.setAttribute('aria-hidden','true');
     control.append(label,input);
-    input.addEventListener('click',()=>{try{input.showPicker?.();}catch(_){} });
     return control;
   }
   const createdDateDisplay=document.querySelector('#sheet .date-box > .date-row');
@@ -9544,7 +9613,7 @@
   const sampleMgmtRoot = firebase.database().ref("sampleManagement");
   let allSampleMgmt = {};
   let lastSampleMgmtSig_ = null;
-  sampleMgmtRoot.on("value", snap=>{
+  window.AiselAccess.watchLegacy(sampleMgmtRoot,"value", snap=>{
     allSampleMgmt = snap.val() || {};
     // 2026-08-25 추가: 내용이 그대로면 표를 다시 만들지 않습니다.
     // 디자이너와 같이 보고 있을 때 저장할 때마다 표 전체가 깜빡이던 자리입니다.
@@ -10437,7 +10506,6 @@
       card.querySelector(".ref-price-input").addEventListener("input", e=> refSaveSoon({ targetPrice: e.target.value }));
       {
         const dateInput = card.querySelector(".ref-meeting-date-input");
-        dateInput.addEventListener("click", e=>{ if(e.target.showPicker){ try{ e.target.showPicker(); }catch(err){} } });
         dateInput.addEventListener("change", e=>{
           const wrap = e.target.closest(".ref-date-pill-wrap");
           const val = e.target.value;
@@ -10653,6 +10721,7 @@
   });
 
   function startNewWorkOrder(){
+    accessSequenceRequest_=null;
     // 2026-08-25 추가 (중요): 직전 작지를 편집하다가 600ms 안에 새 작지를 누르면
     // 예약돼 있던 자동저장이 "비워진 화면"을 읽어서 직전 작지에 덮어쓰는 사고가 있었습니다.
     // (품명·사진·레퍼런스 링크가 동시에 사라지고 나중에 조립된 새 품명이 옛 작지에 박히던 원인)
@@ -10713,6 +10782,7 @@
     $("#cafe24Done").checked = false;
     editLog_ = [];
     editorContentBaseline_ = null;
+    workorderPlanning_=null;renderWorkorderUsp_();
     createdAt_ = null;   // 새 작지는 처음 저장될 때 생성 시각이 새로 정해집니다
     manualModifiedDate_='';blendNormalizePending_=false;
     const outputEl = document.getElementById("output");
@@ -10799,6 +10869,29 @@
     return codes.length===1?codes[0]:'';
   };
   let galleryFilter = "sampling";
+  let galleryOrganization_={date:'',category:'',designer:''},galleryFilterRefresh_=null;
+  function galleryCategory_(code,st){
+    const raw=st.cat,provided=raw!==undefined&&raw!==null&&String(raw).trim()!=='';
+    return (provided?CATS[Number(raw)]:null)||CATS.find(cat=>cat.code===String(code).split('-')[2])||null;
+  }
+  function galleryDate_(st){
+    const at=sortKeyForOrder_(st);if(!at)return '';
+    const date=modificationDateParts_(at);return [date.myy,date.mmm,date.mdd].map((v,i)=>String(v).padStart(i?2:4,'0')).join('-');
+  }
+  function matchesGalleryOrganization_(code,st){
+    const f=galleryOrganization_,designer=String(st.currentAssigneeName??st.designer??'').trim();
+    return (!f.date||galleryDate_(st)===f.date)&&(!f.category||galleryCategory_(code,st)?.code===f.category)&&(!f.designer||(f.designer==='__unassigned__'?!designer:designer===f.designer));
+  }
+  window.AiselWorkorderListFilters={
+    snapshot:()=>({...galleryOrganization_}),
+    options:()=>{
+      const categories=new Map(),designers=new Set();
+      for(const [code,st] of Object.entries(allWorkOrders||{})){const category=galleryCategory_(code,st);if(category)categories.set(category.code,category.name);const assignee=String(st.currentAssigneeName??st.designer??'').trim();if(assignee)designers.add(assignee);}
+      return {categories:[...categories].sort((a,b)=>a[1].localeCompare(b[1],'ko')),designers:[...designers].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ko'))};
+    },
+    set(value){galleryOrganization_={date:validDateInput_(value.date)||'',category:String(value.category||''),designer:String(value.designer||'')};renderGallery();},
+    subscribe(fn){galleryFilterRefresh_=fn;fn();return()=>{if(galleryFilterRefresh_===fn)galleryFilterRefresh_=null;};}
+  };
   let qoStatusFilterVal = "sampling";
   function galleryStatus_(st){
     return normalizeWorkOrderStatus_(st && st.status);
@@ -10854,7 +10947,7 @@
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const list = Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>matchesGallerySearch_(code, st, q));
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&matchesGalleryOrganization_(code,st));
     if(!list.length){ alert("지금 목록에 보이는 작지가 없습니다."); return; }
     if(!confirm(`지금 화면에 보이는 작지 ${list.length}개를 구글시트로 내보낼까요? 같은 품번이 이미 시트에 있으면 그 줄을 덮어씁니다.`)) return;
     const btn = $("#galleryExportSheetBtn");
@@ -10898,12 +10991,13 @@
   function renderGallery(){
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const sig = JSON.stringify({
-      f: galleryFilter, q,
-      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.cat, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length, st.coordiCode1, st.coordiCode2, st.coordiCode3])
+      f: galleryFilter, q, organization:galleryOrganization_,
+      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.cat, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.currentAssigneeName, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length, st.coordiCode1, st.coordiCode2, st.coordiCode3])
     });
     if(sig === lastGallerySig_) return; // 실제로 바뀐 게 없으면 다시 그리지 않음 (썸네일 깜빡임 방지)
     lastGallerySig_ = sig;
     renderGalleryCounts_();
+    galleryFilterRefresh_?.();
     const grid = $("#galleryGrid");
     grid.innerHTML = "";
     const newCard = document.createElement("div");
@@ -10917,7 +11011,7 @@
 
     Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>matchesGallerySearch_(code, st, q))
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&matchesGalleryOrganization_(code,st))
       .sort(compareRegisteredOrders_)
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
@@ -11262,8 +11356,10 @@
   // v114: open the exact sheet-linked record after the index arrives, once only.
   let sheetLinkedCode_ = new URLSearchParams(location.search).get("code");
   if(sheetLinkedCode_ && !/^AS-[A-Z0-9-]+$/.test(sheetLinkedCode_)) sheetLinkedCode_ = null;
-  woIndexRoot.on("value", (snapshot)=>{
-    allWorkOrders = snapshot.val() || {};
+  let authorizedIndexRecords_={},workorderAssignments_={};
+  function acceptAuthorizedWorkorderIndex_(snapshot){
+    authorizedIndexRecords_=snapshot.val()||{};
+    allWorkOrders=window.AiselAccess.projectWorkorders(authorizedIndexRecords_,workorderAssignments_);
     if(sheetLinkedCode_){
       const linkedCode=sheetLinkedCode_;sheetLinkedCode_=null;
       // Queue after the current startup stack, including the navigation wrappers.
@@ -11272,8 +11368,8 @@
         else alert("해당 작업지시서를 찾을 수 없습니다. 삭제·품번 변경 여부를 확인해주세요.");
       },0);
     }
-    queueLegacySampleStatuses_(allWorkOrders);
-    backfillShare_();   // 2026-08-25: 공유 칸이 비어 있으면 색인에서 가볍게 채웁니다
+    if(!window.AiselAccess?.ownOnly)queueLegacySampleStatuses_(allWorkOrders);
+    if(!window.AiselAccess?.ownOnly)backfillShare_();   // 2026-08-25: 공유 칸이 비어 있으면 색인에서 가볍게 채웁니다
     updateCodeConflictUI_(); // 2026-08-13 추가: 목록이 늦게 도착한 경우에도 품번 중복 경고가 정확히 뜨게
     clearTimeout(renderListsTimer_);
     renderListsTimer_ = setTimeout(()=>{
@@ -11284,11 +11380,52 @@
         if(!selectedQO_) qoRenderSearchResults_($("#qoSearchInput").value);
       }
     }, 250);
+  }
+  // The owner keeps the live index. Protected designers receive only the
+  // server-selected assignment index, never the company index plus a filter.
+  window.AiselAccess.watchLegacy(woIndexRoot,"value",acceptAuthorizedWorkorderIndex_);
+  let accessIndexFlight_=null,accessIndexEpoch_=0,accessIndexScope_=null,assignmentRefreshedAt_=0;
+  async function refreshAssignedIndex_(){
+    if(!window.AiselAccess.session||(!window.AiselAccess.ownOnly&&!window.AiselAccess.isOwner)||document.hidden)return;
+    if(!window.AiselAccess.ownOnly&&Date.now()-assignmentRefreshedAt_<300000)return;
+    if(accessIndexFlight_)return accessIndexFlight_;
+    const expected=accessIndexEpoch_;
+    const flight=window.AiselAccess.request('listWorkorders').then(result=>{
+      if(expected!==accessIndexEpoch_)return;
+      workorderAssignments_=result.assignments||{};assignmentRefreshedAt_=Date.now();
+      if(!window.AiselAccess.ownOnly){acceptAuthorizedWorkorderIndex_({val:()=>authorizedIndexRecords_});return;}
+      acceptAuthorizedWorkorderIndex_({val:()=>result.items||{}});
+      window.dispatchEvent(new CustomEvent('aisel-assigned-index-change',{detail:{codes:Object.keys(result.items||{})}}));
+      if(currentCode&&!result.items?.[currentCode]&&!newOrderMode_&&!initialCreationWrite_&&!pendingSaveWrites_.size){
+        detachWoRefNow_('담당 변경');document.activeElement?.blur?.();applyState({});editorContentBaseline_=lastSavedState_=null;
+        window.AiselUnified?.show('orders',{replace:true});
+      }
+    }).catch(error=>{if(expected===accessIndexEpoch_)document.getElementById('unifiedNotice').textContent=error.message;}).finally(()=>{if(accessIndexFlight_===flight)accessIndexFlight_=null;});
+    accessIndexFlight_=flight;return flight;
+  }
+  window.AiselAccess.subscribe(session=>{
+    const scope=session?session.uid+':'+!!session.permissions?.ownOnly:'';
+    if(scope===accessIndexScope_)return;accessIndexScope_=scope;
+    accessIndexEpoch_++;accessIndexFlight_=null;assignmentRefreshedAt_=0;authorizedIndexRecords_={};workorderAssignments_={};
+    document.body.dataset.aiselAccess=!session?'pending':session.permissions?.ownOnly?'restricted':'ready';
+    allWorkOrders={};lastGallerySig_=null;window.AiselWorkorderListFilters?.set?.({});renderGallery();
+    if(!session){
+      const hadRecord=!!woRef; if(woRef)detachWoRefNow_('계정 변경');
+      designerListCache_={};allSampleMgmt={};draftContexts_.clear();
+      for(const key of Object.keys(lastIndexSig_))delete lastIndexSig_[key];
+      if(hadRecord){document.activeElement?.blur?.();applyState({});editorContentBaseline_=lastSavedState_=null;}
+      document.getElementById('editorView').style.display='none';
+    }
+    if(session?.permissions?.ownOnly||session?.role==='owner')refreshAssignedIndex_();
   });
+  setInterval(refreshAssignedIndex_,30000);
+  document.addEventListener('visibilitychange',refreshAssignedIndex_);
+  window.addEventListener('aisel-access-workorders-changed',()=>{assignmentRefreshedAt_=0;refreshAssignedIndex_();});
 
   // 색인이 아직 없거나 예전 판이면 딱 한 번만 전체를 읽어 색인을 만듭니다.
   // 이 작업 이후로는 목록 화면이 두 번 다시 원본 사진을 내려받지 않습니다.
   (async function ensureWoIndex_(){
+    if(!window.AiselAccess?.isOwner)return;
     try{
       const verSnap = await woIndexMetaRoot.child("version").once("value");
       if(verSnap.val() === WO_INDEX_VERSION) return;
@@ -11801,6 +11938,7 @@
   function toggleTrash_(open){
     trashOpen_=open;$("#workOrderTrashPanel").hidden=!open;
     $("#galleryGrid").hidden=open;$("#gallerySearchRow").querySelector("label").hidden=open;
+    if($("#galleryFilters"))$("#galleryFilters").hidden=open;
     $("#galleryTrashBtn").setAttribute("aria-expanded",String(open));
     if(open) listenTrash_();renderTrash_();
   }
@@ -12014,7 +12152,7 @@
   let skipHistoryPop_=false;
   function snapshotRoute_(){
     return {...appRoute_,scroll:window.scrollY,filter:galleryFilter,
-      query:$("#gallerySearchInput").value};
+      query:$("#gallerySearchInput").value,organization:{...galleryOrganization_}};
   }
   function recordRoute_(view,code){
     if(restoringRoute_)return;
@@ -12088,6 +12226,7 @@
     try{
       galleryFilter=state.filter === "all" ? "all" : normalizeWorkOrderStatus_(state.filter);
       $("#gallerySearchInput").value=state.query||"";
+      galleryOrganization_={date:'',category:'',designer:'',...(state.organization||{})};
       $("#galleryTabs").querySelectorAll(".gtab").forEach(b=>b.classList.toggle("active",b.dataset.status===galleryFilter));
       detachWoRefNow_("뒤로/앞으로 이동");
       if(state.view==="editor"&&state.code&&allWorkOrders[state.code])openWorkOrderBeforeHistory_(state.code);
@@ -12097,7 +12236,7 @@
       else if(state.view==="samplemgmt"){galleryFilter="sampling";await showGallery();}
       else await showGallery();
       appRoute_=state;
-      requestAnimationFrame(()=>window.scrollTo(0,state.scroll||0));
+      requestAnimationFrame(()=>{if(!window.AiselReloadStartup?.skipRestore)window.scrollTo(0,state.scroll||0);});
     }finally{restoringRoute_=false;}
   }
   window.addEventListener("popstate",async event=>{
@@ -12213,6 +12352,11 @@
   // Keep the original desktop fields and records; mobile reuses the same IDs and save handlers.
   const mobileRecords=document.createElement('section');mobileRecords.id='mobileSampleRecords';mobileRecords.className='noprint';
   document.querySelector('#sheet > .detail2').before(mobileRecords);
+  const workorderUsp=document.createElement('section');workorderUsp.id='workorderUsp';workorderUsp.className='noprint';workorderUsp.hidden=true;
+  workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP · 고객이 살 이유</span><button type="button" id="workorderUspRefresh" hidden>최신 USP 가져오기</button></div><div id="workorderUspKeywords"></div><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
+  mobileRecords.before(workorderUsp);workorderUspPanel_=window.AiselUsp.mount(document.getElementById('workorderUspKeywords'),{readOnly:true});
+  document.getElementById('workorderUspRefresh').onclick=refreshWorkorderUsp_;
+  window.addEventListener('aisel-session-change',renderWorkorderUsp_);renderWorkorderUsp_();
   const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
   const finalTitle=finalSpec.previousElementSibling,desktopFinalTitle=finalTitle.textContent;
   const mobileStatus=document.createElement('div');mobileStatus.id='mobileSampleStatus';mobileStatus.className='noprint';
@@ -12326,7 +12470,6 @@
       }
       mobileChangesLastSignature_=mobileChangesSignature_();saveSoon();
     };
-    date.addEventListener('click',()=>{try{if(date.showPicker)date.showPicker();}catch(_){}});
     const dateChanged=()=>{if(date.validity.badInput)return;showDate();commit();};
     date.addEventListener('input',dateChanged);date.addEventListener('change',dateChanged);
     textarea.addEventListener('input',commit);
@@ -12404,6 +12547,7 @@
     const screen=!printing&&!namePrintMedia.matches;
     const mobile=mobileLayout.matches&&screen;
     placeDesktopWorkspace_(screen&&!mobile);
+    mobileRecords.before(workorderUsp);
     if(mobile){mobileSummary.append(mobileStatus,sampleSeg);}
     else{sampleStatusHome.after(mobileStatus);sampleSegHome.after(sampleSeg);}
     // Reuse the same picker and handlers. Restore its original home for desktop/print.
@@ -15022,6 +15166,7 @@ async function reconcile(){
 }
 let reconciledApp=null,reconciledUid;
 function onAuthChange(){
+ if(!root.AiselAccess?.session?.active||root.AiselAccess.ownOnly)return;
  const app=authenticatedApp()||defaultApp,uid=app.auth().currentUser?.uid||null;
  if(reconciledApp===app&&reconciledUid===uid)return;
  reconciledApp=app;reconciledUid=uid;
@@ -15031,10 +15176,11 @@ function onAuthChange(){
  });
 }
 sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
+root.AiselAccess?.subscribe(onAuthChange);
 function onIndexChange(snap){return sync(snap.key,snap.val()?.updatedAt,{incremental:true,indexSignature:snap.val()==null?"removed":fingerprint(snap.val())});}
-defaultApp.database().ref("workorderIndex").on("child_added",onIndexChange);
-defaultApp.database().ref("workorderIndex").on("child_changed",onIndexChange);
-defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
+root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_added",onIndexChange);
+root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_changed",onIndexChange);
+root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_removed",onIndexChange);
 })(typeof globalThis!=="undefined"?globalThis:this);
 
 </script>
@@ -15163,7 +15309,6 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
 <style id="aisel-sales-clean-view">
 @media screen {
   #salesView #salesTabs,
-  #salesView #salesGroupTabs,
   #salesView #salesSyncNotice,
   #salesView #salesCounts,
   #salesView .sales-scan-note {display:none!important}
@@ -15358,17 +15503,20 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   if(metric.note){const note=document.createElement('p');note.textContent=metric.note;dialog.append(note);}
   const close=document.createElement('button');close.type='button';close.textContent='닫기';close.addEventListener('click',()=>dialog.close());dialog.append(close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
  }
- async function read(endpoint){
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(endpoint))throw Error('시트 연결 주소가 설정되지 않았습니다.');
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
-  try{const response=await fetch(endpoint+'?action=sales',{signal:controller.signal,credentials:'omit',cache:'no-store'});if(!response.ok)throw Error('시트 연결을 확인해 주세요.');const snapshot=await response.json();if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');returnMetric(snapshot);return snapshot;}finally{clearTimeout(timer);}
+ async function read(endpoint,group='new'){
+  if(!root.AiselAccess?.session)throw Error('로그인 후 판매성과를 확인해주세요.');
+  const snapshot=await root.AiselAccess.request('sales',{group});
+  if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해주세요.');
+  returnMetric(snapshot);return snapshot;
  }
  function start(endpoint){
   const host=document.getElementById('salesTableBody'),search=document.getElementById('salesSearchInput');
-  const cacheKey='aisel.sales-sheet.cache.v1',freshFor=5*60*1000,maxAge=7*24*60*60*1000,maxCacheBytes=256*1024;
-  let snapshot=null,inFlight=null,lastRead=0,lastAttempt=0;
+  const freshFor=5*60*1000;
+  // Previous public cache must never paint before the current account is verified.
+  try{root.localStorage.removeItem('aisel.sales-sheet.cache.v1');}catch(_){}
+  let snapshot=null,inFlight=null,lastRead=0,lastAttempt=0,accountScope=null,generation=0,group='new';
   const show=()=>{if(snapshot)render(host,snapshot,search.value);};
-  search.placeholder='품명 또는 품번으로 검색';search.setAttribute('aria-label','품명 또는 품번으로 검색');
+  search.placeholder='검색';search.setAttribute('aria-label','검색');
   document.getElementById('salesAuth').hidden=true;
   document.getElementById('salesSourceNote').textContent='운영시트 신상성과 · 반품 지표는 시트 기준';
   const sort=document.getElementById('salesSort');sort.replaceChildren(new Option('판매순','quantity'));sort.disabled=true;
@@ -15381,34 +15529,9 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';refresh.id='sheetSalesRefresh';meta.append(refresh);
   const readState=document.createElement('span');readState.className='sheet-sales-read-state';readState.id='sheetSalesReadState';readState.hidden=true;readState.setAttribute('role','status');meta.append(readState);
   search.addEventListener('input',show);
-  function compact(value){
-   if(!value||value.ok!==true||value.source!=='operations-sheet'||!Array.isArray(value.items)||value.items.length>2000||!Number.isFinite(Date.parse(value.readAt)))return null;
-   returnMetric(value);
-   const numberOrNull=x=>x==null||(typeof x==='number'&&Number.isFinite(x));
-   const textOrNull=x=>x==null||typeof x==='string';
-   if(value.items.some(x=>!x||!numberOrNull(x.rank)||typeof x.name!=='string'||!textOrNull(x.designer)||!textOrNull(x.factory)||!numberOrNull(x.share)||!numberOrNull(x.returns)))return null;
-   return {ok:true,source:'operations-sheet',readAt:value.readAt,periodLabel:typeof value.periodLabel==='string'?value.periodLabel:'',returnMetric:{key:returnMetric(value).key},items:value.items.map(x=>({rank:x.rank??null,name:x.name,designer:x.designer??'',factory:x.factory??'',share:x.share??null,returns:x.returns??null}))};
-  }
-  function bytes(text){return new TextEncoder().encode(text).byteLength;}
-  function restore(){
-   try{
-    const text=root.localStorage.getItem(cacheKey);if(!text||text.length>maxCacheBytes||bytes(text)>maxCacheBytes)return;
-    const record=JSON.parse(text),age=Date.now()-record.savedAt;
-    if(record.endpoint!==endpoint||!Number.isFinite(record.savedAt)||age<0||age>maxAge)return;
-    const value=compact(record.snapshot);if(!value)return;
-    snapshot=value;lastRead=record.savedAt;show();showCheckedTime();
-   }catch(error){/* A blocked or stale cache never prevents a fresh read. */}
-  }
-  function remember(value){
-   try{
-    const small=compact(value);if(!small){root.localStorage.removeItem(cacheKey);return;}
-    const text=JSON.stringify({endpoint,savedAt:lastRead,snapshot:small});
-    if(bytes(text)<=maxCacheBytes)root.localStorage.setItem(cacheKey,text);else root.localStorage.removeItem(cacheKey);
-   }catch(error){/* Sales remain usable when browser storage is unavailable. */}
-  }
   function showCheckedTime(failed=false){
    readState.hidden=!failed||!snapshot;readState.textContent=failed&&snapshot?'연결 실패 · 이전 자료 표시 중':'';
-   if(!snapshot){updated.textContent='연결 확인 필요';return;}
+   if(!snapshot){updated.textContent=root.AiselAccess?.session?'연결 확인 필요':'로그인 후 확인';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
    const valid=Number.isFinite(checked.getTime());
    const oldDate=valid&&checked.toLocaleDateString('ko-KR',zone)!==now.toLocaleDateString('ko-KR',zone);
@@ -15423,17 +15546,20 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
    return !document.hidden&&(!root.AiselUnified||root.AiselUnified.view==='sales')&&view&&!view.hidden&&getComputedStyle(view).display!=='none';
   }
   function load(){
+   if(!root.AiselAccess?.session){host.textContent='로그인 후 판매성과를 확인해주세요.';return Promise.resolve(false);}
    if(inFlight)return inFlight;
+   const expected=generation,selected=group;
    lastAttempt=Date.now();refresh.disabled=true;
    if(!snapshot)host.textContent='시트 자료를 불러오는 중입니다.';
    inFlight=(async()=>{
     try{
-     const value=await read(endpoint),changed=!snapshot||contentKey(snapshot)!==contentKey(value);
-     snapshot=value;lastRead=Date.now();if(changed)show();showCheckedTime();remember(value);return true;
+     const value=await read(endpoint,selected);if(expected!==generation)return false;const changed=!snapshot||contentKey(snapshot)!==contentKey(value);
+     snapshot=value;lastRead=Date.now();if(changed)show();if(!value.items.length)host.textContent=root.AiselAccess.ownOnly?'배정된 신상성과가 없습니다. 담당 자료 연결을 확인해주세요.':selected==='core'?'핵심 SKU로 지정된 상품이 없습니다.':'표시할 신상성과가 없습니다.';showCheckedTime();return true;
     }catch(error){
+     if(expected!==generation)return false;
      if(!snapshot)host.textContent='시트 자료를 가져오지 못했습니다. 새로고침해 주세요.';
      showCheckedTime(true);return false;
-    }finally{inFlight=null;refresh.disabled=false;}
+    }finally{if(expected===generation){inFlight=null;refresh.disabled=false;}}
    })();
    return inFlight;
   }
@@ -15444,14 +15570,32 @@ defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
    return load();
   }
   refresh.addEventListener('click',load);
-  root.AiselSheetSalesSource={render:show,refreshIfStale};
-  restore();
+  const tabs=document.getElementById('salesGroupTabs');
+  tabs.addEventListener('click',event=>{
+   const choice=event.target.closest('[data-group]');if(!choice)return;event.stopImmediatePropagation();
+   if(choice.dataset.group==='core'&&!root.AiselAccess.isOwner)return;
+   group=choice.dataset.group==='core'?'core':'new';generation++;snapshot=null;inFlight=null;lastRead=lastAttempt=0;host.replaceChildren();
+   for(const button of tabs.querySelectorAll('button')){const selected=button.dataset.group===group;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}
+   load();
+  },true);
+  root.AiselAccess.subscribe(session=>{
+   const next=session?session.uid+':'+session.enabled+':'+session.role:'';
+   for(const button of tabs.querySelectorAll('[data-group="core"]'))button.hidden=session?.role!=='owner';
+   if(next===accountScope)return;accountScope=next;generation++;snapshot=null;inFlight=null;lastRead=lastAttempt=0;host.replaceChildren();
+   if(session?.role!=='owner')group='new';
+   for(const button of tabs.querySelectorAll('button')){const selected=button.dataset.group===group;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}
+   showCheckedTime();if(session)refreshIfStale();else host.textContent='로그인 후 판매성과를 확인해주세요.';
+  });
+  function invalidate(){generation++;snapshot=null;inFlight=null;lastRead=lastAttempt=0;host.replaceChildren();return refreshIfStale();}
+  root.addEventListener('aisel-assigned-index-change',event=>{if(!root.AiselAccess.ownOnly||!snapshot)return;const codes=new Set(event.detail?.codes||[]);if(snapshot.items.some(row=>row.code&&!codes.has(row.code)))invalidate();});
+  root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate};
   document.addEventListener('visibilitychange',refreshIfStale);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshIfStale,{once:true});else queueMicrotask(refreshIfStale);
  }
  root.AiselSheetSalesView={read,render,start,performance};
 })(globalThis);
-AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf2HQNaXt9C3kLf5HzeZdgBQyDM9wUrSVw3yx4dDT9_skDG_nt8l8O_8Ww/exec");
+
+AiselSheetSalesView.start();
 </script>
 
 <script src="status-pricing-rules.js?v=status17"></script>
@@ -16712,10 +16856,11 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=232">
+<link rel="stylesheet" href="design-meeting.css?v=233">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
+ indexEntry(st){return {...woIndexEntryFrom_(st),updatedAt:Number(st.updatedAt)||sortKeyForOrder_(st),...Object.fromEntries(['createdByUid','createdByName','sourceCreatorUid','sourceCreatorName'].filter(key=>st[key]).map(key=>[key,st[key]]))};},
  designers(){return Object.keys(designerListCache_||{});},
  async leave(){if(!await settleEditorSave_())return false;if(woRef)detachWoRefNow_("디자인회의 준비");return true;},
  blank(season,category){
@@ -16738,19 +16883,19 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-native-bridge.js?v=217"></script>
 <script src="aisel-gallery-index.js?v=221"></script>
 <script src="aisel-gallery-images.js?v=221"></script>
-<script src="aisel-collection-writes.js?v=229"></script>
+<script src="aisel-collection-writes.js?v=233"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=228"></script>
-<link rel="stylesheet" href="aisel-date-filter.css?v=219">
-<script src="aisel-date-filter.js?v=219"></script>
+<link rel="stylesheet" href="aisel-date-filter.css?v=233">
+<script src="aisel-date-filter.js?v=233"></script>
 <script src="design-meeting-core.js?v=223"></script>
 <script src="design-meeting-notes.js?v=204"></script>
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=228"></script>
-<script src="aisel-reference-categories.js?v=220"></script>
-<script src="aisel-look-categories.js?v=229"></script>
-<script src="design-meeting.js?v=232"></script>
+<script src="aisel-reference-categories.js?v=233"></script>
+<script src="aisel-look-categories.js?v=233"></script>
+<script src="design-meeting.js?v=233"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -16768,7 +16913,6 @@ window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:(
 </style>
 
 <link rel="stylesheet" href="reference-collection.css?v=222">
-<link rel="stylesheet" href="unified-app.css?v=178">
 <script>
 window.AiselUnifiedAdapter={
  async leave(){if(!await settleEditorSave_())return false;return true;},
@@ -16782,11 +16926,16 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=230"></script>
+<script src="reference-collection.js?v=233"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
-<script src="unified-app.js?v=227"></script>
+<link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
+<script src="aisel-moodboards.js?v=233"></script>
+<script src="unified-app.js?v=233"></script>
+<link rel="stylesheet" href="aisel-access-ui.css?v=233" media="screen">
+<script src="aisel-access-ui.js?v=233"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=215" media="screen">
+<link rel="stylesheet" href="unified-app.css?v=233">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {

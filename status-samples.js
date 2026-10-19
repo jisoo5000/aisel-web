@@ -74,7 +74,7 @@
   }
   function render(){
     if(document.activeElement !== el.sampleSearch) el.sampleSearch.value = sampleFilters.query;
-    el.sampleSearch.placeholder = "품명 또는 품번으로 검색";
+    el.sampleSearch.placeholder = "검색";
     var busy = state.status === "loading", message = localError || (state.status === "error" ? text(state.message) : "");
     el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
     el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";

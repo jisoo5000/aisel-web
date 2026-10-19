@@ -63,17 +63,20 @@
   if(metric.note){const note=document.createElement('p');note.textContent=metric.note;dialog.append(note);}
   const close=document.createElement('button');close.type='button';close.textContent='닫기';close.addEventListener('click',()=>dialog.close());dialog.append(close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
  }
- async function read(endpoint){
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(endpoint))throw Error('시트 연결 주소가 설정되지 않았습니다.');
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
-  try{const response=await fetch(endpoint+'?action=sales',{signal:controller.signal,credentials:'omit',cache:'no-store'});if(!response.ok)throw Error('시트 연결을 확인해 주세요.');const snapshot=await response.json();if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');returnMetric(snapshot);return snapshot;}finally{clearTimeout(timer);}
+ async function read(endpoint,group='new'){
+  if(!root.AiselAccess?.session)throw Error('로그인 후 판매성과를 확인해주세요.');
+  const snapshot=await root.AiselAccess.request('sales',{group});
+  if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해주세요.');
+  returnMetric(snapshot);return snapshot;
  }
  function start(endpoint){
   const host=document.getElementById('salesTableBody'),search=document.getElementById('salesSearchInput');
-  const cacheKey='aisel.sales-sheet.cache.v1',freshFor=5*60*1000,maxAge=7*24*60*60*1000,maxCacheBytes=256*1024;
-  let snapshot=null,inFlight=null,lastRead=0,lastAttempt=0;
+  const freshFor=5*60*1000;
+  // Previous public cache must never paint before the current account is verified.
+  try{root.localStorage.removeItem('aisel.sales-sheet.cache.v1');}catch(_){}
+  let snapshot=null,inFlight=null,lastRead=0,lastAttempt=0,accountScope=null,generation=0,group='new';
   const show=()=>{if(snapshot)render(host,snapshot,search.value);};
-  search.placeholder='품명 또는 품번으로 검색';search.setAttribute('aria-label','품명 또는 품번으로 검색');
+  search.placeholder='검색';search.setAttribute('aria-label','검색');
   document.getElementById('salesAuth').hidden=true;
   document.getElementById('salesSourceNote').textContent='운영시트 신상성과 · 반품 지표는 시트 기준';
   const sort=document.getElementById('salesSort');sort.replaceChildren(new Option('판매순','quantity'));sort.disabled=true;
@@ -84,39 +87,16 @@
   const scope=document.getElementById('salesScopeNote');if(scope)info.append(scope);
   info.append(period,updated);
   const refresh=document.createElement('button');refresh.type='button';refresh.textContent='새로고침';refresh.className='sheet-sales-refresh';refresh.id='sheetSalesRefresh';meta.append(refresh);
+  const readState=document.createElement('span');readState.className='sheet-sales-read-state';readState.id='sheetSalesReadState';readState.hidden=true;readState.setAttribute('role','status');meta.append(readState);
   search.addEventListener('input',show);
-  function compact(value){
-   if(!value||value.ok!==true||value.source!=='operations-sheet'||!Array.isArray(value.items)||value.items.length>2000||!Number.isFinite(Date.parse(value.readAt)))return null;
-   returnMetric(value);
-   const numberOrNull=x=>x==null||(typeof x==='number'&&Number.isFinite(x));
-   const textOrNull=x=>x==null||typeof x==='string';
-   if(value.items.some(x=>!x||!numberOrNull(x.rank)||typeof x.name!=='string'||!textOrNull(x.designer)||!textOrNull(x.factory)||!numberOrNull(x.share)||!numberOrNull(x.returns)))return null;
-   return {ok:true,source:'operations-sheet',readAt:value.readAt,periodLabel:typeof value.periodLabel==='string'?value.periodLabel:'',returnMetric:{key:returnMetric(value).key},items:value.items.map(x=>({rank:x.rank??null,name:x.name,designer:x.designer??'',factory:x.factory??'',share:x.share??null,returns:x.returns??null}))};
-  }
-  function bytes(text){return new TextEncoder().encode(text).byteLength;}
-  function restore(){
-   try{
-    const text=root.localStorage.getItem(cacheKey);if(!text||text.length>maxCacheBytes||bytes(text)>maxCacheBytes)return;
-    const record=JSON.parse(text),age=Date.now()-record.savedAt;
-    if(record.endpoint!==endpoint||!Number.isFinite(record.savedAt)||age<0||age>maxAge)return;
-    const value=compact(record.snapshot);if(!value)return;
-    snapshot=value;lastRead=record.savedAt;show();showCheckedTime();
-   }catch(error){/* A blocked or stale cache never prevents a fresh read. */}
-  }
-  function remember(value){
-   try{
-    const small=compact(value);if(!small){root.localStorage.removeItem(cacheKey);return;}
-    const text=JSON.stringify({endpoint,savedAt:lastRead,snapshot:small});
-    if(bytes(text)<=maxCacheBytes)root.localStorage.setItem(cacheKey,text);else root.localStorage.removeItem(cacheKey);
-   }catch(error){/* Sales remain usable when browser storage is unavailable. */}
-  }
   function showCheckedTime(failed=false){
-   if(!snapshot){updated.textContent='시트 연결 확인 필요';return;}
+   readState.hidden=!failed||!snapshot;readState.textContent=failed&&snapshot?'연결 실패 · 이전 자료 표시 중':'';
+   if(!snapshot){updated.textContent=root.AiselAccess?.session?'연결 확인 필요':'로그인 후 확인';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
    const valid=Number.isFinite(checked.getTime());
    const oldDate=valid&&checked.toLocaleDateString('ko-KR',zone)!==now.toLocaleDateString('ko-KR',zone);
    const stamp=valid?checked.toLocaleString('ko-KR',{...zone,...(oldDate?{month:'2-digit',day:'2-digit'}:{}),hour:'2-digit',minute:'2-digit'}):'시간 확인 필요';
-   updated.textContent='시트 확인 '+stamp+(failed?' · 연결 실패, 이전 자료':'');
+   updated.textContent='확인 '+stamp;
   }
   function contentKey(value){
    return JSON.stringify([value.periodLabel,returnMetric(value).key,value.items.map(x=>[x.rank,x.name,x.designer,x.factory,x.share,x.returns])]);
@@ -126,17 +106,20 @@
    return !document.hidden&&(!root.AiselUnified||root.AiselUnified.view==='sales')&&view&&!view.hidden&&getComputedStyle(view).display!=='none';
   }
   function load(){
+   if(!root.AiselAccess?.session){host.textContent='로그인 후 판매성과를 확인해주세요.';return Promise.resolve(false);}
    if(inFlight)return inFlight;
+   const expected=generation,selected=group;
    lastAttempt=Date.now();refresh.disabled=true;
    if(!snapshot)host.textContent='시트 자료를 불러오는 중입니다.';
    inFlight=(async()=>{
     try{
-     const value=await read(endpoint),changed=!snapshot||contentKey(snapshot)!==contentKey(value);
-     snapshot=value;lastRead=Date.now();if(changed)show();showCheckedTime();remember(value);return true;
+     const value=await read(endpoint,selected);if(expected!==generation)return false;const changed=!snapshot||contentKey(snapshot)!==contentKey(value);
+     snapshot=value;lastRead=Date.now();if(changed)show();if(!value.items.length)host.textContent=root.AiselAccess.ownOnly?'배정된 신상성과가 없습니다. 담당 자료 연결을 확인해주세요.':selected==='core'?'핵심 SKU로 지정된 상품이 없습니다.':'표시할 신상성과가 없습니다.';showCheckedTime();return true;
     }catch(error){
+     if(expected!==generation)return false;
      if(!snapshot)host.textContent='시트 자료를 가져오지 못했습니다. 새로고침해 주세요.';
      showCheckedTime(true);return false;
-    }finally{inFlight=null;refresh.disabled=false;}
+    }finally{if(expected===generation){inFlight=null;refresh.disabled=false;}}
    })();
    return inFlight;
   }
@@ -147,8 +130,25 @@
    return load();
   }
   refresh.addEventListener('click',load);
-  root.AiselSheetSalesSource={render:show,refreshIfStale};
-  restore();
+  const tabs=document.getElementById('salesGroupTabs');
+  tabs.addEventListener('click',event=>{
+   const choice=event.target.closest('[data-group]');if(!choice)return;event.stopImmediatePropagation();
+   if(choice.dataset.group==='core'&&!root.AiselAccess.isOwner)return;
+   group=choice.dataset.group==='core'?'core':'new';generation++;snapshot=null;inFlight=null;lastRead=lastAttempt=0;host.replaceChildren();
+   for(const button of tabs.querySelectorAll('button')){const selected=button.dataset.group===group;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}
+   load();
+  },true);
+  root.AiselAccess.subscribe(session=>{
+   const next=session?session.uid+':'+session.enabled+':'+session.role:'';
+   for(const button of tabs.querySelectorAll('[data-group="core"]'))button.hidden=session?.role!=='owner';
+   if(next===accountScope)return;accountScope=next;generation++;snapshot=null;inFlight=null;lastRead=lastAttempt=0;host.replaceChildren();
+   if(session?.role!=='owner')group='new';
+   for(const button of tabs.querySelectorAll('button')){const selected=button.dataset.group===group;button.classList.toggle('active',selected);button.setAttribute('aria-pressed',String(selected));}
+   showCheckedTime();if(session)refreshIfStale();else host.textContent='로그인 후 판매성과를 확인해주세요.';
+  });
+  function invalidate(){generation++;snapshot=null;inFlight=null;lastRead=lastAttempt=0;host.replaceChildren();return refreshIfStale();}
+  root.addEventListener('aisel-assigned-index-change',event=>{if(!root.AiselAccess.ownOnly||!snapshot)return;const codes=new Set(event.detail?.codes||[]);if(snapshot.items.some(row=>row.code&&!codes.has(row.code)))invalidate();});
+  root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate};
   document.addEventListener('visibilitychange',refreshIfStale);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshIfStale,{once:true});else queueMicrotask(refreshIfStale);
  }

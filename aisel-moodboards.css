@@ -1,0 +1,21 @@
+@media screen {
+ #aiselMoodboardsView{max-width:420px;margin:10px auto 0;padding-bottom:max(24px,env(safe-area-inset-bottom));color:var(--ink,#343a3d);font-size:12px}
+ #aiselMoodboardsView[hidden],#aiselMoodboardsView [hidden]{display:none!important}
+ #aiselMoodboardsView button,#aiselMoodboardsView input{font:inherit;color:inherit;border:1px solid var(--hair,#dfe2e6);border-radius:3px;background:#fff;min-height:30px;padding:5px 9px;box-sizing:border-box}
+ #aiselMoodboardsView button{cursor:pointer}#aiselMoodboardsView button:disabled{opacity:.5;cursor:default}
+ #aiselMoodboardsView input{min-width:0}#aiselMoodboardsView .mb-title,#aiselMoodboardsView .mb-search{width:100%;margin:8px 0}
+ #aiselMoodboardsView .mb-actions{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+ #aiselMoodboardsView .mb-message{min-height:18px;color:var(--muted,#7c8795)}#aiselMoodboardsView .mb-message.error{color:#a63148}
+ #aiselMoodboardsView .mb-board-list,#aiselMoodboardsView .mb-linked{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ #aiselMoodboardsView .mb-board-card{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;text-align:left}
+ #aiselMoodboardsView .mb-board-card strong,#aiselMoodboardsView .mb-board-card>span{grid-column:1/-1;overflow-wrap:anywhere}
+ #aiselMoodboardsView .mb-photo{aspect-ratio:3/4;min-width:0;display:flex;align-items:center;justify-content:center;color:var(--muted,#7c8795);font-size:11px;text-align:center;background:#fafafa}
+ #aiselMoodboardsView .mb-photo img{width:100%;height:100%;object-fit:contain}
+ #aiselMoodboardsView .mb-linked-card{border:1px solid var(--hair,#dfe2e6);border-radius:3px;padding:6px;min-width:0}
+ #aiselMoodboardsView .mb-linked-card p{overflow-wrap:anywhere;margin:6px 0}
+ #aiselMoodboardsView details{margin-top:12px;border:1px solid var(--hair,#dfe2e6);padding:8px;border-radius:3px}
+ #aiselMoodboardsView summary{cursor:pointer;min-height:30px;display:flex;align-items:center}
+ #aiselMoodboardsView .mb-choices{max-height:360px;overflow-y:auto;overscroll-behavior:contain}
+ #aiselMoodboardsView .mb-choice{display:grid;grid-template-columns:24px 42px minmax(0,1fr);align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--hair,#dfe2e6)}
+ #aiselMoodboardsView .mb-choice input{width:18px;height:18px;min-height:18px}#aiselMoodboardsView .mb-choice span{overflow-wrap:anywhere}
+}

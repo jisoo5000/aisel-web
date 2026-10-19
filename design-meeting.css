@@ -290,3 +290,44 @@
 #designMeetingView .dm-manual-group[data-manual-group="marketDemand"]{grid-template-columns:repeat(2,64px)}
 #designMeetingView .dm-manual-group>span{grid-column:1 / -1;font-size:12px;line-height:18px}
 #designMeetingView .dm-choice{box-sizing:border-box;width:64px;min-width:64px;max-width:64px;height:28px;min-height:28px;padding:3px 6px;font-size:12px;line-height:20px;white-space:nowrap;overflow-wrap:normal}
+
+/* v233: conversion actions share the dialog right inset at both ends. */
+@media screen {
+ #dmConversionDialog {box-sizing:border-box;max-height:calc(100dvh - 32px);padding:12px;}
+ #dmConversionDialog .dm-conversion-heading {display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+ #dmConversionDialog .dm-conversion-heading h3 {margin:0;font-size:14px;line-height:20px;}
+ #dmConversionDialog .dm-conversion-actions {display:flex;justify-content:flex-end;padding-bottom:env(safe-area-inset-bottom);}
+ #dmConversionDialog button {height:28px;min-height:28px;flex:none;font-size:12px;line-height:18px;font-weight:500;}
+ #dmConversionDialog p {font-size:12px;line-height:20px;overflow-wrap:anywhere;}
+ #dmConversionDialog select {height:32px;font-size:12px;}
+}
+
+/* v233: use the document's full height, with reachable bottom actions. */
+@media screen {
+ html:has(body[data-aisel-list-view="designmeeting"]) {overflow-y:auto;}
+ html:root body[data-aisel-list-view="designmeeting"] {height:auto;max-height:none;overflow-y:visible;}
+ html:root body #designMeetingView:has(#dmDetail:not([hidden])) {height:auto;max-height:none;overflow:visible;padding-bottom:calc(16px + env(safe-area-inset-bottom));}
+ html:root body #designMeetingView .dm-detail {height:auto;max-height:none;overflow:visible;}
+ html:root body #designMeetingView .dm-detail-body {height:auto;max-height:none;flex:0 0 auto;overflow:visible;}
+ html:root body #designMeetingView .dm-detail-actions {position:static;flex:none;scroll-margin-bottom:calc(16px + env(safe-area-inset-bottom));padding-bottom:8px;}
+ html:root body #designMeetingView #dmDates {width:100%;}
+ /* The full row is used for supply/demand so four equal controls stay readable. */
+ html:root body #designMeetingView .dm-manual-table tr:has([data-manual-group="marketDemand"]) {display:grid;grid-template-columns:minmax(0,1fr);}
+ html:root body #designMeetingView .dm-manual-table tr:has([data-manual-group="marketDemand"])>th {display:block;width:100%;border-right:0;padding-bottom:0;border-bottom:0;}
+ html:root body #designMeetingView .dm-manual-table tr:has([data-manual-group="marketDemand"])>td {display:block;width:100%;padding-top:4px;}
+ html:root body #designMeetingView .dm-manual-group[data-manual-group="marketDemand"] {grid-template-columns:repeat(4,minmax(0,1fr));}
+ html:root body #designMeetingView .dm-manual-group[data-manual-group="marketDemand"] .dm-choice {width:100%;min-width:0;max-width:none;}
+}
+@media screen {
+ #designMeetingView #dmRestoreDialog .dm-restore-list>div {display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px;}
+ #designMeetingView #dmRestoreDialog .dm-restore-list>div>span {flex:1;min-width:0;overflow-wrap:anywhere;}
+ #designMeetingView #dmRestoreDialog [role="status"] {font-size:12px;line-height:18px;}
+}
+@media screen {
+ html:root body #designMeetingView .dm-manual-table,html:root body #designMeetingView .dm-manual-table>tbody {display:block;width:100%;}
+ html:root body #designMeetingView .dm-manual-table tr {display:grid;grid-template-columns:88px minmax(0,1fr);width:100%;}
+ html:root body #designMeetingView .dm-manual-table tr>th,html:root body #designMeetingView .dm-manual-table tr>td {display:block;width:auto;min-width:0;height:auto;min-height:32px;}
+ html:root body #designMeetingView .dm-manual-table tr:has([data-manual-group="marketDemand"]) {grid-template-columns:minmax(0,1fr);}
+}
+
+@media screen {html:root body #designMeetingView .dm-manual-table tr:has(.dm-usp-cell){grid-template-columns:minmax(0,1fr);}}
