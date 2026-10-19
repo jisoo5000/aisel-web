@@ -1,3 +1,4 @@
+<!-- v225: assignee filter empty-state guidance and marked selection width -->
 <!-- v224: Firebase product-reference linking; shared photo URLs and durable meeting decisions -->
 <!-- v223: readable production screening and nightly queue explanation (2026-10-19) -->
 <!-- v221: bounded thumbnails delivered with gallery indexes and reused for detail previews -->
@@ -16705,7 +16706,7 @@ AiselSheetSalesView.start("https://script.google.com/macros/s/AKfycbxyd9UjSv8mlf
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=223">
+<link rel="stylesheet" href="design-meeting.css?v=225">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -16741,7 +16742,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-note-categories.css?v=203">
 <script src="aisel-note-categories.js?v=220"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
-<script src="design-meeting.js?v=223"></script>
+<script src="design-meeting.js?v=225"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});

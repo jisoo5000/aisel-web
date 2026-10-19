@@ -266,6 +266,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.className='dm-add-card';addMeeting.textContent='＋ 추가';addMeeting.setAttribute('aria-label','디자인회의 추가');addMeeting.onclick=openNewDraft;$dm('#dmGrid').prepend(addMeeting);
  const filterRow=document.createElement('div');filterRow.className='dm-organize-filters';filterRow.innerHTML='<div class="dm-filter-date"></div><select id="dmNoteCategoryFilter" aria-label="카테고리 필터"><option value="">카테고리 전체</option></select><select id="dmDesignerFilter" aria-label="담당자 필터"><option value="">담당자 전체</option><option value="__missing__">미지정</option></select><span id="dmCoverageState" role="status" aria-live="polite"></span>';searchRow.after(filterRow);
  const filterManager=document.createElement('div');filterManager.id='dmFilterManager';filterRow.after(filterManager);
+ const emptyFilterMessage=document.createElement('p');emptyFilterMessage.id='dmEmptyFilterMessage';emptyFilterMessage.hidden=true;emptyFilterMessage.setAttribute('role','status');emptyFilterMessage.setAttribute('aria-live','polite');filterManager.after(emptyFilterMessage);
  function selectOrganizationFilter(key,value){if(key==='date')dateFilter=N.validDate(value)?value:'';else if(key==='designer')designerFilter=value;else noteCategoryFilter=value;limit=40;lastSig='';updateListRoute();render();ensureCoverage();refresh();}
  listDatePicker=window.AiselDateFilter.mount($dm('.dm-filter-date'),{inputId:'dmDateFilter',labelId:'dmDateFilterLabel',label:'회의 날짜 필터',format:compactDate,onChange:value=>selectOrganizationFilter('date',value)});
  const dateFilterInput=listDatePicker.input;
@@ -566,6 +567,9 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
      if(filter==='linked'&&!c.convertedCode)return false;return true;
    }).sort((a,b)=>meetingDate(b).localeCompare(meetingDate(a))||(b.createdAt||0)-(a.createdAt||0)||a.id.localeCompare(b.id));
    if(noteCategoryFilter&&all.some(c=>noteCategoryIds(c)===null))$dm('#dmCoverageState').textContent='참고 분류를 확인하지 못한 자료가 함께 표시됩니다.';
+   const filterCoverageComplete=summaryActive||(!hasOlder&&all.length>0);
+   emptyFilterMessage.hidden=!!shown.length||!designerFilter||galleryDenied||galleryHold||!filterCoverageComplete;
+   if(!emptyFilterMessage.hidden)emptyFilterMessage.textContent=designerFilter!=='__missing__'&&!all.some(c=>c.designer===designerFilter)?`${designerFilter} 담당으로 지정된 자료가 없습니다. 자료를 열어 담당자를 지정해주세요.`:'선택한 조건에 맞는 자료가 없습니다. 날짜·카테고리·예정/드롭 조건을 확인해주세요.';
    $dm('#dmCount').textContent=`불러온 ${all.length}개 · 표시 ${Math.min(limit,shown.length)}개`;
    $dm('#dmMore').hidden=shown.length<=limit&&!hasOlder;$dm('#dmMore').textContent=shown.length>limit?'더 보기':'이전 후보 더 보기';
    const sig=JSON.stringify([shown.slice(0,limit),results,filter,dateFilter,designerFilter,noteCategoryFilter,q,role]);if(sig===lastSig){measureListPaint(shown);return;}lastSig=sig;

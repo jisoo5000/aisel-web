@@ -238,3 +238,9 @@
 
 /* v223: readable production questions and truthful queue state */
 .dm-evidence td{white-space:pre-line}.dm-review-schedule{font-size:12px;line-height:18px;color:var(--aisel-muted,#6C727C);margin:8px 0}.dm-screening-decision{font-size:12px;line-height:18px;font-weight:600;margin:8px 0}
+
+/* v225: right-aligned assignee selection matches the requested marked span. */
+@media screen {
+ html:root body #designMeetingView #dmDesigner {flex:0 1 220px;width:220px;max-width:100%;margin-left:auto;}
+ #designMeetingView #dmEmptyFilterMessage {margin:0 0 8px;font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted);}
+}
