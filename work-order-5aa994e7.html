@@ -1,3 +1,4 @@
+<!-- v230: catalog editors directly beneath their source controls -->
 <!-- v229: meeting date, outfit category and assignee toolbar -->
 <!-- v228: shared assignee and note category drag ordering -->
 <!-- v226: canonical meeting save acknowledgement and visible retry status -->
@@ -16735,7 +16736,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-gallery-index.js?v=221"></script>
 <script src="aisel-gallery-images.js?v=221"></script>
 <script src="aisel-collection-writes.js?v=229"></script>
-<link rel="stylesheet" href="aisel-designers.css?v=228">
+<link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=228"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=219">
@@ -16746,7 +16747,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=220"></script>
 <script src="aisel-look-categories.js?v=229"></script>
-<script src="design-meeting.js?v=229"></script>
+<script src="design-meeting.js?v=230"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -16778,7 +16779,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=224"></script>
+<script src="reference-collection.js?v=230"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <script src="unified-app.js?v=227"></script>

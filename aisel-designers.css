@@ -28,3 +28,12 @@ body :is(#referenceCollectionView,#designMeetingView) .aisel-taxonomy-manager in
 .aisel-taxonomy-dragging{background:#F5F6F7;outline:1px solid #6C727C;outline-offset:-1px;}
 .aisel-taxonomy-dragging .aisel-taxonomy-grip{cursor:grabbing;}
 body :is(#referenceCollectionView,#designMeetingView) .aisel-taxonomy-grip{touch-action:none;}
+
+/* v230: add editors occupy the row immediately below their source controls. */
+@media screen {
+ body #referenceCollectionView :is(#rcCategoryManager,#rcDesignerManager),
+ body #designMeetingView :is(#dmLookManager,#dmDesignerManager) {grid-column:1 / -1;min-width:0;}
+ body :is(#referenceCollectionView,#designMeetingView) :is(#rcCategoryManager,#rcDesignerManager,#dmLookManager,#dmDesignerManager,.rc-note-category-manager,.dm-reference-category-manager):empty {display:none;}
+ body :is(#referenceCollectionView,#designMeetingView) :is(#rcCategoryManager,#rcDesignerManager,#dmLookManager,#dmDesignerManager) > .aisel-taxonomy-manager {margin:0;}
+ body :is(#referenceCollectionView,#designMeetingView) :is(.rc-note-category-manager,.dm-reference-category-manager) > .aisel-taxonomy-manager {margin:0 0 8px;}
+}

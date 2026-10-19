@@ -249,7 +249,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  detailControls.classList.add('dm-detail-meta');
  const lookSelect=document.createElement('select');lookSelect.id='dmLookCategory';lookSelect.setAttribute('aria-label','룩 분류');
  detailControls.replaceChildren($dm('#dmDates'),lookSelect,$dm('.dm-assignee'),$dm('#dmLinks'));
- const lookManager=document.createElement('div');lookManager.id='dmLookManager';detailControls.after(lookManager);
+ const lookManager=document.createElement('div');lookManager.id='dmLookManager';$dm('#dmLinks').before(lookManager);
  const lookPicker=window.AiselLookCategories.mountPicker(lookSelect,{managerHost:lookManager,onChange:async value=>{const id=active;if(!id)return;lookDraftField.value=value;markDetailDraft('lookCategoryId');detailMessage(id,'저장 중…');await saveDetail({id});},onError:error=>detailMessage(active,error.message,true)});
  function renderLook(c){if(!c)return;lookPicker.setValue(active===c.id&&dirtyFields.has('lookCategoryId')?lookDraftField.value:(c.lookCategoryId||''));window.AiselLookCategories.load().catch(error=>{if(active===c.id)detailMessage(c.id,error.message,true);});}
  const detailLoading=document.createElement('section');detailLoading.id='dmDetailLoading';detailLoading.hidden=true;detailLoading.setAttribute('role','status');detailLoading.setAttribute('aria-live','polite');detailLoading.innerHTML='<p>디자인회의를 불러오는 중…</p><button type="button">목록</button>';detailLoading.querySelector('button').onclick=()=>{restoreList();putRoute('list',null,{replace:true});};$dm('#dmDetail').before(detailLoading);
@@ -259,7 +259,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const designerSelect=$dm('#dmDesigner');designerSelect.setAttribute('aria-label','담당자 선택');
  $dm('.dm-assignee label').htmlFor='dmDesigner';$dm('.dm-assignee label').textContent='담당자';
  const headerSave=document.createElement('button');headerSave.id='dmHeaderSave';headerSave.type='button';headerSave.textContent='저장';headerSave.onclick=()=> $dm('#dmSaveDetail').click();$dm('.dm-heading').append(headerSave);
- const designerManager=document.createElement('div');designerManager.id='dmDesignerManager';detailControls.after(designerManager);
+ const designerManager=document.createElement('div');designerManager.id='dmDesignerManager';$dm('#dmLinks').before(designerManager);
  let detailDesignerPicker=null,listDesignerPicker=null,listCategoryPicker=null,listDatePicker=null;
  function closeDesignerPickers(){lookPicker.close();detailDesignerPicker?.close?.();listDesignerPicker?.close?.();listCategoryPicker?.close?.();listDatePicker?.close();}
  async function selectDetailDesigner(value){const id=active;if(!id)return;const stamp=authStamp();designerDraftField.value=value;markDetailDraft('designer');renderDesigner(current(id));detailMessage(id,'저장 중…');const saved=await saveDetail({id});if(!saved&&sameAuth(stamp)&&active===id&&detailState(id).dirty.size){if($dm('#dmDetailSaveState').textContent==='저장 중…')detailMessage(id,'아직 저장되지 않았습니다. 입력을 마친 뒤 다시 저장해주세요.',true);$dm('#dmSaveDetail').hidden=false;}}
