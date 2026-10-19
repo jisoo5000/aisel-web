@@ -63,7 +63,7 @@
  .dm-section-title{font-size:13px;font-weight:600;line-height:20px;margin:12px 0 4px}
  .dm-evidence{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);overflow:hidden;font-size:12px;line-height:18px;table-layout:fixed}
  .dm-evidence th,.dm-evidence td{height:32px;padding:7px 8px;text-align:left;vertical-align:top;border-bottom:1px solid var(--aisel-line);overflow-wrap:anywhere}
- .dm-evidence th{width:52px;font-weight:600;border-right:1px solid var(--aisel-line)}
+ .dm-evidence th{width:36%;font-weight:600;border-right:1px solid var(--aisel-line)}
  .dm-evidence tr:last-child>*{border-bottom:0}
  .dm-additional{font-size:var(--aisel-body);font-weight:400;line-height:22px;margin:8px 0;overflow-wrap:anywhere}
  .dm-additional strong{margin-right:12px}
@@ -235,3 +235,6 @@
  #designMeetingView .dm-reference-text::placeholder {color:#6C727C;opacity:1;}
  html:root body #designMeetingView :is(.dm-organize-filters input,.dm-organize-filters select,#dmDesigner,#dmMeetingDate,.dm-reference-date,.dm-reference-category select,.dm-reference-category input,.dm-reference-text,.aisel-taxonomy-manager input) {font-size:12px!important;}
 }
+
+/* v223: readable production questions and truthful queue state */
+.dm-evidence td{white-space:pre-line}.dm-review-schedule{font-size:12px;line-height:18px;color:var(--aisel-muted,#6C727C);margin:8px 0}.dm-screening-decision{font-size:12px;line-height:18px;font-weight:600;margin:8px 0}

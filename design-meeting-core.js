@@ -21,6 +21,20 @@
     const line=value=>typeof value==='string'?value.trim().split(/\r?\n/)[0]:'';
     return {demand:line(basis.demand)||labelled('수요')||'미확인',supply:line(basis.supply)||labelled('공급')||'미확인',differentiation:line(basis.differentiation)||labelled('차별성')||'미정',additional:line(result?.unknowns)};
   }
+
+  function productionSummary(result){
+    const ev=evidence(result),criteria=ev.productionScreening?.criteria||{},legacy=reviewSummary(result);
+    const clean=value=>typeof value==='string'?value.trim():'';
+    const alternative=[legacy.supply==='미확인'?'':'기존 공급 근거: '+legacy.supply,legacy.differentiation==='미정'?'':'차별성: '+legacy.differentiation].filter(Boolean).join('\n');
+    return {
+      demand:clean(criteria['수요·반응'])||legacy.demand,
+      choice:clean(criteria['공급·차별성'])||alternative||'비슷한 상품과의 비교 근거 미확인',
+      economics:clean(criteria['제작 경제성'])||clean(ev.economics)||'개별 원가·수량 근거 미확인. 담당 디자이너가 기존 기준 안에서 확인합니다.',
+      decision:clean(ev.productionScreening?.decision),
+      additional:legacy.additional
+    };
+  }
+  const productionQuestions=[['사려는 사람이 있나?','demand'],['우리 것을 살 이유가 있나?','choice'],['정한 원가·수량 안에서 만들 수 있나?','economics']];
   function dateLabel(value){if(!value)return '';const d=new Date(value);if(!Number.isFinite(d.getTime()))return '';return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'2-digit',month:'2-digit',day:'2-digit'}).format(d).replace(/\s/g,'').replace(/\.$/,'');}
   function edit(c,patch,now=Date.now()){
     const next={...c,...patch,updatedAt:now};
@@ -53,6 +67,6 @@
     return c.reviewState==='done'?'blocked':c.reviewState||'idle';
   }
   function rowKey(id,version){if(!/^[-\w]{8,100}$/.test(id)||!Number.isInteger(Number(version))||Number(version)<1)throw Error('후보 연결 정보를 확인해주세요.');return id+':'+version;}
-  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,dateLabel,replacePhoto,reviewRow,confirmedResult,previousResult};
+  const api={material,states,httpUrl,photos,signature,edit,status,rowKey,evidence,reviewSummary,productionSummary,productionQuestions,dateLabel,replacePhoto,reviewRow,confirmedResult,previousResult};
   if(typeof module==='object'&&module.exports)module.exports=api;else root.AiselDesignMeetingCore=api;
 })(typeof window==='object'?window:globalThis);
