@@ -16,7 +16,18 @@
   let createRequestId=id();const role=el('select',null,{'aria-label':'권한'});for(const [value,label]of [['designer','디자이너'],['md','MD'],['logistics','물류']])role.append(new Option(label,value));for(const input of [name,email,role])input.addEventListener('change',()=>{createRequestId=id();});form.append(role,el('p','Gmail이 아니어도 됩니다. 초기 비밀번호는 직원에게 직접 전달해주세요.',{class:'access-hint'}));const submit=el('button','계정 만들기',{type:'submit'});form.append(submit);
   form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;run(view,async()=>{const requestId=createRequestId;try{await access.request('createStaff',{displayName:name.value.trim(),email:email.value.trim(),password:password.value,role:role.value,requestId});password.value='';view.status.textContent='계정을 만들었습니다. 직원에게 이메일과 초기 비밀번호를 전달해주세요.';form.replaceChildren();await loadStaff();}finally{password.value='';}});});
  }
- function openLink(){const view=modal('기존 직원 계정 연결'),form=el('form');view.body.append(form);const name=field(form,'이름'),email=field(form,'기존 로그인 이메일','email');name.required=email.required=true;form.append(el('button','계정 연결',{type:'submit'}));form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;run(view,async()=>{await access.request('linkExistingStaff',{displayName:name.value.trim(),email:email.value.trim(),requestId:id()});view.status.textContent='기존 계정을 연결했습니다. 담당 자료를 확인해 배정해주세요.';form.replaceChildren();await loadStaff();});});}
+ function openLink(){
+  const view=modal('기존 직원 계정 연결'),form=el('form');view.body.append(form);
+  const name=field(form,'이름'),email=field(form,'기존 로그인 이메일','email');name.required=email.required=true;
+  const roleField=el('label',null,{class:'access-field'}),role=el('select',null,{'aria-label':'연결할 계정 권한'});role.required=true;role.append(new Option('권한 선택',''));
+  for(const [value,label]of [['designer','디자이너'],['md','MD'],['logistics','물류']])role.append(new Option(label,value));
+  roleField.append(el('span','권한'),role);form.append(roleField,el('p','이 앱에서 로그인했고 이메일 인증을 완료한 계정을 연결합니다. Google 계정은 먼저 앱에서 Google 로그인을 한 번 해주세요.',{class:'access-hint'}),el('button','계정 연결',{type:'submit'}));
+  form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;run(view,async()=>{
+   const data=await access.request('linkExistingStaff',{displayName:name.value.trim(),email:email.value.trim(),role:role.value,requestId:id()});
+   view.status.textContent=data.staff?.active===false?'기존 계정의 사용 중지 상태가 유지됩니다. 직원 관리에서 상태를 확인해주세요.':'기존 계정을 연결했습니다. 담당 자료를 확인해 배정해주세요.';
+   form.replaceChildren();await loadStaff();
+  });});
+ }
  function openToggle(person){const requestId=id(),view=modal(person.active?'계정 사용 중지':'계정 다시 사용');view.body.append(el('p',(person.displayName||person.email)+(person.active?'님의 앱 접근을 중지합니다. 작업 자료와 작성 이력은 회사에 남습니다.':'님의 앱 접근을 다시 허용합니다.')));view.body.append(button(person.active?'사용 중지':'다시 사용',()=>run(view,async()=>{await access.request('setStaffActive',{uid:person.uid,active:!person.active,expectedRevision:person.revision,requestId});view.status.textContent=person.active?'사용 중지했습니다.':'다시 사용할 수 있습니다.';await loadStaff();})));
  }
  function openSelection(person,assign=false){const view=modal(assign?'미배정 자료 연결':(person.displayName||person.email)+' · 인수인계'),select=el('select',null,{'aria-label':'받는 사람'});personOptions(select,person?.uid);view.body.append(select,el('p','최초 작성자와 작업 내용은 유지됩니다. 실제 담당할 자료를 선택해주세요.',{class:'access-hint'}));const list=el('div',null,{class:'access-selection'}),toolbar=el('div',null,{class:'access-actions'}),result=el('p','',{role:'status'});view.body.append(toolbar,list,result);let rows=[],loadedTo='',retryItems=null,requestId=null;
@@ -41,7 +52,7 @@
   run(view,load);
  }
  function mountAccount(){const actions=$('aiselAccountDialog')?.querySelector('.account-actions');if(!actions)return;let manage=$('aiselStaffManage');if(!manage){manage=button('직원 관리',()=>{$('aiselAccountDialog').close();openManager();});manage.id='aiselStaffManage';actions.prepend(manage);}manage.hidden=!access.isOwner;}
- function metadata(code){detailCode=code||'';const epoch=++metaEpoch;let area=$('aiselWorkorderAttribution');if(!area){area=el('section',null,{id:'aiselWorkorderAttribution',class:'noprint'});$('editorView')?.prepend(area);}area.replaceChildren();if(!code||!access.session)return;
+ function metadata(code){detailCode=code||'';const epoch=++metaEpoch;let area=$('aiselWorkorderAttribution');if(!area){area=el('section',null,{id:'aiselWorkorderAttribution',class:'noprint'});$('editorView')?.prepend(area);}area.replaceChildren();area.hidden=access.legacy===true;if(!code||!access.session||access.legacy)return;
   access.request('assignmentMeta',{code}).then(data=>{if(epoch!==metaEpoch||detailCode!==code)return;const assignment=data.assignment||{};area.append(el('span','현재 담당자 '+assignmentText(assignment)),el('span','최초 작성자 '+(assignment.creatorName||'미확인')));const details=el('details'),summary=el('summary','변경 이력');details.append(summary);for(const entry of data.history||[]){const date=entry.at?new Date(entry.at).toLocaleString('ko-KR'):'';details.append(el('p',[date,entry.type||'인수인계',entry.actorName||'',entry.fromName||'',entry.toName||''].filter(Boolean).join(' · ')));}if(!(data.history||[]).length)details.append(el('p','등록된 변경 이력이 없습니다.'));area.append(details);if(access.isOwner)area.append(button('담당자 변경',()=>{openManager();}));}).catch(error=>{if(epoch===metaEpoch)area.textContent=error.code==='not_found'?'최초 작성자 미확인':error.message;});
  }
  access.subscribe(()=>{mountAccount();if(detailCode)metadata(detailCode);if(!access.isOwner){staff=[];manager?.dialog.close();document.querySelectorAll('.aisel-access-dialog').forEach(dialog=>dialog.close());}});

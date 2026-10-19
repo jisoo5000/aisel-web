@@ -36,13 +36,13 @@
   }
   galleryFilters.subscribe(()=>{const state=galleryFilters.snapshot(),choices=galleryFilters.options();date.setValue(state.date);options(category,[['','카테고리'],...choices.categories],state.category);options(designer,[['','담당자'],['__unassigned__','미지정'],...choices.designers.map(name=>[name,name])],state.designer);});
  }
- function info(s=''){notice.textContent=s;}
+ function info(s=''){notice.textContent=s||(window.AiselAccess?.legacy?'계정별 접근 제한 적용 전 · 기존 작업지시서를 이용할 수 있습니다.':'');}
  // Warm each collection without changing the visible pane or waiting in navigation.
  // Modules authorize their own requests; the landing-role hint is never an access grant.
  let galleryWarmKey='';
  function scheduleGalleryWarm(){
   const session=window.AiselAuth,user=session?.currentUser();
-  if(!user?.uid||!user.emailVerified||!session.normalized||document.hidden||!window.AiselAccess?.session||window.AiselAccess.ownOnly)return;
+  if(!user?.uid||!user.emailVerified||!session.normalized||document.hidden||!window.AiselAccess?.session||window.AiselAccess.ownOnly||window.AiselAccess.legacy)return;
   const key=user.uid+':'+session.generation;
   if(galleryWarmKey===key)return;galleryWarmKey=key;
   const run=()=>{
@@ -62,7 +62,7 @@
  }
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGalleryWarm();});
  function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
- function allowedWorkorder(){return ['owner','designer'].includes(role());}
+ function allowedWorkorder(){return window.AiselAccess?.allowed('orders')===true;}
  function allowedView(view){return window.AiselAccess?.allowed(view)===true;}
  function applyRole(){
   for(const button of main.querySelectorAll('[data-main]'))button.hidden=!allowedView(button.dataset.main);
@@ -93,7 +93,7 @@
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
  function rememberRole(value){const user=memberUser();if(!user?.emailVerified||!user.uid||!validRoles.includes(value))return;try{localStorage.setItem(landingKey,JSON.stringify({uid:user.uid,role:value,checkedAt:Date.now()}));}catch(_){} }
  function landingRole(){const verified=role();if(validRoles.includes(verified))return verified;const user=memberUser();if(!user?.emailVerified||!user.uid)return null;try{const hint=JSON.parse(localStorage.getItem(landingKey));const age=Date.now()-hint?.checkedAt;if(hint?.uid===user.uid&&age>=0&&age<86400000&&validRoles.includes(hint.role))return hint.role;}catch(_){}return null;}
- function landingView(){const value=landingRole();return value==='logistics'?'products':value==='designer'?'orders':'sales';}
+ function landingView(){if(window.AiselAccess?.legacy)return 'orders';const value=landingRole();return value==='logistics'?'products':value==='designer'?'orders':'sales';}
  function restoreLanding(){if(!landingOpen||busy||!landingRole())return;landingOpen=false;const target=landingView();if(current!==target)show(target,{replace:true});}
  for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,()=>{landingOpen=false;},{capture:true,once:true});
  // Resuming input cancels a destination chosen before that input. A delayed save

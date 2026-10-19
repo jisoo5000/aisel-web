@@ -248,7 +248,7 @@
 })(window);
 </script>
 <script>window.AiselSheetSalesMode=true;</script>
-<script src="aisel-access-core.js?v=233"></script>
+<script src="aisel-access-core.js?v=233.1"></script>
 <meta name="google" content="notranslate">
 <!-- AISEL 작업지시서 v114 (2026-10-08)
      [v114] 운영 시트 작성일순·드롭 제외·개별 원본 바로가기·로그인 없는 시트 갱신.
@@ -5471,7 +5471,7 @@
   function bumpUsed(n){ const c=getCounters(), k=seqKey(); c[k]=Math.max(c[k]||0, n||0); setCounters(c); }
   let accessSequenceRequest_=null;
   function suggestSeq(){
-    if(!window.AiselAccess?.session||!newOrderMode_){$("#seq").value=String(nextSeq()).padStart(3,"0");genCode();return;}
+    if(!window.AiselAccess?.session||window.AiselAccess.legacy||!newOrderMode_){$("#seq").value=String(nextSeq()).padStart(3,"0");genCode();return;}
     const season=$("#season").value,category=currentCat().code,key=season+':'+category;
     if(accessSequenceRequest_?.key===key&&accessSequenceRequest_.flight)return accessSequenceRequest_.flight;
     const entry=accessSequenceRequest_?.key===key?accessSequenceRequest_:{key,requestId:crypto.randomUUID()};accessSequenceRequest_=entry;
@@ -7696,7 +7696,7 @@
       return result;
     }
     const targetRef=woRef,targetCode=currentCode,st=collect();
-    if(newOrderMode_&&!editorContentBaseline_&&window.AiselAccess?.session){
+    if(newOrderMode_&&!editorContentBaseline_&&window.AiselAccess?.session&&!window.AiselAccess.legacy){
       st.createdByUid=window.AiselAccess.session.uid;
       st.createdByName=window.AiselAccess.session.displayName||window.AiselAccess.session.email||'';
     }
@@ -7732,7 +7732,7 @@
     const writePromise=Promise.resolve().then(async()=>{
       if(draftContext){if(!draftContext.loaded)await draftContext.ready;await draftContext.chain;if(draftBlocksSave_(draftContext)||draftContext.awaitingServer||draftContext.remotePending||draftContext.owner!==draftOwner_())throw new Error('서버 연결과 변경된 내용을 확인해 주세요.');}
       if(creating){
-        if(window.AiselAccess?.session)await window.AiselAccess.request('claimWorkorder',{code:targetCode});
+        if(window.AiselAccess?.session&&!window.AiselAccess.legacy)await window.AiselAccess.request('claimWorkorder',{code:targetCode});
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
       }else if(keys.length)await targetRef.update(patch);
@@ -8601,7 +8601,7 @@
     const subscribe=()=>{if(woRef===subscribedRef&&currentCode===code)subscribedRef.on("value",woListener,onReadError);};
     // Claiming records the actual author and current assignee before the first
     // save. The server refuses existing records and does not invent authors.
-    if(newOrderMode_&&window.AiselAccess?.session)window.AiselAccess.request('claimWorkorder',{code}).then(subscribe,onReadError);
+    if(newOrderMode_&&window.AiselAccess?.session&&!window.AiselAccess.legacy)window.AiselAccess.request('claimWorkorder',{code}).then(subscribe,onReadError);
     else subscribe();
   }
   // 입력하던 칸에서 포커스가 빠지면(다른 칸으로 이동하거나 클릭 밖으로 나가면) 보류해뒀던 최신 내용 반영
@@ -11404,7 +11404,7 @@
     accessIndexFlight_=flight;return flight;
   }
   window.AiselAccess.subscribe(session=>{
-    const scope=session?session.uid+':'+!!session.permissions?.ownOnly:'';
+    const scope=session?session.uid+':'+!!session.permissions?.ownOnly+':'+!!session.legacy:'';
     if(scope===accessIndexScope_)return;accessIndexScope_=scope;
     accessIndexEpoch_++;accessIndexFlight_=null;assignmentRefreshedAt_=0;authorizedIndexRecords_={};workorderAssignments_={};
     document.body.dataset.aiselAccess=!session?'pending':session.permissions?.ownOnly?'restricted':'ready';
@@ -15504,7 +15504,7 @@ root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_
   const close=document.createElement('button');close.type='button';close.textContent='닫기';close.addEventListener('click',()=>dialog.close());dialog.append(close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
  }
  async function read(endpoint,group='new'){
-  if(!root.AiselAccess?.session)throw Error('로그인 후 판매성과를 확인해주세요.');
+  if(!root.AiselAccess?.allowed('sales'))throw Error('로그인 후 판매성과를 확인해주세요.');
   const snapshot=await root.AiselAccess.request('sales',{group});
   if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해주세요.');
   returnMetric(snapshot);return snapshot;
@@ -15546,7 +15546,7 @@ root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_
    return !document.hidden&&(!root.AiselUnified||root.AiselUnified.view==='sales')&&view&&!view.hidden&&getComputedStyle(view).display!=='none';
   }
   function load(){
-   if(!root.AiselAccess?.session){host.textContent='로그인 후 판매성과를 확인해주세요.';return Promise.resolve(false);}
+   if(!root.AiselAccess?.allowed('sales')){host.textContent='로그인 후 판매성과를 확인해주세요.';return Promise.resolve(false);}
    if(inFlight)return inFlight;
    const expected=generation,selected=group;
    lastAttempt=Date.now();refresh.disabled=true;
@@ -16931,9 +16931,9 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=233"></script>
-<script src="unified-app.js?v=233"></script>
+<script src="unified-app.js?v=233.1"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=233" media="screen">
-<script src="aisel-access-ui.js?v=233"></script>
+<script src="aisel-access-ui.js?v=233.1"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=215" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=233">
 
