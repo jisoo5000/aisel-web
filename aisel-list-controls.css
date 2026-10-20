@@ -105,7 +105,7 @@
  html:root body #aiselWorkorderAttribution .access-attribution-line {display:flex;align-items:center;gap:8px;flex:1 1 100%;min-width:0;}
  html:root body #aiselWorkorderAttribution .access-assignee-name {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
  html:root body #aiselWorkorderAttribution button {height:28px;min-height:28px;padding:0 4px;font:inherit;border:1px solid var(--aisel-list-border);border-radius:3px;}
- html:root body #aiselWorkorderAttribution .access-history-toggle {flex:none;padding:0;border:0;background:transparent;color:#1766bf;white-space:nowrap;text-decoration:underline;cursor:pointer;}
+ html:root body #aiselWorkorderAttribution .access-history-toggle {flex:none;padding:0;border:0;background:transparent;color:var(--aisel-accent,#2F3B52);white-space:nowrap;text-decoration:underline;cursor:pointer;}
  html:root body #aiselWorkorderAttribution .access-attribution-history {flex-basis:100%;}
  html:root body #aiselWorkorderAttribution .access-attribution-history p {margin:4px 0;overflow-wrap:anywhere;}
 }
@@ -121,7 +121,7 @@
  html:root body #editorView .fabric-variant-fields input:last-child {grid-column:1/-1;}
  .fabric-variant-print {display:none;}
  html:root body #editorView #codeView[role=button] {cursor:pointer;}
- html:root body #editorView .code-copy-status {font-size:12px;font-weight:400;color:#1766bf;white-space:nowrap;}
+ html:root body #editorView .code-copy-status {font-size:12px;font-weight:400;color:var(--aisel-accent,#2F3B52);white-space:nowrap;}
 }
 @media screen and (max-width:600px) {
  html:root body #editorView #sheet #productColors,html:root body #editorView #sheet #mobileSampleRecords {margin-left:0;margin-right:0;width:100%;box-sizing:border-box;}
@@ -131,3 +131,30 @@
 @media print {.fabric-variant-print {flex:0 0 auto;margin-bottom:6px;font-size:11px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;} .fabric-variant-print:empty {display:none;}}
 
 @media screen {html:root body #editorView .fabric-variant-base {display:flex;flex-direction:column;}html:root body #editorView .fabric-variant-base>.fabric-variant-color {order:-1;}}
+
+/* v238: shared muted accent; product swatches retain their actual colors. */
+:root {--aisel-accent:#2F3B52;}
+@media screen {
+ html:root body .code-copy-status,html:root body #aiselWorkorderAttribution .access-history-toggle {color:var(--aisel-accent)!important;}
+ html:root body .code-edit-button {display:inline-flex;align-items:center;justify-content:center;min-height:28px;margin:0 0 0 5px;padding:0 2px;border:0;background:transparent;color:inherit;font-size:11px;font-weight:400;cursor:pointer;}
+ html:root body #mobileCodeSettings {color:var(--aisel-accent);}
+ html:root body #mobileCodeSettings .code-settings-grid {display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+ html:root body #mobileCodeSettings label {min-width:0;font-size:12px;line-height:18px;}
+ html:root body #mobileCodeSettings :is(select,input) {box-sizing:border-box;width:100%;min-width:0;height:32px;font-size:12px;border:1px solid #E3E5E7;border-radius:3px;padding:0 4px;}
+ html:root body #mobileCodeSettings #codeSettingsClose {background:var(--aisel-accent);border-color:var(--aisel-accent);color:white;font-size:12px;height:28px;padding:0 12px;}
+ html:root body #codeSettingsStatus {min-height:18px;font-size:12px;}
+ html:root body #workorderDesignerSelect {min-width:0;max-width:150px;width:110px;height:28px;font-size:12px;font-weight:400;color:var(--aisel-accent);background:white;border:1px solid #E3E5E7;border-radius:3px;padding:0 4px;}
+ html:root body #mobileDesignerName {display:none!important;}
+ html:root body #workorderDesignerManager:not(:empty) {grid-column:1/-1;padding:8px;}
+ html:root body .editor-designer-notice:empty {display:none;}
+ html:root body #editorView .changes-toggle {grid-column:1;grid-row:1;justify-self:start;min-height:28px;padding:0;border:0;background:transparent;color:var(--aisel-accent);font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;}
+ html:root body #mobileSampleRecords.changes-folded .mobile-change-card:not(:first-child),html:root body #mobileSampleRecords.changes-folded .mobile-change-card>:not(.mobile-change-heading),html:root body #mobileSampleRecords.changes-folded .mobile-change-heading>:not(.changes-toggle) {display:none!important;}
+ html:root body #mobileSampleRecords.changes-folded .mobile-change-heading {display:flex;margin:0;}
+ html:root body #editorView .color-pattern-dot {display:inline-block;width:16px;height:16px;flex:none;border:1px solid #d9dcdf;border-radius:50%;vertical-align:middle;margin-right:4px;}
+}
+@media screen {
+ html:root body {--accent:#2F3B52;--accent-soft:#EEF0F3;accent-color:#2F3B52;}
+ html:root body :is(a,.code-copy-status,.access-history-toggle) {color:var(--aisel-accent);}
+ html:root body :is(input,select,textarea,button):focus-visible {outline-color:var(--aisel-accent);}
+ html:root body #sheet > :is(#workorderDesignerManager,.editor-designer-notice) {order:1;}
+}

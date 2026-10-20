@@ -3224,7 +3224,7 @@
 #salesView .sales-summary {grid-template-columns:24px 40px minmax(160px,1fr) auto 44px;gap:10px;padding:10px 2px;min-height:70px;cursor:default}
 #salesView .sales-summary:hover {background:transparent}
 #salesView .sales-indicators {display:flex;align-items:center;gap:12px;white-space:nowrap;font-size:13px;font-weight:700}
-#salesView .sales-signal.positive {color:#1760B5}
+#salesView .sales-signal.positive {color:#2F3B52}
 #salesView .sales-signal.negative {color:#B52B43}
 #salesView .sales-signal.neutral {color:#4B617E}
 #salesView .sales-signal.unknown {color:#7B8494;font-weight:500}
@@ -5311,7 +5311,8 @@
 <script src="aisel-photo.js?v=216"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=233">
 <script src="aisel-usp.js?v=236"></script>
-<script src="aisel-fabric-variants.js?v=237.1"></script>
+<script src="aisel-editor-values.js?v=238"></script>
+<script src="aisel-fabric-variants.js?v=238"></script>
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -5319,21 +5320,22 @@
     { code:"SH",  name:"셔츠",                fabric:"직기" },
     { code:"HT",  name:"반팔 티셔츠",         fabric:"다이마루" },
     { code:"LT",  name:"긴팔 티셔츠",         fabric:"다이마루" },
-    { code:"KT",  name:"니트탑 / 타이니트",   fabric:"다이마루" },
-    { code:"KN",  name:"니트 / 스웨터",       fabric:"니트" },
+    { code:"KT",  name:"니트",   fabric:"다이마루" },
+    { code:"KN",  name:"니트",       fabric:"니트" },
     { code:"CD",  name:"가디건",              fabric:"니트" },
     { code:"OP",  name:"원피스",              fabric:"기타" },
-    { code:"SK",  name:"스커트 (컴포트)",     fabric:"다이마루" },
-    { code:"WSK", name:"스커트 (직기)",       fabric:"직기" },
-    { code:"PT",  name:"팬츠 (직기/슬랙스)",  fabric:"직기" },
-    { code:"CP",  name:"컴포트팬츠",          fabric:"다이마루" },
+    { code:"SK",  name:"스커트",     fabric:"다이마루" },
+    { code:"WSK", name:"스커트",       fabric:"직기" },
+    { code:"PT",  name:"팬츠",  fabric:"직기" },
+    { code:"CP",  name:"팬츠",          fabric:"다이마루" },
     { code:"DN",  name:"데님",                fabric:"데님" },
     { code:"JK",  name:"자켓",                fabric:"직기" },
     { code:"CT",  name:"코트",                fabric:"직기" },
     { code:"VT",  name:"베스트",              fabric:"기타" },
-    { code:"SET", name:"셋업 (상+하)",        fabric:"기타" },
+    { code:"SET", name:"셋업",        fabric:"기타" },
     { code:"OPS", name:"플리츠 티셔츠(단순직기)", fabric:"직기" },
     { code:"SC",  name:"스카프",                fabric:"기타" },
+    { code:"SL", name:"슬리브리스", fabric:"다이마루" },
   ];
 
 
@@ -5348,6 +5350,7 @@
   CATS.forEach((c,i) => {
     const o = document.createElement("option");
     o.value = i; o.textContent = `${c.name}  ·  ${c.code}`;
+    if([5,9,11,17].includes(i)){o.hidden=true;o.disabled=true;}
     catSel.appendChild(o);
   });
   catSel.value = 4; // 니트탑 기본
@@ -5404,7 +5407,7 @@
   // 사진만으로 카테고리가 확실히 정해지는 아이템만 자동으로 바꿉니다.
   const ITEM_TO_CAT_CODE = {
     "블라우스": "BL", "셔츠": "SH",
-    "트라우저": "PT", "슬랙스": "PT", "컴포트팬츠": "CP", "팬츠": "PT",
+    "트라우저": "PT", "슬랙스": "PT", "컴포트팬츠": "PT", "팬츠": "PT",
     "진": "DN", "데님": "DN", "숏츠": "PT", "하프": "PT",
     "스커트": "SK", "드레스": "OP", "재킷": "JK", "가디건": "CD"
   };
@@ -5518,28 +5521,16 @@
     }
   }
 
-  $("#genBtn").addEventListener("click", suggestSeq);        // '다음 번호' 버튼
-  $("#season").addEventListener("change", suggestSeq);       // 시즌 바꾸면 그 시즌 다음 번호
-  // 2026-08-13 수정: 타이핑 중(input)에는 화면 글자만 바꾸고, 손을 뗐을 때(change/blur)만 실제로 연결함
-  $("#seq").addEventListener("input", ()=> renderCodeText_());
-  $("#seq").addEventListener("change", genCode);
-  $("#seq").addEventListener("blur", genCode);
-  catSel.addEventListener("change", ()=>{
-    pumInput.dataset.auto = "1";
-    if(codePending_){
-      // 아직 번호를 안 매긴 새 작지 → 이 카테고리로 번호를 매깁니다
-      assignCodeNow_();
-    }else{
-      // 2026-08-21 재수정: 카테고리를 바꾸면 품번도 그 자리에서 바로 같이 바뀝니다.
-      // 예전에는 품번을 그대로 두고 "품번 옮기기" 버튼을 따로 눌러야 했는데, 그 버튼을
-      // 못 보고 지나쳐서 사진 판독이 잘못 읽은 품번이 그대로 남는 사고가 있었습니다.
-      // 이제 자동으로 옮기고 확인 절차도 없습니다 (카페24 코드 입력 완료는 PDP·판매 단계에서만
-      // 나타나는데, 카테고리를 실수로 잘못 읽는 상황은 항상 그보다 훨씬 이전 단계라 안전합니다).
-      applyCat();
-      autoMoveCodeForCategory_();
-    }
-    autoPrice_();   // 2026-09-22: 컴포트↔상의·하의 는 계단이 다릅니다
-  });
+  function updateClassification_(){
+    if(loading)return;
+    if(codePending_||!currentCode){assignCodeNow_();return;}
+    // Existing identifiers change only through the explicit correction dialog.
+    $("#codeView").textContent=currentCode;autoPrice_();saveSoon();
+  }
+  $("#genBtn").addEventListener('click',()=>{if(!currentCode||codePending_)suggestSeq();else window.openMobileCodeSettings_?.();});
+  $("#season").addEventListener('change',updateClassification_);
+  $("#seq").readOnly=true;
+  catSel.addEventListener('change',updateClassification_);
 
   const copyCodeNode_=document.getElementById('codeView');
   copyCodeNode_.setAttribute('role','button');copyCodeNode_.tabIndex=0;copyCodeNode_.title='현재 저장된 품번 복사';
@@ -5548,10 +5539,7 @@
   async function copySavedCode_(){const code=currentCode;if(!code||codePending_){setCodeCopyStatus_('품번 확정 후 복사');return;}try{await navigator.clipboard.writeText(code);setCodeCopyStatus_('복사됨');}catch(_){setCodeCopyStatus_('길게 눌러 복사해주세요');}clearTimeout(codeCopyTimer_);codeCopyTimer_=setTimeout(()=>setCodeCopyStatus_(''),1800);}
 
 
-  // ---------- 품번 옮기기 (2026-08-13 추가, 2026-08-21 자동화) ----------
-  // 저장된 작지에서 카테고리가 바뀌면 품번의 카테고리 코드가 실제와 달라집니다.
-  // (예: AS-26F-KT-021 인데 실제로는 팬츠)
-  // 카테고리를 바꾸는 즉시 내용을 새 품번으로 통째로 옮기고 옛 품번을 지웁니다.
+  // ---------- v238: 분류 변경은 품번을 유지; 명시적 정정만 서버에서 원자적으로 처리 ----------
   function proposedCodeForCurrentCat_(){
     const c = currentCat();
     const seq = String(num($("#seq").value) || 0).padStart(3, "0");
@@ -5562,111 +5550,22 @@
     if(!btn) return;
     btn.style.display = "none";   // 2026-08-21 수정: 자동으로 옮기므로 버튼은 더 이상 안 씀
   }
-  async function autoMoveCodeForCategory_(){
-    const oldCode = currentCode;
-    const newCode = proposedCodeForCurrentCat_();
-    if(!oldCode || !newCode || oldCode === newCode) return;
-    if(allWorkOrders && allWorkOrders[newCode]){
-      // 이미 그 자리에 다른 작지가 있으면 자동으로는 못 옮기니 순번을 하나 올려 다시 시도
-      let seq = num($("#seq").value) || 0;
-      let tries = 0;
-      let tryCode = newCode;
-      while(allWorkOrders[tryCode] && tries < 50){
-        seq += 1; tries += 1;
-        $("#seq").value = String(seq).padStart(3, "0");
-        tryCode = proposedCodeForCurrentCat_();
-      }
-      if(allWorkOrders[tryCode]){
-        setCodeChangeNotice_("자동으로 옮길 빈 자리를 못 찾았습니다. 순번을 직접 바꿔주세요.");
-        return;
-      }
-    }
-    await moveCurrentWorkOrder_(true);
-  }
-  async function moveCurrentWorkOrder_(silent){
-    const oldCode = currentCode;
-    const newCode = proposedCodeForCurrentCat_();
-    if(!oldCode || !newCode || oldCode === newCode) return;
-
-    if(allWorkOrders && allWorkOrders[newCode]){
-      if(!silent) alert("옮기려는 품번 " + newCode + " 은 이미 사용 중입니다.\n순번을 바꾼 뒤 다시 시도해주세요.");
-      return;
-    }
-    if(!silent){
-      const ok = confirm(
-        "품번을 옮깁니다.\n\n" + oldCode + "  →  " + newCode + "\n\n" +
-        "지금 작지 내용이 새 품번으로 통째로 옮겨지고 옛 품번은 삭제됩니다.\n" +
-        "공장에 나간 서류나 카페24 자체상품코드에 옛 품번이 적혀 있다면 옮기면 안 됩니다.\n\n진행할까요?"
-      );
-      if(!ok) return;
-    }
-
+  async function correctWorkorderCode_(newCode){
+    if(!window.AiselAccess?.isOwner)throw Error('대표자 계정에서 품번을 정정할 수 있습니다.');
+    if(!await settleEditorSave_())throw Error('현재 내용을 먼저 저장해주세요.');
+    const oldCode=currentCode;if(!oldCode||oldCode===newCode)return;
+    const retryKey='aisel.code-correction:'+window.AiselAccess.session.uid+':'+oldCode+':'+newCode;let requestId;try{requestId=sessionStorage.getItem(retryKey);}catch(_){}requestId=requestId||crypto.randomUUID();try{sessionStorage.setItem(retryKey,requestId);}catch(_){}const expectedUpdatedAt=Number(lastSavedState_?.updatedAt||0);
+    clearTimeout(saveT);saveT=null;movingCodeNow_=true;loading=true;
     try{
-      // 2026-08-25 추가: 옮기는 동안 예약돼 있던 자동저장이 옛 품번으로 나가면
-      // 한 박자 이전 내용이 복사되거나 지운 자리가 되살아납니다. 먼저 취소합니다.
-      try{ clearTimeout(saveT); }catch(e){}
-      const snap = await woRoot.child(oldCode).once("value");
-      const data = snap.val();
-      if(!data){
-        // 2026-08-21 추가: 아직 파이어베이스에 한 번도 저장 안 된 상태(저장 전 새 작지에서
-        // 빠르게 카테고리를 여러 번 바꾼 경우)라면 옮길 내용 자체가 없습니다.
-        // 옛 품번 삭제 없이 그냥 새 품번으로 연결만 바꿔서 다음 저장이 새 품번으로 나가게 합니다.
-        if(woRef && woListener) woRef.off("value", woListener);
-        woRef = null; woListener = null; currentCode = null;
-        attachWoRef(newCode);
-        $("#codeView").textContent = newCode;
-        return;
-      }
-
-      // 2026-08-25 수정 (중요): 예전에는 "새 자리에 복사" 와 "옛 자리 삭제" 가 따로 나갔습니다.
-      // 복사만 성공하고 삭제가 실패하면 내용이 똑같은 작지가 두 개 남았고,
-      // 자동 이동(silent) 일 때는 그 실패가 아무 표시 없이 삼켜졌습니다.
-      // 이제 한 번의 update 로 두 가지를 함께 보냅니다. 둘 다 되거나 둘 다 안 되거나뿐입니다.
-      const moveUpdates_ = {};
-      moveUpdates_[newCode] = data;
-      moveUpdates_[oldCode] = null;
-      movingCodeNow_ = true;   // 2026-09-20 추가: 옛 품번 리스너가 null 을 받아도 "삭제됨" 안내를 안 띄웁니다
-      await woRoot.update(moveUpdates_);
-      // 2026-08-25 추가: 목록 색인도 같은 방식으로 한 번에 옮깁니다
-      const idxEntry_ = woIndexEntryFrom_(data);
-      idxEntry_.updatedAt = data.updatedAt || Date.now();
-      const idxUpdates_ = {};
-      idxUpdates_[newCode] = idxEntry_;
-      idxUpdates_[oldCode] = null;
-      delete lastIndexSig_[oldCode];
-      lastIndexSig_[newCode] = woIndexSig_(idxEntry_);
-      await woIndexRoot.update(idxUpdates_);
-      // 2026-08-25 추가: 공유용 칸도 같은 품번으로 옮깁니다
-      const shareUpdates_ = {};
-      if(shareKeeps_(data)) shareUpdates_[newCode] = woShareEntryFrom_(data);
-      shareUpdates_[oldCode] = null;
-      await woShareRoot.update(shareUpdates_).catch(()=>{});
-
-      // 연결을 새 품번으로 갈아끼움
-      if(woRef && woListener) woRef.off("value", woListener);
-      woRef = null; woListener = null; currentCode = null;
-      justDeletedCode_ = oldCode;
-      setTimeout(()=>{ if(justDeletedCode_ === oldCode) justDeletedCode_ = null; }, 3000);
-
-      movingCodeNow_ = false;
-      attachWoRef(newCode);
-      $("#codeView").textContent = newCode;
-      refreshCafe24Bar_();
-      // 2026-08-21 수정: 자동으로 옮겼을 때는 "왜 바뀌었는지"만 짧게 알려줍니다
-      setCodeChangeNotice_(silent
-        ? "카테고리에 맞춰 품번을 " + newCode + " 로 자동으로 옮겼습니다."
-        : "품번을 " + newCode + " 로 옮겼습니다. 카페24 자체상품코드도 새 품번으로 바꿔주세요.");
-    }catch(err){
-      movingCodeNow_ = false;
-      // 2026-08-25 수정: 자동 이동일 때도 반드시 화면에 알립니다.
-      // 조용한 실패가 작지 중복의 원인이었습니다.
-      if(!silent){
-        alert("품번 옮기기에 실패했습니다: " + err.message);
-      }else{
-        setCodeChangeNotice_("품번을 " + newCode + " 로 옮기지 못했습니다. 품번은 " + oldCode + " 그대로입니다. 인터넷 상태를 확인하고 카테고리를 다시 골라주세요. (" + err.message + ")");
-      }
-    }
+      let result;try{result=await window.AiselAccess.request('correctWorkorderCode',{oldCode,newCode,expectedUpdatedAt,requestId});}catch(error){const resolved=await window.AiselAccess.request('resolveWorkorderCode',{code:oldCode}).catch(()=>null);if(resolved?.code===newCode)result=resolved;else throw error;}
+      if(woRef&&woListener)woRef.off('value',woListener);woRef=null;woListener=null;currentCode=null;
+      attachWoRef(result.code);document.getElementById('codeView').textContent=result.code;try{sessionStorage.removeItem(retryKey);}catch(_){}
+      window.dispatchEvent(new CustomEvent('aisel-access-workorders-changed'));
+      if(appRoute_.view==='editor'){appRoute_={...appRoute_,code:result.code};history.replaceState(appRoute_,'');}
+    }catch(error){const labels={code_taken:'이미 사용 중인 품번입니다.',workorder_changed:'다른 곳에서 수정됐습니다. 최신 내용을 확인하고 다시 시도해주세요.',invalid_code:'품번 형식을 확인해주세요.',permission_denied:'대표자 계정에서 품번을 정정해주세요.'};throw Error(labels[error.code]||error.message||'품번 수정 결과를 확인해주세요.');}
+    finally{movingCodeNow_=false;if(currentCode===oldCode)loading=false;}
   }
+  async function moveCurrentWorkOrder_(){return window.openMobileCodeSettings_?.();}
   if($("#moveCodeBtn")) $("#moveCodeBtn").addEventListener("click", ()=> moveCurrentWorkOrder_(false));
 
   // 이미 저장된 작지에서 카테고리를 바꿨을 때 알려주는 줄
@@ -7760,7 +7659,7 @@
         window.dispatchEvent(new CustomEvent("aisel-access-workorders-changed"));
         try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
       }
-      if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);}
+      if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);window.AiselEditorEnhancements?.refresh(st,targetCode,{saved:true});}
       return true;
     }).catch(()=>{
       if(originalWritten && state.latest===id)state.indexFailed=true;
@@ -7966,7 +7865,9 @@
     // 여기서만 기준을 갱신하므로, 입력 중이라 반영을 미뤄둔 남의 수정은 기준에 들어가지
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
+    document.getElementById("blend").value=englishBlend_(document.getElementById("blend").value);
     fabricVariants_.refresh();
+    window.AiselEditorEnhancements?.refresh(st,currentCode,{loaded:true});
     syncFabricFromMemo_();
     renderMobileHeader_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
@@ -8556,15 +8457,10 @@
         resetEditorSaveFeedback_(!!st);
       }
       if(!st){
-        if(isFirst){ loading = !newOrderMode_;window.AiselWorkorderMeetingPhotos?.empty(code,newOrderMode_);if(mobileUnifiedReady_)renderMobileSampleDate_();return; } // 아직 아무것도 저장 안 된 새 품번이면 지금 화면 기본값 그대로 둠
-        // 2026-09-20 추가: 열어둔 작지가 밑에서 사라졌습니다(다른 기기에서 삭제·품번 이동).
-        // 예전에는 화면이 그대로 남아서 한 글자만 쳐도 부분 저장이 나가 "품명만 있는 빈 작지"가 되살아났습니다.
-        // 내가 지운 것(justDeletedCode_)과 내가 옮기는 중(movingCodeNow_)은 각자 처리하므로 여기서 제외합니다.
-        if(justDeletedCode_ === code || movingCodeNow_) return;
-        detachWoRefNow_("gone");
-        alert("이 작지(" + code + ")가 다른 기기에서 삭제되거나 품번이 옮겨졌습니다.\n목록으로 돌아갑니다. 이 화면의 내용은 저장되지 않습니다.");
-        showGallery();
-        return;
+        if(justDeletedCode_===code||movingCodeNow_)return;
+        const missing=()=>{if(currentCode!==code||woRef!==subscribedRef)return;if(isFirst){loading=!newOrderMode_;window.AiselWorkorderMeetingPhotos?.empty(code,newOrderMode_);return;}detachWoRefNow_('gone');alert('이 작지가 삭제되거나 품번이 옮겨졌습니다. 목록에서 다시 확인해주세요.');showGallery();};
+        if(!newOrderMode_&&window.AiselAccess?.session&&!subscribedRef._aliasChecked){subscribedRef._aliasChecked=true;loading=true;window.AiselAccess.request('resolveWorkorderCode',{code}).then(r=>{if(currentCode!==code||woRef!==subscribedRef)return;if(r.code!==code)attachWoRef(r.code);else missing();}).catch(missing);return;}
+        missing();return;
       }
       // 2026-08-13 추가: "새 작지"를 만드는 중이면, 그 품번에 기존 작지가 있어도 화면에 불러오지 않음.
       // (예전에는 새 작지를 눌렀는데 기존 작지의 사진과 내용이 스르륵 채워지는 문제가 있었음)
@@ -9085,27 +8981,14 @@
   modifiedDateInput.addEventListener('blur',refreshModifiedDateInput_);
 
   // Only complete known fiber expressions are rewritten. Product names and notes remain exact.
-  function englishBlend_(value){
-    const names={polyester:'POLYESTER',poly:'POLYESTER','폴리에스터':'POLYESTER','폴리':'POLYESTER',polyurethane:'POLYURETHANE',spandex:'POLYURETHANE',elastane:'POLYURETHANE','폴리우레탄':'POLYURETHANE','스판덱스':'POLYURETHANE','스판':'POLYURETHANE',cotton:'COTTON','코튼':'COTTON','면':'COTTON',nylon:'NYLON','나일론':'NYLON',rayon:'RAYON','레이온':'RAYON',wool:'WOOL','울':'WOOL',linen:'LINEN','린넨':'LINEN',acrylic:'ACRYLIC','아크릴':'ACRYLIC'};
-    const source=String(value||'').trim();if(!source)return '';
-    const expression=new RegExp('('+Object.keys(names).sort((a,b)=>b.length-a.length).join('|')+')(?:\\s*(\\d+(?:\\.\\d+)?)(\\s*%)?)?','igy');
-    const parts=[];let at=0;
-    while(at<source.length){
-      expression.lastIndex=at;const match=expression.exec(source);if(!match||(!match[2]&&match[3]))return value;
-      const next=expression.lastIndex;if(next<source.length&&!/[\s/,+·]/.test(source[next])&&!/^[가-힣]/.test(source.slice(next)))return value;
-      parts.push(names[match[1].toLowerCase()]+(match[2]?' '+match[2]+'%':''));
-      at=next;const separator=source.slice(at).match(/^[\s/,+·]+/);if(separator)at+=separator[0].length;
-      if(at===source.length&&separator&&/[\/,+·]/.test(separator[0]))return value;
-    }
-    return parts.join(' / ');
-  }
+  function englishBlend_(value){return window.AiselEditorValues.blend(value);}
   function normalizePendingBlend_(){
     const input=document.getElementById('blend');
     if(!blendNormalizePending_||!mobileBlendInputMode_()||isEditorComposing_()||document.activeElement===input)return false;
     blendNormalizePending_=false;const converted=englishBlend_(input.value);if(converted===input.value)return false;
     input.value=converted;return true;
   }
-  function mobileBlendInputMode_(){return mobileDraftMode_()||/iPhone|iPad|Android/i.test(navigator.userAgent);}
+  function mobileBlendInputMode_(){return true;}
   let blendFocusUntouched_=false;
   document.getElementById('blend').addEventListener('focus',()=>{
     if(loading||!mobileBlendInputMode_()||isEditorComposing_())return;
@@ -10805,6 +10688,7 @@
     if(typeof refreshMetaAccordionHead_ === "function") refreshMetaAccordionHead_();
     if(typeof refreshPlanChecks_ === "function") refreshPlanChecks_();
     if(typeof refreshSpSummaryLine_ === "function") refreshSpSummaryLine_();
+    window.AiselEditorEnhancements?.refresh(null,null,{loaded:true});
   }
   // 2026-08-13 수정: 예전에는 검색어 글자 하나마다 목록 전체를 새로 만들어서
   // 사진이 매번 다시 그려지며 깜빡였음. 타이핑이 멈춘 뒤 한 번만 그리게 함.
@@ -10874,7 +10758,7 @@
   let galleryOrganization_={date:'',category:'',designer:''},galleryFilterRefresh_=null;
   function galleryCategory_(code,st){
     const raw=st.cat,provided=raw!==undefined&&raw!==null&&String(raw).trim()!=='';
-    return (provided?CATS[Number(raw)]:null)||CATS.find(cat=>cat.code===String(code).split('-')[2])||null;
+    const index=provided?Number(raw):CATS.findIndex(cat=>cat.code===String(code).split('-')[2]);return CATS[window.AiselEditorValues.categoryIndex(index)]||null;
   }
   function galleryDate_(st){
     const at=sortKeyForOrder_(st);if(!at)return '';
@@ -12306,38 +12190,50 @@
 
   // v116: mobile settings live beside the printed code; stored codes stay stable.
   const codeSettings=document.createElement('dialog');codeSettings.id='mobileCodeSettings';codeSettings.className='noprint';
-  codeSettings.innerHTML='<form method="dialog"><h3>품번 설정</h3><p id="mobileCodeHelp"></p><label>시즌<select id="mobileCodeSeason"></select></label><label>카테고리<select id="mobileCodeCategory"></select></label><div class="code-settings-actions"><button type="button" id="mobileCodeApply" class="btn">품번 생성</button><button type="submit" class="btn ghost">닫기</button></div></form>';
+  codeSettings.innerHTML='<form method="dialog"><h3>품번 설정</h3><p id="mobileCodeHelp"></p><div class="code-settings-grid"><label>시즌<select id="mobileCodeSeason"></select></label><label>카테고리<select id="mobileCodeCategory"></select></label></div><label id="codeCorrectionLabel">품번<input id="codeCorrectionInput" autocomplete="off" spellcheck="false" aria-label="품번 정정"></label><p id="codeSettingsStatus" role="status"></p><div class="code-settings-actions"><button id="codeSettingsClose" type="submit" class="btn">닫기</button></div></form>';
   document.body.appendChild(codeSettings);
-  const codeSeason=document.getElementById('mobileCodeSeason'),codeCategory=document.getElementById('mobileCodeCategory');
+  const codeSeason=document.getElementById('mobileCodeSeason'),codeCategory=document.getElementById('mobileCodeCategory'),correctionInput=document.getElementById('codeCorrectionInput'),codeSettingsStatus=document.getElementById('codeSettingsStatus');
+  let codeSettingsFlight_=null,codeSettingsKey_='';
   function openMobileCodeSettings_(){
-    if(!workOrderLayoutMedia_('(max-width:600px)').matches)return;
     codeSeason.innerHTML=document.getElementById('season').innerHTML;codeCategory.innerHTML=catSel.innerHTML;
-    codeSeason.value=document.getElementById('season').value;codeCategory.value=catSel.value;
-    const editable=codePending_||newOrderMode_;
-    codeSeason.disabled=!editable;codeCategory.disabled=false;
-    document.getElementById('mobileCodeApply').hidden=false;
-    document.getElementById('mobileCodeApply').textContent=editable?'품번 생성':'분류 적용';
-    document.getElementById('mobileCodeHelp').textContent=editable?'시즌과 카테고리를 확인하면 순번은 자동으로 정해집니다.':'카테고리를 수정해도 저장된 품번은 유지됩니다.';
+    codeSeason.value=document.getElementById('season').value;codeCategory.value=String(window.AiselEditorValues.categoryIndex(catSel.value));if(codePending_||!currentCode){codeCategory.prepend(new Option('카테고리 선택',''));codeCategory.value='';}
+    codeSettingsKey_=currentCode;codeSeason.disabled=false;codeCategory.disabled=false;
+    correctionInput.value=currentCode||'';document.getElementById('codeCorrectionLabel').hidden=!currentCode||codePending_;
+    codeSettingsStatus.textContent='';
+    document.getElementById('mobileCodeHelp').textContent=codePending_?'시즌과 카테고리를 선택하면 품번이 생성됩니다.':'분류 선택은 바로 저장됩니다. 품번은 아래에서 직접 정정할 수 있습니다.';
     if(!codeSettings.open){if(codeSettings.showModal)codeSettings.showModal();else codeSettings.setAttribute('open','');}
   }
   window.openMobileCodeSettings_=openMobileCodeSettings_;
-  document.getElementById('mobileCodeApply').addEventListener('click',()=>{
-    if(loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;
-    const creating=codePending_||newOrderMode_;
-    const changed=catSel.value!==codeCategory.value;
-    catSel.value=codeCategory.value;
-    if(creating){
-      document.getElementById('season').value=codeSeason.value;
-      try{localStorage.setItem('aisel_current_season',codeSeason.value);}catch(e){}
-      clearPendingCode_();suggestSeq();
-    }
-    codeSettings.close();renderMobileHeader_();if(creating||changed)saveSoon();
-  });
+  async function commitClassification_(){
+    if(codeSettingsFlight_||loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;if(!codeCategory.value){codeSettingsStatus.textContent='카테고리를 선택해주세요.';return;}
+    if(currentCode!==codeSettingsKey_&&codeSettingsKey_)return;
+    const task=(async()=>{codeSettingsStatus.textContent='저장 중';
+      catSel.value=codeCategory.value;document.getElementById('season').value=codeSeason.value;
+      if(codePending_||!currentCode){clearPendingCode_();await suggestSeq();for(let i=0;loading&&i<200;i++)await new Promise(resolve=>setTimeout(resolve,50));}
+      codeSettingsKey_=currentCode;correctionInput.value=currentCode||'';
+      renderMobileHeader_();clearTimeout(saveT);saveT=null;
+      const ok=await save();codeSettingsStatus.textContent=ok?'저장됨':'저장 확인 필요 · 선택한 내용을 유지했습니다';
+    })();codeSettingsFlight_=task;codeSeason.disabled=codeCategory.disabled=true;try{await task;}finally{codeSettingsFlight_=null;codeSeason.disabled=codeCategory.disabled=false;}
+  }
+  codeSeason.addEventListener('change',commitClassification_);codeCategory.addEventListener('change',commitClassification_);
+  async function commitCodeCorrection_(){
+    const value=correctionInput.value.trim().toUpperCase();if(!value||value===currentCode)return true;
+    if(codeSettingsFlight_)await codeSettingsFlight_;
+    if(!window.AiselEditorValues.validCode(value)){codeSettingsStatus.textContent='품번 형식을 확인해주세요. 예: AS-26F-BL-036';return false;}
+    codeSettingsStatus.textContent='품번 정정 중';
+    try{await correctWorkorderCode_(value);codeSettingsKey_=currentCode;correctionInput.value=currentCode;codeSettingsStatus.textContent='품번이 수정됐습니다';return true;}catch(error){codeSettingsStatus.textContent=error.message||'품번 수정에 실패했습니다';return false;}
+  }
+  let correctionFlight_=null;
+  const correctOnce=()=>correctionFlight_||(correctionFlight_=commitCodeCorrection_().finally(()=>{correctionFlight_=null;}));
+  correctionInput.addEventListener('change',()=>{void correctOnce();});
+  correctionInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();void correctOnce();}});
+  codeSettings.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();if(codeSettingsFlight_)await codeSettingsFlight_;if(await correctOnce())codeSettings.close();});
   for(const id of ['saveBtn','factorySaveBtn','printBtn'])document.getElementById(id).addEventListener('click',event=>{
     if(codePending_&&workOrderLayoutMedia_('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
   },true);
   const codeView=document.getElementById('codeView');
   const headerCode=document.getElementById('mobileProductCode');headerCode.after(codeCopyStatus_.cloneNode(true));
+  for(const node of [codeView,headerCode]){const edit=document.createElement('button');edit.type='button';edit.className='code-edit-button noprint';edit.textContent='수정';edit.setAttribute('aria-label','품번 수정');edit.onclick=openMobileCodeSettings_;node.after(edit);}
   function codeAction_(){if(codePending_||newOrderMode_)openMobileCodeSettings_();else copySavedCode_();}
   for(const node of [codeView,headerCode]){node.title='저장된 품번 복사';node.addEventListener('click',codeAction_);node.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();codeAction_();}});}
   const newAction=document.getElementById('newBtn'),deleteAction=document.getElementById('deleteBtn');
@@ -12384,6 +12280,7 @@
     view.dataset.contactRole=id==='designer'?'디자이너':'공장';view.className='mobile-contact-name';view.setAttribute('aria-label',(id==='designer'?'디자이너':'공장')+' 이름 수정');headerNames.append(view);
     const record={input,home,view,label:id==='designer'?'디자이너':'공장'};
     view.addEventListener('click',()=>{
+      if(id==='designer'&&window.AiselEditorEnhancements)return;
       if(!mobileLayout.matches||namePrintMedia.matches)return;
       finishHeaderNameEdits_();view.hidden=true;view.after(input);input.classList.add('mobile-name-editor');
       headerNames.closest('.title-row').classList.add('mobile-name-editing');input.focus();
@@ -12400,7 +12297,7 @@
     headerNames.closest('.title-row').classList.remove('mobile-name-editing');renderHeaderNames_();
   }
   function finishHeaderNameEdits_(){contactLayouts.forEach(finishHeaderNameEdit_);}
-  function renderHeaderNames_(){contactLayouts.forEach(record=>{record.view.textContent=record.input.value.trim()||record.label;});}
+  function renderHeaderNames_(){contactLayouts.forEach(record=>{record.view.textContent=record.input.value.trim()||record.label;});window.AiselEditorEnhancements?.syncDesigner();}
   function renderMobileSampleDate_(){
     const fullDate=document.getElementById('sampleRecoveryDates').textContent;
     const date=sampleRecoveryStatus==='returned'?sampleReturnedDate:sampleFactorySentDate;
@@ -12421,7 +12318,7 @@
   function updateMobileChangeLabels_(){
     [...mobileRecords.children].forEach((card,index)=>{
       const title=index===0?'수정사항':'추가 수정사항';
-      card.querySelector('.mobile-change-heading > span:first-child').textContent=title;
+      const toggle=card.querySelector('.changes-toggle');toggle.textContent=title+' ▾';toggle.setAttribute('aria-expanded','true');
       card.querySelector('textarea').setAttribute('aria-label',title);
       card.querySelector('input').setAttribute('aria-label',title+' 날짜');
       card.querySelector('.mobile-change-delete').setAttribute('aria-label',title+' 삭제');
@@ -12432,7 +12329,7 @@
     const recordCode=currentCode;
     if(record.source==='resample')record._entrySig=JSON.stringify(resampleHistory_[record.index]);
     const heading=document.createElement('div');heading.className='mobile-change-heading';
-    const label=document.createElement('span');label.textContent='수정사항';heading.append(label);
+    const label=document.createElement('button');label.type='button';label.className='changes-toggle';label.textContent='수정사항 ▾';label.setAttribute('aria-expanded','true');heading.append(label);
     const field=document.createElement('span');field.className='sample-date-field';
     const dateLabel=document.createElement('span');dateLabel.className='sample-date-label';dateLabel.setAttribute('aria-hidden','true');field.append(dateLabel);
     const date=document.createElement('input');date.type='date';date.setAttribute('aria-label','수정사항 날짜');
@@ -12569,6 +12466,7 @@
     else{renderMeetingHistory_();renderResampleHistory_();}
     renderHeaderNames_();renderMobileSampleDate_();
   }
+  window.AiselEditorAdapter={state:()=>({code:currentCode,record:lastSavedState_}),setDesigner:name=>{document.getElementById('designer').value=name;fillDesignerPhoneForExactName_();renderHeaderNames_();saveSoon();},save,ready:()=>!loading};
   mobileUnifiedReady_=true;
   window.addEventListener('beforeprint',()=>placeMobileRecords_(true));
   window.addEventListener('afterprint',()=>placeMobileRecords_());
@@ -13794,7 +13692,7 @@ const COLOR_NAME_ALIASES = Object.freeze({
 });
 function normalizeColorName_(name){
   if(typeof name !== "string") return "";
-  const value = name.trim().replace(/\s+/g, " ");
+  const value = window.AiselEditorValues.color(name).replace(/\s+/g, " ");
   const key = value.replace(/\s+/g, "");
   return Object.prototype.hasOwnProperty.call(COLOR_NAME_ALIASES, key) ? COLOR_NAME_ALIASES[key] : value;
 }
@@ -13846,6 +13744,7 @@ function customColorSwatch_(hex){
 }
 function resolveColorSwatch_(name){
   const normalized = normalizeColorName_(name);
+  if(normalized==='아이보리·검정 스트라이프')return {hex:'#F3F0E7',text:'#2F3B52',pattern:'repeating-linear-gradient(90deg,#F3F0E7 0 4px,#1A1A1A 4px 6px)'};
   // Existing palette values and canonical gray aliases always take precedence.
   if(Object.prototype.hasOwnProperty.call(COLOR_VARIANT_HEX, normalized)) return COLOR_VARIANT_HEX[normalized];
   const key = customColorKey_(normalized);
@@ -13996,6 +13895,7 @@ function renderSelectedColors(){
     chip.style.setProperty('--workorder-color-text', swatch.text);
     chip.style.background = "#2F3B52";
     chip.style.color = "#FFFFFF";
+    if(swatch.pattern){const dot=document.createElement('span');dot.className='color-pattern-dot';dot.style.background=swatch.pattern;dot.setAttribute('aria-hidden','true');chip.append(dot);}
     chip.appendChild(document.createTextNode(v));
     const rm = document.createElement("button");
     rm.textContent = "×";
@@ -16892,6 +16792,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=228"></script>
+<script src="aisel-editor-enhancements.js?v=238"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=233">
 <script src="aisel-date-filter.js?v=233"></script>
 <script src="design-meeting-core.js?v=223"></script>
@@ -16938,10 +16839,10 @@ window.AiselUnifiedAdapter={
 <script src="aisel-moodboards.js?v=233"></script>
 <script src="unified-app.js?v=235"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=233" media="screen">
-<script src="aisel-access-ui.js?v=236"></script>
+<script src="aisel-access-ui.js?v=238"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=215" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=233">
-<link rel="stylesheet" href="aisel-list-controls.css?v=237.1" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=238" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {
