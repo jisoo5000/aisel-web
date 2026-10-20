@@ -6,7 +6,7 @@
   base.classList.add('fabric-variant-base');
   const field=document.createElement('input');field.id='fabricVariantsData';field.type='hidden';editor.append(field);
   const make=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text)e.textContent=text;return e;};
-  const add=make('button','fabric-variant-add noprint','+');add.type='button';add.setAttribute('aria-label','컬러별 원단 추가');add.title='컬러별 원단 추가';base.querySelector('.k').append(add);
+  const add=make('button','fabric-variant-add noprint','+');add.type='button';add.setAttribute('aria-label','컬러별 원단 추가');add.title='컬러별 원단 추가';document.getElementById('fabricNameField').after(add);
   const primary=make('div','fabric-variant-color noprint'),primaryLabel=make('span','','컬러'),primarySelect=make('select');primarySelect.setAttribute('aria-label','기본 원단 컬러');primary.append(primaryLabel,primarySelect);base.append(primary);
   const list=make('div','fabric-variant-list noprint'),print=make('div','fabric-variant-print');base.append(list);document.querySelector('#sheet > .detail2 > .cell.mat > .sec-title').after(print);
   let data={primaryColor:'',rows:[]},key='',signature='',invalid=false;

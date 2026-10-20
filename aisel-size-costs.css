@@ -1,0 +1,72 @@
+.size-cost-base-print,.size-cost-print {display:none;}
+@media screen {
+ html:root body #aiselWorkorderAttribution {display:block;}
+ html:root body #aiselWorkorderAttribution .access-attribution-line {display:flex;align-items:center;gap:6px;flex-wrap:nowrap;font-size:11px;white-space:nowrap;}
+ html:root body #aiselWorkorderAttribution .access-original-creator {margin:0;}
+ html:root body #aiselWorkorderAttribution .access-attribution-history {margin-top:8px;}
+ html:root body #aiselWorkorderAttribution .access-history-toggle {flex-shrink:0;}
+ html:root body #editorView #sheet .sizespec .ss-table-wrap table {width:100%!important;min-width:0!important;table-layout:fixed;}
+ html:root body #editorView #sheet .sizespec th.part-h {width:72px!important;}
+ html:root body #editorView #sheet .sizespec th.colhead {width:auto!important;}
+ html:root body #editorView #sheet .sizespec :is(th,td):last-child.noprint {width:20px!important;}
+ html:root body #editorView #sheet .sizespec :is(th,td) input {box-sizing:border-box;width:100%!important;min-width:0!important;padding:4px 1px!important;font-size:12px!important;height:32px;min-height:32px;line-height:1.3;}
+ html:root body #editorView #sheet .sizespec td.part-cell input {text-align:left;padding-left:4px!important;}
+ html:root body #editorView #sheet .sizespec .ss-colname {padding-right:11px!important;}
+ html:root body #editorView #sheet .sizespec .ss-col-del {right:0;width:12px;min-width:12px;height:28px;min-height:28px;padding:0;font-size:10px;}
+ html:root body #editorView #sheet .sizespec .row-del {width:18px;min-width:18px;padding:0;}
+ html:root body #editorView #sheet .sizespec td:has(.ss-val[data-filled=true]),html:root body #editorView #sheet .sizespec .ss-val[data-filled=true] {background:#F0F2F5!important;}
+ html:root body #editorView #sheet .sizespec .ss-val:not([data-filled=true]) {background:#fff!important;}
+ html:root body #editorView #sheet .sizespec[data-wide=true] .ss-table-wrap table {min-width:var(--size-table-min)!important;}
+ html:root body #editorView .fabric-variant-add {margin:0 0 0 4px;flex:0 0 28px;align-self:center;}
+ html:root body #editorView .fabric-variant-base>.designer:has(#fabricNameField) {display:grid!important;grid-template-columns:60px minmax(0,1fr) minmax(0,1fr) 28px;gap:6px;}
+ html:root body #editorView .fabric-variant-base>.designer :is(#fabricSupplierField,#fabricNameField) {width:100%!important;min-width:0;}
+ html:root body #editorView .size-cost-heading {display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;line-height:1.4;margin-bottom:8px;}
+ html:root body #editorView .size-cost-heading :is(strong,span) {white-space:nowrap;}
+ html:root body #editorView .size-cost-note {box-sizing:border-box;width:100%;min-width:0;max-width:150px;flex:1;height:28px;min-height:28px;padding:3px 6px;border:1px solid #e1e3e6;border-radius:3px;font:400 12px/1.4 inherit;color:inherit;background:#fff;}
+ html:root body #editorView .size-cost-note::placeholder {color:#858c96;}
+ html:root body #editorView :is(.size-cost-add,.size-cost-remove) {margin-left:auto;flex:0 0 28px;width:28px;min-width:28px;height:28px;min-height:28px;padding:0;border:0;background:transparent;color:inherit;font-size:20px;}
+ html:root body #editorView .size-cost-list:empty {display:none;}
+ html:root body #editorView .size-cost-card {padding:12px 0;border-top:1px solid #e1e3e6;color:#383d41;}
+ html:root body #editorView .size-cost-table {width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px;}
+ html:root body #editorView .size-cost-table :is(td,th) {border:1px solid #e1e3e6;padding:2px;text-align:center;}
+ html:root body #editorView .size-cost-table th {height:28px;font-size:12px;font-weight:600;background:#fff;}
+ html:root body #editorView .size-cost-table th:nth-child(1) {width:18%;}
+ html:root body #editorView .size-cost-table th:nth-child(2) {width:40%;}
+ html:root body #editorView .size-cost-table th:nth-child(3) {width:12%;}
+ html:root body #editorView .size-cost-table th:nth-child(4) {width:22%;}
+ html:root body #editorView .size-cost-table th:nth-child(5) {width:8%;}
+ html:root body #editorView .size-cost-card input {box-sizing:border-box;min-width:0;width:100%;padding:4px 2px;border:1px solid #e1e3e6;border-radius:3px;font-family:inherit;font-size:12px!important;font-weight:400;line-height:1.4;height:30px;min-height:30px;color:inherit;background:white;}
+ html:root body #editorView .size-cost-card .cost-pair {height:34px;padding:0;}
+ html:root body #editorView .size-cost-card .nego-price-empty {background:#f7eeee;}
+ html:root body #editorView .size-cost-card .cost-pair input::placeholder {font-size:10px;}
+ html:root body #editorView .size-cost-card button {font-family:inherit;color:inherit;background:white;border:1px solid #e1e3e6;border-radius:3px;}
+ html:root body #editorView .size-cost-delete {width:100%;padding:0;min-width:0;height:28px;border:0!important;}
+ html:root body #editorView .size-cost-add-line {width:100%;height:28px;margin:8px 0 12px;font-size:12px;}
+ html:root body #editorView .size-cost-fixed {display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0;font-size:14px;}
+ html:root body #editorView .size-cost-fixed>div {width:52%;min-width:0;}
+ html:root body #editorView .size-cost-sum {display:flex;align-items:center;justify-content:space-between;border:1px solid #e1e3e6;border-radius:3px;padding:12px;margin-top:12px;font-size:14px;}
+ html:root body #editorView .size-cost-total {font-size:22px;}
+}
+@media print {
+ .size-cost-base-print:not(:empty) {display:inline;font-size:10px;margin-left:6px;}
+ .size-cost-print:not(:empty) {display:block;font-size:10px;line-height:1.4;margin-top:8px;}
+ .size-cost-print section {break-inside:avoid;margin-bottom:10px;}
+ .size-cost-print table {width:100%;table-layout:fixed;border-collapse:collapse;font-size:10px;}
+ .size-cost-print :is(th,td) {border:1px solid #aaa;padding:2px;text-align:left;}
+ body.factory-print-mode .size-cost-print {display:none!important;}
+}
+@media screen {
+ html:root body #editorView #sheet :is(#sizeSpecHead,#sizeSpecRows) input {font-size:12px!important;}
+ html:root body #editorView #sheet #sizeSpecHead .ss-col-del {width:12px!important;min-width:12px!important;height:24px!important;min-height:24px!important;padding:0!important;right:0!important;font-size:10px!important;}
+ html:root body #editorView #sheet #sizeSpecRows .row-del {width:18px!important;min-width:18px!important;height:24px!important;min-height:24px!important;padding:0!important;}
+}
+@media screen {
+ html:root body #editorView #sheet #sizeSpecHead .ss-colname {display:block;width:100%!important;padding:2px 0!important;height:28px!important;min-height:28px!important;text-align:center;}
+ html:root body #editorView #sheet #sizeSpecHead .ss-col-del {position:static!important;transform:none!important;display:block!important;margin:0 auto!important;width:16px!important;min-width:16px!important;height:16px!important;min-height:16px!important;line-height:16px!important;}
+}
+@media screen {
+ html:root body #editorView #sheet #sizeSpecHead th.colhead {padding:0!important;}
+ html:root body #editorView .size-cost-list {box-sizing:border-box;padding:0 12px;}
+ html:root body #editorView .size-cost-heading>strong {font-size:14px;font-weight:600;}
+ html:root body #editorView #costSizeNote {font-family:inherit;font-size:12px!important;font-weight:400;}
+}

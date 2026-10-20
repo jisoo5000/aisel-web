@@ -1,3 +1,4 @@
+<!-- v239: responsive size cells, single attribution row and independent size cost sheets -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
@@ -5312,7 +5313,9 @@
 <link rel="stylesheet" href="aisel-usp.css?v=233">
 <script src="aisel-usp.js?v=236"></script>
 <script src="aisel-editor-values.js?v=238"></script>
-<script src="aisel-fabric-variants.js?v=238"></script>
+<script src="aisel-fabric-variants.js?v=239"></script>
+<script src="aisel-size-costs.js?v=239"></script>
+<link rel="stylesheet" href="aisel-size-costs.css?v=239">
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -6515,7 +6518,8 @@
   window.setEditLog_ = (v) => { editLog_ = Array.isArray(v) ? v : []; };
 
   const fabricVariants_=window.AiselFabricVariants.mount({document,getKey:()=>currentCode,getColors:()=>window.getSelectedColors_?.()||[]});
-  const TXT_IDS = ["fabricVariantsData","supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
+  const sizeCosts_=window.AiselSizeCosts.mount({document,getKey:()=>currentCode,negotiation:negotiation_,getBase:()=>({lines:[...linesWrap.querySelectorAll(".line")].map(readCostRow_),gongim:$("#gongim").value,siyage:$("#siyage").value,fixedNegotiations:fixedNegotiations_()})});
+  const TXT_IDS = ["costSizeNote","costVariantsData","fabricVariantsData","supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
     "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
     "planChecksData","planGrade","planWhy","planCheckCustom",
     "refLink", "refLink2",
@@ -7332,7 +7336,7 @@
       if(path[0]==='lines')return (rowNames.get(path[1])||'원가 항목')+(path.length>2?' · '+(names[path.at(-1)]||'세부 내용'):'');
       if(path[0]==='costNegotiationLinesData')return (rowNames.get(path[2])||'보관된 원가 항목')+' · 협상 기록';
       if(path[0]==='costNegotiationData')return ({gongim:'공임',siyage:'시야게'}[path[1]]||'원가')+' · '+(names[path.at(-1)]||'협상 기록');
-      return ({gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',documentCreatedDate:'작업지시서 작성일',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
+      return ({costSizeNote:'원가 사이즈 메모',costVariantsData:'사이즈별 원가계산서',gongim:'공임 · 최초 가격',siyage:'시야게 · 최초 가격',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',documentCreatedDate:'작업지시서 작성일',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'}[path[0]]||'변경 내용');
     }
     function choice(b,l,r,path){
       const id=JSON.stringify(identity(path));
@@ -7473,7 +7477,7 @@
     if(!conflicts.length){apply({});return;}
     const dialog=document.createElement('dialog');dialog.className='draft-conflict-dialog noprint';
     const title=document.createElement('p');title.textContent=plan?'같은 칸에 서로 다른 수정이 있습니다. 사용할 값을 선택해 주세요.':'저장된 내용과 초안이 다릅니다. 사용할 내용을 선택해 주세요.';dialog.append(title);
-    const labels={designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
+    const labels={costSizeNote:'원가 사이즈 메모',costVariantsData:'사이즈별 원가계산서',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
     const selectors={};conflicts.forEach((conflict,i)=>{
       const key=plan?conflict.id:conflict;
       const section=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
@@ -7866,7 +7870,7 @@
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
     document.getElementById("blend").value=englishBlend_(document.getElementById("blend").value);
-    fabricVariants_.refresh();
+    fabricVariants_.refresh();sizeCosts_.refresh();
     window.AiselEditorEnhancements?.refresh(st,currentCode,{loaded:true});
     syncFabricFromMemo_();
     renderMobileHeader_();
@@ -10625,7 +10629,7 @@
     // 2026-08-21 추가: 품명 칸이 빠져 있어서 새 작지를 만들어도 직전 작지 품명이 그대로 남아 있었습니다.
     // dataset.auto도 "1"로 되돌려서 카테고리를 고르면 다시 자동으로 이름이 채워지게 합니다.
     $("#pumMyeong").value = ""; pumInput.dataset.auto = "1";
-    $("#fabricVariantsData").value="";fabricVariants_.refresh();
+    $("#fabricVariantsData").value="";fabricVariants_.refresh();$("#costSizeNote").value="";$("#costVariantsData").value="";sizeCosts_.refresh();
     $("#materials").value="";
     fabricMemoLastText_="";
     fabricMemoSync_={};$("#fabricMemoActions").hidden=true;delete $("#fabricMemoActions").dataset.signature;
@@ -16839,10 +16843,10 @@ window.AiselUnifiedAdapter={
 <script src="aisel-moodboards.js?v=233"></script>
 <script src="unified-app.js?v=235"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=233" media="screen">
-<script src="aisel-access-ui.js?v=238"></script>
+<script src="aisel-access-ui.js?v=239"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=215" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=233">
-<link rel="stylesheet" href="aisel-list-controls.css?v=238" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=239" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {
