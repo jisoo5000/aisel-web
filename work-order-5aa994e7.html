@@ -6387,7 +6387,7 @@
         headers: {'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify({ orders: orders })
       });
-      setOrderStatus('ok', '발주가 접수됐습니다. 시트와 슬랙에 자동으로 올라갑니다.');
+      setOrderStatus('ok', '발주 전송을 요청했습니다. 실제 초도 발주 여부는 업무 확인에서 기록해주세요.');
       colorBlocks.innerHTML = '';
       addColorBlock();
       $("#orderMemo").value = '';
@@ -7643,6 +7643,7 @@
         if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
         state.indexFailed=false;
         window.dispatchEvent(new CustomEvent("aisel-access-workorders-changed"));
+        try{window.AiselDesignWorkflow?.observeSaved(targetCode);}catch(_){}
         try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
       }
       if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);window.AiselEditorEnhancements?.refresh(st,targetCode,{saved:true});}
@@ -11717,7 +11718,7 @@
         headers: {'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify({ orders: orders })
       });
-      setQoOrderStatus('ok', '발주가 접수됐습니다. 구글 공용시트와 슬랙에 자동으로 올라갑니다.');
+      setQoOrderStatus('ok', '발주 전송을 요청했습니다. 실제 초도 발주 여부는 업무 확인에서 기록해주세요.');
       qoColorBlocks.innerHTML = '';
       qoAddColorBlock();
       qoFabricBlocks.innerHTML = '';
@@ -17184,3 +17185,8 @@ window.AiselUnifiedAdapter={
  }
 }
 </style>
+
+<!-- Design workflow: screen-only, existing print template preserved. -->
+<link rel="stylesheet" href="design-workflow-ui.css?v=20261021" media="screen">
+<script src="design-workflow-core.js?v=20261021"></script>
+<script src="design-workflow-ui.js?v=20261021"></script>

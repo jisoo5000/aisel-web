@@ -1,0 +1,24 @@
+/* Scoped screen-only controls; never affect the printed workorder sheet. */
+.dw-panel{box-sizing:border-box;margin:12px 0;padding:14px 16px;border:1px solid #dedbd6;border-radius:8px;background:#fff;color:#302f2d;font-size:13px;line-height:1.55;}
+.dw-panel[hidden]{display:none!important;}
+.dw-panel.dw-editor{max-width:820px;margin-left:auto;margin-right:auto;}
+.dw-panel .dw-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.dw-panel strong{font-size:14px;font-weight:650;}
+.dw-panel button,.dw-panel input,.dw-panel select{box-sizing:border-box;font:inherit;line-height:1.4;color:#302f2d;border:1px solid #dedbd6;border-radius:5px;background:#fff;padding:7px 9px;min-height:34px;}
+.dw-panel button{cursor:pointer;}.dw-panel button:disabled{opacity:.55;cursor:default;}
+.dw-panel button:focus-visible,.dw-panel input:focus-visible,.dw-panel select:focus-visible,.dw-panel summary:focus-visible{outline:2px solid #786f65;outline-offset:2px;}
+.dw-panel .dw-week-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.dw-panel .dw-week-card{display:flex;flex-direction:column;gap:4px;padding:10px 12px;background:#f6f5f2;border-radius:6px;}
+.dw-panel .dw-week-card b{font-size:16px;font-weight:650;}.dw-panel .dw-week-card b span{font-size:12px;font-weight:400;margin-left:5px;}
+.dw-panel small,.dw-panel .dw-muted{color:#6e6b66;font-size:12px;}.dw-panel p{margin:8px 0;}
+.dw-panel details{margin-top:10px;border-top:1px solid #eeece8;padding-top:9px;}.dw-panel summary{cursor:pointer;font-weight:600;}
+.dw-panel .dw-tabs{display:flex;gap:6px;margin:10px 0;}.dw-panel .dw-tabs [aria-selected=true]{background:#302f2d;color:#fff;border-color:#302f2d;}
+.dw-panel .dw-order-list{max-height:250px;overflow:auto;}.dw-panel .dw-order-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid #eeece8;}
+.dw-panel .dw-order-row>button{flex:1;text-align:left;border:0;padding:4px;background:transparent;}.dw-panel .dw-order-row small{display:block;}.dw-panel .dw-order-row>span{font-size:12px;white-space:nowrap;}
+.dw-panel form{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:10px;}.dw-panel label{display:flex;flex-direction:column;gap:4px;font-size:12px;flex:1 1 140px;}
+.dw-panel .dw-check{flex-direction:row;align-items:center;flex:1 1 230px;}.dw-panel .dw-check input{width:16px;min-height:16px;}
+.dw-panel select{max-width:100%;}.dw-panel input[type=text]{min-width:0;}.dw-panel dl{display:grid;grid-template-columns:70px minmax(0,1fr);gap:8px;margin:12px 0;}
+.dw-panel dt{font-weight:600;color:#6e6b66;}.dw-panel dd{margin:0;overflow-wrap:anywhere;}.dw-panel .dw-notice{font-size:12px;}.dw-panel .dw-metric{overflow-wrap:anywhere;}
+.dw-panel .dw-candidate{align-items:center;padding:10px;background:#f6f5f2;border-radius:6px;}.dw-panel .dw-candidate>div{flex:1 1 220px;}.dw-panel .dw-candidate small{display:block;overflow-wrap:anywhere;}
+@media(max-width:600px){.dw-panel{margin:10px 8px;padding:12px;}.dw-panel.dw-editor{margin-left:8px;margin-right:8px;}.dw-panel .dw-week-grid{grid-template-columns:1fr;}.dw-panel .dw-order-row{align-items:start;}.dw-panel .dw-order-row>span{white-space:normal;max-width:100px;}.dw-panel form>button{width:100%;}.dw-panel label{flex-basis:100%;}}
+@media print{#designWorkflowPanel,#designWorkflowEditor{display:none!important;}}
