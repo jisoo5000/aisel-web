@@ -109,3 +109,25 @@
  html:root body #aiselWorkorderAttribution .access-attribution-history {flex-basis:100%;}
  html:root body #aiselWorkorderAttribution .access-attribution-history p {margin:4px 0;overflow-wrap:anywhere;}
 }
+@media screen {
+ html:root body #editorView .fabric-variant-add {display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;min-height:24px;margin-left:2px;padding:0;border:0;background:transparent;color:#2f3b52;font-size:20px;line-height:24px;cursor:pointer;}
+ html:root body #editorView .fabric-variant-color {display:flex;align-items:center;gap:4px;margin:0 0 6px;font-size:12px;}
+ html:root body #editorView .fabric-variant-color[hidden] {display:none!important;}
+ html:root body #editorView .fabric-variant-color select {flex:1;min-width:0;height:28px;margin:0;padding:0 4px;border:1px solid var(--aisel-list-border);border-radius:3px;font-size:12px;background:white;}
+ html:root body #editorView .fabric-variant-remove {height:28px;width:28px;min-height:28px;padding:0;border:1px solid var(--aisel-list-border);border-radius:3px;background:white;font-size:16px;}
+ html:root body #editorView .fabric-variant-row {margin-top:8px;padding-top:8px;border-top:1px solid var(--aisel-list-border);}
+ html:root body #editorView .fabric-variant-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+ html:root body #editorView .fabric-variant-fields input {box-sizing:border-box;width:100%;min-width:0;height:36px;min-height:36px;margin:0;padding:5px 8px;border:1px solid var(--aisel-list-border);border-radius:3px;font-size:16px;font-weight:400;line-height:24px;background:white;}
+ html:root body #editorView .fabric-variant-fields input:last-child {grid-column:1/-1;}
+ .fabric-variant-print {display:none;}
+ html:root body #editorView #codeView[role=button] {cursor:pointer;}
+ html:root body #editorView .code-copy-status {font-size:12px;font-weight:400;color:#1766bf;white-space:nowrap;}
+}
+@media screen and (max-width:600px) {
+ html:root body #editorView #sheet #productColors,html:root body #editorView #sheet #mobileSampleRecords {margin-left:0;margin-right:0;width:100%;box-sizing:border-box;}
+ html:root body #editorView #sheet .sizespec {height:auto!important;max-height:none!important;overflow:visible!important;}
+ html:root body #editorView #sheet .sizespec .ss-table-wrap {height:auto!important;max-height:none!important;overflow-x:auto;overflow-y:visible;}
+}
+@media print {.fabric-variant-print {font-size:9px;line-height:1.2;white-space:normal;overflow-wrap:anywhere;} .fabric-variant-print:empty {display:none;}}
+
+@media screen {html:root body #editorView .fabric-variant-base {display:flex;flex-direction:column;}html:root body #editorView .fabric-variant-base>.fabric-variant-color {order:-1;}}

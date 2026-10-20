@@ -1,0 +1,23 @@
+(function(root){
+ 'use strict';
+ function parse(raw){try{const data=JSON.parse(raw||'{}');return {primaryColor:String(data.primaryColor||''),rows:Array.isArray(data.rows)?data.rows.map(r=>({id:String(r.id||''),color:String(r.color||''),supplier:String(r.supplier||''),name:String(r.name||''),blend:String(r.blend||'')})):[]};}catch(_){return null;}}
+ function mount({document,getKey,getColors}){
+  const base=document.getElementById('fabricSupplierField').closest('.cell'),editor=document.getElementById('editorView');
+  base.classList.add('fabric-variant-base');
+  const field=document.createElement('input');field.id='fabricVariantsData';field.type='hidden';editor.append(field);
+  const make=(tag,cls,text)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(text)e.textContent=text;return e;};
+  const add=make('button','fabric-variant-add noprint','+');add.type='button';add.setAttribute('aria-label','컬러별 원단 추가');add.title='컬러별 원단 추가';base.querySelector('.k').append(add);
+  const primary=make('div','fabric-variant-color noprint'),primaryLabel=make('span','','컬러'),primarySelect=make('select');primarySelect.setAttribute('aria-label','기본 원단 컬러');primary.append(primaryLabel,primarySelect);base.append(primary);
+  const list=make('div','fabric-variant-list noprint'),print=make('div','fabric-variant-print');base.append(list,print);
+  let data={primaryColor:'',rows:[]},key='',signature='',invalid=false;
+  function options(select,value){select.replaceChildren(new Option('공통',''));for(const color of new Set([...(getColors()||[]),value].filter(Boolean)))select.append(new Option(color,color));select.value=value;}
+  function printText(){print.replaceChildren();if(!data.rows.length)return;print.append(make('div','', '기본 원단: '+(data.primaryColor||'공통')));for(const row of data.rows)print.append(make('div','',[(row.color||'공통'),row.supplier,row.name,row.blend].filter(Boolean).join(' · ')));}
+  function commit(){field.value=JSON.stringify(data);signature=field.value;printText();field.dispatchEvent(new Event('input',{bubbles:true}));}
+  function draw(){primary.hidden=!data.rows.length;options(primarySelect,data.primaryColor);list.replaceChildren();for(const row of data.rows){const block=make('div','fabric-variant-row'),heading=make('div','fabric-variant-color'),select=make('select'),remove=make('button','fabric-variant-remove','×');select.setAttribute('aria-label','추가 원단 컬러');options(select,row.color);select.onfocus=()=>options(select,row.color);select.onchange=()=>{row.color=select.value;commit();};remove.type='button';remove.setAttribute('aria-label','추가 원단 삭제');remove.onclick=()=>{if([row.supplier,row.name,row.blend].some(Boolean)&&!confirm('이 컬러의 원단 정보를 삭제할까요?'))return;data.rows=data.rows.filter(r=>r!==row);commit();draw();};heading.append(make('span','','컬러'),select,remove);block.append(heading);const line=make('div','fabric-variant-fields');for(const [prop,label]of [['supplier','원단처'],['name','원단명'],['blend','혼용률']]){const input=make('input');input.type='text';input.value=row[prop];input.placeholder=label;input.setAttribute('aria-label','추가 원단 '+label);input.dataset.fabricField=prop;input.oninput=()=>{row[prop]=input.value;commit();};line.append(input);}block.append(line);list.append(block);}printText();}
+  primarySelect.onfocus=()=>options(primarySelect,data.primaryColor);primarySelect.onchange=()=>{data.primaryColor=primarySelect.value;commit();};
+  add.onclick=()=>{if(invalid)return;data.rows.push({id:crypto.randomUUID(),color:'',supplier:'',name:'',blend:''});commit();draw();list.lastElementChild.querySelector('select').focus();};
+  function refresh(){const nextKey=String(getKey()||''),raw=field.value;if(key===nextKey&&signature===raw)return;key=nextKey;signature=raw;const parsed=parse(raw);invalid=!parsed;add.disabled=invalid;if(invalid){data={primaryColor:'',rows:[]};draw();return;}data=parsed;draw();}
+  draw();return {refresh};
+ }
+ root.AiselFabricVariants={mount,parse};if(typeof module==='object'&&module.exports)module.exports=root.AiselFabricVariants;
+})(typeof window==='object'?window:globalThis);

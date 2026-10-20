@@ -1,4 +1,4 @@
-<!-- v236: compact meeting planning rows and bottom workorder attribution -->
+<!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
 <!-- v229: meeting date, outfit category and assignee toolbar -->
@@ -5311,6 +5311,7 @@
 <script src="aisel-photo.js?v=216"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=233">
 <script src="aisel-usp.js?v=236"></script>
+<script src="aisel-fabric-variants.js?v=237"></script>
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -5539,6 +5540,13 @@
     }
     autoPrice_();   // 2026-09-22: 컴포트↔상의·하의 는 계단이 다릅니다
   });
+
+  const copyCodeNode_=document.getElementById('codeView');
+  copyCodeNode_.setAttribute('role','button');copyCodeNode_.tabIndex=0;copyCodeNode_.title='현재 저장된 품번 복사';
+  const codeCopyStatus_=document.createElement('span');codeCopyStatus_.className='code-copy-status noprint';codeCopyStatus_.setAttribute('role','status');copyCodeNode_.after(codeCopyStatus_);let codeCopyTimer_;
+  function setCodeCopyStatus_(text){document.querySelectorAll('.code-copy-status').forEach(node=>node.textContent=text);}
+  async function copySavedCode_(){const code=currentCode;if(!code||codePending_){setCodeCopyStatus_('품번 확정 후 복사');return;}try{await navigator.clipboard.writeText(code);setCodeCopyStatus_('복사됨');}catch(_){setCodeCopyStatus_('길게 눌러 복사해주세요');}clearTimeout(codeCopyTimer_);codeCopyTimer_=setTimeout(()=>setCodeCopyStatus_(''),1800);}
+
 
   // ---------- 품번 옮기기 (2026-08-13 추가, 2026-08-21 자동화) ----------
   // 저장된 작지에서 카테고리가 바뀌면 품번의 카테고리 코드가 실제와 달라집니다.
@@ -6607,7 +6615,8 @@
   window.getEditLog_ = () => editLog_;
   window.setEditLog_ = (v) => { editLog_ = Array.isArray(v) ? v : []; };
 
-  const TXT_IDS = ["supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
+  const fabricVariants_=window.AiselFabricVariants.mount({document,getKey:()=>currentCode,getColors:()=>window.getSelectedColors_?.()||[]});
+  const TXT_IDS = ["fabricVariantsData","supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
     "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
     "planChecksData","planGrade","planWhy","planCheckCustom",
     "refLink", "refLink2",
@@ -7937,23 +7946,14 @@
         part: row.querySelector(".ss-part") ? row.querySelector(".ss-part").value : "",
         values: Array.from(row.querySelectorAll(".ss-val")).map(i=> i.value)
       }));
-      const wantCols = (Array.isArray(st.sizeSpecCols) && st.sizeSpecCols.length && st.sizeSpecVersion === SIZESPEC_DEFAULT_VERSION)
-        ? st.sizeSpecCols : SIZESPEC_DEFAULT.cols;
-      const wantRows = (Array.isArray(st.sizeSpecCols) && st.sizeSpecCols.length && st.sizeSpecVersion === SIZESPEC_DEFAULT_VERSION)
-        ? (st.sizeSpec || []).map(r=>({ part: r.part||"", values: r.values||[] }))
-        : SIZESPEC_DEFAULT.parts.map(p=>({ part: p, values: [] }));
-      const sizeSpecChanged = JSON.stringify(currentCols) !== JSON.stringify(wantCols)
-        || JSON.stringify(currentRows) !== JSON.stringify(wantRows);
-      if(sizeSpecChanged){
-        clearSizeSpecTable();
-        if(Array.isArray(st.sizeSpecCols) && st.sizeSpecCols.length && st.sizeSpecVersion === SIZESPEC_DEFAULT_VERSION){
-          st.sizeSpecCols.forEach(c=> addSizeSpecColumn(c));
-          (st.sizeSpec||[]).forEach(r=> makeSizeSpecRow(r.part, r.values));
-        } else {
-          applySizeSpecDefault();
-        }
+      // Stored measurements remain authoritative across schema versions.
+      const wantCols=Array.isArray(st.sizeSpecCols)&&st.sizeSpecCols.length?st.sizeSpecCols:SIZESPEC_DEFAULT.cols;
+      const wantRows=Array.isArray(st.sizeSpec)&&st.sizeSpec.length?st.sizeSpec.map(r=>({part:r.part||'',values:r.values||[]})):SIZESPEC_DEFAULT.parts.map(part=>({part,values:[]}));
+      if(JSON.stringify(currentCols)!==JSON.stringify(wantCols)||JSON.stringify(currentRows)!==JSON.stringify(wantRows)){
+        clearSizeSpecTable();wantCols.forEach(c=>addSizeSpecColumn(c));wantRows.forEach(r=>makeSizeSpecRow(r.part,r.values));
       }
     }
+
     loading = false;
     if(mobileUnifiedReady_)renderMobileSampleDate_();
     if(currentCode) $("#codeView").textContent = currentCode;
@@ -7966,6 +7966,7 @@
     // 여기서만 기준을 갱신하므로, 입력 중이라 반영을 미뤄둔 남의 수정은 기준에 들어가지
     // 않고 따라서 내 패치가 그 칸을 덮어쓰지 않습니다.
     lastSavedState_ = st;
+    fabricVariants_.refresh();
     syncFabricFromMemo_();
     renderMobileHeader_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
@@ -10741,6 +10742,7 @@
     // 2026-08-21 추가: 품명 칸이 빠져 있어서 새 작지를 만들어도 직전 작지 품명이 그대로 남아 있었습니다.
     // dataset.auto도 "1"로 되돌려서 카테고리를 고르면 다시 자동으로 이름이 채워지게 합니다.
     $("#pumMyeong").value = ""; pumInput.dataset.auto = "1";
+    $("#fabricVariantsData").value="";fabricVariants_.refresh();
     $("#materials").value="";
     fabricMemoLastText_="";
     fabricMemoSync_={};$("#fabricMemoActions").hidden=true;delete $("#fabricMemoActions").dataset.signature;
@@ -12335,10 +12337,9 @@
     if(codePending_&&workOrderLayoutMedia_('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
   },true);
   const codeView=document.getElementById('codeView');
-  codeView.addEventListener('click',openMobileCodeSettings_);
-  const headerCode=document.getElementById('mobileProductCode');
-  headerCode.addEventListener('click',openMobileCodeSettings_);
-  headerCode.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openMobileCodeSettings_();}});
+  const headerCode=document.getElementById('mobileProductCode');headerCode.after(codeCopyStatus_.cloneNode(true));
+  function codeAction_(){if(codePending_||newOrderMode_)openMobileCodeSettings_();else copySavedCode_();}
+  for(const node of [codeView,headerCode]){node.title='저장된 품번 복사';node.addEventListener('click',codeAction_);node.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();codeAction_();}});}
   const newAction=document.getElementById('newBtn'),deleteAction=document.getElementById('deleteBtn');
   const newHome=document.createComment('desktop new action'),deleteHome=document.createComment('desktop delete action');
   newAction.before(newHome);deleteAction.before(deleteHome);
@@ -16940,7 +16941,7 @@ window.AiselUnifiedAdapter={
 <script src="aisel-access-ui.js?v=236"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=215" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=233">
-<link rel="stylesheet" href="aisel-list-controls.css?v=236" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=237" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {
