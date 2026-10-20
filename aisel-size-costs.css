@@ -110,3 +110,10 @@
  html:root body #editorView #sheet .fabric-variant-row > .fabric-variant-color {margin-bottom:0;}
  html:root body #editorView #sheet .fabric-variant-fields {row-gap:var(--aisel-workorder-row-gap);}
 }
+/* v254: separate the fabric heading from its compact color selector. */
+@media screen {
+ html:root body #editorView #sheet .fabric-variant-color {flex-wrap:nowrap;min-width:0;gap:4px;}
+ html:root body #editorView #sheet .fabric-variant-title {flex:0 0 auto;margin-right:auto;white-space:nowrap;}
+ html:root body #editorView #sheet .fabric-variant-color-label {flex:0 0 auto;font-family:var(--aisel-font);font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-ink);white-space:nowrap;}
+ html:root body #editorView #sheet .fabric-variant-color select {box-sizing:border-box;flex:0 1 120px;width:120px;max-width:120px;min-width:0;font-size:12px!important;}
+}

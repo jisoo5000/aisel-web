@@ -266,3 +266,16 @@
  /* The existing iOS viewport guard already prevents compact-input focus zoom. */
  html:root body #editorView #sheet #mobileHeaderNames #factory.mobile-name-editor {box-sizing:border-box;flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;height:28px!important;min-height:28px!important;margin:0!important;padding:0 4px!important;transform:none!important;border:1px solid #E3E5E7!important;border-radius:3px;background:white!important;font-size:12px!important;font-weight:400!important;line-height:18px;color:#6C727C!important;-webkit-text-fill-color:#6C727C!important;text-align:center;text-align-last:center;}
 }
+
+/* v254: use the color section's heading type for the adjacent workorder sections. */
+@media screen {
+ html:root body #editorView #productColors .color-heading h2,
+ html:root body #editorView #sheet .fabric-variant-title,
+ html:root body #editorView #workorderUsp .aisel-usp-heading > span,
+ html:root body #editorView #mobileSampleRecords .changes-toggle,
+ html:root body #editorView #sheet > .detail2 > .cell.mat > .sec-title,
+ html:root body #editorView #sheet .sizespec > .sec-title {font-family:var(--aisel-font)!important;font-size:16px!important;font-weight:600;line-height:24px!important;letter-spacing:0;color:var(--aisel-ink);}
+ html:root body #editorView #mobileSampleRecords .changes-toggle {max-width:100%;min-width:0;white-space:normal;}
+ html:root body #editorView #mobileSampleRecords .changes-toggle-label {min-width:0;font:inherit;color:inherit;word-break:keep-all;overflow-wrap:anywhere;}
+ html:root body #editorView #sheet > .detail2 > .cell.mat > .sec-title {max-width:100%;min-width:0;white-space:normal;word-break:keep-all;overflow-wrap:anywhere;}
+}
