@@ -327,6 +327,8 @@
    if(/^#design-meeting(?:=|$)/.test(hash))return {view:'designmeeting',id:hash.startsWith('#design-meeting=')?decodeURIComponent(hash.slice(16)):null};
    if(hash==='#moodboards')return {view:'moodboards'};
    if(/^#workorder=/.test(hash))return {view:'editor',code:decodeURIComponent(hash.slice(11))};
+   const reloadCode=window.AiselReloadStartup?.workorderCode;
+   if(reloadCode)return {view:'editor',code:reloadCode};
    if(hash==='#workorders')return {view:'orders'};
    if(hash==='#sales')return {view:'sales'};
    if(hash==='#products')return {view:'products'};
@@ -338,6 +340,7 @@
   const requested=requestedLocation(),target=requested&&allowedView(requested.view)?requested:{view:landingView()};
   const hash=location.hash,intent=navigationRevision,uid=window.AiselAccess.session?.uid;
   const opened=await show(target.view,{history:target!==requested,replace:true,code:target.code,id:target.id});
+  if(opened&&target.view==='editor'){route('editor',true,target.code);return true;}
   if(!opened||target.view!=='designmeeting'||!target.id)return opened;
   if(intent!==navigationRevision||hash!==location.hash||uid!==window.AiselAccess.session?.uid||current!=='designmeeting'||!allowedView('designmeeting'))return false;
   return DM.open(target.id,{history:false});
