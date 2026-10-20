@@ -17,3 +17,59 @@
  #workorderUspNotice {font-size:11px;color:#6c727c;margin-top:6px;}
 }
 @media print {.aisel-usp,#workorderUsp {display:none!important;}}
+
+/* Screen-only USP row follows the workorder's color section. */
+@media screen {
+ html:root body #editorView #workorderUsp {
+  box-sizing:border-box;min-width:0;width:100%;margin:0;padding:12px;
+  border:0;border-bottom:1px solid var(--aisel-line,#e3e5e8);border-radius:0;background:#fff;
+ }
+ html:root body #editorView #workorderUsp .aisel-usp-heading {
+  display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;
+ }
+ html:root body #editorView #workorderUsp .aisel-usp-heading > span {
+  font-size:16px;font-weight:600;line-height:24px;letter-spacing:0;color:var(--aisel-ink,#34383c);
+ }
+ html:root body #editorView #workorderUsp #workorderUspRefresh {
+  box-sizing:border-box;min-height:28px;padding:3px 7px;border:1px solid var(--aisel-line,#e3e5e8);
+  border-radius:3px;background:#fff;color:var(--aisel-accent,#2F3B52);white-space:nowrap;
+  font-family:inherit;font-size:11px;font-weight:400;line-height:18px;
+ }
+ html:root body #editorView #workorderUsp .aisel-usp-row {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;}
+ html:root body #editorView #workorderUsp .aisel-usp-row > .aisel-usp-keyword {
+  box-sizing:border-box;width:100%;min-width:0;min-height:30px;height:30px;padding:4px 2px;
+  border:1px solid var(--aisel-line,#e3e5e8);border-radius:3px;background:#fff;
+  color:var(--aisel-ink,#34383c);font-family:inherit;font-size:12px!important;font-weight:400;
+  line-height:20px;text-align:center;
+ }
+ html:root body #editorView #workorderUsp input:focus {outline:1px solid var(--aisel-accent,#2F3B52);outline-offset:1px;}
+ html:root body #editorView #workorderUsp .aisel-usp-keyword::placeholder {color:var(--aisel-muted,#7e8798);opacity:1;}
+ html:root body #editorView #workorderUsp :is(#workorderUspLegacy,#workorderUspNotice) {
+  margin:6px 0 0;color:var(--aisel-muted,#7e8798);font-size:11px;line-height:17px;overflow-wrap:anywhere;
+ }
+ html:root body #editorView #workorderUsp #workorderUspNotice:empty {display:none;}
+ .aisel-workorder-usp-picker {
+  box-sizing:border-box;width:min(420px,calc(100vw - 32px));max-height:min(640px,80dvh);padding:16px;
+  border:1px solid #e3e5e8;border-radius:6px;background:#fff;color:#34383c;font-family:inherit;
+ }
+ .aisel-workorder-usp-picker::backdrop {background:rgba(27,32,40,.28);}
+ .aisel-workorder-usp-picker-heading {display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;}
+ .aisel-workorder-usp-picker-heading h2 {margin:0;font-size:14px;font-weight:600;line-height:22px;color:var(--aisel-accent,#2F3B52);}
+ .aisel-workorder-usp-picker-heading button {
+  width:28px;height:28px;padding:0;border:1px solid #e3e5e8;border-radius:3px;background:#fff;color:var(--aisel-accent,#2F3B52);font-family:inherit;font-size:20px;font-weight:400;line-height:26px;
+ }
+ .aisel-workorder-usp-picker > input {
+  box-sizing:border-box;width:100%;min-height:34px;padding:6px 8px;border:1px solid #e3e5e8;border-radius:3px;
+  background:#fff;color:#34383c;font-family:inherit;font-size:14px;
+ }
+ .aisel-workorder-usp-picker > p {margin:9px 0;color:#7e8798;font-size:12px;line-height:18px;}
+ .aisel-workorder-usp-picker-list {display:grid;gap:6px;}
+ .aisel-workorder-usp-picker-list > button {
+  display:grid;gap:3px;width:100%;padding:9px 10px;border:1px solid #e3e5e8;border-radius:3px;
+  background:#fff;color:#34383c;font-family:inherit;font-size:13px;line-height:20px;text-align:left;
+ }
+ .aisel-workorder-usp-picker-list > button:hover {background:#f5f6f8;}
+ .aisel-workorder-usp-picker-list small {color:#7e8798;font-size:11px;font-weight:400;}
+ .aisel-workorder-usp-picker :is(button,input):focus-visible {outline:1px solid var(--aisel-accent,#2F3B52);outline-offset:1px;}
+}
+@media print {#workorderUsp,.aisel-workorder-usp-picker{display:none!important;}}

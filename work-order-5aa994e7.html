@@ -1,4 +1,4 @@
-<!-- v250: compact mobile meeting controls, notes and photo layout -->
+<!-- v251: workorder links, color entry, USP and header/cost layout -->
 <!-- v249: workorder reads, writes and photos share the signed-in Firebase app -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
@@ -5313,12 +5313,13 @@
 
 <script src="workorder-draft-storage.js?v=189"></script>
 <script src="aisel-photo.js?v=216"></script>
-<link rel="stylesheet" href="aisel-usp.css?v=233">
+<link rel="stylesheet" href="aisel-usp.css?v=251">
 <script src="aisel-usp.js?v=236"></script>
+<script src="aisel-workorder-usp.js?v=251"></script>
 <script src="aisel-editor-values.js?v=238"></script>
 <script src="aisel-fabric-variants.js?v=240"></script>
-<script src="aisel-size-costs.js?v=240"></script>
-<link rel="stylesheet" href="aisel-size-costs.css?v=240">
+<script src="aisel-size-costs.js?v=251"></script>
+<link rel="stylesheet" href="aisel-size-costs.css?v=251">
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -7004,37 +7005,8 @@
   },true);
 
 
-  let workorderPlanning_ = null,workorderUspPanel_=null,workorderUspRefreshBusy_=false;
-  function renderWorkorderUsp_(){
-    if(!workorderUspPanel_)return;
-    const plan=workorderPlanning_,section=document.getElementById('workorderUsp');
-    section.hidden=!plan;
-    workorderUspPanel_.update({key:currentCode,serialized:plan?.uspKeywordsJson,legacy:plan?.uspValue});
-    document.getElementById('workorderUspRefresh').hidden=!plan?.candidateId||!window.AiselUnifiedAdapter?.isOwner?.();
-    document.getElementById('workorderUspRefresh').disabled=workorderUspRefreshBusy_;
-    const note=document.getElementById('workorderUspNotice');
-    if(!workorderUspRefreshBusy_)note.textContent=plan?.descriptionNeedsReview?'상품명·USP가 바뀌었습니다. 기존 상세설명을 확인해주세요.':'';
-  }
-  async function refreshWorkorderUsp_(){
-    if(workorderUspRefreshBusy_||!workorderPlanning_?.candidateId||!window.AiselUnifiedAdapter?.isOwner?.())return;
-    const code=currentCode,ref=woRef,id=workorderPlanning_.candidateId,expected=JSON.stringify(workorderPlanning_);
-    workorderUspRefreshBusy_=true;renderWorkorderUsp_();
-    try{
-      if(!await waitForEditorComposition_()||await save()===false)throw Error('현재 작업지시서 저장을 먼저 확인해주세요.');
-      const candidate=await window.AiselCollectionWrites.getMeeting(id);
-      if(currentCode!==code||woRef!==ref)return;
-      const value=candidate?.val?candidate.val():candidate;
-      if(!value||value.id&&value.id!==id||value.convertedCode&&value.convertedCode!==code)throw Error('연결된 디자인회의를 확인해주세요.');
-      if(JSON.stringify(workorderPlanning_)!==expected)throw Error('다른 곳에서 USP가 변경됐습니다. 다시 확인해주세요.');
-      const next=window.AiselUsp.refreshed(workorderPlanning_,value,id,pumInput.value,document.getElementById('output')?.value);
-      // Update only this source snapshot. Product names, revisions and manually
-      // written descriptions are never replaced by the meeting's current title.
-      workorderPlanning_=next;markEditorSavePending_();
-      if(await save()===false)throw Error('USP 저장을 확인하지 못했습니다. 입력은 초안에 유지했습니다.');
-      document.getElementById('workorderUspNotice').textContent='USP를 최신 내용으로 가져왔습니다.';
-    }catch(error){if(currentCode===code)document.getElementById('workorderUspNotice').textContent=error.message;}
-    finally{workorderUspRefreshBusy_=false;if(currentCode===code){document.getElementById('workorderUspRefresh').disabled=false;workorderUspPanel_.update({key:code,serialized:workorderPlanning_?.uspKeywordsJson,legacy:workorderPlanning_?.uspValue});}}
-  }
+  let workorderPlanning_ = null,workorderUspPanel_=null;
+  function renderWorkorderUsp_(){workorderUspPanel_?.update();}
   let manualModifiedDate_ = '', blendNormalizePending_ = false;
   function collect(){
     syncFabricFromMemo_();
@@ -7861,6 +7833,7 @@
     }
 
     loading = false;
+    renderWorkorderUsp_();
     if(mobileUnifiedReady_)renderMobileSampleDate_();
     if(currentCode) $("#codeView").textContent = currentCode;
     applyCat();
@@ -7961,12 +7934,14 @@
   // v117: URL editors occupy a supplementary row; link and action buttons stay together.
   function alignReferenceScreenRows_(){
     let gridRow=1;
-    document.querySelectorAll('#refLinksList > .ref-link-row').forEach(row=>{
+    // Display new links above the primary link without changing saved link order.
+    [...document.querySelectorAll('#refLinksList > .ref-link-row')].reverse().forEach(row=>{
       if(row.hidden)return;
       const link=row.querySelector('.ref-short-link'),actions=row.querySelector('.ref-actions'),input=row.querySelector('input');
       if(link)link.style.gridRow=String(gridRow);
       if(actions)actions.style.gridRow=String(gridRow);
       if(input)input.style.gridRow=String(gridRow+1);
+      if(row.dataset.refIndex==='0')document.getElementById('refAddBtn').style.gridRow=String(gridRow);
       gridRow+=row.classList.contains('is-editing')?2:1;
     });
   }
@@ -12260,11 +12235,16 @@
   // Keep the original desktop fields and records; mobile reuses the same IDs and save handlers.
   const mobileRecords=document.createElement('section');mobileRecords.id='mobileSampleRecords';mobileRecords.className='noprint';
   document.querySelector('#sheet > .detail2').before(mobileRecords);
-  const workorderUsp=document.createElement('section');workorderUsp.id='workorderUsp';workorderUsp.className='noprint';workorderUsp.hidden=true;
-  workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP · 고객이 살 이유</span><button type="button" id="workorderUspRefresh" hidden>최신 USP 가져오기</button></div><div id="workorderUspKeywords"></div><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
-  mobileRecords.before(workorderUsp);workorderUspPanel_=window.AiselUsp.mount(document.getElementById('workorderUspKeywords'),{readOnly:true});
-  document.getElementById('workorderUspRefresh').onclick=refreshWorkorderUsp_;
-  window.addEventListener('aisel-session-change',renderWorkorderUsp_);renderWorkorderUsp_();
+  const workorderUsp=document.createElement('section');workorderUsp.id='workorderUsp';workorderUsp.className='noprint';
+  workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP</span><button type="button" id="workorderUspRefresh" hidden>디자인회의에서 가져오기</button></div><div id="workorderUspKeywords"></div><p id="workorderUspLegacy" hidden></p><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
+  mobileRecords.before(workorderUsp);
+  workorderUspPanel_=window.AiselWorkorderUsp.mount(workorderUsp,{
+    context:()=>({code:currentCode,ref:woRef,planning:workorderPlanning_,name:pumInput.value,output:document.getElementById('output')?.value,
+      editable:!loading&&!codeConflictNow_()&&!!window.AiselAccess?.allowed?.('editor')}),
+    change:(next,importing)=>{workorderPlanning_=next;if(importing)markEditorSavePending_();else saveSoon();},
+    waitComposition:waitForEditorComposition_,save
+  });
+  renderWorkorderUsp_();
   const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
   const finalTitle=finalSpec.closest('.cell.mat').querySelector('.sec-title'),desktopFinalTitle=finalTitle.textContent;
   const mobileStatus=document.createElement('div');mobileStatus.id='mobileSampleStatus';mobileStatus.className='noprint';
@@ -12456,12 +12436,12 @@
     const screen=!printing&&!namePrintMedia.matches;
     const mobile=mobileLayout.matches&&screen;
     placeDesktopWorkspace_(screen&&!mobile);
-    mobileRecords.before(workorderUsp);
     if(mobile){mobileSummary.append(mobileStatus,sampleSeg);}
     else{sampleStatusHome.after(mobileStatus);sampleSegHome.after(sampleSeg);}
     // Reuse the same picker and handlers. Restore its original home for desktop/print.
     if(mobile){if(colorSection.parentElement.id!=='sheet')document.querySelector('#sheet > .meta').after(colorSection);}
     else if(colorSection.parentElement.id==='sheet')colorHome.after(colorSection);
+    if(screen)colorSection.after(workorderUsp);else mobileRecords.before(workorderUsp);
     finalSpec.placeholder=mobile?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
     finalTitle.textContent=mobile?desktopFinalTitle+' (최종)':desktopFinalTitle;
     if(!mobile)finishHeaderNameEdits_();
@@ -13852,6 +13832,21 @@ function renderVariantPanel(){
     chip.addEventListener("click", () => addColor(v));
     chipRow.appendChild(chip);
   });
+  const familyAdd = document.createElement("button");
+  familyAdd.type = "button";
+  familyAdd.className = "copygen-family-add-color";
+  familyAdd.textContent = "+";
+  familyAdd.title = openBase + " 계열 컬러 직접 추가";
+  familyAdd.setAttribute("aria-label", familyAdd.title);
+  familyAdd.setAttribute("aria-controls", "addColorRow");
+  familyAdd.addEventListener("click", () => {
+    const addRow = $("addColorRow");
+    // Keep the shared input outside the panel cleared by renderVariantPanel().
+    panel.after(addRow);
+    addRow.classList.add("copygen-open");
+    $("newColorInput").focus();
+  });
+  chipRow.appendChild(familyAdd);
   wrap.appendChild(chipRow);
   panel.appendChild(wrap);
 }
@@ -16847,7 +16842,7 @@ window.AiselUnifiedAdapter={
 <script src="unified-app.js?v=248"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=242" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=251" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=248">
 <link rel="stylesheet" href="aisel-list-controls.css?v=250" media="screen">
 
@@ -16870,6 +16865,21 @@ window.AiselUnifiedAdapter={
   }
   html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(5) {min-width:28px;}
   html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(6) {min-width:34px;}
+ }
+}
+</style>
+
+<style id="aisel-v251-color-family">
+@media screen {
+ html:root body #editorView #productColors #variantPanel .copygen-chip-group {align-items:center;}
+ html:root body #editorView #productColors #variantPanel .copygen-family-add-color {
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;
+  box-sizing:border-box;width:28px;min-width:28px;height:28px;min-height:28px;
+  padding:0;border:0;border-radius:3px;background:transparent;color:#2F3B52;
+  font-size:24px;font-weight:500;line-height:1;cursor:pointer;
+ }
+ html:root body #editorView #productColors #variantPanel .copygen-family-add-color:focus-visible {
+  outline:2px solid var(--aisel-edit-focus,#CCD8E9);outline-offset:1px;
  }
 }
 </style>

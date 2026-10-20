@@ -4,7 +4,8 @@
  function mount({document:d,getKey,getBase,negotiation:n}){
   const make=(tag,cls,text)=>{const e=d.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;},base=d.getElementById('costCell'),head=base.querySelector('.sec-title');
   head.classList.add('size-cost-heading');const label=make('span','','원가계산서');head.replaceChildren(label);
-  const size=make('input','size-cost-note noprint');size.id='costSizeNote';size.placeholder='사이즈';size.setAttribute('aria-label','기본 원가계산서 사이즈');size.maxLength=60;
+  function sizeNote(cls,label,value,oninput){const e=make('textarea',cls);e.rows=2;e.value=value??'';e.placeholder='1 (S M) / 2 (L XL)\n2번 사이즈(XL)로 원가 계산';e.title='1 (S M) / 2 (L XL) · 2번 사이즈(XL)로 원가 계산';e.setAttribute('aria-label',label);e.maxLength=60;if(oninput)e.oninput=()=>oninput(e.value);return e;}
+  const size=sizeNote('size-cost-note noprint','기본 원가계산서 사이즈와 계산 기준','');size.id='costSizeNote';
   const printSize=make('span','size-cost-base-print');const plus=make('button','size-cost-add noprint','+');plus.type='button';plus.setAttribute('aria-label','사이즈별 원가계산서 추가');head.append(size,printSize,plus);
   const field=make('input');field.id='costVariantsData';field.type='hidden';d.getElementById('editorView').append(field);
   const list=make('div','size-cost-list noprint');base.after(list);
@@ -20,7 +21,7 @@
   function button(cls,label,action){const e=make('button',cls,label);e.type='button';e.onclick=action;return e;}
   function draw(){for(const editor of editors)editor.remove();editors=[];list.replaceChildren();for(const row of data.rows){
    const card=make('section','size-cost-card'),heading=make('div','size-cost-heading');card.dataset.costVariant=row.id;
-   const note=input('size-cost-note','추가 원가계산서 사이즈',row.size,v=>{row.size=v;commit();});note.placeholder='사이즈';note.maxLength=60;
+   const note=sizeNote('size-cost-note','추가 원가계산서 사이즈와 계산 기준',row.size,v=>{row.size=v;commit();});
    const remove=button('size-cost-remove','×',()=>{if(!root.confirm('이 사이즈의 원가계산서를 삭제할까요?'))return;data.rows=data.rows.filter(r=>r!==row);commit();draw();});remove.setAttribute('aria-label','추가 원가계산서 삭제');const copy=button('size-cost-add','+',()=>addCost(row));copy.setAttribute('aria-label','이 원가계산서 복사 추가');heading.append(make('strong','','원가계산서'),note,copy);card.append(heading);
    const table=make('table','size-cost-table'),thead=make('thead'),tr=make('tr');for(const text of ['항목','단가','수량','금액',''])tr.append(make('th','',text));thead.append(tr);const body=make('tbody');table.append(thead,body);card.append(table);
    const totalNode=make('strong','size-cost-total');const update=()=>{totalNode.textContent=money(total(row));printText();};

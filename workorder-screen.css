@@ -219,6 +219,24 @@
  html:root body #editorView .editor-mobile-head #refPanel {grid-column:1 / -1;grid-row:3;}
 }
 
+/* v251: additional links sit above the primary link; keep its product code aligned. */
+@media screen {
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption {align-self:end;align-items:center;min-height:28px;}
+ html:root body #editorView .editor-mobile-head:has(#refLinksList > .ref-link-row[data-ref-index="0"].is-editing) .editor-mobile-caption {margin-bottom:44px;}
+}
+@media screen and (max-width:359px) {
+ html:root body #editorView .editor-mobile-head:has(#refLinksList > .ref-link-row[data-ref-index="0"].is-editing) .editor-mobile-caption {margin-bottom:0;}
+}
+@media screen and (min-width:360px) and (max-width:389px) {
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption {gap:2px;}
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption .code-edit-button {flex-shrink:0;margin-left:0;white-space:nowrap;}
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption .code-copy-status:empty {display:none;}
+ html:root body #editorView .editor-mobile-head #mobileProductCode {flex:1 1 0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+ html:root body #editorView .editor-mobile-head #refPanel {grid-template-columns:68px auto 28px;width:164px;}
+ html:root body #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {width:68px;min-width:68px;max-width:68px;}
+ html:root body #editorView .editor-mobile-head #refPanel :is(.ref-icon-btn,#refAddBtn) {width:28px;min-width:28px;flex-basis:28px;}
+}
+
 /* v194: keep equal contact columns inline with 8px clearance after the title. */
 @media screen {
  html:root body #editorView #sheet > .title-row,
