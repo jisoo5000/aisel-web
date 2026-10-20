@@ -81,6 +81,12 @@
   parts.push('반품 사유 미연결');
   if(m.latestDataDate||data.source?.dataThrough)parts.push(String(m.latestDataDate||data.source.dataThrough)+' 기준');return parts.join(' · ');
  }
+ function feedbackDetails(f={}){
+  return '<dl>'+[['가설',f.hypothesis||'가설 초안 준비 중'],['실험',f.experiment||'비교할 방법을 준비 중이에요.'],
+   ['결과',f.result||'자료가 쌓이면 확인할 수 있어요.'],['다음 개선',f.next||'성과 확인 후 다음 작업에 반영해요.'],
+   ['추가 디벨롭',f.develop||'검증 결과를 확인한 뒤 확장할 방향을 정해요.']]
+   .map(([label,value])=>'<dt>'+label+'</dt><dd>'+esc(value)+'</dd>').join('')+'</dl>';
+ }
  function createObservationGate(now){
   const rows=new Map(),get=code=>rows.get(code)||{attempts:0,lastAt:-Infinity,pending:false,complete:false};
   return {eligible:code=>{const r=get(code);return !r.complete&&r.attempts<3&&now()-r.lastAt>=30000;},
@@ -117,7 +123,7 @@
   }
   function ordersHtml(data){
    if(!isOwner(data))return '';const rows=orderRows(data,tab),pending=orderRows(data,'request').length,done=orderRows(data,'done').length;
-   return `<details class="dw-orders"><summary>발주 확인 · 요청 ${pending} / 초도 완료 ${done}</summary><div class="dw-tabs" role="tablist" aria-label="발주 상태"><button data-tab="request" role="tab" aria-selected="${tab==='request'}">발주할 상품 (${pending})</button><button data-tab="done" role="tab" aria-selected="${tab==='done'}">초도 발주 완료 (${done})</button></div><div class="dw-order-list">${rows.length?rows.map(r=>`<div class="dw-order-row"><button data-open="${esc(r.code)}">${esc(recordTitle(r))}<small>${esc(r.code)} · ${esc(r.designer||'담당 확인 필요')}</small></button><span>${actualOrder(r)?compact(r.order.confirmation.orderDate)+' · '+r.order.confirmation.quantity+'장':'실제 발주 확인 전'}</span></div>`).join(''):'<p class="dw-muted">이 상태의 상품이 없어요.</p>'}</div></details>`;
+   return `<details class="dw-orders"><summary>발주 확인 · 확인 필요 ${pending} / 초도 완료 확인 ${done}</summary><div class="dw-tabs" role="tablist" aria-label="발주 상태"><button data-tab="request" role="tab" aria-selected="${tab==='request'}">발주 요청·확인 필요 (${pending})</button><button data-tab="done" role="tab" aria-selected="${tab==='done'}">초도 완료 확인 (${done})</button></div>${tab==='request'?'<p class="dw-muted">이미 발주했다면 완료 확인만 해주세요.</p>':''}<div class="dw-order-list">${rows.length?rows.map(r=>`<div class="dw-order-row"><button data-open="${esc(r.code)}">${esc(recordTitle(r))}<small>${esc(r.code)} · ${esc(r.designer||'담당 확인 필요')}</small></button><span>${actualOrder(r)?compact(r.order.confirmation.orderDate)+' · '+r.order.confirmation.quantity+'장':'실제 발주 확인 전'}</span></div>`).join(''):'<p class="dw-muted">이 상태의 상품이 없어요.</p>'}</div></details>`;
   }
   function ownerForms(r,data){
    if(!isOwner(data))return '';const policy=C.getPolicy(r.designer);
@@ -134,7 +140,7 @@
    const r=state.data?.records.find(item=>item.code===currentCode);strip.hidden=!visible()||!currentCode;
    if(strip.hidden){strip.replaceChildren();return;}
    if(state.status!=='ready'||!r){strip.innerHTML='<p class="dw-muted">이 상품의 업무·성과 자료를 확인하고 있어요.</p>';return;}
-   const f=r.feedback||{};strip.innerHTML=`<strong>성과와 다음 개선</strong><p class="dw-metric">${esc(metricLine(r,state.data))}</p><details><summary>가설 · 결과 · 다음 개선</summary><dl><dt>가설</dt><dd>${esc(f.hypothesis||'가설 초안 준비 중')}</dd><dt>결과</dt><dd>${esc(f.result||'자료가 쌓이면 확인할 수 있어요.')}</dd><dt>다음 개선</dt><dd>${esc(f.next||'성과 확인 후 다음 작업에 반영해요.')}</dd></dl>${r.metrics?.returnNote?'<p class="dw-muted">'+esc(r.metrics.returnNote)+'</p>':''}</details>${ownerForms(r,state.data)}<p class="dw-notice" role="status">${esc(notice)}</p>`;
+   const f=r.feedback||{};strip.innerHTML=`<strong>성과와 다음 개선</strong><p class="dw-metric">${esc(metricLine(r,state.data))}</p><details><summary>가설 · 실험 · 결과 · 개선</summary>${feedbackDetails(f)}${r.metrics?.returnNote?'<p class="dw-muted">'+esc(r.metrics.returnNote)+'</p>':''}</details>${ownerForms(r,state.data)}<p class="dw-notice" role="status">${esc(notice)}</p>`;
    strip.querySelectorAll('button,input,select').forEach(el=>el.disabled=busy);
   }
   function render(){
@@ -183,5 +189,5 @@
   d.addEventListener('visibilitychange',()=>{if(!d.hidden)void client.refresh();});
   w.AiselDesignWorkflow=Object.freeze({refresh:()=>client.refresh(true),observeSaved,state:client.state});session();
  }
- return {createClient,createObservationGate,meaningfulSaved,weeklyCards,actualOrder,orderRows,metricLine,mount};
+ return {createClient,createObservationGate,meaningfulSaved,weeklyCards,actualOrder,orderRows,metricLine,feedbackDetails,mount};
 });
