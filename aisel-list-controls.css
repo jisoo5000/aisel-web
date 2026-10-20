@@ -70,3 +70,42 @@
  /* Six labels and counts remain readable on one line at the narrowest width. */
  html:root body #galleryView #galleryTabs .gtab {font-size:11px!important;}
 }
+/* v236: compact judgment table and workorder attribution footer. */
+@media screen {
+ html:root body #designMeetingView #dmReview .dm-manual-table tr,
+ html:root body #designMeetingView #dmReview .dm-manual-table tr:has(#dmUspKeywords) {
+  display:grid;grid-template-columns:88px minmax(0,1fr);align-items:stretch;
+ }
+ html:root body #designMeetingView #dmReview .dm-manual-table tr>th,
+ html:root body #designMeetingView #dmReview .dm-manual-table tr>td {
+  display:flex;align-items:center;box-sizing:border-box;width:auto;min-width:0;min-height:44px;
+  padding:8px 4px;border-color:var(--aisel-list-border);font-size:12px;line-height:18px;
+ }
+ html:root body #designMeetingView #dmReview .dm-manual-table tr>th {
+  padding-left:8px;border-right:1px solid var(--aisel-list-border);font-weight:600;white-space:nowrap;
+ }
+ html:root body #designMeetingView #dmReview .dm-manual-table tr>td {font-weight:400;}
+ html:root body #designMeetingView .dm-market-selects {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:100%;min-width:0;}
+ html:root body #designMeetingView .dm-market-selects label {display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;font-size:12px;line-height:18px;}
+ html:root body #designMeetingView .dm-market-selects select {flex:1;min-width:0;width:0;}
+ html:root body #designMeetingView #dmReview :is(.dm-manual-select,.dm-choice,.aisel-usp-keyword) {
+  box-sizing:border-box;height:28px;min-height:28px;min-width:0;margin:0;padding:0 4px;
+  border:1px solid var(--aisel-list-border);border-radius:3px;font-family:var(--aisel-font);font-size:12px!important;line-height:18px;font-weight:400;white-space:nowrap;
+ }
+ html:root body #designMeetingView #dmReview .dm-manual-group {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;width:100%;min-width:0;}
+ html:root body #designMeetingView #dmReview .dm-choice {width:100%;max-width:none;}
+ html:root body #designMeetingView #dmUspKeywords {width:100%;min-width:0;}
+ html:root body #designMeetingView #dmUspValue[hidden] {display:none!important;}
+ html:root body #designMeetingView .aisel-usp-inline .aisel-usp-keyword {padding:0;width:0;flex:1 1 0;text-align:center;overflow:hidden;}
+ html:root body #aiselWorkorderAttribution {
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:16px 0 0;padding:12px 0 max(24px,env(safe-area-inset-bottom));
+  border-top:1px solid var(--aisel-list-border);font-family:var(--aisel-font);font-size:12px;line-height:18px;
+ }
+ html:root body #aiselWorkorderAttribution[hidden] {display:none!important;}
+ html:root body #aiselWorkorderAttribution .access-attribution-line {display:flex;align-items:center;gap:8px;flex:1 1 100%;min-width:0;}
+ html:root body #aiselWorkorderAttribution .access-assignee-name {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+ html:root body #aiselWorkorderAttribution button {height:28px;min-height:28px;padding:0 4px;font:inherit;border:1px solid var(--aisel-list-border);border-radius:3px;}
+ html:root body #aiselWorkorderAttribution .access-history-toggle {flex:none;padding:0;border:0;background:transparent;color:#1766bf;white-space:nowrap;text-decoration:underline;cursor:pointer;}
+ html:root body #aiselWorkorderAttribution .access-attribution-history {flex-basis:100%;}
+ html:root body #aiselWorkorderAttribution .access-attribution-history p {margin:4px 0;overflow-wrap:anywhere;}
+}

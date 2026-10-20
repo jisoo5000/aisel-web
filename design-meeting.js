@@ -42,22 +42,24 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  const manualFields=['marketDemand','substituteSupply','uspValue','uspKeywordsJson','engagementLevel'];
  const manualChoices={marketDemand:[['high','높음'],['low','낮음'],['niche','틈새'],['unknown','확인필요']],substituteSupply:[['many','많음'],['few','적음'],['unknown','확인필요']],engagementLevel:[['high','높음'],['low','낮음'],['unknown','확인필요']]};
  const manualTable=document.createElement('table');manualTable.className='dm-evidence dm-manual-table';
- manualTable.innerHTML='<tbody><tr><th scope="row">수요·공급</th><td><div class="dm-manual-group" data-manual-group="marketDemand" role="group" aria-label="수요"><span>수요</span></div><div class="dm-manual-group" data-manual-group="substituteSupply" role="group" aria-label="대체품"><span>대체품</span></div></td></tr><tr><td colspan="2" class="dm-usp-cell"><div>USP</div><div id="dmUspKeywords"></div><input type="hidden" data-dm-field="uspKeywordsJson"><textarea id="dmUspValue" data-dm-field="uspValue" rows="2" maxlength="4000" aria-label="기존 USP 원문" placeholder="기존 USP 원문"></textarea></td></tr><tr><th scope="row">반응도</th><td><div class="dm-manual-group" data-manual-group="engagementLevel" role="group" aria-label="반응도"></div></td></tr></tbody>';
+ manualTable.innerHTML='<tbody><tr><th scope="row">수요·공급</th><td><div class="dm-market-selects"><label>수요<select class="dm-manual-select" data-manual-select="marketDemand" aria-label="수요"></select></label><label>공급<select class="dm-manual-select" data-manual-select="substituteSupply" aria-label="대체상품 공급"></select></label></div></td></tr><tr><th scope="row">USP</th><td class="dm-usp-cell"><div id="dmUspKeywords"></div><input type="hidden" data-dm-field="uspKeywordsJson"><textarea id="dmUspValue" data-dm-field="uspValue" hidden aria-label="기존 USP 원문"></textarea></td></tr><tr><th scope="row">인게이지먼트</th><td><div class="dm-manual-group" data-manual-group="engagementLevel" role="group" aria-label="인게이지먼트"></div></td></tr></tbody>';
  $dm('#dmReview').replaceChildren(manualTable);
  for(const [key,choices] of Object.entries(manualChoices)){
    const field=document.createElement('input');field.type='hidden';field.dataset.dmField=key;$dm('#dmLegacyFields').append(field);
+   const select=manualTable.querySelector('[data-manual-select="'+key+'"]');
+   if(select){select.append(new Option('선택',''));for(const [value,label]of choices)select.append(new Option(label,value));select.onchange=()=>{if(!active||select.disabled)return;field.value=select.value;field.dispatchEvent(new Event('input',{bubbles:true}));syncManualButtons();scheduleManualSave(active);};continue;}
    const group=manualTable.querySelector('[data-manual-group="'+key+'"]');
    for(const [value,label]of choices){const button=document.createElement('button');button.type='button';button.className='dm-choice';button.dataset.manualField=key;button.dataset.value=value;button.textContent=label;button.setAttribute('aria-pressed','false');button.onclick=()=>{if(!active||button.disabled)return;field.value=field.value===value?'':value;field.dispatchEvent(new Event('input',{bubbles:true}));syncManualButtons();scheduleManualSave(active);};group.append(button);}
  }
  const uspInput=$dm('#dmUspValue');
  const uspKeywordsField=$dm('[data-dm-field="uspKeywordsJson"]');
- const uspEditor=window.AiselUsp.mount($dm('#dmUspKeywords'),{onChange:serialized=>{if(!active)return;uspKeywordsField.value=serialized;uspKeywordsField.dispatchEvent(new Event('input',{bubbles:true}));scheduleManualSave(active);}});
+ const uspEditor=window.AiselUsp.mount($dm('#dmUspKeywords'),{inline:true,onChange:serialized=>{if(!active)return;uspKeywordsField.value=serialized;uspKeywordsField.dispatchEvent(new Event('input',{bubbles:true}));scheduleManualSave(active);}});
  function syncUspEditor(){uspEditor.update({key:active,serialized:uspKeywordsField.value,disabled:uspInput.disabled});}
  uspInput.addEventListener('compositionstart',()=>{uspInput.dataset.composing='true';clearTimeout(manualSaveTimers.get(active));});
  uspInput.addEventListener('compositionend',()=>{uspInput.dataset.composing='false';markDetailDraft('uspValue');scheduleManualSave(active);});
  uspInput.addEventListener('input',()=>scheduleManualSave(active));
  uspInput.addEventListener('blur',()=>{if(active&&!composingDraft(active)&&detailState(active).dirty.has('uspValue'))scheduleManualSave(active);});
- function syncManualButtons(){for(const b of manualTable.querySelectorAll('.dm-choice')){const selected=$dm('[data-dm-field="'+b.dataset.manualField+'"]').value===b.dataset.value;b.setAttribute('aria-pressed',String(selected));b.classList.toggle('selected',selected);}}
+ function syncManualButtons(){for(const select of manualTable.querySelectorAll('[data-manual-select]'))select.value=$dm('[data-dm-field="'+select.dataset.manualSelect+'"]').value;for(const b of manualTable.querySelectorAll('.dm-choice')){const selected=$dm('[data-dm-field="'+b.dataset.manualField+'"]').value===b.dataset.value;b.setAttribute('aria-pressed',String(selected));b.classList.toggle('selected',selected);}}
  function scheduleManualSave(id){if(!id)return;clearTimeout(manualSaveTimers.get(id));const stamp=authStamp();manualSaveTimers.set(id,setTimeout(()=>{manualSaveTimers.delete(id);if(sameAuth(stamp)&&!composingDraft(id)&&!detailConflicts.has(id))saveDetail({id});},500));}
 
  // Each candidate owns its draft and queue even after a menu or record change.
@@ -358,7 +360,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  function applyEditingState(){
    manageLinksButton.disabled=!active||!['owner','designer'].includes(role);
    const editable=(role==='owner'||role==='designer')&&!openingId&&!isDeleted(current(active))&&!deleteFlight;lookPicker.setDisabled(!editable);headerSave.disabled=!editable;
-   pane.querySelectorAll('#dmAddMeeting,#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmDesignerTrigger,#dmNewLink,#dmMeetingDate,#dmLinks input,#dmLinks button:not([data-dm-readonly]),.dm-photo,#dmPending button,.dm-reference-control,#dmReferenceRetry,.dm-choice').forEach(el=>el.disabled=!editable);
+   pane.querySelectorAll('#dmAddMeeting,#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmDesignerTrigger,#dmNewLink,#dmMeetingDate,#dmLinks input,#dmLinks button:not([data-dm-readonly]),.dm-photo,#dmPending button,.dm-reference-control,#dmReferenceRetry,.dm-choice,.dm-manual-select').forEach(el=>el.disabled=!editable);
    if($dm('#dmDetailTitle').contentEditable!==String(editable))$dm('#dmDetailTitle').contentEditable=String(editable);
    for(const el of $dm('#dmDetail').querySelectorAll('[data-dm-field]'))el.disabled=!editable||(['decision','decisionReason'].includes(el.dataset.dmField)&&role!=='owner');
    syncUspEditor();

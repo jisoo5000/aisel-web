@@ -12,7 +12,25 @@
   if(String(output||'').trim()&&signature(name,previous)!==signature(name,next))next.descriptionNeedsReview=true;
   return next;
  }
- function mount(host,{onChange,readOnly=false}={}){
+ // Stable inline inputs keep Korean composition and focus intact during live updates.
+ function mountInline(host,{onChange}={}){
+  const document=host.ownerDocument;host.classList.add('aisel-usp','aisel-usp-inline');
+  const row=document.createElement('div');row.className='aisel-usp-row';row.setAttribute('aria-label','USP 키워드');host.append(row);
+  let values=[],key='',disabled=false;const composing=new Set();
+  const inputs=Array.from({length:5},(_,index)=>{
+   const input=document.createElement('input');input.type='text';input.className='aisel-usp-keyword';input.placeholder=String(index+1);input.setAttribute('aria-label','USP 키워드 '+(index+1));row.append(input);
+   const commit=()=>{if(disabled||composing.has(index))return;while(values.length<=index)values.push('');values[index]=input.value;while(values.length&&!values.at(-1))values.pop();onChange?.(JSON.stringify(values));};
+   input.addEventListener('input',commit);input.addEventListener('blur',commit);input.addEventListener('compositionstart',()=>composing.add(index));input.addEventListener('compositionend',()=>{composing.delete(index);commit();});return input;
+  });
+  return {isComposing:()=>composing.size>0,update(next={}){
+   const changedKey=String(next.key||'')!==key;if(changedKey){key=String(next.key||'');composing.clear();}
+   disabled=!!next.disabled;const incoming=keywords(next.serialized);
+   inputs.forEach((input,index)=>{input.disabled=disabled;if(changedKey||!composing.has(index)&&document.activeElement!==input){input.value=incoming[index]||'';values[index]=incoming[index]||'';}});
+   while(values.length&&!values.at(-1))values.pop();
+  }};
+ }
+ function mount(host,{onChange,readOnly=false,inline=false}={}){
+  if(inline&&!readOnly)return mountInline(host,{onChange});
   const document=host.ownerDocument;host.classList.add('aisel-usp');
   const row=document.createElement('div');row.className='aisel-usp-row';row.setAttribute('aria-label','USP 키워드');host.append(row);
   const legacy=document.createElement('p');legacy.className='aisel-usp-legacy';legacy.hidden=true;host.append(legacy);
