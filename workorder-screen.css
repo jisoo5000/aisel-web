@@ -279,3 +279,17 @@
  html:root body #editorView #mobileSampleRecords .changes-toggle-label {min-width:0;font:inherit;color:inherit;word-break:keep-all;overflow-wrap:anywhere;}
  html:root body #editorView #sheet > .detail2 > .cell.mat > .sec-title {max-width:100%;min-width:0;white-space:normal;word-break:keep-all;overflow-wrap:anywhere;}
 }
+
+/* v256: white buttons remain visible; color fields match the 36px fabric fields. */
+@media screen {
+ html:root body #editorView #productColors .color-heading h2 {padding-inline:0;}
+ html:root body #editorView #productColors :is(#selectedColors,#variantPanel) .copygen-color-chip[data-color-white="true"] {border:1px solid var(--aisel-line,#E3E5E7)!important;box-shadow:none;}
+ html:root body #editorView #productColors #variantPanel .copygen-color-chip[data-color-white="true"].copygen-selected {border-color:var(--aisel-ink,#34383C)!important;box-shadow:0 0 0 1px var(--aisel-ink,#34383C)!important;}
+ html:root body #editorView #productColors #addColorRow :is(#newColorInput,#newColorConfirm),
+ html:root body #editorView #sheet .fabric-variant-color select,
+ html:root body #editorView #sheet .fabric-variant-fields input {
+  box-sizing:border-box;height:36px!important;min-height:36px!important;max-height:36px;padding-block:5px;line-height:24px;
+ }
+ html:root body #editorView #productColors #addColorRow {align-items:center;}
+ html:root body #editorView #productColors #newColorConfirm {padding-inline:8px;}
+}
