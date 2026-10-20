@@ -27,7 +27,7 @@
  html:root body #galleryView #galleryGrid .gcard-code-row {display:flex;flex-wrap:wrap;gap:4px;min-width:0;white-space:normal;overflow:visible;}
  html:root body #galleryView #galleryGrid .gcard-code-value {flex:0 1 auto;max-width:100%;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;}
  html:root body #galleryView .gcard-colors {display:flex;flex-wrap:wrap;gap:4px;}
- html:root body #galleryView #galleryGrid .gcard-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px!important;min-height:22px!important;padding:2px 5px!important;border:0!important;border-radius:var(--aisel-radius);font-size:12px!important;line-height:18px!important;font-weight:500;}
+ html:root body #galleryView #galleryGrid .gcard-color-chip {display:inline-flex;align-items:center;box-sizing:border-box;height:22px!important;min-height:22px!important;padding:2px 4px!important;border:0!important;border-radius:var(--aisel-radius);font-size:12px!important;line-height:18px!important;font-weight:500;}
  html:root body #galleryView .gcard-color-mobile-extra {display:inline-flex!important;}
  html:root body #galleryView .gcard-color-more {display:none!important;}
  html:root body #galleryView .gcard.newcard {border-style:solid;min-height:160px;align-self:stretch;}
