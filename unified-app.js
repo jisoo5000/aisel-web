@@ -358,7 +358,7 @@
   try{app=sdk.apps.find(a=>a.name==='aiselSalesReadOnly')||sdk.initializeApp(sdk.app().options,'aiselSalesReadOnly');auth=app.auth();}catch(_){return;}
   const header=$('appBrandHeader'),button=document.createElement('button');button.id='aiselSessionButton';button.type='button';button.textContent='로그인';button.setAttribute('aria-haspopup','dialog');header.append(button);
   const dialog=document.createElement('dialog');dialog.id='aiselAccountDialog';dialog.className='noprint';dialog.setAttribute('aria-labelledby','aiselAccountTitle');
-  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><form id="aiselEmailLogin"><label for="aiselLoginEmail">아이디</label><input id="aiselLoginEmail" type="text" autocomplete="username" required><label for="aiselLoginPassword">비밀번호</label><input id="aiselLoginPassword" type="password" autocomplete="current-password" required><button type="submit">로그인</button><button id="aiselResetPassword" type="button">비밀번호 재설정</button></form><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselMeetingTools" hidden>디자인회의 관리 도구</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
+  dialog.innerHTML='<div class="account-heading"><h2 id="aiselAccountTitle">로그인</h2><button type="button" id="aiselAccountClose" aria-label="계정 창 닫기">×</button></div><p id="aiselAccountIdentity"></p><p id="aiselAccountStatus" role="status" aria-live="polite"></p><form id="aiselEmailLogin"><label for="aiselLoginEmail">아이디</label><input id="aiselLoginEmail" type="text" autocomplete="username" required><label for="aiselLoginPassword">비밀번호</label><input id="aiselLoginPassword" type="password" autocomplete="current-password" required><button type="submit">로그인</button><button id="aiselResetPassword" type="button">로그인 도움말</button></form><div class="account-actions"><button type="button" id="aiselAccountGoogle">Google 계정으로 로그인</button><button type="button" id="aiselMeetingTools" hidden>디자인회의 관리 도구</button><button type="button" id="aiselAccountLogout" hidden>로그아웃</button></div>';
   document.body.append(dialog);document.body.dataset.aiselCommonSession='ready';
   const google=$('aiselAccountGoogle'),logoutButton=$('aiselAccountLogout'),meetingTools=$('aiselMeetingTools'),status=$('aiselAccountStatus'),identity=$('aiselAccountIdentity');
   let resolveInitialized;const initialized=new Promise(resolve=>{resolveInitialized=resolve;});
@@ -367,7 +367,7 @@
   const listeners=new Set(),sameProject=a=>a.options?.projectId===app.options?.projectId;
   const currentUser=()=>auth.currentUser||null;
   const cancelled=()=>Object.assign(Error('로그인을 취소했습니다.'),{code:'auth/popup-closed-by-user'});
-  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=window.AiselAccess?.session?.loginId||user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;meetingTools.hidden=!user||!allowedView('designmeeting');$('aiselEmailLogin').hidden=!!user;meetingTools.disabled=sessionBusy;const initial=$('aiselInitialPassword');if(initial)initial.hidden=!user||window.AiselAccess?.session?.passwordChangeRequired!==true;}
+  function renderAccount(){const user=currentUser();button.textContent=user?'계정':'로그인';button.setAttribute('aria-label',user?'로그인 계정과 로그아웃':'로그인');$('aiselAccountTitle').textContent=user?'계정':'로그인';identity.textContent=window.AiselAccess?.session?.loginId||user?.email||'';identity.hidden=!user;google.hidden=!!user&&!normalizationError;google.textContent=user?'계정 연결 확인':'Google 계정으로 로그인';logoutButton.hidden=!user;logoutButton.disabled=sessionBusy;meetingTools.hidden=!user||!allowedView('designmeeting');$('aiselEmailLogin').hidden=!!user;meetingTools.disabled=sessionBusy;}
   function sessionDetail(reason){const user=currentUser();return {uid:user?.uid||null,email:user?.email||'',generation,reason};}
   function clearNormalizationError(){if(normalizationError&&notice.textContent===normalizationError)info();normalizationError='';}
   function syncFrame(reason='sync',requestId){post('aisel-session-change',{...sessionDetail(reason),requestId});}
@@ -408,20 +408,31 @@
    Promise.all([settle(),migration||Promise.resolve()]).then(([ok])=>{if(!loginFlight)return;if(ok&&currentUser()){finishLogin(null,{user:currentUser()});dialog.close();}else if(ok){status.textContent='';google.disabled=false;}else{status.textContent='입력한 내용을 저장한 뒤 다시 로그인해주세요.';finishLogin(Object.assign(Error(status.textContent),{code:'save_pending'}));}}).catch(error=>{status.textContent=error.message||'입력한 내용을 확인하지 못했습니다.';finishLogin(error);});
    return result;
   }
+  async function signInWithStaffPassword(loginId,password){
+   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),25000);
+   try{
+    const response=await fetch('https://asia-southeast1-aisel-workorder.cloudfunctions.net/staffLoginV247',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'omit',cache:'no-store',signal:controller.signal,body:JSON.stringify({loginId,password})});
+    const result=await response.json();
+    if(!response.ok||result.ok!==true||typeof result.customToken!=='string'||!result.customToken)throw Object.assign(Error('로그인하지 못했습니다.'),{code:response.status===429?'auth/too-many-requests':'auth/invalid-credential'});
+    return await auth.signInWithCustomToken(result.customToken);
+   }finally{clearTimeout(timeout);}
+  }
   $('aiselEmailLogin').addEventListener('submit',event=>{
    event.preventDefault();if(sessionBusy||!loginFlight||!event.target.reportValidity())return;
    sessionBusy=true;suppressMigration=true;status.textContent='로그인 중…';renderAccount();
-   const password=$('aiselLoginPassword');
-   auth.signInWithEmailAndPassword((value=>value.includes('@')?value:value.toLowerCase()+'@staff.aisel.invalid')($('aiselLoginEmail').value.trim()),password.value).then(async result=>{
-    password.value='';publish('login');await ready();await verifySession();finishLogin(null,result);if(!window.AiselAccess?.session?.passwordChangeRequired)dialog.close();else status.textContent='처음 사용하는 비밀번호로 변경해주세요.';
+   const password=$('aiselLoginPassword'),loginId=$('aiselLoginEmail').value.trim();
+   // Staff passwords are checked by the owner-managed server credential store.
+   // The internal Firebase email alias must use that same route, never email/password auth.
+   const staffId=loginId.toLowerCase().replace(/@staff\.aisel\.invalid$/,'');
+   const signIn=staffId.includes('@')?auth.signInWithEmailAndPassword(loginId,password.value):signInWithStaffPassword(staffId,password.value);
+   Promise.resolve(signIn).then(async result=>{
+    password.value='';publish('login');await ready();await verifySession();finishLogin(null,result);dialog.close();
    }).catch(error=>{status.textContent=/too-many-requests/.test(error.code||'')?'로그인 시도가 많습니다. 잠시 후 다시 시도해주세요.':'아이디와 비밀번호를 확인해주세요.';}).finally(()=>{password.value='';sessionBusy=false;renderAccount();});
   });
-  const initial=document.createElement('form');initial.id='aiselInitialPassword';initial.hidden=true;initial.innerHTML='<p>처음 로그인했습니다. 본인만 아는 비밀번호를 설정해주세요.</p><label for="aiselNewPassword">새 비밀번호</label><input id="aiselNewPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><label for="aiselConfirmPassword">새 비밀번호 확인</label><input id="aiselConfirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required><button type="submit">비밀번호 설정</button>';dialog.insertBefore(initial,dialog.querySelector('.account-actions'));
-  initial.addEventListener('submit',async event=>{event.preventDefault();if(sessionBusy||!initial.reportValidity())return;const first=$('aiselNewPassword'),confirm=$('aiselConfirmPassword');if(first.value!==confirm.value){status.textContent='비밀번호가 일치하지 않습니다.';return;}sessionBusy=true;renderAccount();try{await window.AiselAccess.request('changeInitialPassword',{password:first.value});await auth.signOut();publish('password_changed');status.textContent='비밀번호를 설정했습니다. 새 비밀번호로 다시 로그인해주세요.';info(status.textContent);}catch(error){status.textContent=error.message||'비밀번호를 설정하지 못했습니다.';}finally{first.value=confirm.value='';sessionBusy=false;renderAccount();if(!currentUser()&&!loginFlight)login().catch(()=>{});}});
-  window.addEventListener('aisel-access-change',()=>{renderAccount();if(window.AiselAccess?.session?.passwordChangeRequired&&!dialog.open)dialog.showModal();});
+  window.addEventListener('aisel-access-change',renderAccount);
   $('aiselResetPassword').addEventListener('click',()=>{
-   if(sessionBusy)return;const email=$('aiselLoginEmail');if(!email.reportValidity())return;if(!email.value.includes('@')||email.value.toLowerCase().endsWith('@staff.aisel.invalid')){status.textContent='대표님에게 임시 비밀번호 재발급을 요청해주세요.';return;}
-   sessionBusy=true;auth.sendPasswordResetEmail(email.value.trim()).then(()=>{status.textContent='등록된 계정이면 비밀번호 재설정 메일이 발송됩니다.';}).catch(()=>{status.textContent='메일을 보내지 못했습니다. 이메일을 확인한 뒤 다시 시도해주세요.';}).finally(()=>{sessionBusy=false;});
+   if(sessionBusy)return;
+   status.textContent='직원 비밀번호는 대표님이 설정합니다. 비밀번호를 잊었거나 로그인이 안 되면 대표님에게 확인해주세요.';
   });
   google.addEventListener('click',()=>{
    if(sessionBusy||google.disabled)return;
@@ -466,7 +477,7 @@
   logoutButton.addEventListener('click',logout);
   meetingTools.addEventListener('click',async()=>{if(sessionBusy)return;dialog.close();if(current==='designmeeting'||await show('designmeeting'))DM.openTools?.();});
   $('aiselAccountClose').addEventListener('click',()=>{if(!sessionBusy)dialog.close();});
-  dialog.addEventListener('cancel',event=>{if(sessionBusy)event.preventDefault();});dialog.addEventListener('close',()=>{if(loginFlight&&!sessionBusy)finishLogin(cancelled());});
+  dialog.addEventListener('cancel',event=>{if(sessionBusy)event.preventDefault();});dialog.addEventListener('close',()=>{$('aiselLoginPassword').value='';if(loginFlight&&!sessionBusy)finishLogin(cancelled());});
   window.AiselAuth={currentUser,ready,initialized,login,requestLogin,logout,subscribe(fn){listeners.add(fn);return ()=>listeners.delete(fn);},syncFrame,get generation(){return generation;},get normalized(){return normalizedUid===(currentUser()?.uid||null)&&!normalizationError;}};
   window.dispatchEvent(new CustomEvent('aisel-session-ready'));
   async function adoptExistingSession(){
