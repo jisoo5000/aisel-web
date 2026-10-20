@@ -99,7 +99,7 @@
  #designMeetingView :is(.dm-reference-delete,.dm-reference-add){flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0}
  .dm-reference-delete svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round}
  #designMeetingView .dm-reference-add{font-size:20px;font-weight:500}
- #designMeetingView .dm-reference-text{display:block;box-sizing:border-box;width:100%;height:120px;min-height:120px;resize:vertical;margin:0;padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#FFFFFF;color:var(--aisel-ink);font-family:var(--aisel-font);font-size:12px;font-weight:400;line-height:18px}
+ #designMeetingView .dm-reference-text{display:block;box-sizing:border-box;width:100%;height:64px;min-height:64px;resize:vertical;margin:0;padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#FFFFFF;color:var(--aisel-ink);font-family:var(--aisel-font);font-size:12px;font-weight:400;line-height:18px}
  #designMeetingView .dm-reference-text:focus-visible{outline:2px solid var(--aisel-focus);outline-offset:2px}
  .dm-reference-save{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:4px}
  #dmReferenceSaveState{font-size:11px;line-height:16px;color:var(--aisel-muted)}
@@ -348,3 +348,13 @@
 }
 
 @media screen {html:root body #designMeetingView .dm-manual-table tr:has(.dm-usp-cell){grid-template-columns:minmax(0,1fr);}}
+
+/* v250: fit the standard one-photo / one-note detail on a phone without clipping. */
+@media screen and (max-width:600px) {
+ html:root body #designMeetingView #dmPhotos .dm-photo img {height:clamp(128px,calc(100svh - 500px),240px);}
+ html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>th,
+ html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>td {min-height:36px;padding-top:4px;padding-bottom:4px;}
+ html:root body #designMeetingView .dm-section-title {margin-top:8px;}
+ html:root body #designMeetingView #dmReferenceNotes {margin-top:8px;}
+ html:root body #designMeetingView .dm-reference-header {margin-bottom:4px;}
+}
