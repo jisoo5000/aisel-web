@@ -152,9 +152,9 @@
       }
       const next=JSON.stringify([values,historical]);
       if(signature!==next&&(!signature||document.activeElement!==select)){
-        const fragment=document.createDocumentFragment(),option=(value,label)=>{const e=document.createElement('option');e.value=value;e.textContent=label;return e;};
+        const fragment=document.createDocumentFragment(),option=(value,label)=>{const e=document.createElement('option');e.value=value;e.textContent=label;e.style.fontWeight='400';return e;};
         for(const [value,label]of values)fragment.append(option(value,label));
-        if(historical.length){const group=document.createElement('optgroup');group.label='이전 담당자';for(const name of historical)group.append(option(name,name));fragment.append(group);}
+        for(const name of historical)fragment.append(option(name,name));
         fragment.append(option(ADD,'＋ 추가'));select.replaceChildren(fragment);signature=next;
       }
       select.value=selected;select.disabled=!!config.disabled;if(config.disabled)close();
