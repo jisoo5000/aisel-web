@@ -1,3 +1,4 @@
+<!-- v255: custom rose shades, workroom color aliases and explicit ST stripe pairs -->
 <!-- v254: fabric heading and color-matched section typography -->
 <!-- v253: approved 38 SIE/UUR color names within the existing eight swatch families -->
 <!-- v252: compact form spacing, revision chevrons and stable reload position -->
@@ -5320,7 +5321,7 @@
 <link rel="stylesheet" href="aisel-usp.css?v=254">
 <script src="aisel-usp.js?v=236"></script>
 <script src="aisel-workorder-usp.js?v=251"></script>
-<script src="aisel-editor-values.js?v=238"></script>
+<script src="aisel-editor-values.js?v=255"></script>
 <script src="aisel-fabric-variants.js?v=254"></script>
 <script src="aisel-size-costs.js?v=252"></script>
 <link rel="stylesheet" href="aisel-size-costs.css?v=254">
@@ -8055,6 +8056,7 @@
       chip.className = "gcard-color-chip";
       if(info){ chip.style.background = info.hex; chip.style.color = info.text; }
       chip.textContent = c;
+      if(window.colorPatternDot_) window.colorPatternDot_(chip, info);
       wrap.appendChild(chip);
     });
     return wrap;
@@ -10914,6 +10916,7 @@
           const chip=document.createElement("span");chip.className="gcard-color-chip"+(index>=2?" gcard-color-mobile-extra":"");chip.textContent=name;
           const info=window.colorHex_?window.colorHex_(name):null;
           if(info && /^#[0-9a-f]{3,8}$/i.test(info.hex)){chip.style.backgroundColor=info.hex;if(/^#[0-9a-f]{3,8}$/i.test(info.text))chip.style.color=info.text;}
+          if(window.colorPatternDot_) window.colorPatternDot_(chip,info);
           colorRow.appendChild(chip);
         });
         if(names.length>2){const more=document.createElement("span");more.className="gcard-color-more";more.textContent="+"+(names.length-2);colorRow.appendChild(more);}
@@ -13921,9 +13924,8 @@ function customColorSwatch_(hex){
     .reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
   return { hex, text: luminance > .179 ? "#25303A" : "#FFFFFF" };
 }
-function resolveColorSwatch_(name){
+function resolveSolidColorSwatch_(name){
   const normalized = normalizeColorName_(name);
-  if(normalized==='아이보리·검정 스트라이프')return {hex:'#F3F0E7',text:'#2F3B52',pattern:'repeating-linear-gradient(90deg,#F3F0E7 0 4px,#1A1A1A 4px 6px)'};
   // Existing palette values and canonical gray aliases always take precedence.
   if(Object.prototype.hasOwnProperty.call(COLOR_VARIANT_HEX, normalized)) return COLOR_VARIANT_HEX[normalized];
   const key = customColorKey_(normalized);
@@ -13941,6 +13943,46 @@ function resolveColorSwatch_(name){
   }).join("").toUpperCase();
   return customColorSwatch_(hex);
 }
+// v255: exact custom names and known aliases; unknown names stay uncolored.
+const CUSTOM_COLOR_REFERENCES = Object.freeze(Object.fromEntries([
+ ['#E9D1D5',['페일 로즈','pale rose']],
+ ['#CAA0A8',['로즈','rose','rosy']],
+ ['#D4A4AF',['로즈 핑크','rose pink']],
+ ['#DDC9BD',['블러쉬 샌드','blush sand']],
+ ['#DCC5BE',['블러쉬 베이지','blush beige']],
+ ['#D9B5B9',['더스티 로즈','dusty rose']],
+ ['#E3B7A6',['애프리콧 블러쉬','apricot blush']],
+ ['#F4F0E7',['아이']],['#1A1A1A',['검']],['#2F3B52',['곤','곤색']],
+ ['#3A3D40',['먹','먹색']],['#C6A3A8',['인핑','인디 핑크']],
+ ['#B8A7C8',['라일락','lilac']],['#ECC7B4',['피치','peach']],
+].flatMap(([hex,names])=>names.map(name=>[customColorKey_(name),hex]))));
+const COMPACT_COLOR_REFERENCES = Object.freeze(Object.fromEntries(Object.entries(COLOR_VARIANT_HEX).map(([name,value])=>[customColorKey_(name),value])));
+function resolveColorSwatch_(name){
+ const normalized=normalizeColorName_(name),stripe=window.AiselEditorValues.stripeColors(normalized);
+ if(stripe){
+  const first=resolveColorSwatch_(stripe[0]),second=resolveColorSwatch_(stripe[1]);
+  if(first&&second)return {...first,pattern:'repeating-linear-gradient(90deg,'+first.hex+' 0 4px,'+second.hex+' 4px 6px)'};
+  return null;
+ }
+ // Preserve established colors (including existing no-space light-beige values).
+ const existing=resolveSolidColorSwatch_(normalized);if(existing)return existing;
+ const key=customColorKey_(normalized);
+ if(Object.hasOwn(CUSTOM_COLOR_REFERENCES,key))return customColorSwatch_(CUSTOM_COLOR_REFERENCES[key]);
+ if(Object.hasOwn(COMPACT_COLOR_REFERENCES,key))return COMPACT_COLOR_REFERENCES[key];
+ const modifier=key.match(/^(light|pale|deep|dark|soft|muted|misty|ash|라이트|페일|딥|다크|소프트|뮤트|미스티|애쉬)(.+)$/);
+ if(!modifier)return null;
+ const base=CUSTOM_COLOR_REFERENCES[modifier[2]]||CUSTOM_COLOR_HEX[modifier[2]]||COMPACT_COLOR_REFERENCES[modifier[2]]?.hex;
+ if(!base)return null;
+ const dark=/^(deep|dark|딥|다크)$/.test(modifier[1]),muted=/^(muted|ash|뮤트|애쉬)$/.test(modifier[1]);
+ const hex='#'+base.slice(1).match(/../g).map(channel=>{const n=parseInt(channel,16),target=dark?0:muted?160:255,weight=dark?.25:muted?.2:/^(pale|페일)$/.test(modifier[1])?.35:.2;return Math.round(n+(target-n)*weight).toString(16).padStart(2,'0');}).join('').toUpperCase();
+ return customColorSwatch_(hex);
+}
+window.colorPatternDot_ = (chip,swatch)=>{
+ if(!swatch?.pattern)return;
+ const dot=document.createElement('span');dot.className='color-pattern-dot';
+ dot.style.cssText='display:inline-block;width:12px;height:12px;flex:0 0 12px;border:1px solid #B7B7B7;border-radius:2px;vertical-align:middle;margin-right:3px;';
+ dot.style.background=swatch.pattern;dot.setAttribute('aria-hidden','true');chip.prepend(dot);
+};
 window.colorHex_ = resolveColorSwatch_;
 
 const COLOR_VARIANTS = {
@@ -14143,7 +14185,7 @@ function renderSelectedColors(){
     chip.style.setProperty('--workorder-color-text', swatch.text);
     chip.style.background = "#2F3B52";
     chip.style.color = "#FFFFFF";
-    if(swatch.pattern){const dot=document.createElement('span');dot.className='color-pattern-dot';dot.style.background=swatch.pattern;dot.setAttribute('aria-hidden','true');chip.append(dot);}
+    window.colorPatternDot_(chip, swatch);
     chip.appendChild(document.createTextNode(v));
     const rm = document.createElement("button");
     rm.textContent = "×";
