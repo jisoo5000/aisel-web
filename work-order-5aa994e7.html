@@ -5311,7 +5311,7 @@
 <script src="aisel-photo.js?v=216"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=233">
 <script src="aisel-usp.js?v=236"></script>
-<script src="aisel-fabric-variants.js?v=237"></script>
+<script src="aisel-fabric-variants.js?v=237.1"></script>
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -12363,7 +12363,7 @@
   document.getElementById('workorderUspRefresh').onclick=refreshWorkorderUsp_;
   window.addEventListener('aisel-session-change',renderWorkorderUsp_);renderWorkorderUsp_();
   const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
-  const finalTitle=finalSpec.previousElementSibling,desktopFinalTitle=finalTitle.textContent;
+  const finalTitle=finalSpec.closest('.cell.mat').querySelector('.sec-title'),desktopFinalTitle=finalTitle.textContent;
   const mobileStatus=document.createElement('div');mobileStatus.id='mobileSampleStatus';mobileStatus.className='noprint';
   const sampleLabel=document.createElement('span');sampleLabel.textContent='샘플';mobileStatus.append(sampleLabel);
   const sampleName=document.getElementById('sampleNoteTitle');sampleName.type='text';sampleName.placeholder='샘플명';sampleName.setAttribute('aria-label','샘플명');mobileStatus.append(sampleName);
@@ -16941,7 +16941,7 @@ window.AiselUnifiedAdapter={
 <script src="aisel-access-ui.js?v=236"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=215" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=233">
-<link rel="stylesheet" href="aisel-list-controls.css?v=237" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=237.1" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {
