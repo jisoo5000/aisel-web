@@ -8,7 +8,7 @@
  let key=null,finalValue='',pendingFold=false,folded=false;
  const records=d.getElementById('mobileSampleRecords'),final=d.getElementById('materials');
  function paint(){records.classList.toggle('changes-folded',folded);records.querySelectorAll('.changes-toggle').forEach((button,index)=>{button.textContent=(index?'추가 수정사항':'수정사항')+' '+(folded?'▸':'▾');button.setAttribute('aria-expanded',String(!folded));});}
- function refresh(st,code,options={}){syncDesigner();const value=String(st?.materials||'').trim();if(key!==code){key=code;finalValue=value;pendingFold=false;folded=!!value;paint();return;}if(options.saved&&value!==finalValue){finalValue=value;pendingFold=!!value;if(!value){folded=false;pendingFold=false;}if(d.activeElement!==final&&pendingFold){folded=true;pendingFold=false;}paint();}}
+ function refresh(st,code,options={}){syncDesigner();const value=String(st?.materials||'').trim();if(key!==code){key=code;finalValue=value;pendingFold=false;folded=!!value;paint();return;}if((options.saved||options.loaded)&&value!==finalValue){finalValue=value;pendingFold=!!value;if(!value){folded=false;pendingFold=false;}if(d.activeElement!==final&&pendingFold){folded=true;pendingFold=false;}paint();}}
  records.addEventListener('click',event=>{if(event.target.closest('.changes-toggle')){folded=!folded;pendingFold=false;paint();}});
  final.addEventListener('blur',()=>{if(pendingFold){folded=true;pendingFold=false;paint();}});
  new MutationObserver(()=>{const buttons=records.querySelectorAll('.changes-toggle');if(buttons.length&&buttons[0].getAttribute('aria-expanded')!==String(!folded))paint();}).observe(records,{childList:true,subtree:true});

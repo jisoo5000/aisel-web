@@ -158,3 +158,16 @@
  html:root body :is(input,select,textarea,button):focus-visible {outline-color:var(--aisel-accent);}
  html:root body #sheet > :is(#workorderDesignerManager,.editor-designer-notice) {order:1;}
 }
+/* v240: reference and meeting share spacing and type; category counts may differ. */
+@media screen {
+ html:root body :is(#referenceCollectionView .rc-filters,#designMeetingView .dm-filters) {height:28px;margin:0 0 8px;padding:0;}
+ html:root body #referenceCollectionView .rc-filters button {flex:1 1 0;min-width:0;padding:0 4px;font-weight:400;}
+ html:root body #referenceCollectionView .rc-filters button[aria-pressed=true] {font-weight:600;}
+ html:root body #referenceCollectionView :is(.rc-date-group,.rc-card strong) {font-weight:600;}
+ html:root body #referenceCollectionView .rc-date-group:first-child {margin-bottom:-4px;}
+ html:root body #referenceCollectionView .rc-list-tools #rcRestore {flex:0 0 52px;width:52px;}
+ html:root body #referenceCollectionView .rc-card strong {margin-bottom:0;}
+}
+@media screen {
+ html:root body #referenceCollectionView #rcNotices:not(:has(#rcStatus:not(:empty),.rc-notice-actions>button:not([hidden]))) {display:none;}
+}
