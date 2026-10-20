@@ -145,8 +145,7 @@ async function thumbnail(code,v,ctx){
   const blob=preview.blob;
   if(!signedIn(ctx))return "";
   const ref=ctx.app.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
-  await ref.put(blob,{contentType:"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
-  const url=await ref.getDownloadURL();
+  const url=await window.AiselMedia.upload(ref,blob,code);
   // An upload may finish after the work order was deleted or its photo changed.
   // Update only the existing matching original; never recreate a deleted record.
   if(!signedIn(ctx))return "";

@@ -1,4 +1,4 @@
-<!-- v245: username credentials and shared handover preparation -->
+<!-- v246: username credentials and shared handover preparation -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
@@ -249,7 +249,8 @@
 })(window);
 </script>
 <script>window.AiselSheetSalesMode=true;</script>
-<script src="aisel-access-core.js?v=245.1"></script>
+<script src="aisel-protected-media.js?v=246.1"></script>
+<script src="aisel-access-core.js?v=246.1"></script>
 <meta name="google" content="notranslate">
 <!-- AISEL 작업지시서 v114 (2026-10-08)
      [v114] 운영 시트 작성일순·드롭 제외·개별 원본 바로가기·로그인 없는 시트 갱신.
@@ -5169,10 +5170,7 @@
            그러면 브라우저가 사진을 하나도 보관하지 않고 화면을 열 때마다 다시 받습니다.
            한 장에 0.6~1.1초씩 걸려서 썸네일이 버벅이는 느낌이 났습니다.
            사진이 바뀌면 주소(토큰)도 같이 바뀌므로 오래 보관해도 옛날 사진이 남지 않습니다. */
-        return fileRef.put(blob, {
-          contentType: "image/jpeg",
-          cacheControl: "public, max-age=31536000, immutable"
-        }).then(()=> fileRef.getDownloadURL());
+        return window.AiselMedia.upload(fileRef, blob, code);
       }).then(url=>{
         // 주소가 확실히 생긴 뒤에야 글자로 박혀 있던 사진을 지웁니다 (중간에 사진이 사라지지 않게)
         woShareRoot.child(code).transaction(value=>value&&shareThumbSigCache_[code]===sig?{...value,thumbUrl:url,thumbSig:sig,thumb:null}:undefined,undefined,false).catch(()=>{});
@@ -9731,10 +9729,7 @@
          그러면 브라우저가 사진을 하나도 보관하지 않고 화면을 열 때마다 다시 받습니다.
          작지 사진과 무드보드 회의 사진이 여기를 지나갑니다.
          사진이 바뀌면 주소(토큰)도 같이 바뀌므로 오래 보관해도 옛날 사진이 남지 않습니다. */
-      return fileRef.put(blob, {
-        contentType: "image/jpeg",
-        cacheControl: "public, max-age=31536000, immutable"
-      }).then(()=> fileRef.getDownloadURL()).then(cb);
+      return window.AiselMedia.upload(fileRef, blob).then(cb);
     }).catch(err=>{
       if(onError) onError(err); else alert("사진 업로드 중 문제가 생겼습니다: " + (err && err.message ? err.message : err));
     });
@@ -14966,8 +14961,7 @@ async function thumbnail(code,v,ctx){
   const blob=preview.blob;
   if(!signedIn(ctx))return "";
   const ref=ctx.app.storage().ref("workorderShareThumbs").child(code+"_sheet_"+sig+".jpg");
-  await ref.put(blob,{contentType:"image/jpeg",cacheControl:"public,max-age=31536000,immutable"});
-  const url=await ref.getDownloadURL();
+  const url=await window.AiselMedia.upload(ref,blob,code);
   // An upload may finish after the work order was deleted or its photo changed.
   // Update only the existing matching original; never recreate a deleted record.
   if(!signedIn(ctx))return "";

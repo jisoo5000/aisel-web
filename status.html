@@ -2,6 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script src="aisel-protected-media.js?v=246.1"></script>
 <!-- AISEL 제품 진행 현황 v33 (2026-10-14): 제작진행 사진 화살표 제거·작성일 최신순 및 짧은 연도 호환. -->
 <!-- AISEL 제품 진행 현황 v32 (2026-10-14): 카드 상태배지/컬러 라벨 제거, 작지 컬러칩 규격 일치. -->
 <!-- AISEL 제품 진행 현황 v30 (2026-10-12): 앱 코어 1.0.0, 버튼28·본문382·카드160, 기존 자료/동작 유지. -->
@@ -194,6 +195,15 @@ firebase.initializeApp({
   messagingSenderId: "150328860955",
   appId: "1:150328860955:web:98086ff488035fc8be33be"
 });
+function statusDatabase_(){
+  if(window.aiselStatusEmbedded_){
+    try{var session=parent.AiselAuth,uid=session&&session.currentUser()&&session.currentUser().uid;
+      var app=uid&&(parent.firebase.apps||[]).find(function(a){return a.auth().currentUser&&a.auth().currentUser.uid===uid;});
+      if(app)return app.database();
+    }catch(ignore){}
+  }
+  return firebase.database();
+}
 function normalizeStatus_(key){return ["planned","samplemgmt"].indexOf(key)!==-1 ? "sampling" : key;}
 var STATES = [
   {key:"sampling",label:"샘플중",bg:"#EEF1F6",fg:"#4B5566",desc:function(n){return "샘플 진행 중인 제품 " + n + "개입니다.";},empty:"지금 샘플 진행 중인 제품이 없습니다."},
@@ -266,8 +276,8 @@ function rememberStatusUndo_(code,before,patch){
 function sameCatalogVersion_(entry,version){return String(entry.sourceUpdatedAt || '') === String(version || '');}
 function readLiveStatusEntry_(code){
   return Promise.all([
-    firebase.database().ref('workorderStatusCatalog/' + code).once('value'),
-    firebase.database().ref('workorders/' + code + '/status').once('value')
+    statusDatabase_().ref('workorderStatusCatalog/' + code).once('value'),
+    statusDatabase_().ref('workorders/' + code + '/status').once('value')
   ]).then(function(snapshots){
     var entry = snapshots[0].val(), status = normalizeStatus_(snapshots[1].val());
     return entry && SHARED.indexOf(status) !== -1 && status === normalizeStatus_(entry.status) ? entry : null;
@@ -285,7 +295,7 @@ function writeStatusPatch_(code, patch, btn, okText, before){
     if(Object.prototype.hasOwnProperty.call(patch,key)) updates['workorderStatusCatalog/' + code + '/' + key] = patch[key];
   });
   updates['workorderStatusCatalog/' + code + '/sourceUpdatedAt'] = patch.updatedAt;
-  return firebase.database().ref().update(updates).then(function(){
+  return statusDatabase_().ref().update(updates).then(function(){
     if(btn){btn.disabled = false;btn.textContent = okText;}
     if(before) rememberStatusUndo_(code,before,patch);
     return true;
@@ -425,14 +435,14 @@ function photoSource_(value){
   return typeof value === "string" && (/^https:\/\//i.test(value) || /^data:image\/(?:png|jpe?g|gif|webp);base64,/i.test(value)) ? value : "";
 }
 function readPhotoLeaf_(code,leaf){
-  return firebase.database().ref("workorderShare/" + code + "/" + leaf).once("value").then(function(snap){return photoSource_(snap.val());});
+  return statusDatabase_().ref("workorderShare/" + code + "/" + leaf).once("value").then(function(snap){return photoSource_(snap.val());});
 }
 /* v23: the legacy share retention excludes sampling. Only the existing small
    thumbnail leaf is requested; never download the index tree or original p1. */
 function readThumbnailFallback_(code){
   return readPhotoLeaf_(code,"thumb").catch(function(){return "";}).then(function(src){
     if(src) return src;
-    return firebase.database().ref("workorderIndex/" + code + "/thumb").once("value").then(function(snap){return photoSource_(snap.val());});
+    return statusDatabase_().ref("workorderIndex/" + code + "/thumb").once("value").then(function(snap){return photoSource_(snap.val());});
   });
 }
 function photoRecord_(code,version){
@@ -743,7 +753,8 @@ function renderLiveCatalog_(){
   renderTabs();render();
   if(failed) document.getElementById("desc").textContent = "일부 제품의 작지 상태를 확인하지 못했습니다. 연결을 확인한 뒤 새로고침해 주세요.";
 }
-firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
+var statusCatalogRef_=statusDatabase_().ref("workorderStatusCatalog");
+var statusCatalogListener_=statusCatalogRef_.on("value",function(snap){
   var catalog = snap.val(), next = {};
   if(catalog && typeof catalog === "object") Object.keys(catalog).forEach(function(code){
     var entry = catalog[code];
@@ -759,7 +770,7 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   var added = [];
   Object.keys(next).forEach(function(code){
     if(sourceStatusWatches_[code]) return;
-    var watch = {ref:firebase.database().ref("workorders/" + code + "/status"),ready:false,failed:false,status:null};
+    var watch = {ref:statusDatabase_().ref("workorders/" + code + "/status"),ready:false,failed:false,status:null};
     sourceStatusWatches_[code] = watch;
     watch.callback = function(source){
       if(sourceStatusWatches_[code] !== watch) return;
@@ -859,7 +870,9 @@ firebase.database().ref("workorderStatusCatalog").on("value",function(snap){
   window.addEventListener('pagehide',function(){
     report(true);
     /* The shell removes inactive frames; stop their own Firebase connection too. */
-    if(window.firebase && typeof firebase.database === 'function') firebase.database().goOffline();
+    if(statusCatalogRef_&&statusCatalogListener_)statusCatalogRef_.off('value',statusCatalogListener_);
+    Object.values(sourceStatusWatches_).forEach(function(w){w.ref.off('value',w.callback);});
+    if(!window.aiselStatusEmbedded_ && window.firebase && typeof firebase.database === 'function') firebase.database().goOffline();
   });
   post('aisel-status-ready');report(true);
 })();
