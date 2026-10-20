@@ -1,3 +1,4 @@
+<!-- v257: same-workorder refresh and compact market/fabric controls -->
 <!-- v256: visible white chips, pale stripe labels and aligned color inputs -->
 <!-- v255: custom rose shades, workroom color aliases and explicit ST stripe pairs -->
 <!-- v254: fabric heading and color-matched section typography -->
@@ -134,7 +135,7 @@
  const events=new AbortController(),frames=new Set();
  let recoveryQueued=false;active=true;
  history.scrollRestoration='manual';
- window.AiselReloadStartup={get active(){return active;},get skipRestore(){return restoreBlocked;},release};
+ window.AiselReloadStartup={get active(){return active;},get skipRestore(){return restoreBlocked;},workorderCode:initial?.view==='editor'&&typeof initial.code==='string'?initial.code:null,release};
  function release(){
   if(!active)return;active=false;events.abort();
   frames.forEach(cancelAnimationFrame);frames.clear();
@@ -12040,7 +12041,12 @@
     const previous=snapshotRoute_();history.replaceState(previous,"");
     appRoute_={aisel:true,view,code:code||null,step:(appRoute_.step||0)+1,
       parent:previous.view==="editor"?previous.parent:previous};
-    history.pushState(appRoute_,"");
+    const url=new URL(location.href);
+    if(view==="editor"&&code)url.hash="workorder="+encodeURIComponent(code);
+    else if(view==="gallery")url.hash="workorders";
+    else if(view==="sales")url.hash="sales";
+    history.pushState(appRoute_,"",url);
+
   }
   async function settleEditorSave_(){
     if(!isViewVisible_("editorView"))return true;
@@ -17134,12 +17140,12 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=233"></script>
-<script src="unified-app.js?v=248"></script>
+<script src="unified-app.js?v=257"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=256.1" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=257" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=248">
-<link rel="stylesheet" href="aisel-list-controls.css?v=254" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=257" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {
