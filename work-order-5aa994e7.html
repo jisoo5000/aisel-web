@@ -1,3 +1,4 @@
+<!-- v259: fabric color picker, five compact chips, wider market selects, stable reload route -->
 <!-- v257: same-workorder refresh and compact market/fabric controls -->
 <!-- v256: visible white chips, pale stripe labels and aligned color inputs -->
 <!-- v255: custom rose shades, workroom color aliases and explicit ST stripe pairs -->
@@ -99,6 +100,7 @@
 <script id="aisel-reload-position">
 (function(){
  'use strict';
+ window.AiselInitialLocation={hash:location.hash,search:location.search,state:history.state};
  const navigation=performance.getEntriesByType?.('navigation')[0];
  const reloaded=navigation?navigation.type==='reload':performance.navigation?.type===1;
  if(!('scrollRestoration' in history))return;
@@ -12454,10 +12456,13 @@
     placeDesktopWorkspace_(screen&&!mobile);
     if(mobile){mobileSummary.append(mobileStatus,sampleSeg);}
     else{sampleStatusHome.after(mobileStatus);sampleSegHome.after(sampleSeg);}
-    // Reuse the same picker and handlers. Restore its original home for desktop/print.
-    if(mobile){if(colorSection.parentElement.id!=='sheet')document.querySelector('#sheet > .meta').after(colorSection);}
-    else if(colorSection.parentElement.id==='sheet')colorHome.after(colorSection);
-    if(screen)colorSection.after(workorderUsp);else mobileRecords.before(workorderUsp);
+    // Keep the existing picker, values and listeners inside the fabric section on screen.
+    if(screen){
+      const fabric=document.getElementById('fabricSupplierField').closest('.cell');
+      if(colorSection.parentElement!==fabric)fabric.append(colorSection);
+      if(mobile)document.querySelector('#sheet > .meta').after(workorderUsp);
+      else desktopPanel.insertBefore(workorderUsp,desktopPhotoActions);
+    }else{colorHome.after(colorSection);mobileRecords.before(workorderUsp);}
     finalSpec.placeholder=mobile?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
     finalTitle.textContent=mobile?desktopFinalTitle+' (최종)':desktopFinalTitle;
     if(!mobile)finishHeaderNameEdits_();
@@ -14200,7 +14205,7 @@ function renderSelectedColors(){
     chip.style.background = "#2F3B52";
     chip.style.color = "#FFFFFF";
     window.colorPatternDot_(chip, swatch);
-    chip.appendChild(document.createTextNode(v === "아이보리·검정 스트라이프" ? "아검 st" : v));
+    const label=document.createElement("span");label.className="color-chip-name";label.textContent=v === "아이보리·검정 스트라이프" ? "아검 st" : v;label.title=v;chip.appendChild(label);
     const rm = document.createElement("button");
     rm.textContent = "×";
     rm.setAttribute("aria-label", v + " 삭제");
@@ -17141,10 +17146,10 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=233"></script>
-<script src="unified-app.js?v=257"></script>
+<script src="unified-app.js?v=259"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=257" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=259" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=248">
 <link rel="stylesheet" href="aisel-list-controls.css?v=257" media="screen">
 
@@ -17190,3 +17195,4 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="design-workflow-ui.css?v=20261021" media="screen">
 <script src="design-workflow-core.js?v=20261021"></script>
 <script src="design-workflow-ui.js?v=20261021.1"></script>
+

@@ -71,7 +71,8 @@
   for(const button of main.querySelectorAll('[data-main]'))button.hidden=!allowedView(button.dataset.main);
   post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
  }
- let accessIdentity=null,accessRestore=null,initialRoutePending=true;
+ let accessIdentity=null,accessRestore=null,initialRoutePending=true,initialRouteInFlight=false;
+ const initialLocation=window.AiselInitialLocation||{hash:location.hash,search:location.search};
  window.addEventListener('aisel-access-change',event=>{
   const session=event.detail?.session;
   knownRole=session?.role||null;applyRole();
@@ -83,6 +84,7 @@
   const changedIdentity=accessIdentity&&accessIdentity!==session.uid,restore=accessRestore?.uid===session.uid?accessRestore:null;
   accessIdentity=session.uid;accessRestore=null;
   if(initialRoutePending){initialRoutePending=false;openInitialLocation().catch(error=>info(error.message));}
+  else if(initialRouteInFlight&&!changedIdentity){return;}
   else if(restore&&allowedView(restore.view))show(restore.view,{replace:true,code:restore.code});
   else if(changedIdentity)show(landingView(),{replace:true});
   else if(!allowedView(current)){
@@ -319,8 +321,8 @@
  // An initial URL is opened only after the access grant arrives. Opening a
  // collection earlier races auth restoration and can replace its detail hash
  // with the role's landing page.
- function requestedLocation(){
-  const hash=location.hash;
+ function requestedLocation(locationSnapshot){
+  const hash=locationSnapshot?.hash??location.hash;
   try{
    if(/^#reference=/.test(hash))return {view:'references',id:decodeURIComponent(hash.slice(11))};
    if(/^#references?$/.test(hash))return {view:'references'};
@@ -332,18 +334,21 @@
    if(hash==='#workorders')return {view:'orders'};
    if(hash==='#sales')return {view:'sales'};
    if(hash==='#products')return {view:'products'};
-   const code=new URLSearchParams(location.search).get('code');if(code)return {view:'editor',code};
+   const code=new URLSearchParams(locationSnapshot?.search??location.search).get('code');if(code)return {view:'editor',code};
   }catch(_){}
   return null;
  }
  async function openInitialLocation(){
-  const requested=requestedLocation(),target=requested&&allowedView(requested.view)?requested:{view:landingView()};
+  initialRouteInFlight=true;
+  try{
+  const requested=requestedLocation(initialLocation),target=requested&&allowedView(requested.view)?requested:{view:landingView()};
   const hash=location.hash,intent=navigationRevision,uid=window.AiselAccess.session?.uid;
   const opened=await show(target.view,{history:target!==requested,replace:true,code:target.code,id:target.id});
   if(opened&&target.view==='editor'){route('editor',true,target.code);return true;}
   if(!opened||target.view!=='designmeeting'||!target.id)return opened;
   if(intent!==navigationRevision||hash!==location.hash||uid!==window.AiselAccess.session?.uid||current!=='designmeeting'||!allowedView('designmeeting'))return false;
-  return DM.open(target.id,{history:false});
+  return await DM.open(target.id,{history:false});
+  }finally{initialRouteInFlight=false;}
  }
  if(window.AiselAccess?.session){initialRoutePending=false;openInitialLocation().catch(error=>info(error.message));}
  // Reuse existing Firebase auth restoration; do not perform another role lookup.
@@ -493,3 +498,4 @@
   renderAccount();
  }
 })();
+
