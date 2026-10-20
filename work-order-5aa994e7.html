@@ -1,3 +1,4 @@
+<!-- v253: approved 38 SIE/UUR color names within the existing eight swatch families -->
 <!-- v252: compact form spacing, revision chevrons and stable reload position -->
 <!-- v249: workorder reads, writes and photos share the signed-in Firebase app -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
@@ -13605,14 +13606,46 @@ renderAllItemGroups();
 
 /* ================= 컬러 데이터 ================= */
 const BASE_COLORS = [
-  { key:"블랙", hex:"#1a1a1a", text:"#ffffff" },
-  { key:"차콜", hex:"#3a3d40", text:"#ffffff" },
-  { key:"딥네이비", hex:"#22314f", text:"#ffffff" },
-  { key:"회소라", hex:"#a9b7c2", text:"#1a2530" },
-  { key:"라이트 그레이", hex:"#cfcecb", text:"#33322f" },
-  { key:"블러쉬", hex:"#e9c9c6", text:"#5a2e2b" },
-  { key:"크림", hex:"#f2ead9", text:"#5c4f34" },
-  { key:"베이지", hex:"#d9c6a8", text:"#4a3c26" },
+  {
+    "key": "블랙",
+    "hex": "#1A1A1A",
+    "text": "#FFFFFF"
+  },
+  {
+    "key": "차콜",
+    "hex": "#3A3D40",
+    "text": "#FFFFFF"
+  },
+  {
+    "key": "딥 네이비",
+    "hex": "#22314F",
+    "text": "#FFFFFF"
+  },
+  {
+    "key": "블루 그레이",
+    "hex": "#A9B7C2",
+    "text": "#1A1A1A"
+  },
+  {
+    "key": "라이트 그레이",
+    "hex": "#CFCECB",
+    "text": "#1A1A1A"
+  },
+  {
+    "key": "블러쉬",
+    "hex": "#E9C9C6",
+    "text": "#1A1A1A"
+  },
+  {
+    "key": "크림",
+    "hex": "#F2EAD9",
+    "text": "#1A1A1A"
+  },
+  {
+    "key": "베이지",
+    "hex": "#D9C6A8",
+    "text": "#1A1A1A"
+  }
 ];
 // 2026-08-13 재수정: 기본색 자체를 맨 앞에 추가합니다.
 // 예전에는 차콜 쉐도우·스모크 차콜 같은 파생색만 있고 순수한 차콜을 고를 자리가 없었습니다.
@@ -13675,6 +13708,161 @@ const COLOR_VARIANT_HEX = {
   "카키 그린": { hex: "#707c6a", text: "#ffffff" },
   "포레스트 그린": { hex: "#667552", text: "#ffffff" },
 };
+// v253: approved SIE/UUR names; legacy saved names retain their original swatches.
+Object.assign(COLOR_VARIANT_HEX, {
+  "화이트": {
+    "hex": "#FFFFFF",
+    "text": "#1A1A1A"
+  },
+  "아이보리": {
+    "hex": "#F4F0E7",
+    "text": "#1A1A1A"
+  },
+  "크림": {
+    "hex": "#F2EAD9",
+    "text": "#1A1A1A"
+  },
+  "크림 아이보리": {
+    "hex": "#F0EBDF",
+    "text": "#1A1A1A"
+  },
+  "쉘 크림": {
+    "hex": "#EEE8DC",
+    "text": "#1A1A1A"
+  },
+  "버터 크림": {
+    "hex": "#EEE2BD",
+    "text": "#1A1A1A"
+  },
+  "베이지": {
+    "hex": "#D9C6A8",
+    "text": "#1A1A1A"
+  },
+  "라이트 베이지": {
+    "hex": "#E7DDCB",
+    "text": "#1A1A1A"
+  },
+  "크림 베이지": {
+    "hex": "#E9DFCC",
+    "text": "#1A1A1A"
+  },
+  "오트 베이지": {
+    "hex": "#D8D0C0",
+    "text": "#1A1A1A"
+  },
+  "샌드 베이지": {
+    "hex": "#D5C3A5",
+    "text": "#1A1A1A"
+  },
+  "애쉬 베이지": {
+    "hex": "#C5BDB1",
+    "text": "#1A1A1A"
+  },
+  "밀키 베이지": {
+    "hex": "#E6DCCD",
+    "text": "#1A1A1A"
+  },
+  "뮤트 베이지": {
+    "hex": "#CBBFB2",
+    "text": "#1A1A1A"
+  },
+  "블랙": {
+    "hex": "#1A1A1A",
+    "text": "#FFFFFF"
+  },
+  "차콜": {
+    "hex": "#3A3D40",
+    "text": "#FFFFFF"
+  },
+  "딥 차콜": {
+    "hex": "#25282B",
+    "text": "#FFFFFF"
+  },
+  "그레이": {
+    "hex": "#A1A4A6",
+    "text": "#1A1A1A"
+  },
+  "라이트 그레이": {
+    "hex": "#CFCECB",
+    "text": "#1A1A1A"
+  },
+  "멜란지 그레이": {
+    "hex": "#9CA3A8",
+    "text": "#1A1A1A"
+  },
+  "소프트 그레이": {
+    "hex": "#BEC0BF",
+    "text": "#1A1A1A"
+  },
+  "도브 그레이": {
+    "hex": "#B5B4B0",
+    "text": "#1A1A1A"
+  },
+  "잉크 그레이": {
+    "hex": "#535B63",
+    "text": "#FFFFFF"
+  },
+  "라이트 블루": {
+    "hex": "#BDD0DF",
+    "text": "#1A1A1A"
+  },
+  "스카이 블루": {
+    "hex": "#ABC9DE",
+    "text": "#1A1A1A"
+  },
+  "소프트 블루": {
+    "hex": "#B8CBD6",
+    "text": "#1A1A1A"
+  },
+  "블루 그레이": {
+    "hex": "#A9B7C2",
+    "text": "#1A1A1A"
+  },
+  "포그 블루": {
+    "hex": "#B4C0CA",
+    "text": "#1A1A1A"
+  },
+  "애쉬 블루": {
+    "hex": "#97A9B8",
+    "text": "#1A1A1A"
+  },
+  "네이비": {
+    "hex": "#2C3850",
+    "text": "#FFFFFF"
+  },
+  "딥 네이비": {
+    "hex": "#22314F",
+    "text": "#FFFFFF"
+  },
+  "핑크": {
+    "hex": "#E8BDC4",
+    "text": "#1A1A1A"
+  },
+  "라이트 핑크": {
+    "hex": "#EDCDD1",
+    "text": "#1A1A1A"
+  },
+  "페일 핑크": {
+    "hex": "#F2DEDF",
+    "text": "#1A1A1A"
+  },
+  "블러쉬": {
+    "hex": "#E9C9C6",
+    "text": "#1A1A1A"
+  },
+  "소프트 블러쉬": {
+    "hex": "#EDD7D3",
+    "text": "#1A1A1A"
+  },
+  "블러쉬 핑크": {
+    "hex": "#E4BFC3",
+    "text": "#1A1A1A"
+  },
+  "미스티 로즈": {
+    "hex": "#C6A7AA",
+    "text": "#1A1A1A"
+  }
+});
 // v85: normalize product-color aliases in memory; loading does not save records.
 const COLOR_NAME_ALIASES = Object.freeze({
   "멜란지그레이": "멜란지 그레이",
@@ -13755,16 +13943,70 @@ function resolveColorSwatch_(name){
 window.colorHex_ = resolveColorSwatch_;
 
 const COLOR_VARIANTS = {
-  "블랙": ["블랙","딥 블랙","소프트 블랙","스모키 블랙","미드나잇 블랙","펄 블랙"],
-  "차콜": ["차콜","차콜 쉐도우","스모크 차콜","딥 차콜","애쉬 차콜","소프트 차콜"],
-  "딥네이비": ["딥네이비","미드나잇 네이비","인디고 네이비","다크 네이비","네이비 블루","스틸 네이비"],
-  "회소라": ["회소라","소라 그레이","페일 소라","더스티 소라","미스티 블루","소라 블루"],
-  "라이트 그레이": ["라이트 그레이","페일 그레이","애쉬 그레이","미스트 그레이","실버 그레이"],
-  "멜란지 그레이": ["멜란지 그레이"],
-  "블러쉬": ["블러쉬","블러쉬 핑크","더스티 핑크","로즈 블러쉬","페일 블러쉬","소프트 핑크"],
-  "크림": ["크림","크림 베이지","웜 크림","펄리 크림","바닐라 크림","아이보리 크림"],
-  "베이지": ["베이지","로즈 베이지","샌드 베이지","웜 베이지","토프 베이지","스톤 베이지"],
-  "그린": ["그린","세이지 그린","올리브 그린","민트 그린","카키 그린","포레스트 그린"],
+  "블랙": [
+    "블랙"
+  ],
+  "차콜": [
+    "차콜",
+    "딥 차콜"
+  ],
+  "딥 네이비": [
+    "네이비",
+    "딥 네이비"
+  ],
+  "블루 그레이": [
+    "라이트 블루",
+    "스카이 블루",
+    "소프트 블루",
+    "블루 그레이",
+    "포그 블루",
+    "애쉬 블루"
+  ],
+  "라이트 그레이": [
+    "그레이",
+    "라이트 그레이",
+    "멜란지 그레이",
+    "소프트 그레이",
+    "도브 그레이",
+    "잉크 그레이"
+  ],
+  "블러쉬": [
+    "핑크",
+    "라이트 핑크",
+    "페일 핑크",
+    "블러쉬",
+    "소프트 블러쉬",
+    "블러쉬 핑크",
+    "미스티 로즈"
+  ],
+  "크림": [
+    "화이트",
+    "아이보리",
+    "크림",
+    "크림 아이보리",
+    "쉘 크림",
+    "버터 크림"
+  ],
+  "베이지": [
+    "베이지",
+    "라이트 베이지",
+    "크림 베이지",
+    "오트 베이지",
+    "샌드 베이지",
+    "애쉬 베이지",
+    "밀키 베이지",
+    "뮤트 베이지"
+  ]
+};
+const COLOR_FAMILY_LABELS = {
+  "블랙": "블랙",
+  "차콜": "차콜",
+  "딥 네이비": "네이비",
+  "블루 그레이": "블루",
+  "라이트 그레이": "그레이",
+  "블러쉬": "핑크·로즈",
+  "크림": "화이트·크림",
+  "베이지": "베이지"
 };
 
 let selectedColors = [];
@@ -13784,7 +14026,7 @@ function renderSwatches(){
     dot.className = "color-dot";
     dot.style.background = c.hex;
     dot.setAttribute("aria-hidden", "true");
-    btn.type='button';btn.title=c.key;btn.setAttribute('aria-label',c.key+' 계열');btn.setAttribute('aria-expanded',String(openBase===c.key));btn.append(dot);
+    btn.type='button';btn.title=c.key;btn.setAttribute('aria-label',(COLOR_FAMILY_LABELS[c.key] || c.key)+' 계열');btn.setAttribute('aria-expanded',String(openBase===c.key));btn.append(dot);
     btn.addEventListener("click", () => {
       $("addColorRow").classList.remove("copygen-open");
       openBase = (openBase === c.key) ? null : c.key;
@@ -13812,7 +14054,7 @@ function renderVariantPanel(){
   wrap.className = "copygen-variant-panel";
   const label = document.createElement("div");
   label.className = "copygen-label";
-  label.textContent = openBase + " 계열 — 선택한 컬러는 이 작지에 저장됩니다";
+  label.textContent = (COLOR_FAMILY_LABELS[openBase] || openBase) + " 계열 — 선택한 컬러는 이 작지에 저장됩니다";
   wrap.appendChild(label);
   const chipRow = document.createElement("div");
   chipRow.className = "copygen-chip-group";
@@ -13839,7 +14081,7 @@ function renderVariantPanel(){
   familyAdd.type = "button";
   familyAdd.className = "copygen-family-add-color";
   familyAdd.textContent = "+";
-  familyAdd.title = openBase + " 계열 컬러 직접 추가";
+  familyAdd.title = (COLOR_FAMILY_LABELS[openBase] || openBase) + " 계열 컬러 직접 추가";
   familyAdd.setAttribute("aria-label", familyAdd.title);
   familyAdd.setAttribute("aria-controls", "addColorRow");
   familyAdd.addEventListener("click", () => {
