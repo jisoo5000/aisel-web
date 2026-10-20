@@ -282,6 +282,7 @@
 
 /* v256: white buttons remain visible; color fields match the 36px fabric fields. */
 @media screen {
+ html:root body #editorView #productColors > .copygen-card {padding-inline:12px;}
  html:root body #editorView #productColors .color-heading h2 {padding-inline:0;}
  html:root body #editorView #productColors :is(#selectedColors,#variantPanel) .copygen-color-chip[data-color-white="true"] {border:1px solid var(--aisel-line,#E3E5E7)!important;box-shadow:none;}
  html:root body #editorView #productColors #variantPanel .copygen-color-chip[data-color-white="true"].copygen-selected {border-color:var(--aisel-ink,#34383C)!important;box-shadow:0 0 0 1px var(--aisel-ink,#34383C)!important;}
