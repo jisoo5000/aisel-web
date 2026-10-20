@@ -1,3 +1,4 @@
+<!-- v256: visible white chips, pale stripe labels and aligned color inputs -->
 <!-- v255: custom rose shades, workroom color aliases and explicit ST stripe pairs -->
 <!-- v254: fabric heading and color-matched section typography -->
 <!-- v253: approved 38 SIE/UUR color names within the existing eight swatch families -->
@@ -13978,10 +13979,15 @@ function resolveColorSwatch_(name){
  return customColorSwatch_(hex);
 }
 window.colorPatternDot_ = (chip,swatch)=>{
- if(!swatch?.pattern)return;
- const dot=document.createElement('span');dot.className='color-pattern-dot';
- dot.style.cssText='display:inline-block;width:12px;height:12px;flex:0 0 12px;border:1px solid #B7B7B7;border-radius:2px;vertical-align:middle;margin-right:3px;';
- dot.style.background=swatch.pattern;dot.setAttribute('aria-hidden','true');chip.prepend(dot);
+ if(!swatch)return;
+ if(!swatch.pattern&&swatch.hex.toUpperCase()==='#FFFFFF')chip.dataset.colorWhite='true';
+ if(!swatch.pattern)return;
+ chip.dataset.colorPattern='stripe';
+ const fade=hex=>'#'+hex.slice(1).match(/../g).map(v=>Math.round(parseInt(v,16)*.15+255*.85).toString(16).padStart(2,'0')).join('');
+ const pale=swatch.pattern.replace(/#[0-9a-f]{6}/gi,fade);
+ chip.style.setProperty('--workorder-color-bg',pale);
+ chip.style.setProperty('--workorder-color-text','#34383C');
+ chip.style.background=pale;chip.style.color='#34383C';
 };
 window.colorHex_ = resolveColorSwatch_;
 
@@ -14116,6 +14122,7 @@ function renderVariantPanel(){
       chip.style.borderColor = isSel ? "#2F3B52" : "transparent";
       if(isSel) chip.style.boxShadow = "none";
     }
+    window.colorPatternDot_(chip, c);
     chip.textContent = v;
     chip.addEventListener("click", () => addColor(v));
     chipRow.appendChild(chip);
@@ -14186,7 +14193,7 @@ function renderSelectedColors(){
     chip.style.background = "#2F3B52";
     chip.style.color = "#FFFFFF";
     window.colorPatternDot_(chip, swatch);
-    chip.appendChild(document.createTextNode(v));
+    chip.appendChild(document.createTextNode(v === "아이보리·검정 스트라이프" ? "아검 st" : v));
     const rm = document.createElement("button");
     rm.textContent = "×";
     rm.setAttribute("aria-label", v + " 삭제");
@@ -17130,7 +17137,7 @@ window.AiselUnifiedAdapter={
 <script src="unified-app.js?v=248"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=254" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=256" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=248">
 <link rel="stylesheet" href="aisel-list-controls.css?v=254" media="screen">
 
