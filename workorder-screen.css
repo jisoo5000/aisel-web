@@ -196,7 +196,7 @@
  html:root body #editorView #mobileMeetingSummary {gap:4px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleStatus {display:flex;flex:1 1 0;min-width:0;flex-wrap:nowrap;gap:4px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {flex:0 0 28px;font-size:16px;}
- html:root body #editorView #mobileMeetingSummary #sampleNoteTitle {display:block;box-sizing:border-box;flex:1 1 128px;width:128px;min-width:0;max-width:128px;height:28px;min-height:28px;padding:2px 4px;border:1px solid var(--aisel-line);border-radius:3px;font-size:12px!important;font-weight:400;line-height:18px;}
+ html:root body #editorView #mobileMeetingSummary #sampleNoteTitle {display:block;box-sizing:border-box;flex:1 1 128px;align-self:center;width:128px;min-width:0;max-width:128px;height:26px;min-height:26px;padding:3px 4px;border:1px solid var(--aisel-line);border-radius:3px;font-size:12px!important;font-weight:400;line-height:18px;}
  html:root body #editorView #mobileMeetingSummary #mobileSampleRecoveryDate {flex:0 0 88px;min-width:0;font-size:12px;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
  html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg {flex:0 0 auto;gap:4px;}
 }
@@ -255,4 +255,14 @@
  html:root body #editorView #sheet #costCell .cost-table .nm[data-cost-name-size="16"] {font-size:16px!important;}
  html:root body #editorView #sheet #costCell .cost-table .nm[data-cost-name-size="14"] {font-size:14px!important;}
  html:root body #editorView #sheet #costCell .cost-table .nm[data-cost-name-size="12"] {font-size:12px!important;}
+}
+
+/* v252: consistent header fields; keep the existing edit and IME handlers. */
+@media screen {
+ html:root body #editorView #mobileMeetingSummary #mobileSampleStatus > span:first-child {flex:0 0 auto;font-size:12px;font-weight:600;line-height:20px;color:var(--aisel-ink);}
+ html:root body #editorView .editor-mobile-head :is(#mobileProductName,#pumMyeong.mobile-title-input) {box-sizing:border-box;width:100%;max-width:100%;min-width:0;min-height:32px;height:auto;margin:0;padding:3px 8px;border:1px solid #E3E5E7;border-radius:3px;background:#F0F2F5!important;color:var(--aisel-ink)!important;-webkit-text-fill-color:var(--aisel-ink)!important;}
+ html:root body #editorView .editor-mobile-head #pumMyeong.mobile-title-input {height:32px;line-height:24px;}
+ html:root body #editorView .editor-mobile-head #pumMyeong.mobile-title-input:focus {border-color:var(--aisel-muted);}
+ /* The existing iOS viewport guard already prevents compact-input focus zoom. */
+ html:root body #editorView #sheet #mobileHeaderNames #factory.mobile-name-editor {box-sizing:border-box;flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;height:28px!important;min-height:28px!important;margin:0!important;padding:0 4px!important;transform:none!important;border:1px solid #E3E5E7!important;border-radius:3px;background:white!important;font-size:12px!important;font-weight:400!important;line-height:18px;color:#6C727C!important;-webkit-text-fill-color:#6C727C!important;text-align:center;text-align-last:center;}
 }

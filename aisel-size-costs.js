@@ -4,7 +4,7 @@
  function mount({document:d,getKey,getBase,negotiation:n}){
   const make=(tag,cls,text)=>{const e=d.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;},base=d.getElementById('costCell'),head=base.querySelector('.sec-title');
   head.classList.add('size-cost-heading');const label=make('span','','원가계산서');head.replaceChildren(label);
-  function sizeNote(cls,label,value,oninput){const e=make('textarea',cls);e.rows=2;e.value=value??'';e.placeholder='1 (S M) / 2 (L XL)\n2번 사이즈(XL)로 원가 계산';e.title='1 (S M) / 2 (L XL) · 2번 사이즈(XL)로 원가 계산';e.setAttribute('aria-label',label);e.maxLength=60;if(oninput)e.oninput=()=>oninput(e.value);return e;}
+  function sizeNote(cls,label,value,oninput){const e=make('textarea',cls);e.rows=1;e.wrap='off';e.value=value??'';e.placeholder='2번 사이즈 (XL)로 원가 계산';e.title='2번 사이즈 (XL)로 원가 계산';e.setAttribute('aria-label',label);e.maxLength=60;if(oninput)e.oninput=()=>oninput(e.value);return e;}
   const size=sizeNote('size-cost-note noprint','기본 원가계산서 사이즈와 계산 기준','');size.id='costSizeNote';
   const printSize=make('span','size-cost-base-print');const plus=make('button','size-cost-add noprint','+');plus.type='button';plus.setAttribute('aria-label','사이즈별 원가계산서 추가');head.append(size,printSize,plus);
   const field=make('input');field.id='costVariantsData';field.type='hidden';d.getElementById('editorView').append(field);

@@ -1,4 +1,4 @@
-<!-- v251: workorder links, color entry, USP and header/cost layout -->
+<!-- v252: compact form spacing, revision chevrons and stable reload position -->
 <!-- v249: workorder reads, writes and photos share the signed-in Firebase app -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
@@ -147,8 +147,10 @@
    document.getElementById('appBrandHeader')?.scrollIntoView({block:'start',behavior:'instant'});
  }
  function nextFrame(callback){const id=requestAnimationFrame(()=>{frames.delete(id);if(active)callback();});frames.add(id);}
+ // A trusted input event does not prove a fresh user gesture.
+ // Only direct interaction releases startup recovery; input values stay intact.
  function userIntent(event){if(event.isTrusted){interacted=true;release();}}
- for(const type of ['pointerdown','touchstart','wheel','keydown','input'])
+ for(const type of ['pointerdown','touchstart','wheel','keydown'])
   window.addEventListener(type,userIntent,{capture:true,passive:true,signal:events.signal});
  window.addEventListener('popstate',event=>{
   const current=entry();
@@ -175,7 +177,7 @@
  // Product progress owns a nested scrolling document, which can load after the shell.
  window.addEventListener('load',event=>{
   if(!active||event.target?.id!=='productProgressFrame')return;
-  try{const doc=event.target.contentDocument;if(doc?.scrollingElement)doc.scrollingElement.scrollTop=0;event.target.contentWindow?.scrollTo(0,0);for(const type of ['pointerdown','touchstart','wheel','keydown','input'])doc?.addEventListener(type,userIntent,{capture:true,passive:true,signal:events.signal});}catch(_){}
+  try{const doc=event.target.contentDocument;if(doc?.scrollingElement)doc.scrollingElement.scrollTop=0;event.target.contentWindow?.scrollTo(0,0);for(const type of ['pointerdown','touchstart','wheel','keydown'])doc?.addEventListener(type,userIntent,{capture:true,passive:true,signal:events.signal});}catch(_){}
   top();
  },{capture:true,signal:events.signal});
  document.addEventListener('DOMContentLoaded',top,{once:true,signal:events.signal});
@@ -5313,13 +5315,13 @@
 
 <script src="workorder-draft-storage.js?v=189"></script>
 <script src="aisel-photo.js?v=216"></script>
-<link rel="stylesheet" href="aisel-usp.css?v=251">
+<link rel="stylesheet" href="aisel-usp.css?v=252">
 <script src="aisel-usp.js?v=236"></script>
 <script src="aisel-workorder-usp.js?v=251"></script>
 <script src="aisel-editor-values.js?v=238"></script>
 <script src="aisel-fabric-variants.js?v=240"></script>
-<script src="aisel-size-costs.js?v=251"></script>
-<link rel="stylesheet" href="aisel-size-costs.css?v=251">
+<script src="aisel-size-costs.js?v=252"></script>
+<link rel="stylesheet" href="aisel-size-costs.css?v=252">
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
   const CATS = [
@@ -12305,18 +12307,19 @@
   function updateMobileChangeLabels_(){
     [...mobileRecords.children].forEach((card,index)=>{
       const title=index===0?'수정사항':'추가 수정사항';
-      const toggle=card.querySelector('.changes-toggle');toggle.textContent=title+' ▾';toggle.setAttribute('aria-expanded','true');
+      const toggle=card.querySelector('.changes-toggle');toggle.textContent=title;toggle.setAttribute('aria-expanded','true');
       card.querySelector('textarea').setAttribute('aria-label',title);
       card.querySelector('input').setAttribute('aria-label',title+' 날짜');
       card.querySelector('.mobile-change-delete').setAttribute('aria-label',title+' 삭제');
     });
+    window.AiselEditorEnhancements?.paintChanges?.();
   }
   function addMobileChangeRow_(record){
     const card=document.createElement('div');card.className='mobile-change-card';card._changeRecord=record;
     const recordCode=currentCode;
     if(record.source==='resample')record._entrySig=JSON.stringify(resampleHistory_[record.index]);
     const heading=document.createElement('div');heading.className='mobile-change-heading';
-    const label=document.createElement('button');label.type='button';label.className='changes-toggle';label.textContent='수정사항 ▾';label.setAttribute('aria-expanded','true');heading.append(label);
+    const label=document.createElement('button');label.type='button';label.className='changes-toggle';label.textContent='수정사항';label.setAttribute('aria-expanded','true');heading.append(label);
     const field=document.createElement('span');field.className='sample-date-field';
     const dateLabel=document.createElement('span');dateLabel.className='sample-date-label';dateLabel.setAttribute('aria-hidden','true');field.append(dateLabel);
     const date=document.createElement('input');date.type='date';date.setAttribute('aria-label','수정사항 날짜');
@@ -16794,7 +16797,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=244"></script>
-<script src="aisel-editor-enhancements.js?v=240"></script>
+<script src="aisel-editor-enhancements.js?v=252"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=233">
 <script src="aisel-date-filter.js?v=233"></script>
 <script src="design-meeting-core.js?v=223"></script>
@@ -16842,9 +16845,9 @@ window.AiselUnifiedAdapter={
 <script src="unified-app.js?v=248"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=251" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=252" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=248">
-<link rel="stylesheet" href="aisel-list-controls.css?v=250" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=252" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {

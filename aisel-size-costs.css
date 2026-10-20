@@ -22,7 +22,7 @@
  html:root body #editorView .fabric-variant-base>.designer :is(#fabricSupplierField,#fabricNameField) {width:100%!important;min-width:0;}
  html:root body #editorView .size-cost-heading {display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;line-height:1.4;margin-bottom:8px;}
  html:root body #editorView .size-cost-heading :is(strong,span) {white-space:nowrap;}
- html:root body #editorView .size-cost-note {box-sizing:border-box;display:block;width:100%;min-width:0;max-width:none;flex:1;height:40px;min-height:40px;margin:0;padding:4px 6px;border:1px solid #e1e3e6;border-radius:3px;font-family:inherit;font-size:11px!important;font-weight:400;line-height:15px;color:inherit;background:#fff;resize:none;}
+ html:root body #editorView .size-cost-note {box-sizing:border-box;display:block;width:100%;min-width:0;max-width:200px;flex:1 1 200px;height:28px;min-height:28px;margin:0;padding:5px 6px;border:1px solid #e1e3e6;border-radius:3px;font-family:inherit;font-size:11px!important;font-weight:400;line-height:16px;color:inherit;background:#fff;resize:none;overflow:hidden;white-space:pre;}
  html:root body #editorView .size-cost-note::placeholder {color:#858c96;}
  html:root body #editorView :is(.size-cost-add,.size-cost-remove) {margin-left:auto;flex:0 0 28px;width:28px;min-width:28px;height:28px;min-height:28px;padding:0;border:0;background:transparent;color:inherit;font-size:20px;}
  html:root body #editorView .size-cost-list:empty {display:none;}
@@ -88,14 +88,25 @@
  html:root body #editorView #sheet #addSizeSpecCol {display:flex;align-items:center;justify-content:center;width:100%;min-width:0;height:28px;min-height:28px;margin:0;padding:0;border:0;background:transparent;color:var(--aisel-accent);font-size:18px;}
  html:root body #editorView #sheet .sizespec .ss-tools {gap:4px;}
  html:root body #mobileHeaderNames {display:flex!important;flex-wrap:nowrap!important;gap:6px!important;width:100%!important;max-width:100%!important;transform:none!important;}
- html:root body #mobileHeaderNames :is(#workorderDesignerSelect,#mobileFactoryName) {box-sizing:border-box;flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;height:28px!important;min-height:28px!important;margin:0!important;padding:0 4px!important;transform:none!important;border:1px solid #E3E5E7!important;border-radius:3px;background:white;font-family:inherit;font-size:12px!important;font-weight:400!important;line-height:18px;color:#6C727C!important;text-align:left;}
+ html:root body #mobileHeaderNames :is(#workorderDesignerSelect,#mobileFactoryName) {box-sizing:border-box;flex:1 1 0!important;width:0!important;min-width:0!important;max-width:none!important;height:28px!important;min-height:28px!important;margin:0!important;padding:0 4px!important;transform:none!important;border:1px solid #E3E5E7!important;border-radius:3px;background:white;font-family:inherit;font-size:12px!important;font-weight:400!important;line-height:18px;color:#6C727C!important;text-align:center;text-align-last:center;}
  html:root body #mobileHeaderNames #mobileFactoryName::before {font-size:12px!important;}
-}
-@media screen and (max-width:359px) {
- html:root body #editorView .size-cost-note {height:55px;min-height:55px;}
 }
 @media screen {
  html:root body #editorView #sheet > .meta > .fabric-variant-base>.designer:has(#fabricNameField) {grid-template-columns:repeat(2,minmax(0,1fr))!important;}
  html:root body #editorView #sheet > .meta > .fabric-variant-base>.designer:has(#blend) {grid-template-columns:minmax(0,1fr)!important;}
  html:root body #editorView #sheet .fabric-variant-base>.designer :is(#fabricSupplierField,#fabricNameField,#blend) {grid-column:auto!important;grid-row:auto!important;}
+}
+/* v252: match the measured 8px cost/retail gap and 12px retail section padding. */
+@media screen {
+ html:root body #editorView {--aisel-workorder-row-gap:8px;--aisel-workorder-section-padding:12px;}
+ html:root body #editorView #sheet #costCell {padding-block:var(--aisel-workorder-section-padding);}
+ html:root body #editorView #sheet #costCell .owner-retail-row {margin-top:var(--aisel-workorder-row-gap);}
+ html:root body #editorView #sheet > .meta > .fabric-variant-base {gap:var(--aisel-workorder-row-gap);padding-block:var(--aisel-workorder-section-padding);}
+ html:root body #editorView #sheet .fabric-variant-base > :is(.designer,.fabric-variant-color) {margin-block:0!important;}
+ html:root body #editorView #sheet .fabric-variant-list {display:flex;flex-direction:column;margin-top:calc(var(--aisel-workorder-section-padding) - var(--aisel-workorder-row-gap));}
+ html:root body #editorView #sheet .fabric-variant-list:empty {display:none;}
+ html:root body #editorView #sheet .fabric-variant-row {display:flex;flex-direction:column;gap:var(--aisel-workorder-row-gap);margin:0;padding-block:var(--aisel-workorder-section-padding);}
+ html:root body #editorView #sheet .fabric-variant-row:last-child {padding-bottom:0;}
+ html:root body #editorView #sheet .fabric-variant-row > .fabric-variant-color {margin-bottom:0;}
+ html:root body #editorView #sheet .fabric-variant-fields {row-gap:var(--aisel-workorder-row-gap);}
 }

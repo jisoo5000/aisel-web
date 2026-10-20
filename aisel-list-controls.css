@@ -87,7 +87,7 @@
  html:root body #designMeetingView #dmReview .dm-manual-table tr>td {font-weight:400;}
  html:root body #designMeetingView .dm-market-selects {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:100%;min-width:0;}
  html:root body #designMeetingView .dm-market-selects label {display:flex;align-items:center;gap:4px;min-width:0;white-space:nowrap;font-size:12px;line-height:18px;}
- html:root body #designMeetingView .dm-market-selects select {flex:0 1 88px;min-width:0;width:88px;max-width:100%;}
+ html:root body #designMeetingView .dm-market-selects select {flex:0 1 76px;min-width:0;width:76px;max-width:100%;}
  html:root body #designMeetingView #dmReview :is(.dm-manual-select,.dm-choice,.aisel-usp-keyword) {
   box-sizing:border-box;height:28px;min-height:28px;min-width:0;margin:0;padding:0 4px;
   border:1px solid var(--aisel-list-border);border-radius:3px;font-family:var(--aisel-font);font-size:12px!important;line-height:18px;font-weight:400;white-space:nowrap;
@@ -147,7 +147,10 @@
  html:root body #mobileDesignerName {display:none!important;}
  html:root body #workorderDesignerManager:not(:empty) {grid-column:1/-1;padding:8px;}
  html:root body .editor-designer-notice:empty {display:none;}
- html:root body #editorView .changes-toggle {grid-column:1;grid-row:1;justify-self:start;min-height:28px;padding:0;border:0;background:transparent;color:var(--aisel-accent);font-size:14px;font-weight:600;white-space:nowrap;cursor:pointer;}
+ html:root body #editorView .changes-toggle {display:inline-flex;align-items:center;gap:4px;grid-column:1;grid-row:1;justify-self:start;min-height:28px;padding:0;border:0;background:transparent;color:var(--aisel-accent,#2F3B52);font-size:14px;font-weight:600;line-height:20px;white-space:nowrap;cursor:pointer;}
+ html:root body #editorView .changes-toggle .changes-toggle-icon {display:block;flex:0 0 14px;width:14px;height:14px;color:inherit;transform-origin:center;transform:rotate(0deg);}
+ html:root body #editorView .changes-toggle[aria-expanded="true"] .changes-toggle-icon {transform:rotate(90deg);}
+ html:root body #editorView .changes-toggle:focus-visible {outline:1px solid var(--aisel-accent,#2F3B52);outline-offset:3px;border-radius:2px;}
  html:root body #mobileSampleRecords.changes-folded .mobile-change-card:not(:first-child),html:root body #mobileSampleRecords.changes-folded .mobile-change-card>:not(.mobile-change-heading),html:root body #mobileSampleRecords.changes-folded .mobile-change-heading>:not(.changes-toggle) {display:none!important;}
  html:root body #mobileSampleRecords.changes-folded .mobile-change-heading {display:flex;margin:0;}
  html:root body #editorView .color-pattern-dot {display:inline-block;width:16px;height:16px;flex:none;border:1px solid #d9dcdf;border-radius:50%;vertical-align:middle;margin-right:4px;}
