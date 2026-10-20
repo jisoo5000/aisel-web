@@ -1,0 +1,72 @@
+/* v235: shared screen controls, measured from the design-meeting category field.
+   Keep record editing, native pickers, authorization and A4 print behavior intact. */
+@media screen {
+ html:root body {
+  --aisel-list-font:12px;--aisel-list-line:18px;--aisel-list-height:28px;
+  --aisel-list-inset:4px;--aisel-list-gap:4px;--aisel-list-group-gap:8px;
+  --aisel-list-border:#E3E5E7;--aisel-list-radius:3px;--aisel-list-color:#6C727C;
+  --aisel-toolbar-inset:var(--aisel-list-inset);
+ }
+ html:root body #galleryView #gallerySearchRow,
+ html:root body :is(.dm-search-row,.rc-list-tools) {
+  display:flex;align-items:center;gap:var(--aisel-list-gap);margin:0 0 var(--aisel-list-gap);min-width:0;
+ }
+ html:root body :is(#galleryView,#salesView,#designMeetingView,#referenceCollectionView,.aisel-status) :is(.aisel-search-field,.rc-search) {
+  box-sizing:border-box;position:relative;display:flex;align-items:center;min-width:0;width:100%;
+  height:var(--aisel-list-height)!important;min-height:var(--aisel-list-height)!important;margin:0;
+  border:1px solid var(--aisel-list-border);border-radius:var(--aisel-list-radius);background:#FFF;
+ }
+ html:root body :is(#galleryView,#salesView,#designMeetingView,#referenceCollectionView,.aisel-status) :is(.aisel-search-field,.rc-search)>svg {
+  position:absolute;left:var(--aisel-list-inset);top:50%;transform:translateY(-50%);width:14px;height:14px;margin:0;color:var(--aisel-list-color);
+ }
+ html:root body :is(#galleryView,#salesView,#designMeetingView,#referenceCollectionView,.aisel-status) :is(#gallerySearchInput,#salesSearchInput,#dmSearch,#rcSearch,#search,#sampleSearch) {
+  box-sizing:border-box;width:100%;min-width:0;height:calc(var(--aisel-list-height) - 2px)!important;min-height:0!important;margin:0!important;
+  padding:0 var(--aisel-list-inset) 0 26px!important;border:0!important;border-radius:var(--aisel-list-radius);background:transparent;
+  font-family:var(--aisel-font)!important;font-size:var(--aisel-list-font)!important;font-weight:400;line-height:var(--aisel-list-line)!important;color:var(--aisel-list-color);
+ }
+ html:root body :is(#galleryFilters,.dm-organize-filters,.rc-collection-filters) {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;gap:var(--aisel-list-gap);margin:0 0 var(--aisel-list-group-gap);
+ }
+ html:root body :is(#galleryFilters,.dm-organize-filters,.rc-collection-filters)>select,
+ html:root body :is(#galleryView,#designMeetingView,#referenceCollectionView) .aisel-list-date :is(button,input),
+ html:root body :is(#galleryTrashBtn,#dmRestore,#rcRestore,#sheetSalesRefresh) {
+  box-sizing:border-box;min-width:0;height:var(--aisel-list-height)!important;min-height:var(--aisel-list-height)!important;margin:0;
+  padding:0 var(--aisel-list-inset)!important;border:1px solid var(--aisel-list-border);border-radius:var(--aisel-list-radius);background:#FFF;
+  font-family:var(--aisel-font)!important;font-size:var(--aisel-list-font)!important;font-weight:400;line-height:var(--aisel-list-line)!important;color:var(--aisel-list-color);
+ }
+ html:root body :is(#galleryFilters,.dm-organize-filters,.rc-collection-filters)>select {width:100%;}
+ html:root body :is(#galleryView,#designMeetingView,#referenceCollectionView) .aisel-list-date-toggle {justify-content:flex-start;}
+ html:root body :is(#galleryTrashBtn,#dmRestore,#rcRestore) {flex:0 0 52px;width:52px;}
+ html:root body :is(#galleryFilters,.dm-organize-filters,.rc-collection-filters) option {font:inherit;}
+ /* All existing tab groups retain their content and one-row layout. */
+ html:root body :is(#galleryTabs .gtab,.dm-filters button,.rc-filters button,#salesTabs .gtab,#salesGroupTabs .gtab,.aisel-status .tab,.aisel-status .workflow-tab) {
+  box-sizing:border-box;height:var(--aisel-list-height);min-height:var(--aisel-list-height);font-size:var(--aisel-list-font)!important;line-height:var(--aisel-list-line);padding-top:0;padding-bottom:0;
+ }
+ html:root body #salesView #sheetSalesRefresh {font-size:var(--aisel-list-font)!important;line-height:var(--aisel-list-line);border-color:var(--aisel-list-border);}
+ /* Reference/meeting detail metadata use the same three equal columns. */
+ html:root body #designMeetingView .dm-detail-meta,
+ html:root body #referenceCollectionView .rc-metadata {grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--aisel-list-gap);}
+ html:root body #designMeetingView :is(#dmDates,.dm-assignee,#dmLookCategory),
+ html:root body #referenceCollectionView :is(.rc-date,#rcCategory,.rc-designer-field) {
+  box-sizing:border-box;height:var(--aisel-list-height);min-height:var(--aisel-list-height);min-width:0;margin:0;padding:0 var(--aisel-list-inset);
+  border:1px solid var(--aisel-list-border);border-radius:var(--aisel-list-radius);color:var(--aisel-list-color);font-size:var(--aisel-list-font)!important;line-height:var(--aisel-list-line);font-weight:400;
+ }
+ html:root body #designMeetingView #dmDesigner,
+ html:root body #referenceCollectionView #rcDesigner {font-size:var(--aisel-list-font)!important;line-height:var(--aisel-list-line);}
+ html:root body #referenceCollectionView #rcDesignerText {font-size:var(--aisel-list-font);line-height:var(--aisel-list-line);}
+ html:root body #designMeetingView #dmDetailTitle,
+ html:root body #referenceCollectionView #rcDetail .rc-title-row input {
+  box-sizing:border-box;min-width:0;height:28px;min-height:28px;margin:0;padding:4px 0;font-size:14px!important;font-weight:600;line-height:20px;
+ }
+ html:root body #galleryView #galleryGrid .gcard-name {font-size:12px;line-height:18px;font-weight:600;}
+ html:root body #aiselMoodboardsView {margin:0 auto;padding:0 4px max(24px,env(safe-area-inset-bottom));}
+ html:root body #aiselMoodboardsView :is(.mb-search,.mb-title,.mb-actions button) {
+  box-sizing:border-box;height:var(--aisel-list-height);min-height:var(--aisel-list-height);padding:0 var(--aisel-list-inset);
+  font-size:var(--aisel-list-font)!important;line-height:var(--aisel-list-line);border:1px solid var(--aisel-list-border);border-radius:var(--aisel-list-radius);
+ }
+ html:root body #aiselMoodboardsView :is(.mb-search,.mb-title) {margin:var(--aisel-list-group-gap) 0;}
+}
+@media screen and (max-width:359px) {
+ /* Six labels and counts remain readable on one line at the narrowest width. */
+ html:root body #galleryView #galleryTabs .gtab {font-size:11px!important;}
+}
