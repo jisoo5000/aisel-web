@@ -1,7 +1,7 @@
 (function(){
  'use strict';
  const C=window.AiselDesignMeetingCore,N=window.AiselDesignMeetingNotes, $dm=s=>document.querySelector(s);
- const ROOT=firebase.database().ref('moodboardRefs');
+ const ROOT=(firebase.apps.find(app=>app.name==='aiselSalesReadOnly')||firebase.app()).database().ref('moodboardRefs');
  const galleryIndex=window.AiselGalleryIndex;let summaryActive=false,galleryDenied=false,galleryHold=!!galleryIndex?.enabled,summaryRows=[],indexFallbackFlight=null,legacyAllowed=false,preloadFlight=null,preloadOwner='',accessFlight=null;const galleryQueueTimers=new Map();
  const BRIDGE=window.AISEL_DESIGN_MEETING_BRIDGE||'';
  const OWNER='sooana1214@gmail.com';

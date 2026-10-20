@@ -108,17 +108,18 @@ function build(code,v,photo){
 const api={build,signature,lineAmount,previewSignature,cachedPreview,previewBlob};root.AiselSheetBridge=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 if(typeof window==="undefined"||!root.firebase)return;
-// Named apps keep separate Auth sessions. Reuse an existing signed-in app for
-// this same project/database; each operation keeps that app's DB and Storage.
+// Named apps keep separate Auth sessions. Use the common login app for
+// every operation so its Database and Storage share the same identity.
 const defaultApp=typeof firebase.app==="function"?firebase.app():{
  name:"[DEFAULT]",options:{},auth:()=>firebase.auth(),database:()=>firebase.database(),storage:()=>firebase.storage()
 };
 const sameProjectApps=[defaultApp,...(firebase.apps||[]).filter(app=>app!==defaultApp&&
  defaultApp.options.projectId&&app.options.projectId===defaultApp.options.projectId&&
  app.options.databaseURL===defaultApp.options.databaseURL)];
-function authenticatedApp(){return sameProjectApps.find(app=>app.auth().currentUser)||null;}
+const canonicalApp=sameProjectApps.find(app=>app.name==="aiselSalesReadOnly")||defaultApp;
+function authenticatedApp(){const user=canonicalApp.auth().currentUser;return user&&!user.isAnonymous?canonicalApp:null;}
 function connection(){
- const app=authenticatedApp()||defaultApp;
+ const app=authenticatedApp()||canonicalApp;
  const db=app.database();return {app,db,uid:app.auth().currentUser?.uid||null,rows:db.ref("workorderSheetRows"),meta:db.ref("workorderSheetMeta")};
 }
 function signedIn(ctx){return (ctx.app.auth().currentUser?.uid||null)===ctx.uid;}
@@ -253,7 +254,7 @@ async function reconcile(){
 }
 let reconciledApp=null,reconciledUid;
 function onAuthChange(){
- const app=authenticatedApp()||defaultApp,uid=app.auth().currentUser?.uid||null;
+ const app=authenticatedApp()||canonicalApp,uid=app.auth().currentUser?.uid||null;
  if(reconciledApp===app&&reconciledUid===uid)return;
  reconciledApp=app;reconciledUid=uid;
  return reconcile().catch(err=>{
@@ -263,7 +264,7 @@ function onAuthChange(){
 }
 sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
 function onIndexChange(snap){return sync(snap.key,snap.val()?.updatedAt,{incremental:true,indexSignature:snap.val()==null?"removed":fingerprint(snap.val())});}
-defaultApp.database().ref("workorderIndex").on("child_added",onIndexChange);
-defaultApp.database().ref("workorderIndex").on("child_changed",onIndexChange);
-defaultApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
+canonicalApp.database().ref("workorderIndex").on("child_added",onIndexChange);
+canonicalApp.database().ref("workorderIndex").on("child_changed",onIndexChange);
+canonicalApp.database().ref("workorderIndex").on("child_removed",onIndexChange);
 })(typeof globalThis!=="undefined"?globalThis:this);

@@ -1,4 +1,4 @@
-<!-- v248: compact account and meeting settings in the shared AISEL palette -->
+<!-- v249: workorder reads, writes and photos share the signed-in Firebase app -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
@@ -4881,6 +4881,10 @@
     appId: "1:150328860955:web:98086ff488035fc8be33be"
   };
   firebase.initializeApp(firebaseConfig);
+  // Named Firebase apps have separate Auth sessions. Bind workorder data to
+  // the same app as the common login before creating any long-lived refs.
+  const workorderFirebaseApp_ = firebase.apps.find(app=>app.name==="aiselSalesReadOnly") || firebase.initializeApp(firebaseConfig,"aiselSalesReadOnly");
+  const workorderDatabase_ = workorderFirebaseApp_.database();
 
   /* ================= 로그인 게이트 (2026-08-13 추가, 13-4) ==========</style>
 
@@ -4926,7 +4930,7 @@
     if(btn){
       btn.addEventListener("click", ()=>{
         const provider = new firebase.auth.GoogleAuthProvider();
-        firebase.auth().signInWithPopup(provider).catch(err=>{
+        workorderFirebaseApp_.auth().signInWithPopup(provider).catch(err=>{
           showLoginGate_("로그인에 실패했습니다.<br>" + err.message, true);
         });
       });
@@ -4939,7 +4943,7 @@
   if(LOGIN_GATE_ENABLED){
     try{
       showLoginGate_("확인 중입니다...", false);
-      firebase.auth().onAuthStateChanged(user=>{
+      workorderFirebaseApp_.auth().onAuthStateChanged(user=>{
         if(!user){
           showLoginGate_("AISEL 작업지시서입니다.<br>허용된 계정으로 로그인해주세요.", true);
           return;
@@ -4949,7 +4953,7 @@
           hideLoginGate_();
         }else{
           showLoginGate_(email + " 계정은 권한이 없습니다.<br>담당자에게 문의해주세요.", false);
-          firebase.auth().signOut();
+          workorderFirebaseApp_.auth().signOut();
         }
       });
     }catch(err){
@@ -4958,19 +4962,19 @@
       hideLoginGate_();
     }
   }
-  const woRoot = firebase.database().ref("workorders"); // 품번마다 각자 칸을 갖는 창고
+  const woRoot = workorderDatabase_.ref("workorders"); // 품번마다 각자 칸을 갖는 창고
   // 2026-08-25 추가: 목록 전용 색인 창고.
   // 예전에는 갤러리·판매현황이 workorders 트리 전체를 구독했습니다. 작지 하나하나에
   // 사진 원본(base64)이 통째로 들어 있어서, 누가 한 글자만 쳐도 모든 접속자에게
   // 전체 스냅샷이 다시 내려왔고 그때마다 화면이 깜빡였습니다.
   // 이제 목록에 실제로 쓰이는 값과 압축 썸네일만 여기에 따로 두고, 목록 화면은
   // 이 창고만 구독합니다. 사진 원본은 작지를 열었을 때만 내려옵니다.
-  const woIndexRoot = firebase.database().ref("workorderIndex");
+  const woIndexRoot = workorderDatabase_.ref("workorderIndex");
   /* 2026-08-25 추가: 물류·MD 공유용 창고.
      공유 화면(status.html)은 오직 이 칸만 읽습니다. 그래서 원가·원단처·판매수량은
      화면에서 숨기는 게 아니라 애초에 내려가지도 않습니다.
      넘길 값은 아래 한 곳에서만 정합니다. 여기 없는 값은 절대 공유되지 않습니다. */
-  const woShareRoot = firebase.database().ref("workorderShare");
+  const woShareRoot = workorderDatabase_.ref("workorderShare");
   /* 2026-08-25 수정: 원샘플 수거필요를 뺐습니다 — 원샘플은 디자이너가 들고 다니는 것이라
      물류·MD가 볼 이유가 없습니다. 대신 코디를 넣습니다.
      ⚠️ 2026-09-15: arrivedAt(물류 도착일, status.html 이 직접 씀)을 여기 넣지 않습니다.
@@ -5197,7 +5201,7 @@
     // 압축 사진을 공유 데이터에 보관해 별도 파일 업로드 실패에도 표시됩니다.
     return e;
   }
-  const woIndexMetaRoot = firebase.database().ref("workorderIndexMeta");
+  const woIndexMetaRoot = workorderDatabase_.ref("workorderIndexMeta");
   /* 2026-08-25: 공유용 칸은 아래 backfillShare_() 가 목록 색인만 보고 가볍게 채웁니다.
      그래서 원본을 통째로 읽는 무거운 재작성(판 올리기)은 하지 않습니다. */
   const WO_INDEX_VERSION = 4;   // 2026-09-20: 4 — 확정 안 된 가격(기본값 59,000 포함)은 색인에서 비웁니다
@@ -5244,7 +5248,7 @@
   // 2026-08-13 추가: 원단 마스터 창고
   // 원단처명 + 원단명을 하나로 합친 값을 열쇠로 씀. 같은 원단처 · 같은 원단명이면 같은 원단으로 보고
   // 새 줄을 만들지 않고 그 줄을 최신값으로 덮어씀. 그래서 같은 원단이 중복으로 쌓이지 않음.
-  const fabricRoot = firebase.database().ref("fabricMaster");
+  const fabricRoot = workorderDatabase_.ref("fabricMaster");
   // 파이어베이스 열쇠에는 . # $ [ ] / 를 쓸 수 없어서 안전한 글자로 바꿔줌
   function fabricKeyOf_(supplier, name){
     const s = String(supplier || "").trim();
@@ -5279,7 +5283,7 @@
   // 이름 입력을 마친 뒤 정확히 일치하는 연락처의 전화번호만 빈 칸에 채웁니다.
   // 입력 중인 이름은 바꾸지 않습니다. 등록은 따로 안 하셔도 되고
   // 이름과 전화번호를 같이 입력하시면 그 조합이 자동으로 저장됩니다.
-  const designerRoot = firebase.database().ref("designerPhones");
+  const designerRoot = workorderDatabase_.ref("designerPhones");
   function designerKeyOf_(name){
     return String(name || "").trim().replace(/[.#$/\[\]]/g, "_");
   }
@@ -5292,7 +5296,7 @@
   };
   let fbStorage;
   try{
-    fbStorage = firebase.storage(); // 사진 원본은 여기(Storage)에, DB에는 주소만 저장
+    fbStorage = workorderFirebaseApp_.storage(); // 사진 원본은 여기(Storage)에, DB에는 주소만 저장
   }catch(err){
     console.error("Firebase Storage 초기화 실패:", err);
     // Storage 스크립트 로딩이 막혔거나 실패한 경우에도 사진 관련 기능을 쓰려고 할 때 바로 알 수 있게 함
@@ -6423,7 +6427,7 @@
   async function registerOrderedWorkorder_(code){
     // The server reads only the stored allowlisted fields, locks by product code,
     // and looks up an existing product before any create. Never publish a page.
-    const user=window.AiselAuth?.currentUser?.()||firebase.auth().currentUser;
+    const user=window.AiselAuth?.currentUser?.()||workorderFirebaseApp_.auth().currentUser;
     if(!user?.emailVerified)throw Error('대표자 계정으로 로그인한 뒤 등록을 확인해주세요.');
     const token=await user.getIdToken();
     const marker=await fetch('https://aisel-workorder-default-rtdb.asia-southeast1.firebasedatabase.app/workorderRegistrationRequests/'+encodeURIComponent(code)+'.json?auth='+encodeURIComponent(token),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestedAt:{'.sv':'timestamp'}}),signal:AbortSignal.timeout(15000)});
@@ -6728,7 +6732,7 @@
           if(shared.exists()) updates["workorderShare/" + code + "/status"] = next;
           else updates["workorderShare/" + code] = woShareEntryFromIndex_({...((allWorkOrders || {})[code] || {}), status: next});
         }else updates["workorderShare/" + code] = null;
-        await firebase.database().ref().update(updates);
+        await workorderDatabase_.ref().update(updates);
         if(currentCode !== code) return;
         currentStatus = next;
         if(lastSavedState_)lastSavedState_={...lastSavedState_,status:next,updatedAt:now,...modifiedParts};
@@ -7170,7 +7174,7 @@
   const draftIgnored_ = new Set(['updatedAt','createdAt','myy','mmm','mdd']);
   function draftOwner_(){
     try{
-      const primary=window.AiselAuth?.currentUser?.()||firebase.app().auth().currentUser;
+      const primary=window.AiselAuth?.currentUser?.()||workorderFirebaseApp_.auth().currentUser;
       const owner=(firebase.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com');
       return (primary?.uid||'local-browser')+':'+(owner?.uid||'designer');
     }catch(_){return 'local-browser:designer';}
@@ -8495,6 +8499,9 @@
     };
     const onReadError=error=>{
       if(woRef!==subscribedRef||currentCode!==code)return;
+      // Keep the unloaded form locked; a failed read must never save its defaults.
+      clearTimeout(openWatchdog_);
+      const saveButton=$("#saveBtn");if(saveButton)saveButton.textContent="읽기 실패";
       window.AiselWorkorderMeetingPhotos?.failed(code,error);draftReadFailed_(error);
     };
     const subscribe=()=>{if(woRef===subscribedRef&&currentCode===code)subscribedRef.on("value",woListener,onReadError);};
@@ -9072,7 +9079,7 @@
   }
 
   // ---------- 무드보드 > 회의 목록 (날짜별, 사진은 Firebase Storage에 저장 · DB엔 주소만) ----------
-  const meetingRoot = firebase.database().ref("moodboardMeetings");
+  const meetingRoot = workorderDatabase_.ref("moodboardMeetings");
   const meetingPhotoStorage = fbStorage.ref("moodboardMeetingPhotos");
   let allMeetings = {};
   let meetingListenerAttached_ = false;
@@ -9496,7 +9503,7 @@
   }
 
   // ---------- 샘플관리 (작지가 샘플중 상태로 바뀌면 자동으로 한 줄 생성, 원샘플 회수 토글과 연동) ----------
-  const sampleMgmtRoot = firebase.database().ref("sampleManagement");
+  const sampleMgmtRoot = workorderDatabase_.ref("sampleManagement");
   let allSampleMgmt = {};
   let lastSampleMgmtSig_ = null;
   window.AiselAccess.watchLegacy(sampleMgmtRoot,"value", snap=>{
@@ -9748,7 +9755,7 @@
   }
 
   // ---------- 무드보드 > 레퍼런스 수집 ----------
-  const refRoot = firebase.database().ref("moodboardRefs");
+  const refRoot = workorderDatabase_.ref("moodboardRefs");
   let allRefCards = {};
   let refFilter = "all";
   let refDateFilter = "all";
@@ -10711,7 +10718,7 @@
   const legacyStatusAttempts_ = new Set();
   function legacyStatusMigrationAllowed_(){
     if(!LOGIN_GATE_ENABLED) return true;
-    const user = firebase.auth().currentUser;
+    const user = workorderFirebaseApp_.auth().currentUser;
     return !!user && ALLOWED_EMAILS.some(email=>email.toLowerCase() === String(user.email||"").toLowerCase());
   }
   async function migrateLegacySampleStatus_(code){
@@ -10940,7 +10947,7 @@
       });
   }
   // ---------- 판매성과: 카페24 요약만 읽으며 작지 원본에는 쓰지 않습니다. ----------
-  // A named app keeps sales login independent from legacy work-order auth/write callbacks.
+  // Sales and workorders reuse the common authenticated app.
   const salesFirebaseApp_ = firebase.apps.find(app=>app.name === "aiselSalesReadOnly") || firebase.initializeApp(firebase.app().options,"aiselSalesReadOnly");
   const salesAuth_ = salesFirebaseApp_.auth();
   const salesDatabase_ = salesFirebaseApp_.database();
@@ -11763,8 +11770,8 @@
 
   // v88: a verified archive is written before any original is removed.
   // Originals use a compare-and-delete transaction; restore only creates an empty code.
-  const woTrashRoot_ = firebase.database().ref("workorderTrash");
-  const woTrashIndexRoot_ = firebase.database().ref("workorderTrashIndex");
+  const woTrashRoot_ = workorderDatabase_.ref("workorderTrash");
+  const woTrashIndexRoot_ = workorderDatabase_.ref("workorderTrashIndex");
   let trashBusy_ = false, trashOpen_ = false, trashListening_ = false;
   let trashEntries_ = {}, trashReadError_ = "", trashUndoId_ = null;
   function trashClone_(v){ return v == null ? null : JSON.parse(JSON.stringify(v)); }
@@ -11838,7 +11845,7 @@
   async function setTrashPhase_(id,phase,extra={}){
     const updates={};updates["workorderTrash/"+id+"/phase"]=phase;updates["workorderTrashIndex/"+id+"/phase"]=phase;
     Object.keys(extra).forEach(k=>{updates["workorderTrash/"+id+"/"+k]=extra[k];});
-    await firebase.database().ref().update(updates);
+    await workorderDatabase_.ref().update(updates);
   }
   async function trashCompareRemove_(ref,expected){
     if(expected==null) return true;
@@ -11859,7 +11866,7 @@
       await pauseShareBackfillForTrash_();
       draft=trashClone_(collect());
       await Promise.allSettled(Array.from(pendingSaveWrites_));
-      const refs=[woRoot.child(code),woIndexRoot.child(code),woShareRoot.child(code),firebase.database().ref("workorderSheetRows").child(code)];
+      const refs=[woRoot.child(code),woIndexRoot.child(code),woShareRoot.child(code),workorderDatabase_.ref("workorderSheetRows").child(code)];
       const snapshots=await Promise.all(refs.map(ref=>ref.once("value")));
       const [server,index,share,sheetRow]=snapshots.map(s=>trashClone_(s.val()));
       if(!server) throw new Error("원본이 이미 없거나 다른 기기에서 이동했습니다. 목록에서 다시 확인해주세요.");
@@ -11868,7 +11875,7 @@
       const archive={version:1,code,name,deletedAt,phase:"prepared",original:server,workorder:merged,index,share,sheetRow,localDraft:draft,localConflicts:conflicts};
       const meta={code,name,deletedAt,phase:"prepared"};
       const updates={};updates["workorderTrash/"+id]=archive;updates["workorderTrashIndex/"+id]=meta;
-      await firebase.database().ref().update(updates);
+      await workorderDatabase_.ref().update(updates);
       const verified=(await entryRef.once("value")).val();
       if(!verified || !trashSame_(verified.original,server) || !trashSame_(verified.workorder,merged)) throw new Error("휴지통 백업을 확인하지 못했습니다. 원본은 삭제하지 않았습니다.");
       const result=await woRoot.child(code).transaction(value=>trashSame_(value,server)?null:undefined,undefined,false);
@@ -11927,9 +11934,9 @@
         const synced=await window.AiselSheetBridge.sync(code);
         if(synced===false) throw new Error("시트 연동 데이터 복원이 완료되지 않았습니다. 연결을 확인한 뒤 복원을 다시 눌러주세요.");
       }
-      else if(archive.sheetRow) await firebase.database().ref("workorderSheetRows").child(code).transaction(value=>value==null?archive.sheetRow:undefined,undefined,false);
+      else if(archive.sheetRow) await workorderDatabase_.ref("workorderSheetRows").child(code).transaction(value=>value==null?archive.sheetRow:undefined,undefined,false);
       const done={};done["workorderTrash/"+id+"/phase"]="restored";done["workorderTrash/"+id+"/restoredAt"]=Date.now();done["workorderTrashIndex/"+id]=null;
-      await firebase.database().ref().update(done);
+      await workorderDatabase_.ref().update(done);
       delete lastIndexSig_[code];lastGallerySig_=null;
       if(trashUndoId_===id){trashUndoId_=null;$("#trashUndoNotice").hidden=true;}
       delete trashEntries_[id];renderTrash_();renderGallery();
@@ -12484,7 +12491,7 @@
   placeCompactMobileActions_();if(mobileLayout.addEventListener)mobileLayout.addEventListener('change',placeCompactMobileActions_);else mobileLayout.addListener(placeCompactMobileActions_);
 
 
-  firebase.auth().onAuthStateChanged(()=>queueLegacySampleStatuses_(allWorkOrders));
+  workorderFirebaseApp_.auth().onAuthStateChanged(()=>queueLegacySampleStatuses_(allWorkOrders));
 
   // init: 처음 열면 갤러리(목록) 화면이 기본으로 보이고, 편집 화면은
   // 카드를 클릭하거나 "+ 새 작지"를 누를 때 그 시점에 준비됩니다.
@@ -12575,7 +12582,7 @@ const FABRIC_KEYS = { fabric:"aisel_custom_fabric", detail:"aisel_custom_detail"
      3) localStorage — 예전 기기에 남아 있던 단어. 처음 한 번 파이어베이스로 옮깁니다.
    셋 중 하나가 실패해도 나머지로 화면이 채워지고, 전부 실패하면 이 파일의 기본 목록을 씁니다. */
 const WORDS_JSON_URL = "words.json";   // work-order.html 과 같은 폴더
-const wordsRoot_ = firebase.database().ref("wordLists");
+const wordsRoot_ = workorderDatabase_.ref("wordLists");
 // wordsMaster_ · wordsShared_ 는 이 블록 맨 위에서 미리 만들어 둡니다 (2026-08-25 고침)
 const wordsKeySafe_ = w => String(w).replace(/[.#$/\[\]]/g, "_");
 
@@ -14924,17 +14931,18 @@ function build(code,v,photo){
 const api={build,signature,lineAmount,previewSignature,cachedPreview,previewBlob};root.AiselSheetBridge=api;
 if(typeof module!=="undefined"&&module.exports)module.exports=api;
 if(typeof window==="undefined"||!root.firebase)return;
-// Named apps keep separate Auth sessions. Reuse an existing signed-in app for
-// this same project/database; each operation keeps that app's DB and Storage.
+// Named apps keep separate Auth sessions. Use the common login app for
+// every operation so its Database and Storage share the same identity.
 const defaultApp=typeof firebase.app==="function"?firebase.app():{
  name:"[DEFAULT]",options:{},auth:()=>firebase.auth(),database:()=>firebase.database(),storage:()=>firebase.storage()
 };
 const sameProjectApps=[defaultApp,...(firebase.apps||[]).filter(app=>app!==defaultApp&&
  defaultApp.options.projectId&&app.options.projectId===defaultApp.options.projectId&&
  app.options.databaseURL===defaultApp.options.databaseURL)];
-function authenticatedApp(){return sameProjectApps.find(app=>app.auth().currentUser)||null;}
+const canonicalApp=sameProjectApps.find(app=>app.name==="aiselSalesReadOnly")||defaultApp;
+function authenticatedApp(){const user=canonicalApp.auth().currentUser;return user&&!user.isAnonymous?canonicalApp:null;}
 function connection(){
- const app=authenticatedApp()||defaultApp;
+ const app=authenticatedApp()||canonicalApp;
  const db=app.database();return {app,db,uid:app.auth().currentUser?.uid||null,rows:db.ref("workorderSheetRows"),meta:db.ref("workorderSheetMeta")};
 }
 function signedIn(ctx){return (ctx.app.auth().currentUser?.uid||null)===ctx.uid;}
@@ -15070,7 +15078,7 @@ async function reconcile(){
 let reconciledApp=null,reconciledUid;
 function onAuthChange(){
  if(!root.AiselAccess?.session?.active||root.AiselAccess.ownOnly)return;
- const app=authenticatedApp()||defaultApp,uid=app.auth().currentUser?.uid||null;
+ const app=authenticatedApp()||canonicalApp,uid=app.auth().currentUser?.uid||null;
  if(reconciledApp===app&&reconciledUid===uid)return;
  reconciledApp=app;reconciledUid=uid;
  return reconcile().catch(err=>{
@@ -15081,9 +15089,9 @@ function onAuthChange(){
 sameProjectApps.forEach(app=>app.auth().onAuthStateChanged(onAuthChange));
 root.AiselAccess?.subscribe(onAuthChange);
 function onIndexChange(snap){return sync(snap.key,snap.val()?.updatedAt,{incremental:true,indexSignature:snap.val()==null?"removed":fingerprint(snap.val())});}
-root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_added",onIndexChange);
-root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_changed",onIndexChange);
-root.AiselAccess.watchLegacy(defaultApp.database().ref("workorderIndex"),"child_removed",onIndexChange);
+root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"child_added",onIndexChange);
+root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"child_changed",onIndexChange);
+root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"child_removed",onIndexChange);
 })(typeof globalThis!=="undefined"?globalThis:this);
 
 </script>
@@ -16799,7 +16807,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=233"></script>
 <script src="aisel-look-categories.js?v=233"></script>
-<script src="design-meeting.js?v=248"></script>
+<script src="design-meeting.js?v=249"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
