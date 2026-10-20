@@ -1,19 +1,25 @@
 @media screen {
- .aisel-access-dialog {box-sizing:border-box;width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:12px;border:1px solid #dedede;border-radius:3px;color:#34383c;background:#fff;font-family:inherit;font-size:12px;line-height:1.5;}
- .aisel-access-dialog::backdrop {background:#0005;}
- .aisel-access-dialog .access-heading {display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:-12px;background:#fff;padding:8px 0;z-index:1;}
- .aisel-access-dialog h2 {font-size:14px;margin:0;}
- .aisel-access-dialog button,.aisel-access-dialog input,.aisel-access-dialog select,#aiselEmailLogin input,#aiselEmailLogin button {box-sizing:border-box;min-height:32px;border:1px solid #dedede;border-radius:3px;background:#fff;color:#34383c;font:inherit;padding:5px 8px;min-width:0;}
- .aisel-access-dialog button:disabled {opacity:.45;}
- .aisel-access-dialog .access-field {display:grid;gap:4px;margin-bottom:10px;}
- .aisel-access-dialog .access-field input,.aisel-access-dialog select {width:100%;}
- .aisel-access-dialog .access-actions {display:flex;gap:4px;flex-wrap:wrap;margin:8px 0;}
- .aisel-access-dialog .access-staff-row {border-bottom:1px solid #dedede;padding:10px 0;}
- .aisel-access-dialog .access-staff-row small {margin-left:8px;color:#6c727c;}
- .aisel-access-dialog p {overflow-wrap:anywhere;}
- .aisel-access-dialog .access-hint {color:#6c727c;}
- .aisel-access-dialog .access-check {display:flex;align-items:center;gap:8px;border-bottom:1px solid #eee;padding:5px 0;}
- .aisel-access-dialog .access-check input {flex:none;width:18px;}
+ html:root body .aisel-access-dialog {box-sizing:border-box;width:min(420px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:16px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);color:var(--aisel-ink,#34383C);background:#fff;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);font-size:12px;line-height:18px;box-shadow:none;}
+ html:root body .aisel-access-dialog::backdrop {background:rgba(52,56,60,.25);}
+ html:root body .aisel-access-dialog .access-heading {display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:-16px;background:#fff;padding:0 0 12px;z-index:1;}
+ html:root body .aisel-access-dialog h2 {font-size:14px;font-weight:600;line-height:20px;margin:0;color:var(--aisel-accent,#2F3B52);}
+ html:root body .aisel-access-dialog :is(button,input,select),html:root body #aiselEmailLogin input {box-sizing:border-box;height:32px;min-height:32px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);background:#fff;color:var(--aisel-ink,#34383C);font-family:inherit;font-size:12px;font-weight:400;line-height:18px;padding:0 8px;min-width:0;max-width:100%;box-shadow:none;}
+ html:root body .aisel-access-dialog button {color:var(--aisel-accent,#2F3B52);white-space:nowrap;}
+ html:root body .aisel-access-dialog :is(input:not([type=hidden]):not([type=file]):not([type=checkbox]):not([type=radio]),select),html:root body #aiselEmailLogin input {height:32px!important;min-height:32px!important;font-size:12px!important;line-height:18px!important;}
+ html:root body .aisel-access-dialog button:disabled {opacity:.45;}
+ html:root body .aisel-access-dialog .access-field {display:grid;gap:4px;margin-bottom:12px;font-size:12px;font-weight:400;}
+ html:root body .aisel-access-dialog .access-field input,html:root body .aisel-access-dialog select {width:100%;}
+ html:root body .aisel-access-dialog .access-actions {display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;}
+ html:root body .aisel-access-dialog .access-staff-row {border-bottom:1px solid var(--aisel-line,#E3E5E7);padding:12px 0;}
+ html:root body .aisel-access-dialog .access-staff-row strong {font-weight:600;}
+ html:root body .aisel-access-dialog .access-staff-row small {margin-left:8px;color:var(--aisel-muted,#6C727C);font-size:11px;}
+ html:root body .aisel-access-dialog p {margin:0 0 12px;overflow-wrap:anywhere;font-size:12px;line-height:18px;}
+ html:root body .aisel-access-dialog p:empty {display:none;}
+ html:root body .aisel-access-dialog .access-hint {color:var(--aisel-muted,#6C727C);}
+ html:root body .aisel-access-dialog .access-check {display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--aisel-line,#E3E5E7);padding:8px 0;font-size:12px;}
+ html:root body .aisel-access-dialog .access-check input {flex:none;width:16px;height:16px;min-height:16px;accent-color:var(--aisel-accent,#2F3B52);}
+ html:root body .aisel-access-dialog:focus,html:root body .aisel-access-dialog :is(button,input,select):focus:not(:focus-visible) {outline:none;}
+ html:root body .aisel-access-dialog:focus-visible,html:root body .aisel-access-dialog :is(button,input,select):focus-visible {outline:1px solid var(--aisel-accent,#2F3B52)!important;outline-offset:2px;}
  #aiselEmailLogin {display:grid;gap:6px;margin:10px 0;}
  #aiselEmailLogin[hidden] {display:none;}
  #aiselWorkorderAttribution {display:flex;flex-wrap:wrap;gap:5px 12px;margin:8px 0;color:#6c727c;font-size:11px;}
