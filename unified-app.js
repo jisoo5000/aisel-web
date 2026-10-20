@@ -15,7 +15,7 @@
  main.after(notice,pane);
  document.title='에이슬 앱';
  const orders=main.querySelector('[data-main="orders"]');orders.textContent='작업지시서';
- const products=document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='제품진행';
+ const products=document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='출고현황';
  const refs=document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
  const boards=document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='moodboards';boards.textContent='무드보드';
  const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
@@ -29,12 +29,15 @@
   const category=$('galleryCategoryFilter'),designer=$('galleryDesignerFilter');
   const change=patch=>galleryFilters.set({...galleryFilters.snapshot(),...patch});
   const date=window.AiselDateFilter.mount(row.firstElementChild,{inputId:'galleryDateFilter',labelId:'galleryDateFilterLabel',label:'작업지시서 날짜 필터',format:value=>value.slice(2).replaceAll('-','. '),onChange:value=>change({date:value})});
-  category.onchange=()=>change({category:category.value});designer.onchange=()=>change({designer:designer.value});
+  category.onchange=()=>change({category:category.value});
+  const designerManager=document.createElement('div');designerManager.id='galleryDesignerManager';row.after(designerManager);
+  const designerPicker=window.AiselDesigners?.mountPicker(designer,{mode:'filter',value:galleryFilters.snapshot().designer,placeholder:'담당자',emptyOptions:[['__unassigned__','미지정']],managerHost:designerManager,onChange:value=>change({designer:value}),onError:error=>{notice.textContent=error.message;}});
+  if(!designerPicker)designer.onchange=()=>change({designer:designer.value});
   function options(select,items,value){
    if(value&&!items.some(item=>item[0]===value))items.push([value,value]);
    const signature=JSON.stringify(items);if(select.dataset.signature!==signature){select.replaceChildren(...items.map(([key,label])=>new Option(label,key)));select.dataset.signature=signature;}select.value=value;
   }
-  galleryFilters.subscribe(()=>{const state=galleryFilters.snapshot(),choices=galleryFilters.options();date.setValue(state.date);options(category,[['','카테고리'],...choices.categories],state.category);options(designer,[['','담당자'],['__unassigned__','미지정'],...choices.designers.map(name=>[name,name])],state.designer);});
+  galleryFilters.subscribe(()=>{const state=galleryFilters.snapshot(),choices=galleryFilters.options();date.setValue(state.date);options(category,[['','카테고리'],...choices.categories],state.category);if(designerPicker)designerPicker.refresh({value:state.designer,includeNames:choices.designers});else options(designer,[['','담당자'],['__unassigned__','미지정'],...choices.designers.map(name=>[name,name])],state.designer);});
  }
  function info(s=''){notice.textContent=s||(window.AiselAccess?.legacy?'계정별 접근 제한 적용 전 · 기존 작업지시서를 이용할 수 있습니다.':'');}
  // Warm each collection without changing the visible pane or waiting in navigation.
@@ -150,10 +153,10 @@
  },{passive:false});
  for(const name of ['touchend','touchcancel'])document.addEventListener(name,()=>{productTouch=null;},{passive:true});
 
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='제품 진행 현황';frame.src='status.html?embedded=1&v=235';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='출고현황';frame.src='status.html?embedded=1&v=243';pane.append(frame);}
  function select(view){
   current=view;
-  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'제품진행',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(view!=='products')unmount();pane.hidden=view!=='products';
@@ -207,7 +210,7 @@
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
    if(intent!==navigationRevision)return false;
    A.hide();select(view);
-   if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='제품 진행 현황';document.body.dataset.aiselListView='products';}
+   if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='출고현황';document.body.dataset.aiselListView='products';}
    else if(view==='moodboards'){
     const openingUid=window.AiselAccess.session?.uid;
     if(!window.AiselMoodboards)throw Error('무드보드 화면을 불러오지 못했습니다. 새로고침 후 다시 열어주세요.');

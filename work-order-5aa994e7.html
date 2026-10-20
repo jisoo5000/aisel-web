@@ -1,4 +1,4 @@
-<!-- v242: compact workorder gallery color chips in width and height -->
+<!-- v243: synchronized designer filters and shipment gallery presentation -->
 <!-- v237: per-color fabric details, size rows and copyable saved codes -->
 <!-- v231: manual demand/supply, USP/premium and engagement planning -->
 <!-- v230: catalog editors directly beneath their source controls -->
@@ -10769,14 +10769,14 @@
     const date=modificationDateParts_(at);return [date.myy,date.mmm,date.mdd].map((v,i)=>String(v).padStart(i?2:4,'0')).join('-');
   }
   function matchesGalleryOrganization_(code,st){
-    const f=galleryOrganization_,designer=String(st.currentAssigneeName??st.designer??'').trim();
+    const f=galleryOrganization_,designer=String(st.designer??st.currentAssigneeName??'').trim();
     return (!f.date||galleryDate_(st)===f.date)&&(!f.category||galleryCategory_(code,st)?.code===f.category)&&(!f.designer||(f.designer==='__unassigned__'?!designer:designer===f.designer));
   }
   window.AiselWorkorderListFilters={
     snapshot:()=>({...galleryOrganization_}),
     options:()=>{
       const categories=new Map(),designers=new Set();
-      for(const [code,st] of Object.entries(allWorkOrders||{})){const category=galleryCategory_(code,st);if(category)categories.set(category.code,category.name);const assignee=String(st.currentAssigneeName??st.designer??'').trim();if(assignee)designers.add(assignee);}
+      for(const [code,st] of Object.entries(allWorkOrders||{})){const category=galleryCategory_(code,st);if(category)categories.set(category.code,category.name);const assignee=String(st.designer??st.currentAssigneeName??'').trim();if(assignee)designers.add(assignee);}
       return {categories:[...categories].sort((a,b)=>a[1].localeCompare(b[1],'ko')),designers:[...designers].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ko'))};
     },
     set(value){galleryOrganization_={date:validDateInput_(value.date)||'',category:String(value.category||''),designer:String(value.designer||'')};renderGallery();},
@@ -16795,7 +16795,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-collection-writes.js?v=233"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
-<script src="aisel-designers.js?v=228"></script>
+<script src="aisel-designers.js?v=243"></script>
 <script src="aisel-editor-enhancements.js?v=240"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=233">
 <script src="aisel-date-filter.js?v=233"></script>
@@ -16841,7 +16841,7 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=233"></script>
-<script src="unified-app.js?v=235"></script>
+<script src="unified-app.js?v=243"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=233" media="screen">
 <script src="aisel-access-ui.js?v=239"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=242" media="screen">
