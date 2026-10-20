@@ -329,3 +329,15 @@
  html:root body #editorView #sheet #productColors #selectedColors .copygen-color-chip {background:var(--workorder-color-bg,#F3F6FA)!important;color:var(--workorder-color-text,#2F3B52)!important;}
  html:root body #editorView #sheet #productColors #selectedColors .color-chip-name {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 }
+
+/* v260: compact fabric palette; match the revision delete/add controls. */
+@media screen {
+ html:root body #editorView #sheet #productColors .color-heading h2 {display:none!important;}
+ html:root body #editorView #sheet #productColors #colorSwatches {flex:1 1 100%;width:100%;margin:0;}
+ html:root body #editorView #sheet .fabric-variant-color {grid-template-columns:minmax(0,1fr) auto minmax(0,104px) 28px 28px;}
+ html:root body #editorView #sheet .fabric-variant-color.fabric-single {grid-template-columns:minmax(0,1fr) 28px 28px;}
+ html:root body #editorView #sheet .fabric-variant-color > [hidden] {display:none!important;}
+ html:root body #editorView #sheet .fabric-variant-color :is(.fabric-variant-add,.fabric-variant-remove) {display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:28px;min-width:28px;height:28px;min-height:28px;padding:0;margin:0;border:1px solid var(--aisel-line);border-radius:4px;background:var(--aisel-bg);color:var(--aisel-ink);box-shadow:none;line-height:1;cursor:pointer;}
+ html:root body #editorView #sheet .fabric-variant-color .fabric-variant-add {font-size:22px;}
+ html:root body #editorView #sheet .fabric-variant-remove .ref-action-icon {width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+}
