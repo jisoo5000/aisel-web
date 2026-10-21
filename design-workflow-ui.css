@@ -21,4 +21,4 @@
 .dw-panel dt{font-weight:600;color:#6e6b66;}.dw-panel dd{margin:0;overflow-wrap:anywhere;}.dw-panel .dw-notice{font-size:12px;}.dw-panel .dw-metric{overflow-wrap:anywhere;}
 .dw-panel .dw-candidate{align-items:center;padding:10px;background:#f6f5f2;border-radius:6px;}.dw-panel .dw-candidate>div{flex:1 1 220px;}.dw-panel .dw-candidate small{display:block;overflow-wrap:anywhere;}
 @media(max-width:600px){.dw-panel{margin:10px 8px;padding:12px;}.dw-panel.dw-editor{margin-left:8px;margin-right:8px;}.dw-panel .dw-week-grid{grid-template-columns:1fr;}.dw-panel .dw-order-row{align-items:start;}.dw-panel .dw-order-row>span{white-space:normal;max-width:100px;}.dw-panel form>button{width:100%;}.dw-panel label{flex-basis:100%;}}
-@media print{#designWorkflowPanel,#designWorkflowEditor{display:none!important;}}
+#designWorkflowPanel,#designWorkflowEditor{display:none!important;}
