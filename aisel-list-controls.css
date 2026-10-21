@@ -174,3 +174,23 @@
 @media screen {
  html:root body #referenceCollectionView #rcNotices:not(:has(#rcStatus:not(:empty),.rc-notice-actions>button:not([hidden]))) {display:none;}
 }
+
+/* Compact planning controls with breathing room; keep 12px type on one row. */
+@media screen {
+ html:root body #designMeetingView #dmReview {--aisel-list-border:#EAE7E2;}
+ html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>th,
+ html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>td {
+  min-height:36px;padding-top:6px;padding-bottom:6px;
+ }
+ html:root body #designMeetingView #dmReview :is(.dm-manual-select,.dm-choice,.aisel-usp-keyword) {
+  height:24px;min-height:24px;border-color:#EAE7E2;
+ }
+ html:root body #designMeetingView #dmReview .dm-choice.selected {border-color:#2F3B52;}
+ html:root body #designMeetingView #dmReview .aisel-usp-row {
+  display:flex;flex-flow:row nowrap;gap:6px;align-items:center;
+ }
+ html:root body #designMeetingView #dmReview .aisel-usp-inline .aisel-usp-keyword {
+  flex:1 1 var(--aisel-usp-width,24px);width:var(--aisel-usp-width,24px);min-width:20px;
+  padding:0 4px;font-size:12px!important;white-space:nowrap;
+ }
+}
