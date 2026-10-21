@@ -1204,7 +1204,16 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  pane.addEventListener('focusin',event=>{if(event.target.matches('input:not([type=search]),textarea,select,[contenteditable=true]'))editIntent++;});
  pane.addEventListener('dragover',e=>{if(e.dataTransfer?.types.includes('Files'))e.preventDefault();});
  pane.addEventListener('drop',e=>{if(e.dataTransfer?.files.length){e.preventDefault();receive(e.dataTransfer.files,target(e),e.target.closest('.dm-photo')?.dataset.photoKey||null);}});
- document.addEventListener('paste',e=>{if(pane.hidden||e.target.closest('input,textarea,[contenteditable="true"]'))return;const files=[...(e.clipboardData?.items||[])].filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile());if(files.length){e.preventDefault();receive(files,target(e),e.target.closest('.dm-photo')?.dataset.photoKey||null);}});
+ function pastePhotos(e){
+  if(pane.hidden)return;
+  let files=[...(e.clipboardData?.items||[])].filter(item=>item.type.startsWith('image/')).map(item=>item.getAsFile()).filter(Boolean);
+  if(!files.length)files=[...(e.clipboardData?.files||[])].filter(file=>file.type.startsWith('image/'));
+  if(!files.length)return;
+  e.preventDefault();e.stopPropagation();
+  const candidateId=active&&!$dm('#dmDetail').hidden?active:null;
+  receive(files,candidateId).catch(error=>message('사진 저장을 확인하지 못했습니다. '+error.message,true));
+ }
+ document.addEventListener('paste',pastePhotos,true);
  document.addEventListener('focusout',()=>setTimeout(render,60));
  window.addEventListener('beforeunload',e=>{if(!externalNavigation&&([...detailStates.values()].some(d=>d.dirty.size)||[...linkEditors.values()].some(e=>e.dirty)||pending.size||hasCategoryDraft()||[...noteDrafts.keys()].some(hasNoteChanges))){e.preventDefault();e.returnValue='';}});
  if(!detailDesignerPicker)designerSelect.onchange=e=>selectDetailDesigner(e.target.value);
