@@ -682,7 +682,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
      if(options.history!==false){let route=history.state;if(!ownRoute(route)||route.view!=='list'&&!wasActive)route=putRoute('list');const parentStep=route.view==='list'?route.step:route.parentStep;putRoute('detail',id,{replace:!!wasActive&&ownRoute(route)&&route.view==='detail',parentStep});}
      else if(!ownRoute(history.state)||history.state.view!=='detail'||history.state.id!==id)putRoute('detail',id,{replace:true});
      ensureTextDraftOwner();active=id;bindDetailState(id);openingId=null;detailLoading.hidden=true;clearDetailPreview();
-     const detail=$dm('#dmDetail');detail.hidden=false;$dm('.dm-detail-body').scrollTop=0;$dm('#dmDetailTitle').textContent=c.title||(localCandidate(c.id)?'':'후보 상세');
+     const detail=$dm('#dmDetail');detail.hidden=false;$dm('.dm-detail-body').scrollTop=0;$dm('#dmDetailTitle').textContent=c.title||'';
      for(const k of detailKeys)$dm('[data-dm-field="'+k+'"]').value=c[k]||(['decision'].includes(k)?'unselected':'');
      for(const k of dirtyFields)$dm('[data-dm-field="'+k+'"]').value=detailState(id).values[k];
      detailMessage(id,'');$dm('#dmSaveDetail').hidden=true;noteMessage(id,'');renderLinks(c);renderDesigner(c);renderDetailPhotos(c);renderReview(c);restoreTextDraft(c);renderReview(c);renderDesigner(c);renderMeetingDate(c);renderNotes(c);if(hasNoteChanges(id))noteMessage(id,'기기 초안 복원됨 · 다시 저장해주세요.',true);applyEditingState();watchActive();requestAnimationFrame(fitDetail);restoreExternalPosition();refresh(false,[id]);measurePhase('detail-ready',started);return true;
@@ -1041,7 +1041,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
      if(detailDirty||linkEditor?.dirty||hasNoteChanges()){message('다른 화면에서 삭제된 항목입니다. 입력한 내용은 화면에 유지했습니다. 복원한 뒤 저장해주세요.',true);return;}
      if(!pane.hidden){restoreList();putRoute('list',null,{replace:true});message('');}return;
    }
-   renderMeetingDate(c);renderNotes(c);if(detailDirty)return;if(!pane.contains(document.activeElement)||!document.activeElement.matches('input,textarea,select,[contenteditable=true]')){renderDetailPhotos(c);renderLinks(c);renderDesigner(c);$dm('#dmDetailTitle').textContent=c.title||(localCandidate(c.id)?'':'후보 상세');}renderReview(c);}
+   renderMeetingDate(c);renderNotes(c);if(detailDirty)return;if(!pane.contains(document.activeElement)||!document.activeElement.matches('input,textarea,select,[contenteditable=true]')){renderDetailPhotos(c);renderLinks(c);renderDesigner(c);$dm('#dmDetailTitle').textContent=c.title||'';}renderReview(c);}
  function stopActive(){if(activeRef)activeRef.off('value',activeCallback);activeRef=null;activeCallback=null;activeWatchId=null;}
  function watchActive(){
    const id=active&&!localCandidate(active)&&!pane.hidden&&!document.hidden&&(galleryIndex?.enabled||!latestIds.has(active))?active:null;if(id===activeWatchId)return;stopActive();if(!id)return;
