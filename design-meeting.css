@@ -276,7 +276,7 @@
  html:root body #designMeetingView .dm-detail-meta #dmLinks {grid-column:1 / -1;}
  html:root body #designMeetingView .dm-assignee {width:auto;min-width:0;padding:0 6px;}
  html:root body #designMeetingView .dm-assignee label {display:none;}
- html:root body #designMeetingView #dmDesigner {flex:1;width:100%;max-width:100%;margin:0;padding:0;height:26px;min-height:26px;}
+ html:root body #designMeetingView #dmDesigner {flex:1;width:100%;max-width:100%;margin:0;padding:0;height:26px;min-height:26px;text-align:center;text-align-last:center;}
  html:root body #designMeetingView #dmLookCategory {width:100%;min-width:0;height:28px;min-height:28px;border:1px solid var(--aisel-line);border-radius:3px;background:var(--aisel-bg);padding:0 6px;color:#6C727C;font-size:12px!important;font-weight:400;line-height:18px;}
  html:root body #designMeetingView #dmHeaderSave {flex:none;width:52px;height:28px;min-height:28px;padding:0 6px;font-size:12px;line-height:18px;font-weight:500;background:#343A3E;color:#fff;border:1px solid #343A3E;}
  #designMeetingView #dmLookManager:empty {display:none;}
