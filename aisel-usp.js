@@ -17,15 +17,23 @@
   const document=host.ownerDocument;host.classList.add('aisel-usp','aisel-usp-inline');
   const row=document.createElement('div');row.className='aisel-usp-row';row.setAttribute('aria-label','USP 키워드');host.append(row);
   let values=[],key='',disabled=false;const composing=new Set();
+  const measure=document.createElement('canvas').getContext('2d');
+  function fitKeyword(input){
+   if(!measure)return;
+   const style=document.defaultView.getComputedStyle(input);
+   measure.font=style.font||style.fontSize+' '+style.fontFamily;
+   const width=Math.max(22,Math.ceil(measure.measureText(input.value||input.placeholder||'').width)+10);
+   input.style.setProperty('--aisel-usp-width',width+'px');
+  }
   const inputs=Array.from({length:5},(_,index)=>{
    const input=document.createElement('input');input.type='text';input.className='aisel-usp-keyword';input.placeholder=String(index+1);input.setAttribute('aria-label','USP 키워드 '+(index+1));row.append(input);
    const commit=()=>{if(disabled||composing.has(index))return;while(values.length<=index)values.push('');values[index]=input.value;while(values.length&&!values.at(-1))values.pop();onChange?.(JSON.stringify(values));};
-   input.addEventListener('input',commit);input.addEventListener('blur',commit);input.addEventListener('compositionstart',()=>composing.add(index));input.addEventListener('compositionend',()=>{composing.delete(index);commit();});return input;
+   input.addEventListener('input',()=>{fitKeyword(input);commit();});input.addEventListener('blur',commit);input.addEventListener('compositionstart',()=>composing.add(index));input.addEventListener('compositionend',()=>{composing.delete(index);commit();});return input;
   });
   return {isComposing:()=>composing.size>0,update(next={}){
    const changedKey=String(next.key||'')!==key;if(changedKey){key=String(next.key||'');composing.clear();}
    disabled=!!next.disabled;const incoming=keywords(next.serialized);
-   inputs.forEach((input,index)=>{input.disabled=disabled;if(changedKey||!composing.has(index)&&document.activeElement!==input){input.value=incoming[index]||'';values[index]=incoming[index]||'';}});
+   inputs.forEach((input,index)=>{input.disabled=disabled;if(changedKey||!composing.has(index)&&document.activeElement!==input){input.value=incoming[index]||'';values[index]=incoming[index]||'';}fitKeyword(input);});
    while(values.length&&!values.at(-1))values.pop();
   }};
  }
