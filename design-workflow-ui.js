@@ -6,6 +6,18 @@
  'use strict';
  const TTL=300000, esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const isOwner=data=>data?.profile?.role==='owner';
+
+ const DESIGNER_BOOKS=Object.freeze({
+  '강혜주':Object.freeze({name:'강혜주',id:'1aH_DQfdD_rEih9JRIcZdxHzX7sOjSt_Gr5-klAUcIfQ'}),
+  '장은영':Object.freeze({name:'장은영',id:'12NI3ssd9OHRu8zcBp9HzvCaogCAmv5plszm-jvpxQco'})
+ });
+ function designerSheetLink(name,kind='workorders'){
+  const aliases={'혜주':'강혜주','은영':'장은영'},book=DESIGNER_BOOKS[aliases[name]||name];
+  if(!book)return null;
+  return {name:book.name,url:'https://docs.google.com/spreadsheets/d/'+book.id+'/edit#gid='+(kind==='orders'?'452268503':'2026102101')};
+ }
+ const MASTER_ORDER_SHEET='https://docs.google.com/spreadsheets/d/1cddRGUavMXIt-arYylrDhhXu4br20N_0eiLoo1nMK1A/edit#gid=452268503';
+
  function createClient(env){
   let key='',epoch=0,data=null,at=0,flight=null,status='idle',message='',mutation=0;const pending=new Set(),changed=new Map();
   const identity=()=>{const u=env.auth();return u?.uid&&u.isAnonymous!==true?u:null;};
@@ -118,12 +130,13 @@
    const cards=weeklyCards(observations.pending().length?{...data,source:{...data.source,recordState:'unknown'}}:data,Date.now(),C);return cards.length?cards.map(s=>{
     const known=s.status!=='unknown',progress=s.manual?`기본 ${s.manual.confirmedBaseCount}개 · 대표 확인`:known?`${s.onTime} / ${s.target}개`:'제출 결과 확인 필요';
     const detail=s.name==='혜주'?'기본 8개 · 일반 6 + 팬츠 신규소재 1 + 스커트 신규소재 1':'기본 6개 · 종류 제한 없음';
-    return `<div class="dw-week-card"><strong>${esc(s.name)} · ${compact(s.meetingDate)} 자정</strong><b>${esc(progress)} <span>${s.manual?(s.manual.confirmedBaseCount>=s.baseline?'기본 완료':'기본 일부 확인'):label[s.status]}</span></b><small>${detail}${s.additionalTarget?' · 대표 추가 '+s.additionalTarget+'개':''}${s.late?' · 지연 제출 '+s.late+'개':''}</small></div>`;
+    const sheet=designerSheetLink(s.name),orders=designerSheetLink(s.name,'orders');
+    return `<div class="dw-week-card"><strong>${sheet?`<a href="${esc(sheet.url)}" target="_blank" rel="noopener noreferrer">${esc(sheet.name)} 시트</a>`:esc(s.name)} · ${compact(s.meetingDate)} 자정</strong><b>${esc(progress)} <span>${s.manual?(s.manual.confirmedBaseCount>=s.baseline?'기본 완료':'기본 일부 확인'):label[s.status]}</span></b><small>${detail}${s.additionalTarget?' · 대표 추가 '+s.additionalTarget+'개':''}${s.late?' · 지연 제출 '+s.late+'개':''}${orders?` · <a href="${esc(orders.url)}" target="_blank" rel="noopener noreferrer">발주 시트</a>`:''}</small></div>`;
    }).join(''):'<p class="dw-muted">배정된 주간 업무를 확인하고 있어요.</p>';
   }
   function ordersHtml(data){
    if(!isOwner(data))return '';const rows=orderRows(data,tab),pending=orderRows(data,'request').length,done=orderRows(data,'done').length;
-   return `<details class="dw-orders"><summary>발주 확인 · 확인 필요 ${pending} / 초도 완료 확인 ${done}</summary><div class="dw-tabs" role="tablist" aria-label="발주 상태"><button data-tab="request" role="tab" aria-selected="${tab==='request'}">발주 요청·확인 필요 (${pending})</button><button data-tab="done" role="tab" aria-selected="${tab==='done'}">초도 완료 확인 (${done})</button></div>${tab==='request'?'<p class="dw-muted">이미 발주했다면 완료 확인만 해주세요.</p>':''}<div class="dw-order-list">${rows.length?rows.map(r=>`<div class="dw-order-row"><button data-open="${esc(r.code)}">${esc(recordTitle(r))}<small>${esc(r.code)} · ${esc(r.designer||'담당 확인 필요')}</small></button><span>${actualOrder(r)?compact(r.order.confirmation.orderDate)+' · '+r.order.confirmation.quantity+'장':'실제 발주 확인 전'}</span></div>`).join(''):'<p class="dw-muted">이 상태의 상품이 없어요.</p>'}</div></details>`;
+   return `<details class="dw-orders"><summary>발주 확인 · 확인 필요 ${pending} / 초도 완료 확인 ${done}</summary><p class="dw-muted"><a href="${esc(MASTER_ORDER_SHEET)}" target="_blank" rel="noopener noreferrer">통합 발주 시트</a></p><div class="dw-tabs" role="tablist" aria-label="발주 상태"><button data-tab="request" role="tab" aria-selected="${tab==='request'}">발주 요청·확인 필요 (${pending})</button><button data-tab="done" role="tab" aria-selected="${tab==='done'}">초도 완료 확인 (${done})</button></div>${tab==='request'?'<p class="dw-muted">이미 발주했다면 완료 확인만 해주세요.</p>':''}<div class="dw-order-list">${rows.length?rows.map(r=>`<div class="dw-order-row"><button data-open="${esc(r.code)}">${esc(recordTitle(r))}<small>${esc(r.code)} · ${esc(r.designer||'담당 확인 필요')}</small></button><span>${actualOrder(r)?compact(r.order.confirmation.orderDate)+' · '+r.order.confirmation.quantity+'장':'실제 발주 확인 전'}</span></div>`).join(''):'<p class="dw-muted">이 상태의 상품이 없어요.</p>'}</div></details>`;
   }
   function ownerForms(r,data){
    if(!isOwner(data))return '';const policy=C.getPolicy(r.designer);
@@ -189,5 +202,5 @@
   d.addEventListener('visibilitychange',()=>{if(!d.hidden)void client.refresh();});
   w.AiselDesignWorkflow=Object.freeze({refresh:()=>client.refresh(true),observeSaved,state:client.state});session();
  }
- return {createClient,createObservationGate,meaningfulSaved,weeklyCards,actualOrder,orderRows,metricLine,feedbackDetails,mount};
+ return {createClient,createObservationGate,meaningfulSaved,weeklyCards,actualOrder,orderRows,metricLine,feedbackDetails,designerSheetLink,mount};
 });
