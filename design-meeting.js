@@ -1219,6 +1219,10 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  if(!detailDesignerPicker)designerSelect.onchange=e=>selectDetailDesigner(e.target.value);
  $dm('#dmDetailTitle').addEventListener('compositionstart',()=>{$dm('#dmDetailTitle').dataset.composing='true';});$dm('#dmDetailTitle').addEventListener('compositionend',()=>{delete $dm('#dmDetailTitle').dataset.composing;if(document.activeElement!==$dm('#dmDetailTitle'))setTimeout(saveDetail,0);});
  $dm('#dmDetailTitle').oninput=e=>{$dm('[data-dm-field="title"]').value=e.target.textContent.trim();markDetailDraft('title');};$dm('#dmDetailTitle').onblur=saveDetail;
+ $dm('#dmDetailTitle').addEventListener('keydown',e=>{
+   if(e.key!=='Enter'||e.isComposing||e.keyCode===229||e.currentTarget.dataset.composing==='true')return;
+   e.preventDefault();e.stopPropagation();e.currentTarget.blur();
+ });
  $dm('#dmDrop').onclick=async()=>{const id=active,stamp=authStamp();if(!id||!await saveDetail({id,flushCategories:true}))return;try{assertAuth(stamp);await writeAccess();assertAuth(stamp);if(role!=='owner')throw Error('대표자만 변경할 수 있습니다.');const decision=current(id)?.decision||'unselected';await mutate(id,{decision:decision==='excluded'?'unselected':'excluded'},false,{decision});if(active===id)renderReview(current(id));lastSig='';render();}catch(e){if(active===id)message(e.message,true);}};
  $dm('#dmWorkorder').onclick=async()=>{const id=active;if(!id||busy)return;busy=true;applyEditingState();try{await prepareTransfer(id);await access();if(role!=='owner')throw Error('대표자만 사용할 수 있습니다.');if(active!==id)return;const c=current(id);if(c.convertedCode){await openConverted(c.convertedCode);return;}busy=false;await conversionDialog([id]);}catch(e){message(e.message,true);}finally{busy=false;applyEditingState();}};
  window.AiselNoteCategories?.subscribe(()=>{lastSig='';if(!pane.hidden&&!active)render();});
