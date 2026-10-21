@@ -194,3 +194,18 @@
   padding:0 4px;font-size:12px!important;white-space:nowrap;
  }
 }
+
+/* v263: compact label gap and a title focus box contained in its 28px row. */
+@media screen {
+ html:root body #designMeetingView .dm-detail-header,
+ html:root body #designMeetingView .dm-detail-meta {row-gap:var(--aisel-list-gap,4px);}
+ html:root body #designMeetingView #dmDetailTitle,
+ html:root body #designMeetingView #dmDetailTitle:focus {
+  box-sizing:border-box;height:28px;min-height:28px;max-height:28px;
+  margin:0;padding:4px 0;line-height:20px;
+ }
+ html:root body #designMeetingView #dmDetailTitle:focus {outline:1px solid var(--aisel-focus);outline-offset:-1px;}
+ html:root body #designMeetingView #dmReview .dm-manual-table tr,
+ html:root body #designMeetingView #dmReview .dm-manual-table tr:has(#dmUspKeywords) {grid-template-columns:80px minmax(0,1fr);}
+ html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>td {padding-left:2px;}
+}
