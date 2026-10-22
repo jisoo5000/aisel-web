@@ -3380,7 +3380,7 @@
   <div class="gallery-search" id="gallerySearchRow">
     <label class="aisel-search-field">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input type="search" id="gallerySearchInput" placeholder="검색" aria-label="검색" autocomplete="off">
+      <input type="search" id="gallerySearchInput" placeholder="품명·품번·디자이너·카테고리 전체 검색" aria-label="전체 검색" autocomplete="off">
     </label>
     <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제 복원</button>
   </div>
@@ -10817,7 +10817,7 @@
     const hasCat = st.cat !== undefined && st.cat !== null && String(st.cat).trim() !== "";
     const category = (hasCat ? CATS[Number(st.cat)] : null)
       || CATS.find(cat=>cat.code === String(code).split("-")[2]);
-    return [st.pumMyeong, code, category?.name].some(value=>
+    return [st.pumMyeong, code, st.designer, st.currentAssigneeName, category?.name].some(value=>
       String(value || "").toLocaleLowerCase("ko").includes(q));
   }
 
@@ -10826,7 +10826,7 @@
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const list = Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&matchesGalleryOrganization_(code,st));
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)));
     if(!list.length){ alert("지금 목록에 보이는 작지가 없습니다."); return; }
     if(!confirm(`지금 화면에 보이는 작지 ${list.length}개를 구글시트로 내보낼까요? 같은 품번이 이미 시트에 있으면 그 줄을 덮어씁니다.`)) return;
     const btn = $("#galleryExportSheetBtn");
@@ -10890,7 +10890,7 @@
 
     Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&matchesGalleryOrganization_(code,st))
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)))
       .sort(compareRegisteredOrders_)
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
