@@ -2,6 +2,31 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
+<script id="aisel-status-embed-boot">
+/* v34 (2026-10-22): legacy links enter through the authenticated AISEL app. */
+(function(){
+  var current = new URL(window.location.href);
+  var keys = ['tab','q','view','sq','sfield'];
+  window.aiselStatusEmbedded_ = window.parent !== window && current.searchParams.get('embedded') === '1';
+  if(!window.aiselStatusEmbedded_){
+    var app = new URL('work-order-5aa994e7.html',current);
+    keys.forEach(function(key){if(current.searchParams.has(key)) app.searchParams.set(key,current.searchParams.get(key));});
+    app.hash = 'products';
+    window.location.replace(app.href);
+    return;
+  }
+  document.documentElement.classList.add('aisel-status-embedded');
+  // The shell still owns login, permissions and saved in-app navigation state.
+  // On first entry only, inherit the legacy link's filters into this frame URL.
+  try{
+    var shell = new URL(window.parent.location.href);
+    if(shell.origin === current.origin && shell.hash === '#products'){
+      keys.forEach(function(key){if(!current.searchParams.has(key) && shell.searchParams.has(key)) current.searchParams.set(key,shell.searchParams.get(key));});
+      if(current.href !== window.location.href) window.history.replaceState(window.history.state,'',current.href);
+    }
+  }catch(ignore){}
+})();
+</script>
 <script src="aisel-protected-media.js?v=246.1"></script>
 <!-- AISEL 제품 진행 현황 v33 (2026-10-14): 제작진행 사진 화살표 제거·작성일 최신순 및 짧은 연도 호환. -->
 <!-- AISEL 제품 진행 현황 v32 (2026-10-14): 카드 상태배지/컬러 라벨 제거, 작지 컬러칩 규격 일치. -->
@@ -17,11 +42,7 @@
 <link rel="preconnect" href="https://firebasestorage.googleapis.com" crossorigin>
 <link rel="dns-prefetch" href="https://firebasestorage.googleapis.com">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<script id="aisel-status-embed-boot">
-/* Only an explicitly embedded same-origin screen uses the unified shell layout. */
-window.aiselStatusEmbedded_ = window.parent !== window && new URLSearchParams(window.location.search).get('embedded') === '1';
-if(window.aiselStatusEmbedded_) document.documentElement.classList.add('aisel-status-embedded');
-</script>
+
 <style>
 :root{--bg:#fff;--sheet:#fff;--ink:#242422;--muted:#74746F;--hair:#DEDCD6;--navy:#30302E;--navy-soft:#EEEDE9;--field:#F5F4F1;--field-line:#D8D6D0}
 *{box-sizing:border-box}
