@@ -233,9 +233,11 @@ var STATES = [
   {key:"planned",label:"예정",bg:"#EEF1F6",fg:"#4B5566"},
   {key:"sale",label:"판매중",bg:"#F3F1EC",fg:"#5E6059",desc:function(n){return "최근 30일 내 판매중 제품 " + n + "개입니다. 잘못 처리한 제품은 PDP로 되돌릴 수 있습니다.";},empty:"최근 30일 내 판매중 제품이 없습니다."}
 ];
-var SHARED = ["sampling","order","pdp","sale"];
-var ACTIVE = ["sampling","order","pdp"];
+var SHARED = ["sampling","resampling","order","pdp","sale"];
+var ACTIVE = ["sampling","resampling","order","pdp"];
 var TABS = [STATES[0],STATES[1],STATES[2],STATES[4],{key:"all",label:"전체",desc:function(n){return "샘플중·발주생산·PDP 제품 " + n + "개입니다.";},empty:"지금 진행 중인 제품이 없습니다."}];
+STATES.push({key:"resampling",label:"재샘플",bg:"#EEF1F6",fg:"#4B5566"});
+function statusGroup_(key){return key === "resampling" ? "sampling" : key;}
 function stateOf(key){return STATES.filter(function(s){return s.key === key;})[0] || null;}
 function validFilter(key){return ["sampling","order","pdp","sale","all"].indexOf(key) !== -1 ? key : "order";}
 function normalizeSearch(value){return String(value || "").toLowerCase().replace(/\s+/g, "");}
@@ -381,7 +383,7 @@ document.getElementById('statusToastDismiss').addEventListener('click',function(
 function countOf(key){
   return Object.keys(all).filter(function(code){
     var status = all[code].status;
-    return key === "sale" ? status === "sale" : ACTIVE.indexOf(status) !== -1 && (key === "all" || key === status);
+    return key === "sale" ? status === "sale" : ACTIVE.indexOf(status) !== -1 && (key === "all" || key === statusGroup_(status));
   }).length;
 }
 function renderTabs(){
@@ -430,7 +432,7 @@ function rowsNow(){
     .filter(function(row){
       if(SHARED.indexOf(row.e.status) === -1) return false;
       if(needle) return normalizeSearch(row.code).indexOf(needle) !== -1 || normalizeSearch(row.e.pumMyeong).indexOf(needle) !== -1;
-      return filter === "sale" ? row.e.status === "sale" : ACTIVE.indexOf(row.e.status) !== -1 && (filter === "all" || row.e.status === filter);
+      return filter === "sale" ? row.e.status === "sale" : ACTIVE.indexOf(row.e.status) !== -1 && (filter === "all" || statusGroup_(row.e.status) === filter);
     }).sort(function(a,b){
       return productionDateKey_(b.e) - productionDateKey_(a.e) || b.code.localeCompare(a.code);
     });

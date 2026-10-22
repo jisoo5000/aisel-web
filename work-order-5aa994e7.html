@@ -3559,7 +3559,7 @@
     </div>
 
     <div class="tb-row">
-      <button class="btn ghost nav-btn mfold" id="newBtn">+ 새 작지</button>
+      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" title="발주완료 표시">발주완료</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
@@ -6652,6 +6652,7 @@
   // ---------- 상태(예정/샘플중/샘플관리/발주생산/PDP/드롭) ----------
   const STATUS_LIST = [
     { key:"sampling",    emoji:"🧵", label:"샘플중" },
+    { key:"resampling", emoji:"🧵", label:"재샘플" },
     { key:"order",       emoji:"🏭", label:"발주생산" },
     { key:"pdp",         emoji:"🖼️", label:"PDP" },
     { key:"sale",        emoji:"🛍️", label:"판매" },
@@ -6659,8 +6660,9 @@
   ];
   const STATUS_MAP = Object.fromEntries(STATUS_LIST.map(s=> [s.key, s]));
   let currentStatus = "sampling";
+  let currentOrderCompleted_ = false;
   const STATUS_LABEL_MAP = {
-    planned: "🧵 샘플중", sampling: "🧵 샘플중", samplemgmt: "🧵 샘플중",
+    planned: "🧵 샘플중", sampling: "🧵 샘플중", samplemgmt: "🧵 샘플중", resampling: "🧵 재샘플",
     order: "🏭 발주생산", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
   };
   // 2026-08-13 수정: 예전에는 "샘플중"일 때만 필수칸이 핑크색으로 표시됐음. 이제 "발주생산"일 때도 같이 표시됨.
@@ -6680,7 +6682,7 @@
     { reason:"productDelayReason", exp:"#productExpectedArrivalDate", act:"#productActualArrivalDate" }
   ];
   function updateSampleFieldHighlights_(){
-    const active = currentStatus === "sampling" || currentStatus === "order";
+    const active = ["sampling","resampling","order"].includes(currentStatus);
     SAMPLE_REQUIRED_FIELDS.forEach(id=>{
       const el = document.getElementById(id);
       if(!el) return;
@@ -6700,8 +6702,17 @@
   }
   function updateStatusButtons(){
     document.querySelectorAll(".status-btn").forEach(btn=>{
-      btn.classList.toggle("active", btn.dataset.status === currentStatus);
+      const isSample = btn.dataset.status === "sampling";
+      const active = btn.dataset.status === currentStatus || isSample && currentStatus === "resampling";
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-pressed", String(active));
+      if(isSample){
+        const label = currentStatus === "resampling" ? "재샘플" : "샘플중";
+        if(btn.textContent !== label) btn.textContent = label;
+        btn.title = currentStatus === "sampling" ? "재샘플로 변경" : "샘플중으로 변경";
+      }
     });
+    renderOrderCompletedButton_();
     renderMobileHeader_();
     updateSampleFieldHighlights_();
     if(typeof refreshCafe24Bar_ === "function") refreshCafe24Bar_();
@@ -6711,7 +6722,7 @@
   let statusChanging_ = false;
   document.querySelectorAll(".status-btn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
-      const next = btn.dataset.status;
+      const next = btn.dataset.status === "sampling" && currentStatus === "sampling" ? "resampling" : btn.dataset.status;
       if(statusChanging_ || next === currentStatus) return;
       if(loading || !woRef || !currentCode || codeConflictNow_()){
         alert("작지를 불러오는 중이거나 품번이 겹쳐 상태를 저장할 수 없습니다. 잠시 후 다시 시도해주세요.");
@@ -6751,7 +6762,7 @@
         for(const [key,value] of Object.entries(modifiedParts))document.getElementById(key).value=value;
         updateStatusButtons();
         refreshCafe24Bar_();
-        if(next === "sampling") ensureSampleMgmtRow_(code, pumInput.value.trim());
+        if(next === "sampling" || next === "resampling") ensureSampleMgmtRow_(code, pumInput.value.trim());
         if(next === "order")void requestOrderRegistration_(code,woRef);
         // PDP 진입 시 기존 상세설명 생성 동작은 유지합니다.
         if(next === "pdp" && window.onPdpStageReached_) window.onPdpStageReached_();
@@ -7020,7 +7031,7 @@
   function collect(){
     syncFabricFromMemo_();
     const st = { season:$("#season").value, cat:catSel.value, materials:$("#materials").value,
-      pumAuto:pumInput.dataset.auto||"1", status: currentStatus };
+      pumAuto:pumInput.dataset.auto||"1", status: currentStatus, orderCompleted: currentOrderCompleted_ };
     captureMaterialMap_();
     collectMemoCostBindings_();
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
@@ -7791,6 +7802,7 @@
     $("#materials").value = st.materials || "";
     fabricMemoLastText_=$("#materials").value;
     pumInput.dataset.auto = st.pumAuto || "1";
+    currentOrderCompleted_ = st.orderCompleted === true;
     currentStatus = normalizeWorkOrderStatus_(st.status);
     updateStatusButtons();
     photoStage_ = st.photoStage || "reference";
@@ -9508,7 +9520,7 @@
   }
 
   $("#smSyncBtn").addEventListener("click", ()=>{
-    const samplingOrders = Object.entries(allWorkOrders || {}).filter(([code, st])=> (st.status||"") === "sampling");
+    const samplingOrders = Object.entries(allWorkOrders || {}).filter(([code, st])=> ["sampling","resampling"].includes(st.status||""));
     if(!samplingOrders.length){ alert("현재 샘플중 상태인 작지가 없습니다."); return; }
     let added = 0;
     samplingOrders.forEach(([code, st])=>{
@@ -10668,6 +10680,7 @@
       outputEl.value = "";
       outputEl.classList.add("copygen-empty");
     }
+    currentOrderCompleted_ = false;
     currentStatus = "sampling"; updateStatusButtons();
     // 2026-08-13 추가: 새 작지의 시야게 기본값을 0으로 둠 (인쇄영역 HTML은 그대로 두고 값만 지정)
     $("#siyage").value = "0";
@@ -10690,9 +10703,51 @@
     clearTimeout(gallerySearchTimer_);
     gallerySearchTimer_ = setTimeout(renderGallery, 200);
   });
-  $("#newBtn").addEventListener("click", ()=>{
-    bumpUsed(num($("#seq").value));   // 지금 번호를 '사용함'으로 기록 → 다음 작지는 +1
-    startNewWorkOrder();
+  function renderOrderCompletedButton_(){
+    const button = document.getElementById("newBtn");
+    if(!button) return;
+    button.classList.toggle("order-completed", currentOrderCompleted_);
+    button.setAttribute("aria-pressed", String(currentOrderCompleted_));
+    button.title = currentOrderCompleted_ ? "발주완료 표시 해제" : "발주완료 표시";
+  }
+  $("#newBtn").addEventListener("click", async ()=>{
+    if(statusChanging_) return;
+    if(loading || !woRef || !currentCode || codeConflictNow_()){
+      alert("작지를 불러오는 중이거나 품번이 겹쳐 저장할 수 없습니다. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+    const code = currentCode, next = !currentOrderCompleted_, button = document.getElementById("newBtn");
+    statusChanging_ = true;
+    button.disabled = true;
+    document.querySelectorAll(".status-btn").forEach(b=> b.disabled = true);
+    try{
+      if(!await waitForEditorComposition_()) throw Error("한글 입력을 마쳐주세요.");
+      clearTimeout(saveT); saveT = null;
+      const saved = await save(null,{beforeStatusChange:true}), writes = await Promise.all([...pendingSaveWrites_]);
+      if(saved === false || writes.includes(false)) throw Error("최신 내용 저장을 확인하지 못했습니다.");
+      if(currentCode !== code) return;
+      const now = Date.now(), modifiedParts = modificationDateParts_(now);
+      const updates = {
+        ["workorders/" + code + "/orderCompleted"]: next,
+        ["workorders/" + code + "/updatedAt"]: now,
+        ["workorderIndex/" + code + "/updatedAt"]: now
+      };
+      for(const [key,value] of Object.entries(modifiedParts)) updates["workorders/"+code+"/"+key] = value;
+      await workorderDatabase_.ref().update(updates);
+      if(currentCode !== code) return;
+      currentOrderCompleted_ = next;
+      if(lastSavedState_) lastSavedState_ = {...lastSavedState_,orderCompleted:next,updatedAt:now,...modifiedParts};
+      if(editorContentBaseline_) editorContentBaseline_ = {...editorContentBaseline_,orderCompleted:next,updatedAt:now,...modifiedParts};
+      for(const [key,value] of Object.entries(modifiedParts)) document.getElementById(key).value = value;
+      renderOrderCompletedButton_();
+    }catch(err){
+      alert("발주완료 표시가 저장되지 않았습니다. 인터넷 연결을 확인하고 다시 눌러주세요.");
+    }finally{
+      statusChanging_ = false;
+      button.disabled = false;
+      document.querySelectorAll(".status-btn").forEach(b=> b.disabled = false);
+      if(currentCode === code) saveSoon();
+    }
   });
 
   // v91: 샘플관리는 샘플중으로 통합합니다. 저장된 사진/메모/이력에는 손대지 않습니다.
@@ -10773,7 +10828,8 @@
   };
   let qoStatusFilterVal = "sampling";
   function galleryStatus_(st){
-    return normalizeWorkOrderStatus_(st && st.status);
+    const status = normalizeWorkOrderStatus_(st && st.status);
+    return status === "resampling" ? "sampling" : status;
   }
   // 탭과 같은 상태 기준으로 집계합니다. 검색 중에도 상태별 전체 개수를 유지합니다.
   function renderStatusCounts_(box, activeFilter){
@@ -10893,7 +10949,7 @@
       .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)))
       .sort(compareRegisteredOrders_)
       .forEach(([code, st])=>{
-        const statusInfo = STATUS_MAP[galleryStatus_(st)] || STATUS_MAP.sampling;
+        const statusInfo = STATUS_MAP[normalizeWorkOrderStatus_(st.status)] || STATUS_MAP.sampling;
         const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
         // 2026-08-13 수정: 카드 아래 표시를 품번에서 날짜로 변경.
         // v165: 왼쪽 작성일과 같은 날짜를 카드에 표시합니다.
@@ -15218,7 +15274,7 @@ function build(code,v,photo){
  !approved?(suggested?"판매가 미확정":"98,000원 초과 · 직접 입력"):"기준 충족";
  const size=(v.sizeSpec||[]).filter(r=>(r.values||[]).some(filled)).map(r=>r.part+": "+r.values.map((x,i)=>((v.sizeSpecCols||[])[i]||i+1)+" "+x).join(" / ")).join("\n");
  const p=photo||""; // Never send an uncompressed original as a failed-preview fallback.
- const status={sampling:"샘플중",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
+ const status={sampling:"샘플중",resampling:"재샘플",samplemgmt:"샘플중",planned:"샘플중",order:"발주·생산",pdp:"상세페이지",sale:"판매중",drop:"드롭"}[v.status]||v.status||"";
  const fields=[p,code,v.pumMyeong,status,v.factory,colorNames(v.selectedColors).join(" / "),
  v.fabricSupplierField||v.fabricSupplier,v.fabricNameField||v.fabricName,v.blend||v.fabricBlend,
  v.fabricWidth,v.fabricSwatchNo,appliedUnit(main)??"",filled(main.qty)?number(main.qty):"",
@@ -15813,7 +15869,7 @@ AiselSheetSalesView.start();
 </script>
 
 <script src="status-pricing-rules.js?v=status17"></script>
-<script src="status-catalog-bridge.js?v=status17.1"></script>
+<script src="status-catalog-bridge.js?v=resampling-20261022"></script>
 <style id="aisel-v112-toolbar">
 @media screen and (min-width:701px){
  #editorView .toolbar-fields {display:grid;grid-template-columns:minmax(0,20fr) minmax(0,38fr) minmax(0,42fr);gap:8px;align-items:end;width:100%;}
@@ -17196,3 +17252,11 @@ window.AiselUnifiedAdapter={
 <script src="design-workflow-core.js?v=20261021"></script>
 <script src="design-workflow-ui.js?v=20261021.1"></script>
 
+<style id="aisel-order-completed-style">
+@media screen {
+ html:root body #editorView .toolbar .tb-row > #newBtn.order-completed {
+  background:#34383C!important;border-color:#34383C!important;color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+ }
+}
+</style>

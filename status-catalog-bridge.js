@@ -9,7 +9,7 @@
   const PATH = 'workorderStatusCatalog';
   const FIELDS = ['status','updatedAt','createdAt','yy','mm','dd','pumMyeong','factory','blend','selectedColors',
     'cat','lines','gongim','siyage','targetThreshold','priceConfirmed','priceSource','arrivedAt','pdpReviewNeeded'];
-  const ACTIVE = ['sampling','samplemgmt','planned','order','pdp'];
+  const ACTIVE = ['sampling','resampling','samplemgmt','planned','order','pdp'];
   const DAY = 86400000;
   const text = (v,max=500)=>String(v==null?'':v).trim().slice(0,max);
   const number = v=>Number(v)||0;
