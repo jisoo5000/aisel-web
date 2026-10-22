@@ -66,7 +66,7 @@
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGalleryWarm();});
  function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
  function allowedWorkorder(){return window.AiselAccess?.allowed('orders')===true;}
- function allowedView(view){return window.AiselAccess?.allowed(view)===true;}
+ function allowedView(view){return view==='products'||window.AiselAccess?.allowed(view)===true;}
  function applyRole(){
   for(const button of main.querySelectorAll('[data-main]'))button.hidden=!allowedView(button.dataset.main);
   post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
@@ -79,7 +79,8 @@
   const hash=location.hash,code=requestedLocation()?.code;
   if(!session){
    if(accessIdentity&&current)accessRestore={uid:accessIdentity,view:current,code};
-   info(event.detail?.error||'로그인 후 자료를 확인해주세요.');A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();unmount();current='';return;
+   A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();unmount();current='';
+   info();show('products',{replace:true});return;
   }
   const changedIdentity=accessIdentity&&accessIdentity!==session.uid,restore=accessRestore?.uid===session.uid?accessRestore:null;
   accessIdentity=session.uid;accessRestore=null;
@@ -155,7 +156,7 @@
  },{passive:false});
  for(const name of ['touchend','touchcancel'])document.addEventListener(name,()=>{productTouch=null;},{passive:true});
 
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='출고현황';frame.src='status.html?embedded=1&v=246';pane.append(frame);}
+ function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='출고현황';frame.src='status.html?embedded=1&v=35';pane.append(frame);}
  function select(view){
   current=view;
   $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';

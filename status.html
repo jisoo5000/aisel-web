@@ -3,18 +3,12 @@
 <head>
 <meta charset="utf-8">
 <script id="aisel-status-embed-boot">
-/* v34 (2026-10-22): legacy links enter through the authenticated AISEL app. */
+/* v35 (2026-10-22): product progress is readable without an account. */
 (function(){
   var current = new URL(window.location.href);
   var keys = ['tab','q','view','sq','sfield'];
   window.aiselStatusEmbedded_ = window.parent !== window && current.searchParams.get('embedded') === '1';
-  if(!window.aiselStatusEmbedded_){
-    var app = new URL('work-order-5aa994e7.html',current);
-    keys.forEach(function(key){if(current.searchParams.has(key)) app.searchParams.set(key,current.searchParams.get(key));});
-    app.hash = 'products';
-    window.location.replace(app.href);
-    return;
-  }
+  if(!window.aiselStatusEmbedded_) return;
   document.documentElement.classList.add('aisel-status-embedded');
   // The shell still owns login, permissions and saved in-app navigation state.
   // On first entry only, inherit the legacy link's filters into this frame URL.
@@ -225,6 +219,10 @@ function statusDatabase_(){
   }
   return firebase.database();
 }
+var statusPublicEndpoint_='https://asia-southeast1-aisel-workorder.cloudfunctions.net/statusPublicV1';
+function canManageStatus_(){
+  try{return !!(window.aiselStatusEmbedded_ && parent.AiselAccess && parent.AiselAccess.session && parent.AiselAccess.session.active && parent.AiselAccess.allowed('products'));}catch(ignore){return false;}
+}
 function normalizeStatus_(key){return ["planned","samplemgmt"].indexOf(key)!==-1 ? "sampling" : key;}
 var STATES = [
   {key:"sampling",label:"샘플중",bg:"#EEF1F6",fg:"#4B5566",desc:function(n){return "샘플 진행 중인 제품 " + n + "개입니다.";},empty:"지금 샘플 진행 중인 제품이 없습니다."},
@@ -298,6 +296,7 @@ function rememberStatusUndo_(code,before,patch){
 }
 function sameCatalogVersion_(entry,version){return String(entry.sourceUpdatedAt || '') === String(version || '');}
 function readLiveStatusEntry_(code){
+  if(!canManageStatus_()) return Promise.reject(new Error("변경하려면 권한이 있는 계정으로 로그인해주세요."));
   return Promise.all([
     statusDatabase_().ref('workorderStatusCatalog/' + code).once('value'),
     statusDatabase_().ref('workorders/' + code + '/status').once('value')
@@ -307,6 +306,7 @@ function readLiveStatusEntry_(code){
   });
 }
 function writeStatusPatch_(code, patch, btn, okText, before){
+  if(!canManageStatus_()) return Promise.reject(new Error("변경하려면 권한이 있는 계정으로 로그인해주세요."));
   patch = Object.assign({},patch);
   if(!patch.updatedAt) patch.updatedAt = Date.now();
   if(btn){btn.disabled = true;btn.textContent = '처리 중...';}
@@ -321,6 +321,7 @@ function writeStatusPatch_(code, patch, btn, okText, before){
   return statusDatabase_().ref().update(updates).then(function(){
     if(btn){btn.disabled = false;btn.textContent = okText;}
     if(before) rememberStatusUndo_(code,before,patch);
+    refreshPublicStatus_();
     return true;
   }).catch(function(err){
     console.error(err);
@@ -470,21 +471,9 @@ function readThumbnailFallback_(code){
 }
 function photoRecord_(code,version){
   if(photoCache[code] && photoCache[code].version === version) return photoCache[code];
-  var record = {version:version,source:null,promise:null,fallback:null,fallbackSource:null};
-  photoCache[code] = record;
-  record.promise = readPhotoLeaf_(code,"thumbUrl").catch(function(){return "";}).then(function(src){
-    if(src) return src;
-    record.fallback = readThumbnailFallback_(code).then(function(fallback){record.fallbackSource = fallback;return fallback;});
-    return record.fallback;
-  }).then(function(src){
-    record.source = src;
-    if(!src && photoCache[code] === record) delete photoCache[code];
-    return src;
-  }).catch(function(err){
-    if(photoCache[code] === record) delete photoCache[code];
-    throw err;
-  });
-  return record;
+  var src=statusPublicEndpoint_+'?photo='+encodeURIComponent(code);
+  var record={version:version,source:src,promise:Promise.resolve(src),fallback:Promise.resolve(''),fallbackSource:src};
+  photoCache[code]=record;return record;
 }
 function showPhoto_(thumb,code,entry){
   if(thumb._photoRequested) return;
@@ -600,7 +589,7 @@ function render(){
       var arrived = document.createElement("div");arrived.className = "arrived-at";
       arrived.textContent = "도착 확인일 " + (entry.arrivedAt || "미입력");body.appendChild(arrived);
     }
-    if(entry.status === "order" || entry.status === "pdp" || entry.status === "sale"){
+    if(canManageStatus_() && (entry.status === "order" || entry.status === "pdp" || entry.status === "sale")){
       var actions = document.createElement("div");actions.className = "arrive-row";
       var button = document.createElement("button");button.type = "button";
       if(entry.status === "order"){
@@ -776,45 +765,37 @@ function renderLiveCatalog_(){
   renderTabs();render();
   if(failed) document.getElementById("desc").textContent = "일부 제품의 작지 상태를 확인하지 못했습니다. 연결을 확인한 뒤 새로고침해 주세요.";
 }
-var statusCatalogRef_=statusDatabase_().ref("workorderStatusCatalog");
-var statusCatalogListener_=statusCatalogRef_.on("value",function(snap){
-  var catalog = snap.val(), next = {};
-  if(catalog && typeof catalog === "object") Object.keys(catalog).forEach(function(code){
-    var entry = catalog[code];
-    if(entry && entry.schemaVersion === 1 && SHARED.indexOf(normalizeStatus_(entry.status)) !== -1) next[code] = entry;
-  });
-  statusCatalog_ = next;catalogMissing = !catalog;catalogReadFailed_ = false;
-  Object.keys(sourceStatusWatches_).forEach(function(code){
-    if(Object.prototype.hasOwnProperty.call(next,code)) return;
-    var watch = sourceStatusWatches_[code];
-    delete sourceStatusWatches_[code];watch.ref.off("value",watch.callback);
-    delete photoCache[code];
-  });
-  var added = [];
-  Object.keys(next).forEach(function(code){
-    if(sourceStatusWatches_[code]) return;
-    var watch = {ref:statusDatabase_().ref("workorders/" + code + "/status"),ready:false,failed:false,status:null};
-    sourceStatusWatches_[code] = watch;
-    watch.callback = function(source){
-      if(sourceStatusWatches_[code] !== watch) return;
-      watch.ready = true;watch.failed = false;watch.status = source.val();renderLiveCatalog_();
-    };
-    watch.error = function(err){
-      if(sourceStatusWatches_[code] !== watch) return;
-      watch.ready = true;watch.failed = true;delete photoCache[code];renderLiveCatalog_();console.error(err);
-    };
-    added.push(watch);
-  });
-  added.forEach(function(watch){watch.ref.on("value",watch.callback,watch.error);});
-  renderLiveCatalog_();
-},function(err){
-  catalogReadFailed_ = true;loadFailed = true;gridEl.setAttribute("aria-busy","false");
-  var connection = document.getElementById("connection");connection.className = "connection error";connection.textContent = "연결 확인";
-  emptyEl.setAttribute("role","alert");renderTabs();render();console.error(err);
-});
+var statusCatalogRef_=null,statusCatalogListener_=null;
+var publicStatusFlight_=null,publicStatusTimer_=null;
+function refreshPublicStatus_(){
+  if(publicStatusFlight_)return publicStatusFlight_;
+  var controller=new AbortController(),timeout=setTimeout(function(){controller.abort();},20000);
+  publicStatusFlight_=fetch(statusPublicEndpoint_,{method:'GET',credentials:'omit',cache:'no-store',signal:controller.signal}).then(function(response){
+    if(!response.ok)throw Error('status_unavailable');return response.json();
+  }).then(function(result){
+    if(!result||result.ok!==true||!result.records||typeof result.records!=='object'||Array.isArray(result.records))throw Error('status_invalid');
+    statusCatalog_=result.records;catalogMissing=false;catalogReadFailed_=false;
+    Object.keys(photoCache).forEach(function(code){if(!Object.prototype.hasOwnProperty.call(statusCatalog_,code))delete photoCache[code];});
+    sourceStatusWatches_=Object.create(null);
+    Object.keys(statusCatalog_).forEach(function(code){sourceStatusWatches_[code]={ready:true,failed:false,status:statusCatalog_[code].status};});
+    renderLiveCatalog_();
+    if(window.AiselSamples)window.AiselSamples.onProductsChanged();
+  }).catch(function(error){
+    catalogReadFailed_=true;loadFailed=true;dataReady=false;renderTabs();render();
+    var connection=document.getElementById('connection');connection.className='connection error';connection.textContent='연결 확인';
+  }).finally(function(){clearTimeout(timeout);publicStatusFlight_=null;});
+  return publicStatusFlight_;
+}
+function refreshVisibleStatus_(){if(!document.hidden)refreshPublicStatus_();}
+refreshPublicStatus_();
+publicStatusTimer_=setInterval(refreshVisibleStatus_,60000);
+window.addEventListener('focus',refreshVisibleStatus_);
+document.addEventListener('visibilitychange',refreshVisibleStatus_);
+window.addEventListener('pagehide',function(){clearInterval(publicStatusTimer_);});
+window.addEventListener('pageshow',function(event){if(event.persisted){clearInterval(publicStatusTimer_);publicStatusTimer_=setInterval(refreshVisibleStatus_,60000);refreshVisibleStatus_();}});
 </script>
 <script src="status-samples-flow.js?v=samples-office-20261004-v16-4"></script>
-<script src="status-samples-data.js?v=samples-office-20261004-v16-4"></script>
+<script src="status-samples-data.js?v=status-public-v35"></script>
 <script src="status-samples.js?v=233"></script>
 
 <script id="aisel-status-embed-bridge">
@@ -894,7 +875,7 @@ var statusCatalogListener_=statusCatalogRef_.on("value",function(snap){
     report(true);
     /* The shell removes inactive frames; stop their own Firebase connection too. */
     if(statusCatalogRef_&&statusCatalogListener_)statusCatalogRef_.off('value',statusCatalogListener_);
-    Object.values(sourceStatusWatches_).forEach(function(w){w.ref.off('value',w.callback);});
+    Object.values(sourceStatusWatches_).forEach(function(w){if(w.ref)w.ref.off('value',w.callback);});
     if(!window.aiselStatusEmbedded_ && window.firebase && typeof firebase.database === 'function') firebase.database().goOffline();
   });
   post('aisel-status-ready');report(true);

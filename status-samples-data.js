@@ -66,6 +66,7 @@
   }
   function publicUrl(){
     if(deps.publicCatalogUrl) return deps.publicCatalogUrl;
+    if(deps.window) return "https://asia-southeast1-aisel-workorder.cloudfunctions.net/statusPublicV1?samples=1";
     try{var base = deps.firebase.app().options.databaseURL;if(typeof base === "string" && /^https:\/\//.test(base)) return base.replace(/\/$/,"") + "/" + PUBLIC_PATH + ".json";}catch(ignore){}
     throw error("PUBLIC_SETUP","샘플 목록 연결을 확인해야 합니다.");
   }
