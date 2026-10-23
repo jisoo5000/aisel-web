@@ -935,7 +935,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    for(const c of chosen){const row=document.createElement('div');row.dataset.id=c.id;row.className='dm-conversion-row';row.innerHTML=`<strong>${esc(c.title||'사진 후보')}</strong><label>시즌<select class="dm-season"><option value="">선택</option>${document.getElementById('season').innerHTML}</select></label><label>카테고리<select class="dm-category"><option value="">선택</option>${catSel.innerHTML}</select></label>`;row.querySelector('.dm-season').value='';row.querySelector('.dm-category').value='';list.append(row);}
    dlg.showModal();
  }
- function convertOne(id,season,category){if(conversionFlights.has(id))return conversionFlights.get(id);const flight=convertOneNow(id,season,category).finally(()=>conversionFlights.delete(id));conversionFlights.set(id,flight);return flight;}
+ function convertOne(id,season,category,onProgress){if(conversionFlights.has(id))return conversionFlights.get(id);const flight=convertOneNow(id,season,category,onProgress).finally(()=>conversionFlights.delete(id));conversionFlights.set(id,flight);return flight;}
  async function prepareTransfer(id){
    if(active===id&&!await canLeave())throw Error('입력한 내용 저장을 확인한 뒤 다시 눌러주세요.');
    for(const item of pendingForCandidate(id))await deadline(upload(item),'사진 저장',30000);
@@ -949,14 +949,14 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    if(pane.hidden||active!==started.id||showEpoch!==started.epoch||editIntent!==started.intent)return false;
    if(await window.AiselDesignMeetingAdapter.open(code)===false)throw Error('작업지시서는 저장됐습니다. 열기를 다시 시도해주세요.');return code;
  }
- async function convertOneNow(id,season,category){
+ async function convertOneNow(id,season,category,onProgress){
    await prepareTransfer(id);
    const stamp=authStamp();await writeAccess();assertAuth(stamp);
    if(role!=='owner')throw Error('작업지시서 생성은 대표자만 사용할 수 있습니다.');
    if(!CATS[Number(category)]||![...document.getElementById('season').options].some(option=>option.value===season))throw Error('시즌·카테고리를 확인해주세요.');
    const store=await window.AiselCollectionWrites.conversionStore();assertAuth(stamp);
    const token=uid(),now=Date.now();let reserved=false,code='';
-   const step=async(label,run)=>{try{store.assert();assertAuth(stamp);const value=await run();store.assert();assertAuth(stamp);return value;}catch(error){if(!error.conversionStep){error.conversionStep=label;error.message=label+' · '+error.message;}throw error;}};
+   const step=async(label,run)=>{try{store.assert();assertAuth(stamp);onProgress?.(label);const value=await run();store.assert();assertAuth(stamp);return value;}catch(error){if(!error.conversionStep){error.conversionStep=label;error.message=label+' · '+error.message;}throw error;}};
    const transaction=transform=>meetingTransaction(id,value=>{assertAuth(stamp);return transform(value);});
    async function verifyWorkorder(code){
      await step('삭제 여부 확인',()=>store.ensureWorkorderActive(code));
@@ -1025,7 +1025,9 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  }
  async function convertSelected(){if(busy)return;const rows=[...$dm('#dmConversionList').children];if(rows.some(r=>!r.querySelector('.dm-season').value||r.querySelector('.dm-category').value==='')){$dm('#dmConversionStatus').textContent='각 후보의 시즌·카테고리를 선택해주세요.';return;}
    const started={active,epoch:showEpoch,intent:editIntent};busy=true;$dm('#dmConversionConfirm').disabled=true;for(const row of rows)for(const field of row.querySelectorAll('select'))field.disabled=true;applyEditingState();const codes=[],errors=[];
-   try{for(const row of rows)try{codes.push(await convertOne(row.dataset.id,row.querySelector('.dm-season').value,row.querySelector('.dm-category').value));}catch(e){errors.push(e.message);}
+   const progress=label=>{if(!pane.hidden&&active===started.active&&showEpoch===started.epoch&&editIntent===started.intent){const stage=label.includes('품번')?'품번 확인':label==='작업지시서 생성'?'작업지시서 생성':label==='저장 연결 확인'?'저장 연결 확인':'저장 확인';$dm('#dmConversionStatus').textContent=`${codes.length}/${rows.length}개 저장 확인 · ${stage} 중…`;}};
+   progress('저장 연결 확인');
+   try{for(const row of rows)try{codes.push(await convertOne(row.dataset.id,row.querySelector('.dm-season').value,row.querySelector('.dm-category').value,progress));}catch(e){errors.push(e.message);}
      if(pane.hidden||active!==started.active||showEpoch!==started.epoch||editIntent!==started.intent)return;
      window.AiselDesignMeetingAdapter.restore();lastSig='';render();if(active)renderReview(current(active));$dm('#dmConversionStatus').textContent=`${codes.length}/${rows.length}개 저장 확인${errors.length?' · '+errors.join(' / '):''}`;
      if(!errors.length){$dm('#dmConversionDialog').close();if(codes.length===1)await openConverted(codes[0]);}else message('실패한 항목을 다시 시도해주세요. '+errors.join(' / '),true);

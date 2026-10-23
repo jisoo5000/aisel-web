@@ -217,35 +217,48 @@
       return value;
     };
     const signatureOf=value=>JSON.stringify(stable(stored(value)));
-    async function request(path,method='GET',value,etag,query='') {
+    const requestFailure=(code,status)=>Object.assign(fail(code,{
+      invalid_request:'작업지시서 연결 요청에 오류가 있습니다. 입력은 유지됩니다.',
+      request_failed:'작업지시서 연결 요청을 처리하지 못했습니다. 입력은 유지됩니다.',
+      rate_limited:'요청이 많습니다. 잠시 후 같은 후보에서 다시 시도해주세요.',
+      server_unavailable:'저장 서버가 응답하지 못했습니다. 잠시 후 같은 후보에서 다시 시도해주세요.',
+      timeout:'저장 확인 시간이 초과됐습니다. 같은 후보에서 다시 시도해주세요.',
+      invalid_response:'저장 응답을 확인하지 못했습니다. 같은 후보에서 다시 시도해주세요.',
+      network:'연결이 끊겨 저장 결과를 확인하지 못했습니다. 같은 후보에서 다시 시도해주세요.'
+    }[code]),Number.isInteger(status)?{httpStatus:status}:{});
+    async function request(path,method='GET',value,etag,query='',withEtag=false) {
       assert(ctx);const token=await current().getIdToken();assert(ctx);
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
       try {
+        // Only transaction reads need ETags. RTDB does not support them on
+        // shallow/filtered queries, including the existing-code lookup.
         const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/'+path+'.json?auth='+encodeURIComponent(token)+query,{
           method,cache:'no-store',credentials:'omit',signal:controller.signal,
-          headers:{Accept:'application/json',...(method==='GET'?{'X-Firebase-ETag':'true'}:{'Content-Type':'application/json','If-Match':etag})},
+          headers:{Accept:'application/json',...(method==='GET'?(withEtag?{'X-Firebase-ETag':'true'}:{}):{'Content-Type':'application/json','If-Match':etag})},
           ...(method==='GET'?{}:{body:JSON.stringify(value)})
         });
-        assert(ctx);if([401,403].includes(response.status))throw fail('permission_denied');
-        if(response.status===412)return {conflict:true};if(!response.ok)throw fail('network');
-        const result=await response.json();assert(ctx);return {value:result,etag:response.headers?.get('etag')||''};
-      } catch(error) {assert(ctx);if(error.code)throw error;throw fail('network');} finally {clearTimeout(timer);}
+        assert(ctx);if([401,403].includes(response.status))throw requestFailure('permission_denied',response.status);
+        if(response.status===412&&method!=='GET')return {conflict:true};
+        if(!response.ok)throw requestFailure(response.status===400?'invalid_request':response.status===404?'not_found':response.status===429?'rate_limited':response.status>=500?'server_unavailable':'request_failed',response.status);
+        let result;try{result=await response.json();}catch(error){if(controller.signal.aborted)throw error;throw requestFailure('invalid_response',response.status);}
+        assert(ctx);return {value:result,etag:response.headers?.get('etag')||''};
+      } catch(error) {assert(ctx);if(controller.signal.aborted)throw requestFailure('timeout');if(error.code)throw error;throw requestFailure('network');} finally {clearTimeout(timer);}
     }
     async function transaction(path,transform) {
       for(let attempt=0;attempt<5;attempt++){
-        const before=await request(path);assert(ctx);const next=transform(clone(before.value));
+        const before=await request(path,'GET',undefined,undefined,'',true);assert(ctx);const next=transform(clone(before.value));
         if(next===undefined)return meetingReceipt(false,before.value);
         if(next===null||typeof next?.then==='function')throw fail('invalid');
         const signature=signatureOf(next);
         if(signature===signatureOf(before.value))return meetingReceipt(true,before.value);
-        if(!before.etag)throw fail('network');
+        if(!before.etag)throw requestFailure('invalid_response');
         let result;
         try {result=await request(path,'PUT',next,before.etag);}
         catch(error){
-          if(error.code!=='network')throw error;
+          if(!['network','timeout','server_unavailable','invalid_response'].includes(error.code))throw error;
           // A lost response may hide a successful PUT. Never replay the write
           // until an exact canonical read proves the outcome.
-          const proof=await request(path);
+          let proof;try{proof=await request(path);}catch(_){assert(ctx);throw error;}
           if(signatureOf(proof.value)===signature)return meetingReceipt(true,proof.value);
           throw error;
         }

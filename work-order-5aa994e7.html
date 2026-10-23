@@ -1,3 +1,4 @@
+<!-- v264: restore reference workorder conversion and classify request failures -->
 <!-- v259: fabric color picker, five compact chips, wider market selects, stable reload route -->
 <!-- v257: same-workorder refresh and compact market/fabric controls -->
 <!-- v256: visible white chips, pale stripe labels and aligned color inputs -->
@@ -17153,7 +17154,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-native-bridge.js?v=217"></script>
 <script src="aisel-gallery-index.js?v=221"></script>
 <script src="aisel-gallery-images.js?v=221"></script>
-<script src="aisel-collection-writes.js?v=233"></script>
+<script src="aisel-collection-writes.js?v=264"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=244"></script>
@@ -17166,7 +17167,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=233"></script>
 <script src="aisel-look-categories.js?v=233"></script>
-<script src="design-meeting.js?v=263"></script>
+<script src="design-meeting.js?v=264"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
