@@ -1,3 +1,4 @@
+<!-- v36: logistics transitions, legacy thumbnail formats, shared app controls -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -116,8 +117,8 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 <link rel="stylesheet" href="aisel-ui.css?v=178" />
-<link rel="stylesheet" href="status-samples.css?v=243" />
-<link rel="stylesheet" href="aisel-list-controls.css?v=240" media="screen" />
+<link rel="stylesheet" href="status-samples.css?v=36" />
+<link rel="stylesheet" href="aisel-list-controls.css?v=263" media="screen" />
 
 <style id="aisel-status-embedded-style">
 @media screen {
@@ -220,9 +221,8 @@ function statusDatabase_(){
   return firebase.database();
 }
 var statusPublicEndpoint_='https://asia-southeast1-aisel-workorder.cloudfunctions.net/statusPublicV1';
-function canManageStatus_(){
-  try{return !!(window.aiselStatusEmbedded_ && parent.AiselAccess && parent.AiselAccess.session && parent.AiselAccess.session.active && parent.AiselAccess.allowed('products'));}catch(ignore){return false;}
-}
+function canManageStatus_(){return true;}
+var statusProgressEndpoint_='https://asia-southeast1-aisel-workorder.cloudfunctions.net/statusProgressV1';
 function normalizeStatus_(key){return ["planned","samplemgmt"].indexOf(key)!==-1 ? "sampling" : key;}
 var STATES = [
   {key:"sampling",label:"샘플중",bg:"#EEF1F6",fg:"#4B5566",desc:function(n){return "샘플 진행 중인 제품 " + n + "개입니다.";},empty:"지금 샘플 진행 중인 제품이 없습니다."},
@@ -295,40 +295,34 @@ function rememberStatusUndo_(code,before,patch){
   showStatusToast_((before.pumMyeong || code) + ' · ' + stateOf(patch.status).label + '로 변경했습니다.',true);
 }
 function sameCatalogVersion_(entry,version){return String(entry.sourceUpdatedAt || '') === String(version || '');}
+var statusRequestIds_=Object.create(null);
+function progressRequestId_(){var bytes=new Uint8Array(16);crypto.getRandomValues(bytes);return Array.from(bytes,function(n){return n.toString(16).padStart(2,'0');}).join('');}
 function readLiveStatusEntry_(code){
-  if(!canManageStatus_()) return Promise.reject(new Error("변경하려면 권한이 있는 계정으로 로그인해주세요."));
-  return Promise.all([
-    statusDatabase_().ref('workorderStatusCatalog/' + code).once('value'),
-    statusDatabase_().ref('workorders/' + code + '/status').once('value')
-  ]).then(function(snapshots){
-    var entry = snapshots[0].val(), status = normalizeStatus_(snapshots[1].val());
-    return entry && SHARED.indexOf(status) !== -1 && status === normalizeStatus_(entry.status) ? entry : null;
-  });
+ return fetch(statusPublicEndpoint_,{credentials:'omit',cache:'no-store'}).then(function(response){if(!response.ok)throw Error('status_unavailable');return response.json();}).then(function(value){return value.records[code]||null;});
 }
-function writeStatusPatch_(code, patch, btn, okText, before){
-  if(!canManageStatus_()) return Promise.reject(new Error("변경하려면 권한이 있는 계정으로 로그인해주세요."));
-  patch = Object.assign({},patch);
-  if(!patch.updatedAt) patch.updatedAt = Date.now();
-  if(btn){btn.disabled = true;btn.textContent = '처리 중...';}
-  var updates = {};
-  ['workorders','workorderIndex','workorderShare'].forEach(function(path){
-    Object.keys(patch).forEach(function(key){updates[path + '/' + code + '/' + key] = patch[key];});
-  });
-  ['status','arrivedAt','pdpReviewNeeded'].forEach(function(key){
-    if(Object.prototype.hasOwnProperty.call(patch,key)) updates['workorderStatusCatalog/' + code + '/' + key] = patch[key];
-  });
-  updates['workorderStatusCatalog/' + code + '/sourceUpdatedAt'] = patch.updatedAt;
-  return statusDatabase_().ref().update(updates).then(function(){
-    if(btn){btn.disabled = false;btn.textContent = okText;}
-    if(before) rememberStatusUndo_(code,before,patch);
-    refreshPublicStatus_();
-    return true;
-  }).catch(function(err){
-    console.error(err);
-    if(btn){btn.disabled = false;btn.textContent = '실패 · 다시 시도';}
-    alert('저장에 실패했습니다. 인터넷을 확인하고 다시 눌러주세요.');
-    return false;
-  });
+function writeStatusPatch_(code,patch,btn,okText,before){
+ var prior=before||lastStatusUndo_,action=before?(before.status==='order'?'arrive':before.status==='pdp'?'complete':'restore'):'undo';
+ var body={code:code,action:action,expectedStatus:prior.status,expectedVersion:Number(before?before.sourceUpdatedAt:prior.version)||0};
+ if(action==='undo')body.undoId=prior.undoId;
+ var key=JSON.stringify(body);body.requestId=statusRequestIds_[key]||(statusRequestIds_[key]=progressRequestId_());
+ var originalLabel=btn&&btn.textContent;
+ if(btn){btn.disabled=true;btn.textContent='처리 중...';}
+ var controller=new AbortController(),timer=setTimeout(function(){controller.abort();},25000);
+ return fetch(statusProgressEndpoint_,{method:'POST',credentials:'omit',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:controller.signal}).then(function(response){
+  return response.json().then(function(value){if(!response.ok||!value.ok)throw Object.assign(Error(value.error||'temporarily_unavailable'),{status:response.status});return value;});
+ }).then(async function(result){
+  if(publicStatusFlight_)await publicStatusFlight_;
+  if(statusCatalog_[code])Object.assign(statusCatalog_[code],{status:result.status,arrivedAt:result.arrivedAt||'',sourceUpdatedAt:result.sourceUpdatedAt});
+  if(sourceStatusWatches_[code])sourceStatusWatches_[code].status=result.status;
+  if(before){rememberStatusUndo_(code,before,Object.assign({status:result.status,updatedAt:result.sourceUpdatedAt},action==='arrive'?{arrivedAt:result.arrivedAt}:{}));lastStatusUndo_.undoId=result.undoId;}
+  renderLiveCatalog_();refreshPublicStatus_();
+  return true;
+ }).catch(function(error){
+  var conflict=error.status===409;
+  if(conflict)lastStatusUndo_=null;
+  showStatusToast_(conflict?'다른 변경이 반영되었습니다. 현재 상태를 확인한 뒤 다시 눌러주세요.':'처리 결과를 확인하지 못했습니다. 새로고침 후 현재 단계를 확인해 주세요.',!conflict&&!!lastStatusUndo_);
+  refreshPublicStatus_();return false;
+ }).finally(function(){clearTimeout(timer);if(btn&&btn.isConnected){btn.disabled=false;btn.textContent=originalLabel||okText;}});
 }
 function changeStatus_(code,name,btn,from,patch,label,notice){
   if(statusChangeBusy_ || undoInProgress_) return Promise.resolve(false);
@@ -472,8 +466,14 @@ function readThumbnailFallback_(code){
 function photoRecord_(code,version){
   if(photoCache[code] && photoCache[code].version === version) return photoCache[code];
   var src=statusPublicEndpoint_+'?photo='+encodeURIComponent(code);
-  var record={version:version,source:src,promise:Promise.resolve(src),fallback:Promise.resolve(''),fallbackSource:src};
-  photoCache[code]=record;return record;
+  var previous=photoCache[code];if(previous&&previous.blobUrl)URL.revokeObjectURL(previous.blobUrl);
+  var record={version:version,source:src,fallback:Promise.resolve(''),fallbackSource:src};
+  photoCache[code]=record;
+  record.promise=fetch(src,{credentials:'omit',cache:'no-store'}).then(function(response){if(!response.ok)throw Error('photo_unavailable');return response.blob();}).then(function(blob){
+   if(photoCache[code]!==record)return '';
+   record.blobUrl=URL.createObjectURL(blob);return record.blobUrl;
+  }).catch(function(){return src;});
+  return record;
 }
 function showPhoto_(thumb,code,entry){
   if(thumb._photoRequested) return;
@@ -489,7 +489,7 @@ function showPhoto_(thumb,code,entry){
     var currentSource = src;
     var fallbackTried = src === record.fallbackSource;
     function makeOpen_(){
-      thumb.className = "thumb can-open";
+      thumb.className = "thumb can-open";thumb.dataset.photoState="loaded";
       thumb.setAttribute("role","button");thumb.setAttribute("tabindex","0");
       thumb.setAttribute("aria-label",(entry.pumMyeong || code) + " 사진 크게 보기");
       thumb.title = "누르면 사진이 크게 보입니다";
@@ -500,6 +500,11 @@ function showPhoto_(thumb,code,entry){
       thumb.removeAttribute("role");thumb.removeAttribute("tabindex");
       thumb.removeAttribute("aria-label");thumb.title = "사진을 불러오지 못했습니다";
       currentSource = "";
+      fetch(src,{credentials:'omit',cache:'no-store'}).then(function(response){return response.ok?{error:'photo_unavailable'}:response.json();}).catch(function(){return {error:'photo_unavailable'};}).then(function(result){
+       if(!thumb.isConnected)return;
+       var missing=result.error==='photo_missing';thumb.dataset.photoState=missing?'missing':'failed';thumb.textContent=missing?'사진 미등록':'사진 연결 실패';thumb.title=thumb.textContent;
+       if(!missing){var retry=document.createElement('button');retry.type='button';retry.className='photo-retry';retry.textContent='다시 불러오기';retry.addEventListener('click',function(event){event.stopPropagation();thumb._photoRequested=false;thumb.textContent='사진 불러오는 중';showPhoto_(thumb,code,entry);});thumb.appendChild(retry);}
+      });
     }
     image.addEventListener("load",makeOpen_);
     image.addEventListener("error",function(){
@@ -775,7 +780,7 @@ function refreshPublicStatus_(){
   }).then(function(result){
     if(!result||result.ok!==true||!result.records||typeof result.records!=='object'||Array.isArray(result.records))throw Error('status_invalid');
     statusCatalog_=result.records;catalogMissing=false;catalogReadFailed_=false;
-    Object.keys(photoCache).forEach(function(code){if(!Object.prototype.hasOwnProperty.call(statusCatalog_,code))delete photoCache[code];});
+    Object.keys(photoCache).forEach(function(code){if(!Object.prototype.hasOwnProperty.call(statusCatalog_,code)){if(photoCache[code].blobUrl)URL.revokeObjectURL(photoCache[code].blobUrl);delete photoCache[code];}});
     sourceStatusWatches_=Object.create(null);
     Object.keys(statusCatalog_).forEach(function(code){sourceStatusWatches_[code]={ready:true,failed:false,status:statusCatalog_[code].status};});
     renderLiveCatalog_();
