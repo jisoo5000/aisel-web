@@ -6749,6 +6749,9 @@
           ["workorderIndex/" + code + "/status"]: next,
           ["workorderIndex/" + code + "/updatedAt"]: now
         };
+        // Entering production defaults the reversible order-completed flag on.
+        const nextOrderCompleted = next === "order" ? true : currentOrderCompleted_;
+        if(next === "order") updates["workorders/" + code + "/orderCompleted"] = nextOrderCompleted;
         const modifiedParts=modificationDateParts_(now);
         for(const [key,value] of Object.entries(modifiedParts))updates["workorders/"+code+"/"+key]=value;
         if(sharing){
@@ -6758,8 +6761,9 @@
         await workorderDatabase_.ref().update(updates);
         if(currentCode !== code) return;
         currentStatus = next;
-        if(lastSavedState_)lastSavedState_={...lastSavedState_,status:next,updatedAt:now,...modifiedParts};
-        if(editorContentBaseline_)editorContentBaseline_={...editorContentBaseline_,status:next,updatedAt:now,...modifiedParts};
+        currentOrderCompleted_ = nextOrderCompleted;
+        if(lastSavedState_)lastSavedState_={...lastSavedState_,status:next,orderCompleted:nextOrderCompleted,updatedAt:now,...modifiedParts};
+        if(editorContentBaseline_)editorContentBaseline_={...editorContentBaseline_,status:next,orderCompleted:nextOrderCompleted,updatedAt:now,...modifiedParts};
         for(const [key,value] of Object.entries(modifiedParts))document.getElementById(key).value=value;
         updateStatusButtons();
         refreshCafe24Bar_();
