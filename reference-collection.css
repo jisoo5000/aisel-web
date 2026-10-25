@@ -251,6 +251,12 @@
  #referenceCollectionView .rc-detail-loading button{margin:0}
 }
 
+/* v265: center the selected reference designer without changing the native picker. */
+@media screen {
+ html:root body #referenceCollectionView #rcDetail .rc-designer-field{padding-inline:24px}
+ html:root body #referenceCollectionView #rcDetail #rcDesignerText{flex:1;min-width:0;text-align:center}
+}
+
 /* v216: dated controls, reference notes and top actions share one compact tone. */
 @media screen {
  #referenceCollectionView .rc-title-row{gap:4px}
