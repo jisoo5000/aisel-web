@@ -17,7 +17,7 @@
  }
  function select(rows,date,designer){return rows.filter(row=>row.date===date&&(!designer||row.designer===designer));}
  function route(date,designer){const u=new URL(root.location.href);u.hash='meeting-materials?'+new URLSearchParams({date,designer});return u.href;}
- function routeSelection(){const match=root.location.hash.match(/^#meeting-materials(?:\?(.*))?$/);const p=new URLSearchParams(match?.[1]||'');return {date:validDate(p.get('date'))?p.get('date'):'',designer:p.get('designer')||''};}
+ function routeSelection(hash=root.location.hash){const match=hash.match(/^#meeting-materials(?:\?(.*))?$/);const p=new URLSearchParams(match?.[1]||'');return {date:validDate(p.get('date'))?p.get('date'):'',designer:p.get('designer')||''};}
  root.AiselMeetingMaterialsCore=Object.freeze({candidateId,entries,select,rank,routeSelection});
  let pane,visible=false,epoch=0,rows=[],loaded=[],stops=[],loading=false;
  const $=selector=>pane.querySelector(selector),account=()=>root.AiselAuth?.currentUser?.();
@@ -89,13 +89,13 @@
   }catch(error){if(stamp===epoch){loaded=[];$('.mm-pages').replaceChildren();message(error.message||'회의자료를 불러오지 못했습니다.',true);}}
   finally{if(stamp===epoch)busy(false);}
  }
- async function show(){
+ async function show({hash}={}){
   ensure();visible=true;pane.hidden=false;$('.mm-legacy').hidden=root.AiselAccess?.allowed('moodboards')!==true;const stamp=++epoch,uid=account()?.uid;busy(true);message('회의 날짜와 담당자를 확인하고 있습니다.');
   try{
    await Promise.all(['references','meetings'].map(kind=>root.AiselGalleryIndex.warm(kind,{preferCache:true})));assertSession(stamp,uid);
    const refs=root.AiselGalleryIndex.snapshot('references'),meetings=root.AiselGalleryIndex.snapshot('meetings');if(!refs.complete||!meetings.complete)throw Error('로그인과 전체 목록을 확인한 뒤 다시 열어주세요.');
    rows=await entries(refs.records,meetings.records);assertSession(stamp,uid);
-   const requested=routeSelection(),previous=$('.mm-designer').value,people=[...new Set(rows.map(row=>row.designer).filter(Boolean))].sort();$('.mm-designer').replaceChildren();for(const value of ['',...people]){const option=el('option',value||'전체');option.value=value;$('.mm-designer').append(option);}
+   const requested=routeSelection(hash),previous=$('.mm-designer').value,people=[...new Set(rows.map(row=>row.designer).filter(Boolean))].sort();$('.mm-designer').replaceChildren();for(const value of ['',...people]){const option=el('option',value||'전체');option.value=value;$('.mm-designer').append(option);}
    $('.mm-designer').value=requested.designer||previous;const dates=[...new Set(rows.map(row=>row.date).filter(validDate))].sort(),today=new Date().toLocaleDateString('sv-SE');$('.mm-date').value=requested.date||$('.mm-date').value||dates.find(date=>date>=today)||dates.at(-1)||today;
    busy(false);message('날짜와 디자이너를 선택해 전체 자료를 확인하세요.');
    if(requested.date)await loadSelection();return true;

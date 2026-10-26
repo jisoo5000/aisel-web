@@ -70,8 +70,8 @@
   if(materialsFlight)return materialsFlight;
   materialsFlight=new Promise((resolve,reject)=>{
    let css=document.getElementById('meetingMaterialsCss');
-   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=266';document.head.append(css);}
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=266';
+   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=266.1';document.head.append(css);}
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=266.1';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
@@ -240,7 +240,7 @@
    }
    else if(view==='meetingmaterials'){
     const materials=await meetingMaterials();if(intent!==navigationRevision||!allowedView(view))return false;
-    await materials.show();if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
+    await materials.show({hash:id});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
     document.body.dataset.aiselListView='meetingmaterials';
    }
    else if(view==='orders')await A.orders();
@@ -296,7 +296,7 @@
  function historyTarget(state,hash){
   if(state?.aiselReference||/^#references?$|^#reference=/.test(hash))return {owner:'reference',view:'references'};
   if(state?.aiselDesignMeeting||/^#design-meeting(?:=|$)/.test(hash))return {owner:'meeting',view:'designmeeting'};
-  if(/^#meeting-materials(?:\?|$)/.test(hash))return {owner:'unified',view:'meetingmaterials'};
+  if(/^#meeting-materials(?:\?|$)/.test(hash))return {owner:'unified',view:'meetingmaterials',id:hash};
   if(hash==='#moodboards')return {owner:'unified',view:'moodboards'};
   if(state?.aiselUnified)return {owner:'unified',view:state.view,code:state.code};
   if(state?.aisel)return {owner:'legacy',view:state.view==='editor'?'editor':state.view==='sales'?'sales':'orders'};
@@ -314,7 +314,7 @@
   e.stopImmediatePropagation();
   if(busy){restoreLocation(previous);return;}
   if(target.owner==='unified'){
-   if(!await show(target.view,{history:false,code:target.code})){restoreLocation(previous);return;}
+   if(!await show(target.view,{history:false,code:target.code,id:target.id})){restoreLocation(previous);return;}
    lastLocation=next;return;
   }
   let completed=false;
@@ -349,7 +349,7 @@
    if(/^#reference=/.test(hash))return {view:'references',id:decodeURIComponent(hash.slice(11))};
    if(/^#references?$/.test(hash))return {view:'references'};
    if(/^#design-meeting(?:=|$)/.test(hash))return {view:'designmeeting',id:hash.startsWith('#design-meeting=')?decodeURIComponent(hash.slice(16)):null};
-   if(/^#meeting-materials(?:\?|$)/.test(hash))return {view:'meetingmaterials'};
+   if(/^#meeting-materials(?:\?|$)/.test(hash))return {view:'meetingmaterials',id:hash};
    if(hash==='#moodboards')return {view:'moodboards'};
    if(/^#workorder=/.test(hash))return {view:'editor',code:decodeURIComponent(hash.slice(11))};
    const reloadCode=window.AiselReloadStartup?.workorderCode;
