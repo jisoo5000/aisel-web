@@ -70,8 +70,8 @@
   if(materialsFlight)return materialsFlight;
   materialsFlight=new Promise((resolve,reject)=>{
    let css=document.getElementById('meetingMaterialsCss');
-   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=266.1';document.head.append(css);}
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=266.1';
+   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=266.2';document.head.append(css);}
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=266.2';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
