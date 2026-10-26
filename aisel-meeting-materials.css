@@ -1,11 +1,71 @@
 /* v266: meeting print is isolated from the existing production workorder sheet. */
-@media screen{html:root body.aisel-meeting-materials-open{max-width:1240px;--aisel-screen-width:1240px}}
 .amm-view{max-width:1240px;margin:0 auto;padding:20px 24px 50px;color:#303633}
 .amm-top{display:flex;justify-content:space-between;align-items:center;gap:20px}.amm-top h2{font-size:24px;margin:0}.amm-top p{color:#6d756f;font-size:14px;margin:8px 0 20px}.amm-legacy{font-size:12px!important;color:#707773!important}
 .amm-controls{display:flex;flex-wrap:wrap;align-items:end;gap:10px}.amm-controls label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600}.amm-controls input,.amm-controls select{height:38px;background:#fff;border:1px solid #ccd2cd;border-radius:6px;padding:6px 10px;min-width:140px}.amm-view button{padding:9px 13px;min-height:38px;border:1px solid #cbd2cd;border-radius:6px;background:#fff;cursor:pointer;color:#334239}.amm-view button:hover{background:#f0f4ef}.amm-view button:disabled{opacity:.5;cursor:default}.amm-print{background:#315b47!important;color:#fff!important}.amm-count{font-size:14px;font-weight:600;margin:20px 0 6px}.amm-message{font-size:13px;min-height:20px;color:#647469}.amm-message.error{color:#a33131}
 .amm-pages{display:grid;gap:24px}.amm-page{background:#fff;border:1px solid #d9dfd9;border-radius:8px;padding:24px;box-sizing:border-box}.amm-page-head{display:flex;justify-content:space-between;border-bottom:1px solid #bac9bd;padding-bottom:10px;margin-bottom:14px;font-size:13px;line-height:20px}.amm-page-head span{color:#758178}.amm-grid{display:grid;grid-template-columns:45% minmax(0,1fr);gap:24px}.amm-left{min-width:0;display:flex;flex-direction:column}.amm-photos{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;min-height:250px;background:#f5f6f3;border-radius:4px;padding:8px}.amm-photos img{width:100%;height:100%;max-height:540px;object-fit:contain;min-height:0;align-self:center}.amm-links{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:10px;line-height:1.4;margin-top:12px;overflow-wrap:anywhere}.amm-links a{color:#375744}.amm-right{display:grid;gap:8px;min-width:0}.amm-field{border-bottom:1px solid #d6ded6;min-height:43px;padding:3px 0;box-sizing:border-box}.amm-field strong,.amm-experiment>strong{font-size:12px;line-height:18px;color:#536657}.amm-value{min-height:19px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.45}.amm-title{min-height:45px}.amm-title .amm-value{font-size:18px;font-weight:600}.amm-memo{min-height:62px}.amm-experiment{background:#f6f8f4;border:1px solid #dce4d9;padding:8px 10px;border-radius:4px}.amm-experiment .amm-field{min-height:38px}.amm-hint{font-size:10px;color:#788471;line-height:1.4;margin:3px 0 7px}.amm-actions{text-align:right;margin-top:14px}.amm-actions button{font-size:12px}
 #aiselMeetingPrintRoot{position:fixed;left:-100000px;top:0;width:281mm;pointer-events:none}
 @media screen and (width <= 700px){.amm-view{padding:14px 12px}.amm-top{align-items:start}.amm-top h2{font-size:21px}.amm-page{padding:14px}.amm-grid{grid-template-columns:1fr;gap:16px}.amm-photos{height:340px;min-height:0}.amm-photos img{max-height:320px}.amm-controls{gap:8px}.amm-controls input,.amm-controls select{min-width:130px}.amm-controls button{font-size:12px}}
+
+/* Meeting materials use the existing app width and compact screen tokens.
+   A4 landscape print below remains independent of the screen presentation. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView {
+  box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width,390px);min-width:0;
+  margin:0 auto;padding:0 var(--aisel-page-gutter,4px) calc(80px + env(safe-area-inset-bottom));
+  background:var(--aisel-bg,#FFFFFF);color:var(--aisel-ink,#34383C);
+  font:400 var(--aisel-list-font,12px)/var(--aisel-list-line,18px) var(--aisel-font,sans-serif);
+ }
+ #aiselMeetingMaterialsView *,#aiselMeetingMaterialsView *::before,#aiselMeetingMaterialsView *::after {box-sizing:border-box;}
+ #aiselMeetingMaterialsView[hidden],#aiselMeetingMaterialsView [hidden] {display:none!important;}
+ html:root body #aiselMeetingMaterialsView .amm-top {align-items:center;gap:8px;margin:0 0 8px;}
+ html:root body #aiselMeetingMaterialsView .amm-top>div {min-width:0;flex:1;}
+ /* The shared appBrandHeader already supplies the page heading. */
+ html:root body #aiselMeetingMaterialsView .amm-top h2 {display:none;}
+ html:root body #aiselMeetingMaterialsView .amm-top p {margin:0;font-size:12px;line-height:18px;color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView .amm-legacy {flex:none;font-size:12px!important;color:var(--aisel-muted,#6C727C)!important;}
+ html:root body #aiselMeetingMaterialsView .amm-controls {display:grid;grid-template-columns:repeat(6,minmax(0,1fr));align-items:end;gap:4px;margin:0 0 8px;}
+ html:root body #aiselMeetingMaterialsView .amm-controls label {grid-column:span 3;min-width:0;gap:4px;align-items:stretch;text-align:center;font-size:12px;font-weight:400;line-height:18px;color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView .amm-controls>button {grid-column:span 2;width:100%;}
+ html:root body #aiselMeetingMaterialsView :is(button,input,select) {
+  box-sizing:border-box;min-width:0;max-width:100%;height:var(--aisel-list-height,28px);min-height:var(--aisel-list-height,28px);
+  margin:0;padding:0 var(--aisel-list-inset,4px);border:1px solid var(--aisel-list-border,#E3E5E7);border-radius:var(--aisel-list-radius,3px);
+  background:var(--aisel-bg,#FFFFFF);color:var(--aisel-ink,#34383C);font-family:var(--aisel-font,sans-serif);
+  font-size:var(--aisel-list-font,12px)!important;font-weight:400;line-height:var(--aisel-list-line,18px)!important;box-shadow:none;
+ }
+ html:root body #aiselMeetingMaterialsView button {display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;}
+ html:root body #aiselMeetingMaterialsView button:not(:disabled):hover {background:var(--aisel-bg,#FFFFFF);border-color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView button:disabled {background:var(--aisel-bg,#FFFFFF);color:var(--aisel-disabled-ink,#9BA1AA);border-color:var(--aisel-disabled-line,#E4E7EB);opacity:1;}
+ html:root body #aiselMeetingMaterialsView .amm-controls :is(input,select) {width:100%;text-align:center;text-align-last:center;color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView .amm-date::-webkit-date-and-time-value {text-align:center;}
+ html:root body #aiselMeetingMaterialsView .amm-date::-webkit-datetime-edit {display:inline-flex;justify-content:center;padding:0;}
+ html:root body #aiselMeetingMaterialsView .amm-print:not(:disabled) {background:var(--aisel-ink,#34383C)!important;border-color:var(--aisel-ink,#34383C);color:var(--aisel-bg,#FFFFFF)!important;}
+ html:root body #aiselMeetingMaterialsView .amm-print:disabled {background:var(--aisel-bg,#FFFFFF)!important;color:var(--aisel-disabled-ink,#9BA1AA)!important;}
+ html:root body #aiselMeetingMaterialsView .amm-count {margin:8px 0 4px;font-size:12px;font-weight:600;line-height:18px;text-align:center;}
+ html:root body #aiselMeetingMaterialsView .amm-message {min-height:18px;margin:0 0 8px;font-size:12px;line-height:18px;color:var(--aisel-muted,#6C727C);overflow-wrap:anywhere;}
+ html:root body #aiselMeetingMaterialsView .amm-message:empty {display:none;}
+ html:root body #aiselMeetingMaterialsView .amm-message.error {color:var(--aisel-error,#A63F57);}
+ html:root body #aiselMeetingMaterialsView .amm-pages {gap:12px;min-width:0;}
+ html:root body #aiselMeetingMaterialsView .amm-loading {padding:12px 8px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);color:var(--aisel-muted,#6C727C);font-size:12px;line-height:18px;}
+ html:root body #aiselMeetingMaterialsView .amm-page {min-width:0;padding:8px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);background:var(--aisel-bg,#FFFFFF);}
+ html:root body #aiselMeetingMaterialsView .amm-page-head {position:relative;display:flex;align-items:center;justify-content:center;min-height:28px;margin:0 0 8px;padding:0 48px 4px;border-color:var(--aisel-line,#E3E5E7);font-size:12px;line-height:18px;text-align:center;overflow-wrap:anywhere;}
+ html:root body #aiselMeetingMaterialsView .amm-page-head span {position:absolute;right:0;top:0;line-height:24px;color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView .amm-grid {grid-template-columns:minmax(0,1fr);gap:8px;}
+ html:root body #aiselMeetingMaterialsView .amm-photos {flex:none;height:240px;min-height:0;max-height:240px;padding:4px;gap:4px;background:var(--aisel-bg,#FFFFFF);border-radius:var(--aisel-radius,3px);overflow:auto;align-content:start;}
+ html:root body #aiselMeetingMaterialsView .amm-photos img {display:block;min-width:0;width:100%;height:230px;min-height:0;max-height:230px;object-fit:contain;}
+ html:root body #aiselMeetingMaterialsView .amm-links {gap:4px 8px;margin-top:8px;font-size:11px;line-height:16px;}
+ html:root body #aiselMeetingMaterialsView .amm-links a {color:var(--aisel-accent,#2F3B52);}
+ html:root body #aiselMeetingMaterialsView .amm-right {gap:4px;}
+ html:root body #aiselMeetingMaterialsView .amm-field {min-height:40px;padding:4px 0;border-color:var(--aisel-line,#E3E5E7);}
+ html:root body #aiselMeetingMaterialsView :is(.amm-field strong,.amm-experiment>strong) {font-size:12px;line-height:18px;color:var(--aisel-ink,#34383C);}
+ html:root body #aiselMeetingMaterialsView .amm-value {min-height:18px;font-size:12px;line-height:18px;}
+ html:root body #aiselMeetingMaterialsView .amm-title {min-height:42px;}
+ html:root body #aiselMeetingMaterialsView .amm-title .amm-value {font-size:14px;font-weight:600;line-height:20px;}
+ html:root body #aiselMeetingMaterialsView .amm-memo {min-height:58px;}
+ html:root body #aiselMeetingMaterialsView .amm-experiment {padding:8px;background:var(--aisel-soft,#F6F6F6);border-color:var(--aisel-line,#E3E5E7);border-radius:var(--aisel-radius,3px);}
+ html:root body #aiselMeetingMaterialsView .amm-experiment .amm-field {min-height:40px;}
+ html:root body #aiselMeetingMaterialsView .amm-hint {margin:4px 0 8px;font-size:11px;line-height:16px;color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView .amm-actions {margin-top:8px;}
+}
 @media print{
  body.aisel-meeting-print{margin:0!important;padding:0!important;background:white!important}
  body.aisel-meeting-print>*:not(#aiselMeetingPrintRoot){display:none!important}

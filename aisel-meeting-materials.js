@@ -1,4 +1,4 @@
-/* v266: date-wide meeting materials reuse authorized records; no document copies or writes. */
+/* v267: shared compact screen, background loading and incremental read-only meeting previews. */
 (function(root){
  'use strict';
  const validDate=value=>/^\d{4}-\d{2}-\d{2}$/.test(value||'');
@@ -65,32 +65,36 @@
   const actions=el('div',undefined,'amm-actions noprint');actions.append(button('확인 · 수정 / 작업지시서',async()=>{if(await root.AiselUnified.show('designmeeting'))await root.AiselDesignMeeting.open(record.id);}));
   grid.append(left,right);article.append(grid,actions);return article;
  }
- async function loadSelection(){
+ async function loadSelection({refresh=true}={}){
   const date=$('.amm-date').value,designer=$('.amm-designer').value;if(!validDate(date)){message('회의 날짜를 선택해주세요.',true);return;}
   const stamp=++epoch,uid=account()?.uid;loaded=[];$('.amm-pages').replaceChildren();busy(true);message('선택한 회의의 전체 자료를 확인하고 있습니다.');
   try{
-   await Promise.all(['references','meetings'].map(kind=>root.AiselGalleryIndex.warm(kind,{refresh:true})));assertSession(stamp,uid);
+   await Promise.all(['references','meetings'].map(kind=>root.AiselGalleryIndex.warm(kind,refresh?{refresh:true}:{preferCache:true})));assertSession(stamp,uid);
    const refs=root.AiselGalleryIndex.snapshot('references'),meetings=root.AiselGalleryIndex.snapshot('meetings');
    if(!refs.available||!refs.complete||!meetings.available||!meetings.complete)throw Error('전체 목록 확인이 끝나지 않았습니다. 일부만 인쇄하지 않도록 다시 불러와주세요.');
    rows=await entries(refs.records,meetings.records);assertSession(stamp,uid);
-   const chosen=select(rows,date,designer),results=new Array(chosen.length);let cursor=0;
+   const chosen=select(rows,date,designer),results=new Array(chosen.length),previews=new Array(chosen.length);let cursor=0,finished=0;
+   const placeholders=chosen.map(row=>{const item=el('div',row.title||'회의자료를 불러오는 중입니다.','amm-loading');item.setAttribute('role','status');return item;});
+   $('.amm-pages').replaceChildren(...placeholders);$('.amm-count').textContent=date+' · '+(designer||'전체 디자이너')+' · '+chosen.length+'개';
    await Promise.all(Array.from({length:Math.min(3,chosen.length)},async()=>{while(cursor<chosen.length){const n=cursor++,row=chosen[n];const [detail,ref]=await Promise.all([root.AiselGalleryIndex.detail('meetings',row.id),row.refId?root.AiselGalleryIndex.detail('references',row.refId):null]);assertSession(stamp,uid);const record=detail.record,reference=ref?.record;
      if(record.designMeetingDeletedAt||reference?.archivedAt)throw Error('삭제 또는 보관된 항목이 있습니다. 전체 보기를 다시 눌러주세요.');
      if(reference&&record.sourceRefId!==reference.id)throw Error('레퍼런스와 디자인회의 연결을 확인하지 못했습니다.');
      if((reference?.date||record.meetingDate||record.date||'')!==date||(designer&&(reference?.designer||record.designer||'')!==designer))throw Error('회의 날짜나 담당자가 변경되었습니다. 전체 보기를 다시 눌러주세요.');
      const fresh={...row,title:reference?.title||record.title||'',date:reference?.date||record.meetingDate||record.date,designer:reference?.designer||record.designer||''};results[n]={row:fresh,record,reference,photos:photoList(record,reference)};
+     previews[n]=page(results[n],n,chosen.length);placeholders[n].replaceWith(previews[n]);finished++;message(chosen.length+'개 중 '+finished+'개를 불러왔습니다.');
    }}));assertSession(stamp,uid);
-   loaded=results.sort((a,b)=>rank(a.row)-rank(b.row)||text(a.row.id).localeCompare(text(b.row.id)));
-   $('.amm-pages').replaceChildren(...loaded.map((item,i)=>page(item,i,loaded.length)));
+   loaded=results.slice().sort((a,b)=>rank(a.row)-rank(b.row)||text(a.row.id).localeCompare(text(b.row.id)));
+   $('.amm-pages').replaceChildren(...loaded.map((item,i)=>{const node=previews[results.indexOf(item)];node.querySelector('.amm-page-head span').textContent=String(i+1).padStart(2,'0')+' / '+loaded.length;return node;}));
    $('.amm-count').textContent=date+' · '+(designer||'전체 디자이너')+' · '+loaded.length+'개 전체';
    const mismatches=loaded.filter(x=>x.reference&&x.record.meetingDate&&x.reference.date!==x.record.meetingDate).length;
    message(!loaded.length?'해당 날짜의 디자인회의가 없습니다.':mismatches?'원본 레퍼런스의 최신 회의일 기준입니다. 기존 회의일과 다른 '+mismatches+'개는 원본 기록을 함께 확인해주세요.':'전체 '+loaded.length+'개를 불러왔습니다. 판단이 없는 칸은 비워두었습니다.');
    history.replaceState({aiselUnified:true,view:'meetingmaterials'},'',route(date,designer));
-  }catch(error){if(stamp===epoch){loaded=[];$('.amm-pages').replaceChildren();message(error.message||'회의자료를 불러오지 못했습니다.',true);}}
+  }catch(error){if(stamp===epoch){epoch++;loaded=[];$('.amm-pages').replaceChildren();message(error.message||'회의자료를 불러오지 못했습니다.',true);busy(false);}}
   finally{if(stamp===epoch)busy(false);}
  }
- async function show({hash}={}){
+ function show({hash,background=false}={}){
   ensure();visible=true;pane.hidden=false;document.body.classList.add('aisel-meeting-materials-open');$('.amm-legacy').hidden=root.AiselAccess?.allowed('moodboards')!==true;const stamp=++epoch,uid=account()?.uid;busy(true);message('회의 날짜와 담당자를 확인하고 있습니다.');
+  const ready=(async()=>{
   try{
    await Promise.all(['references','meetings'].map(kind=>root.AiselGalleryIndex.warm(kind,{preferCache:true})));assertSession(stamp,uid);
    const refs=root.AiselGalleryIndex.snapshot('references'),meetings=root.AiselGalleryIndex.snapshot('meetings');if(!refs.complete||!meetings.complete)throw Error('로그인과 전체 목록을 확인한 뒤 다시 열어주세요.');
@@ -98,8 +102,10 @@
    const requested=routeSelection(hash),previous=$('.amm-designer').value,people=[...new Set(rows.map(row=>row.designer).filter(Boolean))].sort();$('.amm-designer').replaceChildren();for(const value of ['',...people]){const option=el('option',value||'전체');option.value=value;$('.amm-designer').append(option);}
    $('.amm-designer').value=requested.designer||previous;const dates=[...new Set(rows.map(row=>row.date).filter(validDate))].sort(),today=new Date().toLocaleDateString('sv-SE');$('.amm-date').value=requested.date||$('.amm-date').value||dates.find(date=>date>=today)||dates.at(-1)||today;
    busy(false);message('날짜와 디자이너를 선택해 전체 자료를 확인하세요.');
-   if(requested.date)await loadSelection();return true;
+   await loadSelection({refresh:false});return true;
   }catch(error){if(stamp===epoch){message(error.message,true);busy(false);}return true;}
+  })();
+  return background?Promise.resolve(true):ready;
  }
  function hide(){visible=false;if(pane)pane.hidden=true;document.body.classList.remove('aisel-meeting-materials-open');clear();}
  async function shareLink(){try{await navigator.clipboard.writeText(route($('.amm-date').value,$('.amm-designer').value));message('회의 링크를 복사했습니다. 기존 앱 접근 권한이 있는 디자이너가 볼 수 있습니다.');}catch(_){message('주소창의 회의 링크를 복사해주세요.');}}

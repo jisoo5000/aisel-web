@@ -1,4 +1,4 @@
-/* v210: prepare verified lightweight galleries as soon as the shared session is ready. */
+/* v267: workorder-first startup; nonblocking meeting materials; preserve confirmed save guards. */
 (function(){
  'use strict';
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
@@ -15,9 +15,9 @@
  main.after(notice,pane);
  document.title='에이슬 앱';
  const orders=main.querySelector('[data-main="orders"]');orders.textContent='작업지시서';
- const products=document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='출고현황';
- const refs=document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
- const boards=document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='meetingmaterials';boards.textContent='회의자료';
+ const products=main.querySelector('[data-main="products"]')||document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='출고현황';
+ const refs=main.querySelector('[data-main="references"]')||document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
+ const boards=main.querySelector('[data-main="meetingmaterials"]')||document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='meetingmaterials';boards.textContent='회의자료';
  const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
  main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),boards,orders);
  // Workorder filters use only the authorized lightweight index already loaded.
@@ -64,24 +64,42 @@
   else setTimeout(run,750);
  }
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleGalleryWarm();});
- let materialsFlight=null;
+ let materialsFlight=null,materialsWarmKey='';
+ function scheduleMaterialsWarm(){
+  const uid=window.AiselAccess?.session?.uid,key=uid+':'+window.AiselAuth?.generation;
+  if(!uid||!allowedView('meetingmaterials')||materialsWarmKey===key||document.hidden)return;
+  materialsWarmKey=key;
+  const warm=()=>{if(uid===window.AiselAccess?.session?.uid&&allowedView('meetingmaterials')&&!document.hidden)meetingMaterials().catch(()=>{materialsWarmKey='';});};
+  if(window.requestIdleCallback)window.requestIdleCallback(warm,{timeout:1500});else setTimeout(warm,250);
+ }
  function meetingMaterials(){
-  if(window.AiselMeetingMaterials)return Promise.resolve(window.AiselMeetingMaterials);
   if(materialsFlight)return materialsFlight;
-  materialsFlight=new Promise((resolve,reject)=>{
+  const styleReady=new Promise((resolve,reject)=>{
    let css=document.getElementById('meetingMaterialsCss');
-   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=266.3';document.head.append(css);}
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=266.3';
+   if(css?.sheet){resolve();return;}
+   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=267';}
+   css.addEventListener('load',()=>resolve(),{once:true});
+   css.addEventListener('error',()=>{css.remove();reject(Error('회의자료 화면을 불러오지 못했습니다. 다시 열어주세요.'));},{once:true});
+   if(!css.isConnected)document.head.append(css);
+  });
+  const moduleReady=window.AiselMeetingMaterials?Promise.resolve(window.AiselMeetingMaterials):new Promise((resolve,reject)=>{
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=267';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
-  }).catch(error=>{materialsFlight=null;throw error;});return materialsFlight;
+  });
+  materialsFlight=Promise.all([styleReady,moduleReady]).then(([,materials])=>materials).catch(error=>{materialsFlight=null;throw error;});
+  return materialsFlight;
  }
  function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
  function allowedWorkorder(){return window.AiselAccess?.allowed('orders')===true;}
  function allowedView(view){return view==='products'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
  function applyRole(){
-  for(const button of main.querySelectorAll('[data-main]'))button.hidden=!allowedView(button.dataset.main);
+  const awaitingAccess=!window.AiselAccess?.session;
+  for(const button of main.querySelectorAll('[data-main]')){
+   button.hidden=!awaitingAccess&&!allowedView(button.dataset.main);
+   button.disabled=awaitingAccess&&button.dataset.main!=='products';
+  }
   post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
  }
  let accessIdentity=null,accessRestore=null,initialRoutePending=true,initialRouteInFlight=false;
@@ -93,7 +111,10 @@
   if(!session){
    if(accessIdentity&&current)accessRestore={uid:accessIdentity,view:current,code};
    A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();window.AiselMeetingMaterials?.hide();unmount();current='';
-   info();show('products',{replace:true});return;
+   document.getElementById('aiselStartupNotice')?.remove();$('appBrandHeader').hidden=false;
+    info(event.detail?.error?.message||event.detail?.error||'로그인 후 작업지시서를 이용할 수 있습니다.');
+    if(requestedLocation(initialLocation)?.view==='products')show('products',{replace:true});
+    return;
   }
   const changedIdentity=accessIdentity&&accessIdentity!==session.uid,restore=accessRestore?.uid===session.uid?accessRestore:null;
   accessIdentity=session.uid;accessRestore=null;
@@ -105,14 +126,14 @@
    const initial=code&&allowedView('editor')?'editor':hash==='#moodboards'&&allowedView('moodboards')?'moodboards':landingView();
    show(initial,{replace:true,code});
   }else restoreLanding();
-  scheduleGalleryWarm();
+  scheduleGalleryWarm();scheduleMaterialsWarm();
  });
  // A tiny account-scoped preference selects a landing page only. It never grants access.
  const landingKey='aisel.unified.landing.v1',validRoles=['owner','designer','md','logistics'];
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
  function rememberRole(value){const user=memberUser();if(!user?.emailVerified||!user.uid||!validRoles.includes(value))return;try{localStorage.setItem(landingKey,JSON.stringify({uid:user.uid,role:value,checkedAt:Date.now()}));}catch(_){} }
  function landingRole(){const verified=role();if(validRoles.includes(verified))return verified;const user=memberUser();if(!user?.emailVerified||!user.uid)return null;try{const hint=JSON.parse(localStorage.getItem(landingKey));const age=Date.now()-hint?.checkedAt;if(hint?.uid===user.uid&&age>=0&&age<86400000&&validRoles.includes(hint.role))return hint.role;}catch(_){}return null;}
- function landingView(){if(window.AiselAccess?.legacy)return 'orders';const value=landingRole();return value==='logistics'?'products':value==='designer'?'orders':'sales';}
+ function landingView(){if(window.AiselAccess?.legacy)return 'orders';const value=landingRole();return value==='logistics'?'products':value==='md'?'sales':'orders';}
  function restoreLanding(){if(!landingOpen||busy||!landingRole())return;landingOpen=false;const target=landingView();if(current!==target)show(target,{replace:true});}
  for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,()=>{landingOpen=false;},{capture:true,once:true});
  // Resuming input cancels a destination chosen before that input. A delayed save
@@ -172,6 +193,7 @@
  function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='출고현황';frame.src='status.html?embedded=1&v=37';pane.append(frame);}
  function select(view){
   current=view;
+  document.getElementById('aiselStartupNotice')?.remove();
   $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
@@ -240,7 +262,7 @@
    }
    else if(view==='meetingmaterials'){
     const materials=await meetingMaterials();if(intent!==navigationRevision||!allowedView(view))return false;
-    await materials.show({hash:id});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
+    await materials.show({hash:id,background:true});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
     document.body.dataset.aiselListView='meetingmaterials';
    }
    else if(view==='orders')await A.orders();
