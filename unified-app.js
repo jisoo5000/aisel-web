@@ -269,6 +269,12 @@
    else if(view==='sales'){await A.sales();window.AiselSheetSalesSource?.refreshIfStale?.();}
    else if(view==='editor'){
     openingEditor=true;
+    // Resolve historic identifiers before waiting for the loaded-code event.
+    if(window.AiselAccess?.request&&!window.AiselAccess.session?.legacy){
+     const resolved=await window.AiselAccess.request('resolveWorkorderCode',{code});
+     if(intent!==navigationRevision||!allowedView(view))return false;
+     if(resolved?.code)code=resolved.code;
+    }
     const waiting=window.AiselWorkorderMeetingPhotos?.expectOpen(code);
     try{
      if(await A.open(code)===false||waiting&&!await waiting.ready)throw Error('작업지시서를 불러오지 못했습니다. 입력 내용은 유지했습니다. 다시 열어주세요.');
@@ -277,6 +283,7 @@
    }
    select(view);
    if(writeHistory)route(view,replace,code);
+   else if(view==='editor')route(view,true,code);
    window.scrollTo(0,0);completed=true;return true;
   }catch(e){
    if(openingEditor){try{await restoreAfterOpenFailure(previousView,previousCode,previousLocation);}catch(_){A.hide();}}
@@ -389,7 +396,7 @@
   const requested=requestedLocation(initialLocation),target=requested&&allowedView(requested.view)?requested:{view:landingView()};
   const hash=location.hash,intent=navigationRevision,uid=window.AiselAccess.session?.uid;
   const opened=await show(target.view,{history:target!==requested,replace:true,code:target.code,id:target.id});
-  if(opened&&target.view==='editor'){route('editor',true,target.code);return true;}
+  if(opened&&target.view==='editor')return true;
   if(!opened||target.view!=='designmeeting'||!target.id)return opened;
   if(intent!==navigationRevision||hash!==location.hash||uid!==window.AiselAccess.session?.uid||current!=='designmeeting'||!allowedView('designmeeting'))return false;
   return await DM.open(target.id,{history:false});
