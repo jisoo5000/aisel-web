@@ -1,3 +1,4 @@
+<!-- v268: keep cost sheet visible on screen after factory printing (2026-10-27) -->
 <!-- v267: workorder-first startup and shared meeting materials UI -->
 <!-- v266: shared meeting materials, exact meeting dates, whole-date print -->
 <!-- v265: center reference detail designer name while preserving native selection -->
@@ -1380,11 +1381,14 @@
   /* 좁은 화면(폰)에서는 제품입고일 원단/공장 카드, 발주 사이즈-수량 줄을 세로로 쌓음 */
   /* 공장저장 버튼 누르면 잠깐 이 클래스가 body에 붙어서 원가계산서만 숨김 */
   /* 박스 크기·위치는 그대로 두고 안의 내용만 안 보이게 처리 → 옆 사진 영역이 밀리지 않음 */
+  /* v268: a missed afterprint event must never hide costs in the editor. */
+  @media print {
   body.factory-print-mode #costCell .sec-title,
   body.factory-print-mode #costCell .cost-table,
   body.factory-print-mode #costCell .add,
   body.factory-print-mode #costCell .cost-fixed { visibility: hidden !important; }
   body.factory-print-mode #costCell { border-color: transparent !important; }
+  }
 
   /* 무드보드 회의 인쇄 (사진 9cm x 12cm, 2열 x 2행 = 한 페이지 4장) */
   #meetingPrintArea { display: none; }
