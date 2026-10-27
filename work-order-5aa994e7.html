@@ -1,3 +1,4 @@
+<!-- v273: category changes correct saved codes atomically -->
 <!-- v270: retain manual sale price and plain historical designer names -->
 <!-- v269: managed designer filters and concise login help (2026-10-27) -->
 <!-- v268: keep cost sheet visible on screen after factory printing (2026-10-27) -->
@@ -5558,11 +5559,63 @@
     }
   }
 
-  function updateClassification_(){
+  let classificationFlight_=null;
+  async function waitForClassificationLoad_(code){
+    for(let i=0;loading&&currentCode===code&&i<200;i++)await new Promise(resolve=>setTimeout(resolve,50));
+    if(currentCode!==code)throw Error('열린 작지가 바뀌었습니다. 현재 작지에서 다시 선택해주세요.');
+    if(loading)throw Error('품번 처리 후 내용을 불러오는 중입니다. 잠시 뒤 확인해주세요.');
+  }
+  function saveClassification_(){
+    if(classificationFlight_)return classificationFlight_;
+    if(loading)return Promise.reject(Error('작지를 불러온 뒤 다시 선택해주세요.'));
+    const seasonField=document.getElementById('season'),oldCode=currentCode;
+    const selectedSeason=seasonField.value,selectedCat=catSel.value;
+    const disabled=[seasonField,catSel].map(node=>[node,node.disabled]);
+    disabled.forEach(([node])=>node.disabled=true);
+    const task=(async()=>{
+      clearTimeout(saveT);saveT=null;
+      if(codePending_||!currentCode){
+        clearPendingCode_();await suggestSeq();
+        if(!currentCode)throw Error('품번을 생성하지 못했습니다. 다시 선택해주세요.');
+        await waitForClassificationLoad_(currentCode);
+        if(await save()===false)throw Error('저장 확인 필요 · 선택한 내용을 유지했습니다.');
+      }else{
+        let target=proposedCodeForCurrentCat_();
+        if(target!==oldCode){
+          if(!window.AiselAccess?.isOwner){
+            catSel.value=lastSavedState_?.cat??catSel.value;
+            seasonField.value=lastSavedState_?.season??seasonField.value;
+            throw Error('대표자 계정에서 카테고리와 품번을 함께 변경해주세요.');
+          }
+          autoPrice_();
+          for(let attempt=0;;attempt++){
+            if(currentCode!==oldCode||catSel.value!==selectedCat||seasonField.value!==selectedSeason)throw Error('변경 중인 작지를 다시 확인해주세요.');
+            try{await correctWorkorderCode_(target,oldCode);break;}
+            catch(error){
+              if(error.code!=='code_taken'||attempt>=9)throw error;
+              // The correction transaction is the authority: never attach or
+              // reserve a new workorder over another record.
+              const next=Math.max(Number(target.split('-').at(-1))+1,maxUsedSeqFromData_()+1);
+              target='AS-'+selectedSeason+'-'+currentCat().code+'-'+String(next).padStart(3,'0');
+            }
+          }
+          await waitForClassificationLoad_(currentCode);
+        }else{
+          autoPrice_();
+          if(!await settleEditorSave_())throw Error('저장을 확인한 뒤 다시 선택해주세요.');
+        }
+      }
+      document.getElementById('codeView').textContent=currentCode;
+      renderMobileHeader_();
+      return currentCode;
+    })();
+    classificationFlight_=task.finally(()=>{classificationFlight_=null;disabled.forEach(([node,value])=>node.disabled=value);});
+    return classificationFlight_;
+  }
+  async function updateClassification_(){
     if(loading)return;
-    if(codePending_||!currentCode){assignCodeNow_();return;}
-    // Existing identifiers change only through the explicit correction dialog.
-    $("#codeView").textContent=currentCode;autoPrice_();saveSoon();
+    try{await saveClassification_();setCodeChangeNotice_('품번 저장됨 · '+currentCode);}
+    catch(error){setCodeChangeNotice_(error.message||'품번 변경을 확인해주세요.');}
   }
   $("#genBtn").addEventListener('click',()=>{if(!currentCode||codePending_)suggestSeq();else window.openMobileCodeSettings_?.();});
   $("#season").addEventListener('change',updateClassification_);
@@ -5576,7 +5629,7 @@
   async function copySavedCode_(){const code=currentCode;if(!code||codePending_){setCodeCopyStatus_('품번 확정 후 복사');return;}try{await navigator.clipboard.writeText(code);setCodeCopyStatus_('복사됨');}catch(_){setCodeCopyStatus_('길게 눌러 복사해주세요');}clearTimeout(codeCopyTimer_);codeCopyTimer_=setTimeout(()=>setCodeCopyStatus_(''),1800);}
 
 
-  // ---------- v238: 분류 변경은 품번을 유지; 명시적 정정만 서버에서 원자적으로 처리 ----------
+  // ---------- v273: 분류 변경도 서버 품번 정정으로 연결 정보를 함께 유지 ----------
   function proposedCodeForCurrentCat_(){
     const c = currentCat();
     const seq = String(num($("#seq").value) || 0).padStart(3, "0");
@@ -5587,9 +5640,10 @@
     if(!btn) return;
     btn.style.display = "none";   // 2026-08-21 수정: 자동으로 옮기므로 버튼은 더 이상 안 씀
   }
-  async function correctWorkorderCode_(newCode){
+  async function correctWorkorderCode_(newCode,expectedCode=currentCode){
     if(!window.AiselAccess?.isOwner)throw Error('대표자 계정에서 품번을 정정할 수 있습니다.');
     if(!await settleEditorSave_())throw Error('현재 내용을 먼저 저장해주세요.');
+    if(currentCode!==expectedCode)throw Error('열린 작지가 바뀌었습니다. 다시 확인해주세요.');
     const oldCode=currentCode;if(!oldCode||oldCode===newCode)return;
     const retryKey='aisel.code-correction:'+window.AiselAccess.session.uid+':'+oldCode+':'+newCode;let requestId;try{requestId=sessionStorage.getItem(retryKey);}catch(_){}requestId=requestId||crypto.randomUUID();try{sessionStorage.setItem(retryKey,requestId);}catch(_){}const expectedUpdatedAt=Number(lastSavedState_?.updatedAt||0);
     clearTimeout(saveT);saveT=null;movingCodeNow_=true;loading=true;
@@ -5599,7 +5653,7 @@
       attachWoRef(result.code);document.getElementById('codeView').textContent=result.code;try{sessionStorage.removeItem(retryKey);}catch(_){}
       window.dispatchEvent(new CustomEvent('aisel-access-workorders-changed'));
       if(appRoute_.view==='editor'){appRoute_={...appRoute_,code:result.code};history.replaceState(appRoute_,'');}
-    }catch(error){const labels={code_taken:'이미 사용 중인 품번입니다.',workorder_changed:'다른 곳에서 수정됐습니다. 최신 내용을 확인하고 다시 시도해주세요.',invalid_code:'품번 형식을 확인해주세요.',permission_denied:'대표자 계정에서 품번을 정정해주세요.'};throw Error(labels[error.code]||error.message||'품번 수정 결과를 확인해주세요.');}
+    }catch(error){const labels={code_taken:'이미 사용 중인 품번입니다.',workorder_changed:'다른 곳에서 수정됐습니다. 최신 내용을 확인하고 다시 시도해주세요.',invalid_code:'품번 형식을 확인해주세요.',permission_denied:'대표자 계정에서 품번을 정정해주세요.'};throw Object.assign(Error(labels[error.code]||error.message||'품번 수정 결과를 확인해주세요.'),{code:error.code});}
     finally{movingCodeNow_=false;if(currentCode===oldCode)loading=false;}
   }
   async function moveCurrentWorkOrder_(){return window.openMobileCodeSettings_?.();}
@@ -12292,25 +12346,37 @@
     codeSettingsKey_=currentCode;codeSeason.disabled=false;codeCategory.disabled=false;
     correctionInput.value=currentCode||'';document.getElementById('codeCorrectionLabel').hidden=!currentCode||codePending_;
     codeSettingsStatus.textContent='';
-    document.getElementById('mobileCodeHelp').textContent=codePending_?'시즌과 카테고리를 선택하면 품번이 생성됩니다.':'분류 선택은 바로 저장됩니다. 품번은 아래에서 직접 정정할 수 있습니다.';
+    document.getElementById('mobileCodeHelp').textContent=codePending_?'시즌과 카테고리를 선택하면 품번이 생성됩니다.':'시즌·카테고리를 바꾸면 품번도 함께 변경됩니다. 사용 중인 번호는 건너뜁니다.';
     if(!codeSettings.open){if(codeSettings.showModal)codeSettings.showModal();else codeSettings.setAttribute('open','');}
   }
   window.openMobileCodeSettings_=openMobileCodeSettings_;
   async function commitClassification_(){
-    if(codeSettingsFlight_||loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;if(!codeCategory.value){codeSettingsStatus.textContent='카테고리를 선택해주세요.';return;}
+    if(codeSettingsFlight_||loading||(initialCreationWrite_&&initialCreationRef_===woRef))return;
+    if(!codeCategory.value){codeSettingsStatus.textContent='카테고리를 선택해주세요.';return;}
     if(currentCode!==codeSettingsKey_&&codeSettingsKey_)return;
-    const task=(async()=>{codeSettingsStatus.textContent='저장 중';
+    const task=(async()=>{
+      codeSettingsStatus.textContent='카테고리와 품번 저장 중';
       catSel.value=codeCategory.value;document.getElementById('season').value=codeSeason.value;
-      if(codePending_||!currentCode){clearPendingCode_();await suggestSeq();for(let i=0;loading&&i<200;i++)await new Promise(resolve=>setTimeout(resolve,50));}
-      codeSettingsKey_=currentCode;correctionInput.value=currentCode||'';
-      renderMobileHeader_();clearTimeout(saveT);saveT=null;
-      const ok=await save();codeSettingsStatus.textContent=ok?'저장됨':'저장 확인 필요 · 선택한 내용을 유지했습니다';
-    })();codeSettingsFlight_=task;codeSeason.disabled=codeCategory.disabled=true;try{await task;}finally{codeSettingsFlight_=null;codeSeason.disabled=codeCategory.disabled=false;}
+      try{
+        await saveClassification_();
+        codeSettingsKey_=currentCode;correctionInput.value=currentCode||'';
+        document.getElementById('codeCorrectionLabel').hidden=!currentCode;
+        codeSettingsStatus.textContent='저장됨 · '+currentCode;
+        return true;
+      }catch(error){
+        codeSettingsKey_=currentCode;correctionInput.value=currentCode||'';
+        codeCategory.value=catSel.value;codeSeason.value=document.getElementById('season').value;
+        codeSettingsStatus.textContent=error.message||'품번 변경을 확인해주세요.';
+        return false;
+      }
+    })();
+    codeSettingsFlight_=task;codeSeason.disabled=codeCategory.disabled=correctionInput.disabled=true;
+    try{return await task;}finally{codeSettingsFlight_=null;codeSeason.disabled=codeCategory.disabled=correctionInput.disabled=false;}
   }
   codeSeason.addEventListener('change',commitClassification_);codeCategory.addEventListener('change',commitClassification_);
   async function commitCodeCorrection_(){
-    const value=correctionInput.value.trim().toUpperCase();if(!value||value===currentCode)return true;
     if(codeSettingsFlight_)await codeSettingsFlight_;
+    const value=correctionInput.value.trim().toUpperCase();if(!value||value===currentCode)return true;
     if(!window.AiselEditorValues.validCode(value)){codeSettingsStatus.textContent='품번 형식을 확인해주세요. 예: AS-26F-BL-036';return false;}
     codeSettingsStatus.textContent='품번 정정 중';
     try{await correctWorkorderCode_(value);codeSettingsKey_=currentCode;correctionInput.value=currentCode;codeSettingsStatus.textContent='품번이 수정됐습니다';return true;}catch(error){codeSettingsStatus.textContent=error.message||'품번 수정에 실패했습니다';return false;}
@@ -12319,7 +12385,7 @@
   const correctOnce=()=>correctionFlight_||(correctionFlight_=commitCodeCorrection_().finally(()=>{correctionFlight_=null;}));
   correctionInput.addEventListener('change',()=>{void correctOnce();});
   correctionInput.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();void correctOnce();}});
-  codeSettings.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();if(codeSettingsFlight_)await codeSettingsFlight_;if(await correctOnce())codeSettings.close();});
+  codeSettings.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();if(codeSettingsFlight_&&await codeSettingsFlight_===false)return;if(await correctOnce())codeSettings.close();});
   for(const id of ['saveBtn','factorySaveBtn','printBtn'])document.getElementById(id).addEventListener('click',event=>{
     if(codePending_&&workOrderLayoutMedia_('(max-width:600px)').matches){event.preventDefault();event.stopImmediatePropagation();openMobileCodeSettings_();}
   },true);
