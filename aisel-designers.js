@@ -139,11 +139,11 @@
 
   const store=createStore();
   function mountPicker(select,options={}){
-    const document=select.ownerDocument;let config={...options},selected=String(options.value??select.value??''),destroyed=false,manager=null,signature='',priorOnchange=select.onchange;
+    const document=select.ownerDocument;let config={...options},selected=String(options.value??select.value??''),destroyed=false,manager=null,signature='',catalogReady=false,priorOnchange=select.onchange;
     function close(){manager?.close();manager=null;}
     function render(){
       if(destroyed)return;
-      const active=store.list(),filter=config.mode==='filter';
+      const active=store.list(),filter=config.mode==='filter',firstCatalog=store.state().ready&&!catalogReady;
       const names=filter?active:[...new Set([...active,...(config.includeNames||[])].filter(name=>name&&!store.isRemoved(name)))];
       const values=[['',config.placeholder||'미지정'],...(config.emptyOptions||[]),...names.map(name=>[name,name])];
       // Filters show the managed catalog only; old records remain searchable.
@@ -153,17 +153,18 @@
         else values.push([selected,selected+(store.isRemoved(selected)?' (삭제됨)':'')]);
       }
       const next=JSON.stringify(values);
-      if(signature!==next&&(!signature||document.activeElement!==select)){
+      if(signature!==next&&(!signature||firstCatalog||document.activeElement!==select)){
         const fragment=document.createDocumentFragment(),option=(value,label)=>{const e=document.createElement('option');e.value=value;e.textContent=label;e.style.fontWeight='400';return e;};
         for(const [value,label]of values)fragment.append(option(value,label));
         fragment.append(option(ADD,'＋ 추가·삭제'));select.replaceChildren(fragment);signature=next;
       }
+      catalogReady=store.state().ready;
       select.value=selected;select.disabled=!!config.disabled;if(config.disabled)close();
       if(clearedFilter)queueMicrotask(()=>{if(!destroyed&&selected==='')config.onChange?.('');});
     }
     function manage(addOnly){close();const state=store.state();manager=openManager(config.managerHost||select.parentElement,{label:'담당자',title:'담당자',iconActions:true,undo:true,maxLength:160,addOnly,closeOnSelect:addOnly,list:()=>store.list().map(name=>({name})),reorder:items=>root.AiselCatalogOrder.save('designers',items.map(item=>item.name)),load:()=>store.load({force:true}),subscribe:store.subscribe,session:()=>{const s=store.state();return [s.uid,s.generation];},permissions:()=>({canAdd:store.state().canManage,canRemove:store.state().canManage}),add:store.add,remove:item=>store.remove(item.name),onError:config.onError,onSelect:item=>{if(destroyed||config.disabled||state.uid!==store.state().uid||state.generation!==store.state().generation)return;selected=item.name;render();config.onChange?.(selected);},onClose:()=>{manager=null;}});}
     select.onchange=()=>{if(destroyed||config.disabled)return;const value=select.value;if(value===ADD){select.value=selected;manage(true);return;}close();if(config.mode!=='filter'&&value!==selected&&store.isRemoved(value)){select.value=selected;config.onError?.(failure('designer_deleted','삭제된 담당자입니다. 다른 담당자를 선택해주세요.'));return;}selected=value;config.onChange?.(value);};
-    const onFocus=()=>{store.load().catch(error=>{if(!destroyed)config.onError?.(error);});},onBlur=()=>setTimeout(render,0);select.addEventListener('focus',onFocus);select.addEventListener('blur',onBlur);const stop=store.subscribe(state=>{if(manager&&(!state.uid||state.generation!==root.AiselAuth?.generation&&root.AiselAuth))close();render();});render();
+    const onFocus=()=>{store.load().catch(error=>{if(!destroyed)config.onError?.(error);});},onBlur=()=>setTimeout(render,0);select.addEventListener('focus',onFocus);select.addEventListener('blur',onBlur);const stop=store.subscribe(state=>{if(manager&&(!state.uid||state.generation!==root.AiselAuth?.generation&&root.AiselAuth))close();render();if(state.uid&&!state.ready&&!state.error)store.load().catch(error=>{if(!destroyed)config.onError?.(error);});});render();
     return {refresh(next={}){config={...config,...next};if(Object.hasOwn(next,'value')){const value=String(next.value||'');if(value!==selected)close();selected=value;}render();},setValue(value){if(String(value||'')!==selected)close();selected=String(value||'');render();},setDisabled(disabled){config.disabled=!!disabled;render();},close,destroy(){if(destroyed)return;destroyed=true;close();stop();select.removeEventListener('focus',onFocus);select.removeEventListener('blur',onBlur);select.onchange=priorOnchange;}};
   }
   const api={...store,VERSION,cleanName,createStore,mountPicker};
