@@ -144,7 +144,7 @@
     const names=[...new Set([...designerNames(),...rows.map(row=>row.designer||'').filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'ko'));
     const designer=$('#rcDesignerFilter');renderDateFilter();
     if(window.AiselDesigners){
-      const options={value:designer.value,placeholder:'담당자',managerHost:$('#rcListTaxonomyManager'),emptyOptions:[['__unassigned__','미지정']],includeNames:names,onChange:()=>{gallerySignature='';renderList();rememberList();},onError:error=>message(error?.message||String(error),true)};
+      const options={mode:'filter',value:designer.value,placeholder:'담당자',managerHost:$('#rcListTaxonomyManager'),emptyOptions:[['__unassigned__','미지정']],includeNames:names,onChange:()=>{gallerySignature='';renderList();rememberList();},onError:error=>message(error?.message||String(error),true)};
       if(!designerFilterPicker)designerFilterPicker=window.AiselDesigners.mountPicker(designer,options);else designerFilterPicker.refresh({value:designer.value,includeNames:names});
     }else selectOptions(designer,[['','담당자'],...names.map(value=>[value,value]),['__unassigned__','미지정']],designer.value);
   }

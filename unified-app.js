@@ -485,7 +485,7 @@
   window.addEventListener('aisel-access-change',renderAccount);
   $('aiselResetPassword').addEventListener('click',()=>{
    if(sessionBusy)return;
-   status.textContent='직원 비밀번호는 대표님이 설정합니다. 비밀번호를 잊었거나 로그인이 안 되면 대표님에게 확인해주세요.';
+   status.textContent='비밀번호를 잊었거나 로그인이 안 되면 대표님에게 확인해주세요.';
   });
   google.addEventListener('click',()=>{
    if(sessionBusy||google.disabled)return;

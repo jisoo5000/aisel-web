@@ -146,18 +146,20 @@
       const active=store.list(),filter=config.mode==='filter';
       const names=filter?active:[...new Set([...active,...(config.includeNames||[])].filter(name=>name&&!store.isRemoved(name)))];
       const values=[['',config.placeholder||'미지정'],...(config.emptyOptions||[]),...names.map(name=>[name,name])];
-      const historical=filter?[...new Set(config.includeNames||[])].filter(name=>name&&!active.includes(name)).sort((a,b)=>a.localeCompare(b,'ko')):[];
-      if(selected&&!values.some(([value])=>value===selected)&&!historical.includes(selected)){
-        if(filter)historical.push(selected);else values.push([selected,selected+(store.isRemoved(selected)?' (삭제됨)':'')]);
+      // Filters show the managed catalog only; old records remain searchable.
+      let clearedFilter=false;
+      if(selected&&!values.some(([value])=>value===selected)){
+        if(filter){if(store.state().ready){selected='';clearedFilter=true;}}
+        else values.push([selected,selected+(store.isRemoved(selected)?' (삭제됨)':'')]);
       }
-      const next=JSON.stringify([values,historical]);
+      const next=JSON.stringify(values);
       if(signature!==next&&(!signature||document.activeElement!==select)){
         const fragment=document.createDocumentFragment(),option=(value,label)=>{const e=document.createElement('option');e.value=value;e.textContent=label;e.style.fontWeight='400';return e;};
         for(const [value,label]of values)fragment.append(option(value,label));
-        for(const name of historical)fragment.append(option(name,name));
-        fragment.append(option(ADD,'＋ 추가'));select.replaceChildren(fragment);signature=next;
+        fragment.append(option(ADD,'＋ 추가·삭제'));select.replaceChildren(fragment);signature=next;
       }
       select.value=selected;select.disabled=!!config.disabled;if(config.disabled)close();
+      if(clearedFilter)queueMicrotask(()=>{if(!destroyed&&selected==='')config.onChange?.('');});
     }
     function manage(addOnly){close();const state=store.state();manager=openManager(config.managerHost||select.parentElement,{label:'담당자',title:'담당자',iconActions:true,undo:true,maxLength:160,addOnly,closeOnSelect:addOnly,list:()=>store.list().map(name=>({name})),reorder:items=>root.AiselCatalogOrder.save('designers',items.map(item=>item.name)),load:()=>store.load({force:true}),subscribe:store.subscribe,session:()=>{const s=store.state();return [s.uid,s.generation];},permissions:()=>({canAdd:store.state().canManage,canRemove:store.state().canManage}),add:store.add,remove:item=>store.remove(item.name),onError:config.onError,onSelect:item=>{if(destroyed||config.disabled||state.uid!==store.state().uid||state.generation!==store.state().generation)return;selected=item.name;render();config.onChange?.(selected);},onClose:()=>{manager=null;}});}
     select.onchange=()=>{if(destroyed||config.disabled)return;const value=select.value;if(value===ADD){select.value=selected;manage(true);return;}close();if(config.mode!=='filter'&&value!==selected&&store.isRemoved(value)){select.value=selected;config.onError?.(failure('designer_deleted','삭제된 담당자입니다. 다른 담당자를 선택해주세요.'));return;}selected=value;config.onChange?.(value);};

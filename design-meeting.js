@@ -310,7 +310,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  if(window.AiselNoteCategories?.mountFilter)listCategoryPicker=window.AiselNoteCategories.mountFilter($dm('#dmNoteCategoryFilter'),{value:noteCategoryFilter,placeholder:'카테고리',managerHost:filterManager,onChange:value=>selectOrganizationFilter('category',value),onError:error=>{$dm('#dmCoverageState').textContent=error.message;}});
  else $dm('#dmNoteCategoryFilter').onchange=event=>selectOrganizationFilter('category',event.target.value);
  if(window.AiselDesigners?.mountPicker){
-   listDesignerPicker=window.AiselDesigners.mountPicker($dm('#dmDesignerFilter'),{value:designerFilter,placeholder:'담당자',emptyOptions:[['__missing__','미지정']],managerHost:filterManager,onChange:value=>selectOrganizationFilter('designer',value),onError:error=>{$dm('#dmCoverageState').textContent=error.message;}});
+   listDesignerPicker=window.AiselDesigners.mountPicker($dm('#dmDesignerFilter'),{mode:'filter',value:designerFilter,placeholder:'담당자',emptyOptions:[['__missing__','미지정']],managerHost:filterManager,onChange:value=>selectOrganizationFilter('designer',value),onError:error=>{$dm('#dmCoverageState').textContent=error.message;}});
    detailDesignerPicker=window.AiselDesigners.mountPicker(designerSelect,{value:'',placeholder:'담당자',managerHost:designerManager,onChange:selectDetailDesigner,onError:error=>detailMessage(active,error.message)});
  }else $dm('#dmDesignerFilter').onchange=event=>selectOrganizationFilter('designer',event.target.value);
  function noteCategoryIds(c){return c?._summary?c.noteCategoryCoverage===false?null:Array.isArray(c.noteCategoryIds)?c.noteCategoryIds:null:[...new Set(Object.values(c?.referenceNotes||{}).map(n=>n.categoryId).filter(Boolean))];}
