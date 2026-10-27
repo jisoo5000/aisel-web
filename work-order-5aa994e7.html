@@ -1,3 +1,4 @@
+<!-- v275: durable drawing sources and plain fabric cost labels -->
 <!-- v274: production correction recovery and canonical code URLs -->
 <!-- v273: category changes correct saved codes atomically -->
 <!-- v270: retain manual sale price and plain historical designer names -->
@@ -5344,13 +5345,13 @@
 </script>
 
 <script src="workorder-draft-storage.js?v=189"></script>
-<script src="aisel-photo.js?v=216"></script>
+<script src="aisel-photo.js?v=275"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=254">
 <script src="aisel-usp.js?v=262"></script>
 <script src="aisel-workorder-usp.js?v=251"></script>
 <script src="aisel-editor-values.js?v=272"></script>
 <script src="aisel-fabric-variants.js?v=260"></script>
-<script src="aisel-size-costs.js?v=252"></script>
+<script src="aisel-size-costs.js?v=275"></script>
 <link rel="stylesheet" href="aisel-size-costs.css?v=254">
 <script>
   // ---------- 카테고리 · 품명 · 타겟판가 체계 ----------
@@ -5727,6 +5728,7 @@
     if(row.negotiationEditor_)row.negotiationEditor_.refresh();
   }
   function makeLine(name="", unit="", qty="", metadata, record){
+    if(/^원단\s*\(\s*야드\s*\)$/.test(name))name="원단";
     const row=document.createElement("tr");row.className="line";
     row.legacyCostRecord_=record?negotiation_.clone(record):{};
     row.negotiation_=metadata?negotiation_.clone(metadata):null;
@@ -5735,12 +5737,6 @@
       <td><input type="text" class="qty tnum" inputmode="decimal" placeholder="비우면 1" aria-label="완제품 1장당 소요량"></td>
       <td><span class="amt">0</span></td><td class="noprint"><button class="del" title="삭제">✕</button></td>`;
     row.querySelector(".nm").value=name;row.querySelector(".unit").value=unit;row.querySelector(".qty").value=qty;
-    // Compact the legacy label on screen without rewriting saved names or A4 content.
-    if(name==="원단(야드)"){
-      const label=document.createElement("span");label.className="cost-name-short noprint";label.textContent="원단";
-      row.querySelector(".nm-cell").append(label);
-      row.querySelector(".nm").addEventListener("input",()=>label.remove(),{once:true});
-    }
     negotiation_.displayInput(row.querySelector('.qty'),qty);
     row.negotiationEditor_=negotiation_.attachEditor(row.querySelector(".nego-material"),{
       title:()=>row.querySelector(".nm").value||"자재",legacy:()=>row.querySelector(".unit").value,quantity:()=>row.querySelector(".qty").value,
@@ -5952,7 +5948,7 @@
       const small=await AiselPhoto.prepare(prepared.blob,'workorderThumb');
       const [photo,thumb]=await Promise.all([AiselPhoto.dataURL(prepared.blob),AiselPhoto.dataURL(small.blob)]);
       if(!current())return;
-      box.querySelector('img').src=photo;box.dataset.thumb=thumb;box.classList.add('filled');
+      box.dataset.photoSource=photo;box.querySelector('img').src=photo;box.dataset.thumb=thumb;box.classList.add('filled');
       // Capture the new image before AI/category work or a later navigation.
       saveSoon();
       if(box.id==='ph1'&&window.analyzeWorkOrderPhoto_)window.analyzeWorkOrderPhoto_(photo);
@@ -5969,7 +5965,7 @@
     box.addEventListener("mouseenter", ()=> pasteBox = box);
     box.querySelector(".clr").addEventListener("click", e=>{
       e.preventDefault(); e.stopPropagation();
-      box.photoRequest_=null;box.querySelector("img").removeAttribute("src"); box.classList.remove("filled");
+      box.photoRequest_=null;box.dataset.photoSource="";box.querySelector("img").removeAttribute("src"); box.classList.remove("filled");
       box.dataset.thumb = "";
       inp.value=""; save();
     });
@@ -7144,7 +7140,7 @@
     st.lines = [...linesWrap.querySelectorAll(".line")].map(readCostRow_);
     // 원본은 작업지시서 편집화면 고화질용, 썸네일은 목록·제품조회 화면 가벼운 용도로 둘 다 저장
     // (원본 저장을 끄고 싶으면 SAVE_ORIGINAL_PHOTO를 false로 바꾸면 됨 — 아래 상수 참고)
-    st.p1 = SAVE_ORIGINAL_PHOTO ? (document.querySelector("#ph1 img").getAttribute("src") || "") : "";
+    st.p1 = SAVE_ORIGINAL_PHOTO ? (document.querySelector("#ph1").dataset.photoSource || "") : "";
     st.p1Thumb = document.querySelector("#ph1").dataset.thumb || "";
     st.sizeSpecCols = [...sizeSpecHead.querySelectorAll(".ss-colname")].map(inp=> inp.value);
     st.sizeSpec = [...sizeSpecRows.querySelectorAll("tr")].map(r=>({
@@ -7812,7 +7808,8 @@
 
   function setPhoto(boxSel, src, thumb){
     const box = document.querySelector(boxSel);
-    if(box.querySelector("img").getAttribute("src")!==(src||null))box.photoRequest_=null;
+    if(box.dataset.photoSource!==(src||""))box.photoRequest_=null;
+    box.dataset.photoSource=src||"";
     const img = box.querySelector("img");
     // 2026-08-13 추가: 사진 주소가 지금과 같으면 다시 대입하지 않습니다.
     // img.src를 다시 쓰면 브라우저가 사진을 처음부터 다시 그려서 화면이 번쩍입니다.
@@ -7927,7 +7924,7 @@
       }
     }
     restoreMemoCostBindings_();
-    setPhoto("#ph1", st.p1, st.p1Thumb);
+    setPhoto("#ph1", AiselPhoto.savedSource(st), st.p1Thumb);
     // 2026-08-13 추가: 사이즈 스펙 표도 내용이 지금과 같으면 다시 만들지 않습니다.
     // 지우고 다시 만들면 표 전체가 깜빡이고, 그 안 어느 칸에 포커스가 있었다면 끊깁니다.
     {

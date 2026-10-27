@@ -1,6 +1,6 @@
 (function(root){
  'use strict';
- function parse(raw){try{if(!raw)return {version:1,rows:[]};const value=JSON.parse(raw);if(value.version!==1||!Array.isArray(value.rows)||value.rows.some(r=>!r||typeof r.id!=='string'||!Array.isArray(r.lines)))return null;return value;}catch(_){return null;}}
+ function parse(raw){try{if(!raw)return {version:1,rows:[]};const value=JSON.parse(raw);if(value.version!==1||!Array.isArray(value.rows)||value.rows.some(r=>!r||typeof r.id!=='string'||!Array.isArray(r.lines)))return null;for(const row of value.rows)for(const line of row.lines)if(/^원단\s*\(\s*야드\s*\)$/.test(line.nm))line.nm="원단";return value;}catch(_){return null;}}
  function mount({document:d,getKey,getBase,negotiation:n}){
   const make=(tag,cls,text)=>{const e=d.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;},base=d.getElementById('costCell'),head=base.querySelector('.sec-title');
   head.classList.add('size-cost-heading');const label=make('span','','원가계산서');head.replaceChildren(label);
@@ -38,7 +38,7 @@
   }printText();}
   function addCost(source){if(plus.disabled)return;const copied=n.clone(source);data.rows.push({...copied,id:crypto.randomUUID(),size:''});commit();draw();list.lastElementChild.querySelector('.size-cost-note').focus();}plus.onclick=()=>addCost(getBase());
   size.addEventListener('input',printText);
-  function refresh(){paintSizes();const next=String(getKey()||''),raw=field.value;printSize.textContent=size.value;if(key===next&&signature===raw)return;key=next;signature=raw;const parsed=parse(raw);plus.disabled=!parsed;data=parsed||{version:1,rows:[]};draw();}
+  function refresh(){paintSizes();const next=String(getKey()||''),raw=field.value;printSize.textContent=size.value;if(key===next&&signature===raw)return;key=next;signature=raw;const parsed=parse(raw);plus.disabled=!parsed;data=parsed||{version:1,rows:[]};if(parsed){field.value=JSON.stringify(data);signature=field.value;}draw();}
   root.addEventListener('beforeprint',printText);return {refresh};
  }
  root.AiselSizeCosts={mount,parse};if(typeof module==='object'&&module.exports)module.exports=root.AiselSizeCosts;

@@ -36,5 +36,18 @@
      return {prepared,thumb:{...thumb,width:prepared.width,height:prepared.height}};
    });
  }
- root.AiselPhoto={prepare,preparePair,dataURL,profiles};
+ // Persist durable sources only. A protected image's DOM src is an ephemeral blob.
+ function savedSource(record){
+   const source=String(record?.p1||'');
+   if(!source.startsWith('blob:'))return source;
+   const durable=value=>typeof value==='string'&&(/^https:\/\//.test(value)||/^data:image\//.test(value));
+   const identity=value=>{try{const u=new URL(value);return u.origin+u.pathname;}catch{return value;}};
+   const thumb=record?.p1Thumb||'';
+   for(const entry of Object.values(record?.sourceDocumentImports||{})){
+     const files=entry?.storageVerification;
+     if(thumb&&files?.thumb?.url&&identity(files.thumb.url)===identity(thumb)&&durable(files?.drawing?.url))return files.drawing.url;
+   }
+   return durable(thumb)?thumb:'';
+ }
+ root.AiselPhoto={prepare,preparePair,dataURL,profiles,savedSource};
 })(globalThis);
