@@ -1,3 +1,4 @@
+<!-- v274: production correction recovery and canonical code URLs -->
 <!-- v273: category changes correct saved codes atomically -->
 <!-- v270: retain manual sale price and plain historical designer names -->
 <!-- v269: managed designer filters and concise login help (2026-10-27) -->
@@ -206,7 +207,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=269">
+<link rel="preload" as="script" href="unified-app.js?v=274">
 <link rel="preload" as="script" href="design-meeting.js?v=269">
 <link rel="preload" as="script" href="reference-collection.js?v=269">
 <link rel="preload" as="style" href="workorder-screen.css?v=270">
@@ -5652,7 +5653,7 @@
       if(woRef&&woListener)woRef.off('value',woListener);woRef=null;woListener=null;currentCode=null;
       attachWoRef(result.code);document.getElementById('codeView').textContent=result.code;try{sessionStorage.removeItem(retryKey);}catch(_){}
       window.dispatchEvent(new CustomEvent('aisel-access-workorders-changed'));
-      if(appRoute_.view==='editor'){appRoute_={...appRoute_,code:result.code};history.replaceState(appRoute_,'');}
+      if(appRoute_.view==='editor'){appRoute_={...appRoute_,code:result.code};const url=new URL(location.href);url.hash='workorder='+encodeURIComponent(result.code);history.replaceState({...history.state,...appRoute_},'',url);}
     }catch(error){const labels={code_taken:'이미 사용 중인 품번입니다.',workorder_changed:'다른 곳에서 수정됐습니다. 최신 내용을 확인하고 다시 시도해주세요.',invalid_code:'품번 형식을 확인해주세요.',permission_denied:'대표자 계정에서 품번을 정정해주세요.'};throw Object.assign(Error(labels[error.code]||error.message||'품번 수정 결과를 확인해주세요.'),{code:error.code});}
     finally{movingCodeNow_=false;if(currentCode===oldCode)loading=false;}
   }
@@ -8528,7 +8529,7 @@
     if(mobileUnifiedReady_)renderMobileSampleDate_();
     sampleChangeBaseline_=null; sampleChangeBaselineCode_=null;
     if(typeof appRoute_!=="undefined" && appRoute_.view==="editor" && !restoringRoute_){
-      appRoute_={...appRoute_,code};history.replaceState({...history.state,...appRoute_},"");
+      appRoute_={...appRoute_,code};const url=new URL(location.href);url.hash="workorder="+encodeURIComponent(code);history.replaceState({...history.state,...appRoute_},"",url);
     }
     woRef = woRoot.child(code);
     const subscribedRef=woRef;
@@ -17305,7 +17306,7 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=233"></script>
-<script src="unified-app.js?v=269"></script>
+<script src="unified-app.js?v=274"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=260" media="screen">
