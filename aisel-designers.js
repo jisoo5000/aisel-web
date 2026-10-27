@@ -60,7 +60,7 @@
       if(drag)return;if(signature===listSignature)return;listSignature=signature;rows.replaceChildren();
       for(const [index,item] of items.entries()){
         const row=document.createElement('div'),name=document.createElement('span'),button=document.createElement('button');
-        name.textContent=item.name+(item.deletedAt?' (삭제됨)':'');button.type='button';button.setAttribute('aria-label',item.name+(item.deletedAt?' 복원':' 삭제'));button.disabled=busy||!permissions.canRemove;
+        name.textContent=item.name;button.type='button';button.setAttribute('aria-label',item.name+(item.deletedAt?' 복원':' 삭제'));button.disabled=busy||!permissions.canRemove;
         if(item.deletedAt){button.className='aisel-taxonomy-restore';button.textContent='복원';button.onclick=()=>void run(async()=>{await restoreItem(item.name);if(alive()&&sameSession()){if(lastDeleted?.name===item.name)lastDeleted=null;status.textContent=item.name+' 복원 완료';}return true;});}
         else{
           button.className='aisel-taxonomy-delete';
@@ -150,7 +150,7 @@
       let clearedFilter=false;
       if(selected&&!values.some(([value])=>value===selected)){
         if(filter){if(store.state().ready){selected='';clearedFilter=true;}}
-        else values.push([selected,selected+(store.isRemoved(selected)?' (삭제됨)':'')]);
+        else values.push([selected,selected]);
       }
       const next=JSON.stringify(values);
       if(signature!==next&&(!signature||firstCatalog||document.activeElement!==select)){

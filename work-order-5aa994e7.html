@@ -1,3 +1,4 @@
+<!-- v270: retain manual sale price and plain historical designer names -->
 <!-- v269: managed designer filters and concise login help (2026-10-27) -->
 <!-- v268: keep cost sheet visible on screen after factory printing (2026-10-27) -->
 <!-- v267: workorder-first startup and shared meeting materials UI -->
@@ -207,7 +208,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=269">
 <link rel="preload" as="script" href="design-meeting.js?v=269">
 <link rel="preload" as="script" href="reference-collection.js?v=269">
-<link rel="preload" as="style" href="workorder-screen.css?v=260">
+<link rel="preload" as="style" href="workorder-screen.css?v=270">
 <link rel="preload" as="style" href="unified-app.css?v=248">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=263">
 <script id="aisel-ipad-layout-mode">
@@ -5740,15 +5741,25 @@
   // 판매가 칸은 뺍니다 — 타이핑하는 족족 자동값이 덮어쓰면 직접 고칠 수가 없습니다.
   ["#gongim","#siyage"].forEach(s=> $(s).addEventListener("input", autoPrice_));
   // 2026-09-20 추가: 판매가 칸을 직접 타이핑해도 확정으로 봅니다 (버튼을 안 눌러도)
+  // Keep manual prices (including values outside the suggestion list) in the
+  // existing autosave path, even if navigation happens before blur/change.
   $("#targetThreshold").addEventListener("input", ()=>{
-    priceConfirmed_ = false; priceSource_ = ""; priceException_ = null;
+    const price = num($("#targetThreshold").value);
+    priceConfirmed_ = priceAllowed_(price,totalCost_());
+    priceSource_ = priceConfirmed_ ? "manual" : ""; priceException_ = null;
   });
   $("#targetThreshold").addEventListener("change", ()=>{
     const price = num($("#targetThreshold").value);
-    if(!price){ priceException_=null; priceConfirmed_=false; save(); return; }
+    if(!price){ priceException_=null; priceConfirmed_=false; priceSource_=""; save(); return; }
     if(!selectRetailPrice_(price,false)){
-      $("#targetThreshold").value=""; priceConfirmed_=false; priceException_=null; calc(); save();
+      // Retain the entered draft and show the existing review warning.
+      // A failed price check must never erase what the user typed.
+      priceConfirmed_=false; priceSource_=""; priceException_=null; calc(); save();
     }
+  });
+  $("#targetThreshold").addEventListener("keydown", event=>{
+    if(event.key!=="Enter" || event.isComposing || event.keyCode===229)return;
+    event.preventDefault(); event.currentTarget.blur();
   });
 
   // ---------- 타겟 판매가 퀵버튼(카테고리 → 가격 2단계) ----------
@@ -17182,7 +17193,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-collection-writes.js?v=264"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
-<script src="aisel-designers.js?v=269.1"></script>
+<script src="aisel-designers.js?v=270"></script>
 <script src="aisel-editor-enhancements.js?v=252"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=233">
 <script src="aisel-date-filter.js?v=233"></script>

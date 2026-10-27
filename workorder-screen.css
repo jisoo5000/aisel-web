@@ -341,3 +341,25 @@
  html:root body #editorView #sheet .fabric-variant-color .fabric-variant-add {font-size:22px;}
  html:root body #editorView #sheet .fabric-variant-remove .ref-action-icon {width:16px;height:16px;flex:0 0 16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
 }
+
+/* v270: keep the editable sale price inside the shared compact screen row. */
+@media screen {
+ html:root body #editorView #sheet #costCell #ownerRetailRow {
+  box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+  display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;
+  column-gap:4px;align-items:center;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow > label {
+  grid-column:1;grid-row:1;white-space:nowrap;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow #targetThreshold {
+  grid-column:2;grid-row:1;box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+  margin:0;padding:0 4px;height:36px;min-height:36px;line-height:28px;text-align:right;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow .mobile-retail-unit {
+  display:block;grid-column:3;grid-row:1;white-space:nowrap;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow .owner-retail-tools {
+  grid-column:1/-1;grid-row:2;min-width:0;max-width:100%;
+ }
+}
