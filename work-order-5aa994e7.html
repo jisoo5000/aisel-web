@@ -7963,6 +7963,10 @@
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
     editorContentBaseline_=collect();
+    // Keep requested repairs dirty until the existing field-level save confirms them.
+    if(String(st.p1||"").startsWith("blob:")&&editorContentBaseline_.p1)editorContentBaseline_.p1=st.p1;
+    if(st.lines)editorContentBaseline_.lines=editorContentBaseline_.lines.map((line,index)=>/^원단\s*\(\s*야드\s*\)$/.test(st.lines[index]?.nm)?{...line,nm:st.lines[index].nm}:line);
+    if(typeof st.costVariantsData==="string"&&/"nm"\s*:\s*"원단\s*\(\s*야드\s*\)"/.test(st.costVariantsData))editorContentBaseline_.costVariantsData=st.costVariantsData;
     window.AiselWorkorderMeetingPhotos?.render(currentCode,st);
   }
   function updateRefLinkMode_(){
