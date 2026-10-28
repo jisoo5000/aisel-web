@@ -1,3 +1,4 @@
+<!-- v277: inline initial-order size presets, durable color-size quantities and confirmed receipts -->
 <!-- v275: durable drawing sources and plain fabric cost labels -->
 <!-- v274: production correction recovery and canonical code URLs -->
 <!-- v273: category changes correct saved codes atomically -->
@@ -3541,6 +3542,30 @@
   </div>
 </div>
 
+<style id="aisel-v277-inline-order">
+@media screen {
+ body #editorView #newBtn { white-space:normal; overflow-wrap:anywhere; line-height:1.2; }
+ body #editorView #orderSizePanel { grid-column:1/-1; grid-row:2; order:100; flex:1 0 100%; box-sizing:border-box; min-width:0; padding:10px; background:#FAF7F1; border:1px solid #DEDAD2; border-radius:6px; }
+ body #editorView #orderSizePanel[hidden] { display:none!important; }
+ #orderSizeContext,#orderSizeMessage { font-size:12px; line-height:1.5; color:#4B4B48; overflow-wrap:anywhere; }
+ #orderSizeContext { margin-bottom:7px; }
+ #orderSizeMessage:empty { display:none; }
+ #orderSizeMessage:not(:empty) { margin-top:7px; }
+ #orderSizeMessage[data-error="true"] { color:#983D37; }
+ #orderSizePanel .order-size-options { display:flex; flex-wrap:wrap; gap:6px; }
+ body #editorView #orderSizePanel .btn { flex:1 1 auto; min-height:40px; height:auto; white-space:normal; padding:8px 10px; font-size:12px; }
+ body #editorView #orderSizePanel .btn[aria-pressed="true"] { background:#34383C; border-color:#34383C; color:white; }
+ body #editorView #orderSizePanel .btn:disabled { opacity:.6; cursor:default; }
+ body #sheet .sizespec .unit-note { flex:0 0 100%; width:100%; margin:2px 0 7px; font-size:11px; }
+}
+@media screen and (max-width:600px) {
+ body #editorView .tb-row:has(#orderSizePanel:not([hidden])) > #saveBtn,
+ body #editorView .tb-row:has(#orderSizePanel:not([hidden])) > #factorySaveBtn,
+ body #editorView .tb-row:has(#orderSizePanel:not([hidden])) > #printBtn { grid-row:3; }
+}
+@media print { #orderSizePanel { display:none!important; } }
+</style>
+
 <div class="page notranslate" id="editorView" style="display:none" lang="ko" translate="no">
   <!-- 2026-08-13 수정: 품번 안내를 카테고리 옆이 아니라 툴바 위 독립 줄로 옮김.
        카테고리 칸 안에 있으면 줄 높이가 달라져 입력줄이 삐뚤어 보였습니다. -->
@@ -3583,7 +3608,16 @@
     </div>
 
     <div class="tb-row">
-      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" title="발주완료 표시">발주완료</button>
+      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" title="사이즈를 선택해 발주">발주완료</button>
+      <div id="orderSizePanel" class="noprint" hidden>
+        <div id="orderSizeContext"></div>
+        <div class="order-size-options" role="group" aria-label="발주 사이즈 구성">
+          <button type="button" class="btn ghost" data-order-preset="numbered">1 (S M) · 2 (L XL)</button>
+          <button type="button" class="btn ghost" data-order-preset="s-xl">S–XL</button>
+          <button type="button" class="btn ghost" data-order-preset="s-3xl">S–3XL</button>
+        </div>
+        <div id="orderSizeMessage" role="status" aria-live="polite"></div>
+      </div>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
@@ -3883,6 +3917,7 @@
 
       <div class="sizespec">
         <div class="sec-title sheet-section-title">사이즈</div>
+        <div class="unit-note noprint">단위: <span id="unitLabel">CM</span></div>
         <div class="ss-addrow noprint">
           <button type="button" class="add" id="addSizeSpecRow">+ 부위 추가</button>
           <button type="button" class="add" id="addSizeSpecCol">+ 사이즈 추가</button>
@@ -3899,7 +3934,7 @@
             <tbody id="sizeSpecRows"></tbody>
           </table>
         </div>
-        <div class="unit-note noprint">단위: <span id="unitLabel">CM</span> · 칸 클릭해 수정 · + 부위/사이즈 추가 · × 로 행 삭제</div>
+
       </div>
     </div>
 
@@ -6743,6 +6778,7 @@
   const STATUS_MAP = Object.fromEntries(STATUS_LIST.map(s=> [s.key, s]));
   let currentStatus = "sampling";
   let currentOrderCompleted_ = false;
+  let currentInitialOrder_ = null;
   const STATUS_LABEL_MAP = {
     planned: "🧵 샘플중", sampling: "🧵 샘플중", samplemgmt: "🧵 샘플중", resampling: "🧵 재샘플",
     order: "🏭 발주생산", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
@@ -6830,9 +6866,6 @@
           ["workorderIndex/" + code + "/status"]: next,
           ["workorderIndex/" + code + "/updatedAt"]: now
         };
-        // Entering production defaults the reversible order-completed flag on.
-        const nextOrderCompleted = next === "order" ? true : currentOrderCompleted_;
-        if(next === "order") updates["workorders/" + code + "/orderCompleted"] = nextOrderCompleted;
         const modifiedParts=modificationDateParts_(now);
         for(const [key,value] of Object.entries(modifiedParts))updates["workorders/"+code+"/"+key]=value;
         if(sharing){
@@ -6842,9 +6875,8 @@
         await workorderDatabase_.ref().update(updates);
         if(currentCode !== code) return;
         currentStatus = next;
-        currentOrderCompleted_ = nextOrderCompleted;
-        if(lastSavedState_)lastSavedState_={...lastSavedState_,status:next,orderCompleted:nextOrderCompleted,updatedAt:now,...modifiedParts};
-        if(editorContentBaseline_)editorContentBaseline_={...editorContentBaseline_,status:next,orderCompleted:nextOrderCompleted,updatedAt:now,...modifiedParts};
+        if(lastSavedState_)lastSavedState_={...lastSavedState_,status:next,updatedAt:now,...modifiedParts};
+        if(editorContentBaseline_)editorContentBaseline_={...editorContentBaseline_,status:next,updatedAt:now,...modifiedParts};
         for(const [key,value] of Object.entries(modifiedParts))document.getElementById(key).value=value;
         updateStatusButtons();
         refreshCafe24Bar_();
@@ -7889,6 +7921,8 @@
     $("#materials").value = st.materials || "";
     fabricMemoLastText_=$("#materials").value;
     pumInput.dataset.auto = st.pumAuto || "1";
+    currentInitialOrder_ = st.initialOrder && typeof st.initialOrder === "object" ? JSON.parse(JSON.stringify(st.initialOrder)) : null;
+    if(document.getElementById("orderSizePanel").dataset.code!==currentCode)closeOrderSizePanel_();
     currentOrderCompleted_ = st.orderCompleted === true;
     currentStatus = normalizeWorkOrderStatus_(st.status);
     updateStatusButtons();
@@ -10771,6 +10805,7 @@
       outputEl.value = "";
       outputEl.classList.add("copygen-empty");
     }
+    currentInitialOrder_ = null;closeOrderSizePanel_();
     currentOrderCompleted_ = false;
     currentStatus = "sampling"; updateStatusButtons();
     // 2026-08-13 추가: 새 작지의 시야게 기본값을 0으로 둠 (인쇄영역 HTML은 그대로 두고 값만 지정)
@@ -10794,51 +10829,180 @@
     clearTimeout(gallerySearchTimer_);
     gallerySearchTimer_ = setTimeout(renderGallery, 200);
   });
-  function renderOrderCompletedButton_(){
-    const button = document.getElementById("newBtn");
-    if(!button) return;
-    button.classList.toggle("order-completed", currentOrderCompleted_);
-    button.setAttribute("aria-pressed", String(currentOrderCompleted_));
-    button.title = currentOrderCompleted_ ? "발주완료 표시 해제" : "발주완료 표시";
+  const ORDER_SIZE_PRESETS_ = Object.freeze({
+    numbered:{label:"1 (S M) · 2 (L XL)",sizes:["1번","2번"]},
+    "s-xl":{label:"S–XL",sizes:["S","M","L","XL"]},
+    "s-3xl":{label:"S–3XL",sizes:["S","M","L","XL","2XL","3XL"]}
+  });
+  function orderColors_(){
+    const raw=window.getSelectedColors_ ? window.getSelectedColors_() : [];
+    return [...new Set((window.colorNames_ ? window.colorNames_(raw) : raw).filter(v=>typeof v==="string").map(v=>v.trim()).filter(Boolean))];
   }
-  $("#newBtn").addEventListener("click", async ()=>{
-    if(statusChanging_) return;
+  function buildInitialOrder_(presetKey,colors,code,now){
+    const preset=ORDER_SIZE_PRESETS_[presetKey];
+    if(!preset || !colors.length) throw Error("컬러와 사이즈 구성을 선택해주세요.");
+    const date=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
+    const items=colors.flatMap(color=>preset.sizes.map(size=>({
+      orderType:"초기발주",orderCategory:"공장발주",styleCode:code,
+      factory:$("#factory").value.trim(),itemName:$("#pumMyeong").value.trim(),
+      color,size,qty:20,unit:"장",orderDate:date,memo:""
+    })));
+    return {version:1,id:"initial-"+code,preset:presetKey,colors:colors.slice(),sizes:preset.sizes.slice(),
+      items,totalQty:items.length*20,createdAt:now,transport:"registered"};
+  }
+  function setOrderSizeMessage_(message,error=false){
+    const el=document.getElementById("orderSizeMessage");
+    el.textContent=message;el.dataset.error=String(error);
+  }
+  function closeOrderSizePanel_(){
+    document.getElementById("orderSizePanel").hidden=true;
+    document.getElementById("newBtn").setAttribute("aria-expanded","false");
+  }
+  function renderOrderCompletedButton_(){
+    const button=document.getElementById("newBtn");
+    if(!button)return;
+    const order=currentInitialOrder_,complete=currentOrderCompleted_ && order?.transport!=="unconfirmed" && order?.transport!=="sending";
+    const colors=Array.isArray(order?.colors) ? order.colors : [];
+    const pending=order && !complete;
+    const text=(complete ? "발주완료" : pending ? "발주 확인 필요" : "발주완료")+(order&&colors.length ? " · "+colors.join(" · ") : "");
+    if(button.textContent!==text)button.textContent=text;
+    button.classList.toggle("order-completed",!!complete);
+    button.setAttribute("aria-pressed",String(!!complete));
+    button.title=complete ? colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장" : "사이즈를 선택해 발주";
+  }
+  function openOrderSizePanel_(){
+    const panel=document.getElementById("orderSizePanel"),button=document.getElementById("newBtn");
+    if(!panel.hidden){closeOrderSizePanel_();return;}
+    panel.dataset.code=currentCode;
+    const colors=orderColors_(),order=currentInitialOrder_;
+    document.getElementById("orderSizeContext").textContent=order ?
+      order.colors.join(" · ")+" / "+order.sizes.join(" · ")+" / 총 "+order.totalQty+"장" :
+      colors.length ? colors.join(" · ")+" · 사이즈별 20장" : "작지의 컬러를 먼저 선택해주세요.";
+    panel.querySelectorAll("[data-order-preset]").forEach(b=>{
+      b.disabled=!!order || !colors.length;
+      b.setAttribute("aria-pressed",String(order?.preset===b.dataset.orderPreset));
+    });
+    setOrderSizeMessage_(order ? order.transport==="confirmed" ?
+      "저장된 발주입니다." : "발주 내역은 저장되어 있습니다. 발주 시트에서 반영 여부를 확인해주세요. 중복 전송하지 않습니다." : "");
+    panel.hidden=false;button.setAttribute("aria-expanded","true");
+  }
+  $("#newBtn").addEventListener("click",()=>{
+    if(statusChanging_)return;
     if(loading || !woRef || !currentCode || codeConflictNow_()){
-      alert("작지를 불러오는 중이거나 품번이 겹쳐 저장할 수 없습니다. 잠시 후 다시 시도해주세요.");
-      return;
+      document.getElementById("orderSizePanel").hidden=false;
+      document.getElementById("newBtn").setAttribute("aria-expanded","true");
+      document.getElementById("orderSizeContext").textContent="";
+      document.querySelectorAll("[data-order-preset]").forEach(b=>b.disabled=true);
+      setOrderSizeMessage_("작지를 불러온 뒤 다시 눌러주세요.",true);return;
     }
-    const code = currentCode, next = !currentOrderCompleted_, button = document.getElementById("newBtn");
-    statusChanging_ = true;
-    button.disabled = true;
-    document.querySelectorAll(".status-btn").forEach(b=> b.disabled = true);
+    openOrderSizePanel_();
+  });
+  async function confirmOrderSize_(presetKey){
+    if(statusChanging_ || currentInitialOrder_ || !ORDER_SIZE_PRESETS_[presetKey])return;
+    if(loading || !woRef || !currentCode || codeConflictNow_())return;
+    const colors=orderColors_();
+    if(!colors.length){setOrderSizeMessage_("작지의 컬러를 먼저 선택해주세요.",true);return;}
+    if(!$("#factory").value.trim() || !$("#pumMyeong").value.trim()){
+      setOrderSizeMessage_("작지의 공장과 품명을 먼저 입력해주세요.",true);return;
+    }
+    const code=currentCode,ref=woRef,button=document.getElementById("newBtn");
+    const same=()=>currentCode===code && woRef===ref;
+    let claimed=false,order=null;
+    statusChanging_=true;button.disabled=true;
+    document.querySelectorAll(".status-btn,[data-order-preset]").forEach(b=>b.disabled=true);
+    setOrderSizeMessage_("발주 저장 중…");
     try{
-      if(!await waitForEditorComposition_()) throw Error("한글 입력을 마쳐주세요.");
-      clearTimeout(saveT); saveT = null;
-      const saved = await save(null,{beforeStatusChange:true}), writes = await Promise.all([...pendingSaveWrites_]);
-      if(saved === false || writes.includes(false)) throw Error("최신 내용 저장을 확인하지 못했습니다.");
-      if(currentCode !== code) return;
-      const now = Date.now(), modifiedParts = modificationDateParts_(now);
-      const updates = {
-        ["workorders/" + code + "/orderCompleted"]: next,
-        ["workorders/" + code + "/updatedAt"]: now,
-        ["workorderIndex/" + code + "/updatedAt"]: now
+      if(!await waitForEditorComposition_())throw Error("한글 입력을 마쳐주세요.");
+      if(!same())return;
+      clearTimeout(saveT);saveT=null;
+      const saved=await save(null,{beforeStatusChange:true}),writes=await Promise.all([...pendingSaveWrites_]);
+      if(saved===false || writes.includes(false))throw Error("최신 작지 저장을 확인하지 못했습니다. 다시 눌러주세요.");
+      if(!same())return;
+      // Claim this initial order once across tabs. A live snapshot avoids a cold-null transaction.
+      order=buildInitialOrder_(presetKey,colors,code,Date.now());
+      const orderRef=ref.child("initialOrder"),keep=()=>{};
+      orderRef.on("value",keep);
+      let result;
+      try{
+        await orderRef.once("value");
+        if(!same())return;
+        result=await orderRef.transaction(current=>current ? undefined : order,undefined,false);
+      }finally{orderRef.off("value",keep);}
+      if(!result.committed){
+        if(same()){
+          currentInitialOrder_=result.snapshot.val()||null;
+          currentOrderCompleted_=currentInitialOrder_?.transport==="confirmed";
+          if(lastSavedState_)lastSavedState_.initialOrder=currentInitialOrder_;
+          if(editorContentBaseline_)editorContentBaseline_.initialOrder=currentInitialOrder_;
+          renderOrderCompletedButton_();closeOrderSizePanel_();
+        }
+        return;
+      }
+      claimed=true;
+      if(same()){
+        currentInitialOrder_=order;
+        if(lastSavedState_)lastSavedState_.initialOrder=JSON.parse(JSON.stringify(order));
+        if(editorContentBaseline_)editorContentBaseline_.initialOrder=JSON.parse(JSON.stringify(order));
+      }
+      // Do not send if the user navigated away during the claim.
+      if(!same())return;
+      await orderRef.update({transport:"sending"});
+      order.transport="sending";
+      if(same())setOrderSizeMessage_("발주 전송 중…");
+      // ContentService redirects support a simple text/plain CORS request.
+      // An opaque no-cors response must never be called a confirmed order.
+      const response=await fetch(ORDER_WEBAPP_URL,{
+        method:"POST",mode:"cors",credentials:"omit",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({requestId:order.id,orders:order.items}),
+        signal:AbortSignal.timeout(30000)
+      });
+      if(!response.ok)throw Error("발주 전송 결과를 확인하지 못했습니다.");
+      const receipt=await response.json();
+      if(receipt.result!=="success" && receipt.ok!==true)throw Error(receipt.message||"발주 시트 반영을 확인하지 못했습니다.");
+      const now=Date.now(),modified=modificationDateParts_(now);
+      const updates={
+        ["workorders/"+code+"/initialOrder/transport"]:"confirmed",
+        ["workorders/"+code+"/initialOrder/confirmedAt"]:now,
+        ["workorders/"+code+"/orderCompleted"]:true,
+        ["workorders/"+code+"/updatedAt"]:now,
+        ["workorderIndex/"+code+"/updatedAt"]:now
       };
-      for(const [key,value] of Object.entries(modifiedParts)) updates["workorders/"+code+"/"+key] = value;
+      for(const [key,value]of Object.entries(modified))updates["workorders/"+code+"/"+key]=value;
       await workorderDatabase_.ref().update(updates);
-      if(currentCode !== code) return;
-      currentOrderCompleted_ = next;
-      if(lastSavedState_) lastSavedState_ = {...lastSavedState_,orderCompleted:next,updatedAt:now,...modifiedParts};
-      if(editorContentBaseline_) editorContentBaseline_ = {...editorContentBaseline_,orderCompleted:next,updatedAt:now,...modifiedParts};
-      for(const [key,value] of Object.entries(modifiedParts)) document.getElementById(key).value = value;
-      renderOrderCompletedButton_();
-    }catch(err){
-      alert("발주완료 표시가 저장되지 않았습니다. 인터넷 연결을 확인하고 다시 눌러주세요.");
+      if(!same())return;
+      currentInitialOrder_={...order,transport:"confirmed",confirmedAt:now};currentOrderCompleted_=true;
+      for(const baseline of [lastSavedState_,editorContentBaseline_]){
+        if(baseline)Object.assign(baseline,{initialOrder:JSON.parse(JSON.stringify(currentInitialOrder_)),orderCompleted:true,updatedAt:now,...modified});
+      }
+      for(const [key,value]of Object.entries(modified))document.getElementById(key).value=value;
+      renderOrderCompletedButton_();closeOrderSizePanel_();
+    }catch(error){
+      if(claimed){
+        // Delivery may already have reached the sheet. Retain the record and never auto-retry.
+        try{await ref.child("initialOrder").update({transport:"unconfirmed"});}catch(_){}
+        if(same()){
+          currentInitialOrder_={...order,transport:"unconfirmed"};currentOrderCompleted_=false;
+          for(const baseline of [lastSavedState_,editorContentBaseline_])if(baseline)Object.assign(baseline,{initialOrder:JSON.parse(JSON.stringify(currentInitialOrder_)),orderCompleted:false});
+          renderOrderCompletedButton_();
+        }
+      }
+      if(same()){
+        document.getElementById("orderSizePanel").hidden=false;
+        button.setAttribute("aria-expanded","true");
+        setOrderSizeMessage_(claimed ? "발주 내역은 저장됐습니다. 전송 결과를 확인하지 못했으니 발주 시트에서 확인해주세요. 중복 전송하지 않습니다." : error.message||"발주 저장에 실패했습니다. 다시 눌러주세요.",true);
+      }
     }finally{
-      statusChanging_ = false;
-      button.disabled = false;
-      document.querySelectorAll(".status-btn").forEach(b=> b.disabled = false);
-      if(currentCode === code) saveSoon();
+      statusChanging_=false;button.disabled=false;
+      document.querySelectorAll(".status-btn").forEach(b=>b.disabled=false);
+      if(same())document.querySelectorAll("[data-order-preset]").forEach(b=>b.disabled=!!currentInitialOrder_);
     }
+  }
+  document.querySelectorAll("[data-order-preset]").forEach(button=>{
+    button.addEventListener("click",()=>confirmOrderSize_(button.dataset.orderPreset));
+  });
+  document.getElementById("orderSizePanel").addEventListener("keydown",event=>{
+    if(event.key==="Escape" && !statusChanging_){closeOrderSizePanel_();document.getElementById("newBtn").focus();}
   });
 
   // v91: 샘플관리는 샘플중으로 통합합니다. 저장된 사진/메모/이력에는 손대지 않습니다.
