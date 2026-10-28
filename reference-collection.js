@@ -549,11 +549,24 @@
     }
   }
   async function restoreDialog(){if(!permissions.canManage||localOnly)return;try{const data=await referenceRequest('refList',{archived:true,limit:40});dialog('복원',box=>{if(!data.items?.length){const p=document.createElement('p');p.textContent='삭제한 자료가 없습니다.';box.append(p);}for(const record of data.items||[]){const button=document.createElement('button');button.type='button';button.textContent=(record.title||'제목 없음')+' · 복원';button.onclick=async()=>{button.disabled=true;try{const result=await referenceRequest('refArchive',{id:record.id,version:record.version,archived:false});if(!result.record||result.record.archivedAt)throw Error('복원을 확인하지 못했습니다.');rememberRecord(result.record,true);gallerySignature='';renderList();button.remove();}catch(e){button.disabled=false;message(errorText(e),true);}};box.append(button);}});}catch(e){message(errorText(e),true);}}
+  function confirmArchive(completed){
+    const modal=$('#rcDialog');
+    return new Promise(resolve=>{
+      let accepted=false;
+      modal.addEventListener('close',()=>resolve(accepted),{once:true});
+      dialog(completed?'참고 완료':'레퍼런스 삭제',box=>{
+        const title=document.createElement('p');title.textContent=active?.title||'제목 없음';box.append(title);
+        const notice=document.createElement('p');notice.textContent=completed?'참고를 완료한 레퍼런스를 보관할까요? 복원에서 다시 볼 수 있습니다.':'이 레퍼런스를 삭제할까요? 저장된 자료는 보관함에서 복원할 수 있습니다.';box.append(notice);
+      },()=>{accepted=true;});
+      $('#rcDialogCancel').focus();
+    });
+  }
   async function archiveRecord(completed=false){
     if(!active||isComposing())return;if(linkEditor?.id===active.id&&!finishLinkEditor())return;
-    if(!confirm(completed?'참고를 완료한 레퍼런스를 보관할까요? 복원에서 다시 볼 수 있습니다.':'이 레퍼런스를 삭제할까요? 저장된 자료는 보관함에서 복원할 수 있습니다.'))return;
-    const id=active.id,epoch=showEpoch,selection=openEpoch,startRevision=revision;
+    const id=active.id,epoch=showEpoch,selection=openEpoch,startRevision=revision,stamp=authStamp();
     const sameIntent=()=>active?.id===id&&epoch===showEpoch&&selection===openEpoch&&revision===startRevision;
+    if(!await confirmArchive(completed)||!sameIntent())return;
+    try{assertAuth(stamp);}catch(e){message(errorText(e),true);return;}
     clearTimeout(autoSaveTimer);
     if(localOnly||!active.version){await removeDraft(id);if(sameIntent()){active=null;dirty=false;pendingFiles=[];showList();setRoute(null,true);}else renderList();return;}
     if(active.permissions?.canArchive!==true||!canEdit())return;if(!await save()||!sameIntent())return;

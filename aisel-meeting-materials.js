@@ -10,7 +10,7 @@
   const byId=new Map(meetings.map(row=>[row.id,row])),linked=new Set(),out=[];
   for(const ref of references){
    const id=await candidateId(ref.id),meeting=byId.get(id);if(!meeting)continue;
-   linked.add(id);out.push({...meeting,title:ref.title||meeting.title,date:ref.date,designer:ref.designer,refId:ref.id,reference:ref});
+   linked.add(id);out.push({...meeting,title:ref.title||meeting.title,date:meeting.date,designer:meeting.designer,refId:ref.id,reference:ref});
   }
   for(const meeting of meetings)if(!linked.has(meeting.id))out.push({...meeting,refId:''});
   return out.filter(row=>!row.archivedAt).sort((a,b)=>rank(a)-rank(b)||text(a.id).localeCompare(text(b.id)));
@@ -79,15 +79,15 @@
    await Promise.all(Array.from({length:Math.min(3,chosen.length)},async()=>{while(cursor<chosen.length){const n=cursor++,row=chosen[n];const [detail,ref]=await Promise.all([root.AiselGalleryIndex.detail('meetings',row.id),row.refId?root.AiselGalleryIndex.detail('references',row.refId):null]);assertSession(stamp,uid);const record=detail.record,reference=ref?.record;
      if(record.designMeetingDeletedAt||reference?.archivedAt)throw Error('삭제 또는 보관된 항목이 있습니다. 전체 보기를 다시 눌러주세요.');
      if(reference&&record.sourceRefId!==reference.id)throw Error('레퍼런스와 디자인회의 연결을 확인하지 못했습니다.');
-     if((reference?.date||record.meetingDate||record.date||'')!==date||(designer&&(reference?.designer||record.designer||'')!==designer))throw Error('회의 날짜나 담당자가 변경되었습니다. 전체 보기를 다시 눌러주세요.');
-     const fresh={...row,title:reference?.title||record.title||'',date:reference?.date||record.meetingDate||record.date,designer:reference?.designer||record.designer||''};results[n]={row:fresh,record,reference,photos:photoList(record,reference)};
+     if((record.meetingDate||'')!==date||(designer&&(record.designer||'')!==designer))throw Error('회의 날짜나 담당자가 변경되었습니다. 전체 보기를 다시 눌러주세요.');
+     const fresh={...row,title:reference?.title||record.title||'',date:record.meetingDate||'',designer:record.designer||''};results[n]={row:fresh,record,reference,photos:photoList(record,reference)};
      previews[n]=page(results[n],n,chosen.length);placeholders[n].replaceWith(previews[n]);finished++;message(chosen.length+'개 중 '+finished+'개를 불러왔습니다.');
    }}));assertSession(stamp,uid);
    loaded=results.slice().sort((a,b)=>rank(a.row)-rank(b.row)||text(a.row.id).localeCompare(text(b.row.id)));
    $('.amm-pages').replaceChildren(...loaded.map((item,i)=>{const node=previews[results.indexOf(item)];node.querySelector('.amm-page-head span').textContent=String(i+1).padStart(2,'0')+' / '+loaded.length;return node;}));
    $('.amm-count').textContent=date+' · '+(designer||'전체 디자이너')+' · '+loaded.length+'개 전체';
    const mismatches=loaded.filter(x=>x.reference&&x.record.meetingDate&&x.reference.date!==x.record.meetingDate).length;
-   message(!loaded.length?'해당 날짜의 디자인회의가 없습니다.':mismatches?'원본 레퍼런스의 최신 회의일 기준입니다. 기존 회의일과 다른 '+mismatches+'개는 원본 기록을 함께 확인해주세요.':'전체 '+loaded.length+'개를 불러왔습니다. 판단이 없는 칸은 비워두었습니다.');
+   message(!loaded.length?'해당 날짜의 디자인회의가 없습니다.':mismatches?'디자인회의에 지정된 회의일 기준입니다. 원본 레퍼런스 날짜와 다른 '+mismatches+'개는 원본 기록을 함께 확인해주세요.':'전체 '+loaded.length+'개를 불러왔습니다. 판단이 없는 칸은 비워두었습니다.');
    history.replaceState({aiselUnified:true,view:'meetingmaterials'},'',route(date,designer));
   }catch(error){if(stamp===epoch){epoch++;loaded=[];$('.amm-pages').replaceChildren();message(error.message||'회의자료를 불러오지 못했습니다.',true);busy(false);}}
   finally{if(stamp===epoch)busy(false);}
