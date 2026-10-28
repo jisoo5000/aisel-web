@@ -1,3 +1,4 @@
+<!-- v278: consistent order controls and spacious color-size summaries under the action row -->
 <!-- v277: inline initial-order size presets, durable color-size quantities and confirmed receipts -->
 <!-- v275: durable drawing sources and plain fabric cost labels -->
 <!-- v274: production correction recovery and canonical code URLs -->
@@ -3543,27 +3544,52 @@
 </div>
 
 <style id="aisel-v277-inline-order">
+/* v278: dedicated disclosure buttons share the neighboring control size without toolbar .btn overrides. */
 @media screen {
- body #editorView #newBtn { white-space:normal; overflow-wrap:anywhere; line-height:1.2; }
- body #editorView #orderSizePanel { grid-column:1/-1; grid-row:2; order:100; flex:1 0 100%; box-sizing:border-box; min-width:0; padding:10px; background:#FAF7F1; border:1px solid #DEDAD2; border-radius:6px; }
- body #editorView #orderSizePanel[hidden] { display:none!important; }
- #orderSizeContext,#orderSizeMessage { font-size:12px; line-height:1.5; color:#4B4B48; overflow-wrap:anywhere; }
- #orderSizeContext { margin-bottom:7px; }
- #orderSizeMessage:empty { display:none; }
- #orderSizeMessage:not(:empty) { margin-top:7px; }
- #orderSizeMessage[data-error="true"] { color:#983D37; }
- #orderSizePanel .order-size-options { display:flex; flex-wrap:wrap; gap:6px; }
- body #editorView #orderSizePanel .btn { flex:1 1 auto; min-height:40px; height:auto; white-space:normal; padding:8px 10px; font-size:12px; }
- body #editorView #orderSizePanel .btn[aria-pressed="true"] { background:#34383C; border-color:#34383C; color:white; }
- body #editorView #orderSizePanel .btn:disabled { opacity:.6; cursor:default; }
- body #sheet .sizespec .unit-note { flex:0 0 100%; width:100%; margin:2px 0 7px; font-size:11px; }
+ html:root body #editorView .toolbar > #orderSizePanel {
+  flex:1 0 100%;order:2;align-self:stretch;box-sizing:border-box;width:100%;max-width:100%;min-width:0;
+  margin:0;padding:12px;background:var(--aisel-soft,#FAF7F1);border:1px solid var(--aisel-line,#DEDAD2);
+  border-radius:var(--aisel-radius,4px);height:auto;min-height:0;max-height:none;overflow:visible;
+ }
+ html:root body #editorView #orderSizePanel[hidden],
+ html:root body #editorView #orderSizeOptions[hidden] {display:none!important;}
+ html:root body #editorView .toolbar > .tb-row > #newBtn {
+  height:var(--aisel-control-height,32px)!important;min-height:var(--aisel-control-height,32px)!important;
+  max-height:var(--aisel-control-height,32px)!important;white-space:nowrap!important;overflow-wrap:normal;line-height:16px;
+ }
+ #orderSizeContext {min-width:0;}
+ #orderSizeContext .order-context-heading {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin:0 0 8px;font-size:12px;line-height:18px;}
+ #orderSizeContext .order-context-heading strong {font-weight:600;}
+ #orderSizeContext .order-context-total {font-variant-numeric:tabular-nums;white-space:nowrap;}
+ #orderSizeContext .order-color-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:6px;min-width:0;}
+ #orderSizeContext .order-color-row {display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;box-sizing:border-box;min-width:0;padding:8px 10px;background:var(--aisel-bg,#fff);border:1px solid var(--aisel-line,#DEDAD2);border-radius:var(--aisel-radius,4px);font-size:12px;line-height:18px;}
+ #orderSizeContext .order-color-name {flex:0 1 auto;min-width:0;font-weight:600;overflow-wrap:anywhere;word-break:keep-all;}
+ #orderSizeContext .order-color-quantities {display:flex;flex:1 1 auto;flex-wrap:wrap;gap:3px 8px;min-width:0;}
+ #orderSizeContext .order-size-quantity {white-space:nowrap;font-variant-numeric:tabular-nums;}
+ html:root body #editorView .toolbar > .tb-row > #factorySaveBtn {
+  flex-direction:column;gap:0;padding:0 2px!important;white-space:nowrap!important;font-size:11px!important;line-height:12px!important;
+ }
+ html:root body #editorView .toolbar > .tb-row > #factorySaveBtn > span {display:block;line-height:12px;white-space:nowrap;}
+ html:root body #editorView #orderSizeOptions {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;gap:6px;min-width:0;margin-top:10px;
+ }
+ html:root body #editorView #orderSizePanel .order-size-choice {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;min-width:0;width:100%;
+  height:var(--aisel-control-height,32px);min-height:var(--aisel-control-height,32px);max-height:none;margin:0;padding:2px 4px;
+  border:1px solid var(--aisel-line,#DEDAD2);border-radius:var(--aisel-radius,4px);background:var(--aisel-bg,#fff);color:var(--aisel-ink,#34383C);
+  font-family:inherit;font-size:12px;font-weight:600;line-height:14px;text-align:center;white-space:normal;word-break:keep-all;overflow-wrap:normal;cursor:pointer;
+ }
+ html:root body #editorView #orderSizePanel .order-size-choice .order-numbered-line {display:block;font-size:11px;line-height:13px;white-space:nowrap;}
+ html:root body #editorView #orderSizePanel .order-size-choice[aria-pressed="true"] {background:#34383C;border-color:#34383C;color:#fff;}
+ html:root body #editorView #orderSizePanel .order-size-choice:disabled {opacity:.6;cursor:default;}
+ html:root body #editorView #orderSizePanel .order-size-choice:focus-visible {outline:2px solid var(--aisel-ink,#34383C);outline-offset:2px;}
+ #orderSizeMessage {font-size:12px;line-height:18px;color:var(--aisel-muted,#4B4B48);overflow-wrap:anywhere;}
+ #orderSizeMessage:empty {display:none;}
+ #orderSizeMessage:not(:empty) {margin-top:8px;}
+ #orderSizeMessage[data-error="true"] {color:#983D37;}
+ body #sheet .sizespec .unit-note {flex:0 0 100%;width:100%;margin:2px 0 7px;font-size:11px;}
 }
-@media screen and (max-width:600px) {
- body #editorView .tb-row:has(#orderSizePanel:not([hidden])) > #saveBtn,
- body #editorView .tb-row:has(#orderSizePanel:not([hidden])) > #factorySaveBtn,
- body #editorView .tb-row:has(#orderSizePanel:not([hidden])) > #printBtn { grid-row:3; }
-}
-@media print { #orderSizePanel { display:none!important; } }
+@media print {#orderSizePanel {display:none!important;}}
 </style>
 
 <div class="page notranslate" id="editorView" style="display:none" lang="ko" translate="no">
@@ -3608,25 +3634,25 @@
     </div>
 
     <div class="tb-row">
-      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" title="사이즈를 선택해 발주">발주완료</button>
-      <div id="orderSizePanel" class="noprint" hidden>
-        <div id="orderSizeContext"></div>
-        <div class="order-size-options" role="group" aria-label="발주 사이즈 구성">
-          <button type="button" class="btn ghost" data-order-preset="numbered">1 (S M) · 2 (L XL)</button>
-          <button type="button" class="btn ghost" data-order-preset="s-xl">S–XL</button>
-          <button type="button" class="btn ghost" data-order-preset="s-3xl">S–3XL</button>
-        </div>
-        <div id="orderSizeMessage" role="status" aria-live="polite"></div>
-      </div>
+      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizeOptions" aria-describedby="orderSizeContext" title="사이즈를 선택해 발주">발주완료</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
-      <button class="btn ghost nav-btn mfold" id="factorySaveBtn">공장 저장/인쇄</button>
+      <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장 및 인쇄" title="공장 저장 및 인쇄"><span>공장 저장</span><span>인쇄</span></button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
       <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장</span><span class="mobile-print-label">PDF 저장</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
 
+    </div>
+    <div id="orderSizePanel" class="noprint" hidden>
+      <div id="orderSizeContext"></div>
+      <div id="orderSizeOptions" class="order-size-options" role="group" aria-label="발주 사이즈 구성" hidden>
+        <button type="button" class="order-size-choice" data-order-preset="numbered" aria-label="1 (S M) · 2 (L XL)"><span class="order-numbered-line">1 (S M)</span><span class="order-numbered-line">2 (L XL)</span></button>
+        <button type="button" class="order-size-choice" data-order-preset="s-xl">S–XL</button>
+        <button type="button" class="order-size-choice" data-order-preset="s-3xl">S–3XL</button>
+      </div>
+      <div id="orderSizeMessage" role="status" aria-live="polite"></div>
     </div>
   </div>
 
@@ -10854,36 +10880,64 @@
     const el=document.getElementById("orderSizeMessage");
     el.textContent=message;el.dataset.error=String(error);
   }
+  function renderOrderContext_(order=currentInitialOrder_){
+    const context=document.getElementById("orderSizeContext"),colors=Array.isArray(order?.colors)?order.colors:orderColors_();
+    const signature=JSON.stringify([colors,order?.preset,order?.items,order?.totalQty]);
+    if(context.dataset.signature===signature)return;
+    context.dataset.signature=signature;
+    const heading=document.createElement("div");heading.className="order-context-heading";
+    const title=document.createElement("strong");title.textContent=order?"발주 내역":"발주 사이즈 선택";
+    const total=document.createElement("span");total.className="order-context-total";total.textContent=order?"총 "+order.totalQty+"장":"사이즈별 20장";
+    heading.append(title,total);
+    const list=document.createElement("div");list.className="order-color-list";
+    for(const color of colors){
+      const row=document.createElement("div");row.className="order-color-row";
+      const name=document.createElement("strong");name.className="order-color-name";name.textContent=color;
+      const quantities=document.createElement("div");quantities.className="order-color-quantities";
+      const items=Array.isArray(order?.items)?order.items.filter(item=>item.color===color):[];
+      if(items.length)for(const item of items){
+        const span=document.createElement("span");span.className="order-size-quantity";span.textContent=item.size+" "+item.qty+"장";quantities.append(span);
+      }else{const span=document.createElement("span");span.className="order-size-quantity";span.textContent="각 사이즈 20장";quantities.append(span);}
+      row.append(name,quantities);list.append(row);
+    }
+    if(!colors.length)list.textContent="작지의 컬러를 먼저 선택해주세요.";
+    context.replaceChildren(heading,list);
+  }
   function closeOrderSizePanel_(){
-    document.getElementById("orderSizePanel").hidden=true;
+    const panel=document.getElementById("orderSizePanel");
+    panel.hidden=!currentInitialOrder_;
+    document.getElementById("orderSizeOptions").hidden=true;
     document.getElementById("newBtn").setAttribute("aria-expanded","false");
+    if(currentInitialOrder_)renderOrderContext_();
+    if(!currentInitialOrder_ || currentInitialOrder_.transport==="confirmed")setOrderSizeMessage_("");
   }
   function renderOrderCompletedButton_(){
     const button=document.getElementById("newBtn");
     if(!button)return;
     const order=currentInitialOrder_,complete=currentOrderCompleted_ && order?.transport!=="unconfirmed" && order?.transport!=="sending";
-    const colors=Array.isArray(order?.colors) ? order.colors : [];
-    const pending=order && !complete;
-    const text=(complete ? "발주완료" : pending ? "발주 확인 필요" : "발주완료")+(order&&colors.length ? " · "+colors.join(" · ") : "");
+    const colors=Array.isArray(order?.colors)?order.colors:[];
+    const text=order && !complete?"발주 확인":"발주완료";
     if(button.textContent!==text)button.textContent=text;
     button.classList.toggle("order-completed",!!complete);
     button.setAttribute("aria-pressed",String(!!complete));
-    button.title=complete ? colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장" : "사이즈를 선택해 발주";
+    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장":"사이즈를 선택해 발주";
+    if(order){
+      document.getElementById("orderSizePanel").hidden=false;
+      renderOrderContext_();
+    }
   }
   function openOrderSizePanel_(){
     const panel=document.getElementById("orderSizePanel"),button=document.getElementById("newBtn");
-    if(!panel.hidden){closeOrderSizePanel_();return;}
+    if(button.getAttribute("aria-expanded")==="true"){closeOrderSizePanel_();return;}
     panel.dataset.code=currentCode;
     const colors=orderColors_(),order=currentInitialOrder_;
-    document.getElementById("orderSizeContext").textContent=order ?
-      order.colors.join(" · ")+" / "+order.sizes.join(" · ")+" / 총 "+order.totalQty+"장" :
-      colors.length ? colors.join(" · ")+" · 사이즈별 20장" : "작지의 컬러를 먼저 선택해주세요.";
+    renderOrderContext_(order);
     panel.querySelectorAll("[data-order-preset]").forEach(b=>{
       b.disabled=!!order || !colors.length;
       b.setAttribute("aria-pressed",String(order?.preset===b.dataset.orderPreset));
     });
-    setOrderSizeMessage_(order ? order.transport==="confirmed" ?
-      "저장된 발주입니다." : "발주 내역은 저장되어 있습니다. 발주 시트에서 반영 여부를 확인해주세요. 중복 전송하지 않습니다." : "");
+    setOrderSizeMessage_(order?order.transport==="confirmed"?"저장된 발주입니다.":"발주 내역은 저장되어 있습니다. 발주 시트에서 반영 여부를 확인해주세요. 중복 전송하지 않습니다.":"");
+    document.getElementById("orderSizeOptions").hidden=false;
     panel.hidden=false;button.setAttribute("aria-expanded","true");
   }
   $("#newBtn").addEventListener("click",()=>{
@@ -12808,7 +12862,7 @@
     updateSampleHeading_();
     placeMobileRecords_();
     if(!mobileLayout.matches)finishMobileNameEdit_();
-    document.getElementById('factorySaveBtn').textContent=mobileLayout.matches?'공장 저장':'공장 저장/인쇄';
+    // Factory save/print keeps its compact two-line label at every viewport.
     // The existing five action buttons stay in their original toolbar order.
     newHome.after(newAction);deleteHome.after(deleteAction);
     if(mobileLayout.matches)document.querySelector('.editor-mobile-head').appendChild(headerReference);
