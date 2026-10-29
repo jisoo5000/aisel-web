@@ -2,7 +2,7 @@
  * acknowledgement; deleting a choice never rewrites an assigned record. */
 (function(root){
   'use strict';
-  const VERSION=216,ADD='__add_designer__';
+  const VERSION=216,ADD='__add_designer__',CACHE_PREFIX='aisel:designers:v280:',CACHE_TTL=30*60*1000;
   const failure=(code,message)=>Object.assign(Error(message),{code});
   function cleanName(value){
     const name=String(value??'').normalize('NFKC').trim().replace(/\s+/g,' ');
@@ -17,17 +17,41 @@
     const request=(action,payload)=>config.request?config.request(action,payload):root.AiselCollectionWrites?.designerRequest(action,payload);
     function snapshot(){return {uid:uid||null,generation,ready,canManage,error,lastLoaded,designers:list(false),entries:[...entries.values()].map(v=>({...v}))};}
     function emit(){for(const listener of listeners)try{listener(snapshot());}catch(_){} }
-    function sync(){const next=user()?.uid||'',nextGeneration=currentGeneration();if(next===uid&&nextGeneration===generation)return;uid=next;generation=nextGeneration;epoch++;ready=false;canManage=false;entries.clear();flight=null;lastLoaded=0;error=null;mutations.clear();emit();}
+    // Cache only server-confirmed names for this tab/account; permissions always reload.
+    const storage=()=>config.storage===undefined?root.sessionStorage:config.storage;
+    function forget(account){try{if(account)storage()?.removeItem(CACHE_PREFIX+account);}catch(_){} }
+    function restoreCache(){
+      if(!uid)return;
+      try{
+        const cached=JSON.parse(storage()?.getItem(CACHE_PREFIX+uid)||'null'),age=Date.now()-cached?.savedAt;
+        if(cached?.version!==VERSION||!Number.isFinite(age)||age<0||age>CACHE_TTL||!Array.isArray(cached.entries)){forget(uid);return;}
+        const values=cached.entries.map(checked);entries=new Map(values.map(v=>[v.name,v]));
+      }catch(_){forget(uid);}
+    }
+    function saveCache(){try{if(uid)storage()?.setItem(CACHE_PREFIX+uid,JSON.stringify({version:VERSION,savedAt:lastLoaded,entries:[...entries.values()].map(({name,revision,deletedAt})=>({name,revision,deletedAt}))}));}catch(_){} }
+    function sync(){const next=user()?.uid||'',nextGeneration=currentGeneration();if(next===uid&&nextGeneration===generation)return;if(uid)forget(uid);uid=next;generation=nextGeneration;epoch++;ready=false;canManage=false;entries.clear();flight=null;lastLoaded=0;error=null;mutations.clear();restoreCache();emit();}
     const stamp=()=>({uid,epoch,generation});
     function check(s){if(s.epoch!==epoch||s.uid!==(user()?.uid||'')||s.generation!==currentGeneration())throw failure('auth_changed','로그인 계정이 변경되었습니다.');}
     function requireUser(){sync();if(!uid)throw failure('permission_denied','로그인한 뒤 담당자 목록을 확인해주세요.');}
     function checked(raw){const name=cleanName(raw?.name);if(name!==raw.name||!Number.isSafeInteger(raw.revision??0)||(raw.revision??0)<0)throw failure('designer_response','저장된 담당자 목록을 확인하지 못했습니다.');return {...raw,name,revision:raw.revision??0,deletedAt:raw.deletedAt||''};}
-    function accept(response,{merge=false}={}){if(response?.taxonomyVersion!==VERSION||!Array.isArray(response.entries)||!Array.isArray(response.designers))throw failure('designer_response','담당자 관리 연결을 확인해주세요.');const values=response.entries.map(checked),active=values.filter(v=>!v.deletedAt).map(v=>v.name).sort();if(JSON.stringify([...response.designers].sort())!==JSON.stringify(active))throw failure('designer_response','담당자 목록을 확인하지 못했습니다.');const next=new Map(values.map(v=>[v.name,v]));if(merge)for(const [name,old]of entries)if(!next.has(name)||old.revision>next.get(name).revision)next.set(name,old);entries=next;canManage=response.canManage===true;ready=true;lastLoaded=Date.now();error=null;}
+    function accept(response,{merge=false}={}){if(response?.taxonomyVersion!==VERSION||!Array.isArray(response.entries)||!Array.isArray(response.designers))throw failure('designer_response','담당자 관리 연결을 확인해주세요.');const values=response.entries.map(checked),active=values.filter(v=>!v.deletedAt).map(v=>v.name).sort();if(JSON.stringify([...response.designers].sort())!==JSON.stringify(active))throw failure('designer_response','담당자 목록을 확인하지 못했습니다.');const next=new Map(values.map(v=>[v.name,v]));if(merge)for(const [name,old]of entries)if(!next.has(name)||old.revision>next.get(name).revision)next.set(name,old);entries=next;canManage=response.canManage===true;ready=true;lastLoaded=Date.now();error=null;saveCache();}
     function list(refresh=true){if(refresh)sync();const rows=[...entries.values()].filter(v=>!v.deletedAt);return (root.AiselCatalogOrder?.sort('designers',rows,'name')||rows.sort((a,b)=>a.name.localeCompare(b.name,'ko'))).map(v=>v.name);}
     function get(name){sync();const entry=entries.get(name);return entry?{...entry}:null;}
     function isRemoved(name){return !!get(name)?.deletedAt;}
     function state(){sync();return snapshot();}
-    async function load({force=false}={}){requireUser();if(flight)return flight;if(ready&&!force&&Date.now()-lastLoaded<30000)return snapshot();const s=stamp(),atRevision=revision;const task=(async()=>{try{const [response]=await Promise.all([request('listDesigners',{}),root.AiselCatalogOrder?.load('designers',{force})]);check(s);if(atRevision===revision){accept(response);emit();}return snapshot();}catch(cause){check(s);error=cause;emit();throw cause;}})();flight=task;try{return await task;}finally{if(flight===task)flight=null;}}
+    async function load({force=false}={}){
+      requireUser();if(flight)return flight;if(ready&&!force&&Date.now()-lastLoaded<30000)return snapshot();
+      const s=stamp(),atRevision=revision;
+      // Register the flight before order subscriptions can re-enter; order is optional.
+      const task=Promise.resolve().then(async()=>{
+        try{
+          check(s);void Promise.resolve().then(()=>{check(s);return root.AiselCatalogOrder?.load('designers',{force});}).catch(()=>{});
+          const response=await request('listDesigners',{});check(s);
+          if(atRevision===revision){accept(response);emit();}return snapshot();
+        }catch(cause){check(s);error=cause;if(['permission_denied','unauthenticated'].includes(cause?.code)){entries.clear();ready=false;canManage=false;forget(uid);}emit();throw cause;}
+      });
+      flight=task;try{return await task;}finally{if(flight===task)flight=null;}
+    }
     async function mutate(action,raw,{restore=false}={}){requireUser();const name=cleanName(raw);if(mutations.has(name)){const active=mutations.get(name);if(active.action===action&&active.restore===restore)return active.promise;try{await active.promise;}catch(_){}if(mutations.get(name)===active)mutations.delete(name);return mutate(action,name,{restore});}const s=stamp();const task=(async()=>{try{await load();check(s);if(!canManage)throw failure('permission_denied','담당자 추가·삭제는 대표자 계정에서 할 수 있습니다.');const old=entries.get(name);if(action==='upsertDesigner'&&!restore&&old?.deletedAt)throw failure('designer_deleted','삭제된 담당자입니다. 복원을 눌러 다시 추가할 수 있습니다.');if(action==='upsertDesigner'&&!restore&&old)return {...old};if(action==='deleteDesigner'&&!old)throw failure('designer_missing','담당자를 다시 선택해주세요.');revision++;const response=await request(action,{name,...(action==='deleteDesigner'||restore?{expectedRevision:old?.revision??0}:{}),...(restore?{restore:true}:{})});check(s);const row=checked(response?.designer);if(row.name!==name||(action==='deleteDesigner'?!row.deletedAt:!!row.deletedAt))throw failure('designer_response','담당자 저장 결과를 확인하지 못했습니다.');accept(response,{merge:true});revision++;emit();const confirmed=entries.get(name);if(!confirmed||(action==='deleteDesigner'?!confirmed.deletedAt:!!confirmed.deletedAt))throw failure('revision_conflict','목록이 변경되었습니다. 관리 화면을 다시 열어주세요.');return {...confirmed};}catch(cause){check(s);error=cause;emit();throw cause;}})();const operation={action,restore,promise:task};mutations.set(name,operation);try{return await task;}finally{if(mutations.get(name)===operation)mutations.delete(name);}}
     const add=(name,options)=>mutate('upsertDesigner',name,options),remove=name=>mutate('deleteDesigner',name);
     function subscribe(listener){sync();listeners.add(listener);listener(snapshot());return()=>listeners.delete(listener);}
@@ -141,7 +165,7 @@
   function mountPicker(select,options={}){
     const document=select.ownerDocument;let config={...options},selected=String(options.value??select.value??''),destroyed=false,manager=null,signature='',catalogReady=false,priorOnchange=select.onchange;
     function close(){manager?.close();manager=null;}
-    function render(){
+    function render(beforeOpen=false){
       if(destroyed)return;
       const active=store.list(),filter=config.mode==='filter',firstCatalog=store.state().ready&&!catalogReady;
       const names=filter?active:[...new Set([...active,...(config.includeNames||[])].filter(name=>name&&!store.isRemoved(name)))];
@@ -153,7 +177,7 @@
         else values.push([selected,selected]);
       }
       const next=JSON.stringify(values);
-      if(signature!==next&&(!signature||firstCatalog||document.activeElement!==select)){
+      if(signature!==next&&(beforeOpen||!signature||firstCatalog||document.activeElement!==select)){
         const fragment=document.createDocumentFragment(),option=(value,label)=>{const e=document.createElement('option');e.value=value;e.textContent=label;e.style.fontWeight='400';return e;};
         for(const [value,label]of values)fragment.append(option(value,label));
         fragment.append(option(ADD,'＋ 추가·삭제'));select.replaceChildren(fragment);signature=next;
@@ -164,9 +188,10 @@
     }
     function manage(addOnly){close();const state=store.state();manager=openManager(config.managerHost||select.parentElement,{label:'담당자',title:'담당자',iconActions:true,undo:true,maxLength:160,addOnly,closeOnSelect:addOnly,list:()=>store.list().map(name=>({name})),reorder:items=>root.AiselCatalogOrder.save('designers',items.map(item=>item.name)),load:()=>store.load({force:true}),subscribe:store.subscribe,session:()=>{const s=store.state();return [s.uid,s.generation];},permissions:()=>({canAdd:store.state().canManage,canRemove:store.state().canManage}),add:store.add,remove:item=>store.remove(item.name),onError:config.onError,onSelect:item=>{if(destroyed||config.disabled||state.uid!==store.state().uid||state.generation!==store.state().generation)return;selected=item.name;render();config.onChange?.(selected);},onClose:()=>{manager=null;}});}
     select.onchange=()=>{if(destroyed||config.disabled)return;const value=select.value;if(value===ADD){select.value=selected;manage(true);return;}close();if(config.mode!=='filter'&&value!==selected&&store.isRemoved(value)){select.value=selected;config.onError?.(failure('designer_deleted','삭제된 담당자입니다. 다른 담당자를 선택해주세요.'));return;}selected=value;config.onChange?.(value);};
-    const onFocus=()=>{store.load().catch(error=>{if(!destroyed)config.onError?.(error);});},onBlur=()=>setTimeout(render,0);select.addEventListener('focus',onFocus);select.addEventListener('blur',onBlur);const stop=store.subscribe(state=>{if(manager&&(!state.uid||state.generation!==root.AiselAuth?.generation&&root.AiselAuth))close();render();if(state.uid&&!state.ready&&!state.error)store.load().catch(error=>{if(!destroyed)config.onError?.(error);});});render();
-    return {refresh(next={}){config={...config,...next};if(Object.hasOwn(next,'value')){const value=String(next.value||'');if(value!==selected)close();selected=value;}render();},setValue(value){if(String(value||'')!==selected)close();selected=String(value||'');render();},setDisabled(disabled){config.disabled=!!disabled;render();},close,destroy(){if(destroyed)return;destroyed=true;close();stop();select.removeEventListener('focus',onFocus);select.removeEventListener('blur',onBlur);select.onchange=priorOnchange;}};
+    const onOpen=()=>{render(true);store.load().catch(error=>{if(!destroyed)config.onError?.(error);});},onKey=event=>{if(['ArrowDown','ArrowUp','Enter',' '].includes(event.key))onOpen();},onBlur=()=>setTimeout(render,0);select.addEventListener('pointerdown',onOpen);select.addEventListener('focus',onOpen);select.addEventListener('keydown',onKey);select.addEventListener('blur',onBlur);const stop=store.subscribe(state=>{if(manager&&(!state.uid||state.generation!==root.AiselAuth?.generation&&root.AiselAuth))close();render();if(state.uid&&!state.ready&&!state.error)store.load().catch(error=>{if(!destroyed)config.onError?.(error);});});render();
+    return {refresh(next={}){config={...config,...next};if(Object.hasOwn(next,'value')){const value=String(next.value||'');if(value!==selected)close();selected=value;}render();},setValue(value){if(String(value||'')!==selected)close();selected=String(value||'');render();},setDisabled(disabled){config.disabled=!!disabled;render();},close,destroy(){if(destroyed)return;destroyed=true;close();stop();select.removeEventListener('pointerdown',onOpen);select.removeEventListener('focus',onOpen);select.removeEventListener('keydown',onKey);select.removeEventListener('blur',onBlur);select.onchange=priorOnchange;}};
   }
   const api={...store,VERSION,cleanName,createStore,mountPicker};
   if(typeof module==='object'&&module.exports)module.exports={...api,openManager};else{root.AiselDesigners=api;root.AiselTaxonomyManager={open:openManager};root.addEventListener('aisel-session-change',()=>store.refreshSession());}
 })(typeof window==='object'?window:globalThis);
+
