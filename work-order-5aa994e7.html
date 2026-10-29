@@ -1,3 +1,4 @@
+<!-- v279: show assigned designer beside the gallery date in the same typography; hide unassigned names -->
 <!-- v278: consistent order controls and spacious color-size summaries under the action row -->
 <!-- v277: inline initial-order size presets, durable color-size quantities and confirmed receipts -->
 <!-- v275: durable drawing sources and plain fabric cost labels -->
@@ -11265,6 +11266,7 @@
         let dateLabel = "";
         const registeredAt=sortKeyForOrder_(st);
         if(registeredAt){const d=modificationDateParts_(registeredAt);dateLabel=`${d.myy}.${d.mmm}.${d.mdd}`;}
+        const designerLabel = String(st.designer ?? st.currentAssigneeName ?? '').trim();
         const card = document.createElement("div");
         card.className = "gcard" + (thumb ? " has-photo" : "");
         // 2026-08-13 추가: 품번을 품명과 날짜 사이에 표시.
@@ -11279,7 +11281,7 @@
             <div class="gcard-name" title="${esc_(productName)}">${esc_(productName)}</div>
             <div class="gcard-code-row"><span class="gcard-code-value" title="${esc_(code)}">${esc_(code)}</span>${sampleBadge}</div>
             <div class="gcard-colors-row" title="${esc_(names.join(' · '))}"></div>
-            <div class="gcard-date">${esc_(dateLabel)||'—'}</div>
+            <div class="gcard-date">${esc_(dateLabel)||'—'}${designerLabel && designerLabel !== '미지정' ? '　'+esc_(designerLabel) : ''}</div>
           </div>`;
         const colorRow=card.querySelector(".gcard-colors-row");
         names.forEach((name,index)=>{
