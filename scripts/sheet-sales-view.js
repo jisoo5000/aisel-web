@@ -76,7 +76,7 @@
   // keep data in memory because assignments can change independently of roles.
   try{root.localStorage.removeItem('aisel.sales-sheet.cache.v1');}catch(_){}
   let accountScope='',accountUid='',generation=0,group='new',lastPaint='';
-  const groups=new Map(),entry=selected=>{if(!groups.has(selected))groups.set(selected,{snapshot:null,inFlight:null,lastRead:0,lastAttempt:0,error:false});return groups.get(selected);};
+  const groups=new Map(),entry=selected=>{if(!groups.has(selected))groups.set(selected,{snapshot:null,inFlight:null,lastRead:0,lastAttempt:0,error:false,retrying:false});return groups.get(selected);};
   const current=()=>entry(group),cacheKey=selected=>cachePrefix+accountUid+':'+selected;
   function forgetCache(){try{if(accountUid)for(const selected of ['new','core'])root.sessionStorage.removeItem(cacheKey(selected));}catch(_){}}
   function compact(value){
@@ -121,7 +121,7 @@
   function showCheckedTime(){
    const state=current(),snapshot=state.snapshot;
    refresh.disabled=!!state.inFlight;
-   readState.textContent=snapshot&&state.error?'연결 실패 · 이전 자료 표시 중':snapshot&&state.inFlight?'최신 자료 확인 중':'';
+   readState.textContent=state.retrying?'연결이 지연되어 한 번 더 확인 중':snapshot&&state.error?'연결 실패 · 이전 자료 표시 중':snapshot&&state.inFlight?'최신 자료 확인 중':'';
    readState.hidden=!readState.textContent;
    if(!snapshot){updated.textContent=root.AiselAccess?.allowed('sales')?(state.error?'연결 확인 필요':'확인 중'):'로그인 후 확인';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
@@ -157,10 +157,21 @@
    if(!root.AiselAccess?.allowed('sales')){show();return Promise.resolve(false);}
    const selected=group,state=current(),expected=generation;
    if(state.inFlight)return state.inFlight;
-   state.lastAttempt=Date.now();state.error=false;
+   state.lastAttempt=Date.now();state.error=false;state.retrying=false;
    const task=Promise.resolve().then(async()=>{
     try{
-     const value=await read(endpoint,selected);if(expected!==generation)return false;
+     let value;
+     for(let attempt=0;attempt<2;attempt++){
+      try{value=await read(endpoint,selected);break;}
+      catch(error){
+       const transient=['AbortError','TimeoutError','TypeError'].includes(error?.name)||['offline','network_error','timeout','service_unavailable','source_unavailable'].includes(error?.code);
+       // One retry belongs to this read, never to a timer or a polling loop.
+       // Access changes and hidden/other groups must not create another request.
+       if(attempt||!transient||expected!==generation||selected!==group||!visible()||!root.AiselAccess?.allowed('sales'))throw error;
+       state.retrying=true;show();
+      }
+     }
+     if(expected!==generation)return false;
      state.snapshot=value;state.lastRead=Date.now();state.error=false;saveCache(selected,state);return true;
     }catch(error){
      if(expected!==generation)return false;
@@ -169,7 +180,7 @@
      }
      state.error=true;return false;
     }finally{
-     if(expected===generation){state.inFlight=null;if(selected===group)show();}
+     if(expected===generation){state.inFlight=null;state.retrying=false;state.lastAttempt=Date.now();if(selected===group)show();}
     }
    });
    state.inFlight=task;show();return task;
@@ -212,3 +223,4 @@
  }
  root.AiselSheetSalesView={read,render,start,performance};
 })(globalThis);
+
