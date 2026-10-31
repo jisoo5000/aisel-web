@@ -1,3 +1,4 @@
+<!-- v284: provisional product names, owner confirmation and reversible history. -->
 <!-- native-dictation-20261031: shared phone keyboard help in Account; no AI integration. -->
 <!-- v283: reference usage history and 24-item lists. -->
 <!-- v282: recover transient sales reads once; preserve verified snapshots and access boundaries. -->
@@ -306,6 +307,8 @@
 <script>window.AiselSheetSalesMode=true;</script>
 <script src="aisel-protected-media.js?v=246.1"></script>
 <script src="aisel-access-core.js?v=247"></script>
+<script src="aisel-name-review.js?v=284"></script>
+<link rel="stylesheet" href="aisel-name-review.css?v=284">
 <meta name="google" content="notranslate">
 <!-- AISEL 작업지시서 v114 (2026-10-08)
      [v114] 운영 시트 작성일순·드롭 제외·개별 원본 바로가기·로그인 없는 시트 갱신.
@@ -3630,6 +3633,7 @@
     <div class="editor-mobile-title"><span class="editor-identity-label">품명</span><strong id="mobileProductName" role="button" tabindex="0" aria-label="품명 수정">작업지시서</strong></div>
     <div class="editor-mobile-caption"><span class="editor-identity-label">품번</span><span id="mobileProductCode" role="button" tabindex="0" aria-label="카테고리 수정"></span></div>
   </div>
+  <section id="nameReviewPanel" class="noprint" aria-label="상품명 확정과 변경 이력" hidden></section>
   <input type="hidden" id="supplierQualityData" value="">
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
@@ -5344,6 +5348,9 @@
       const v = s[k];
       e[k] = (v === undefined || v === null) ? "" : v;
     });
+    e.nameFinal=window.AiselNames.final(s);
+    e.nameAliases=window.AiselNames.aliases(s);
+    e.nameRequested=!!s.nameReview?.requestedName;
     e.status = normalizeLegacySampleStatus_(e.status);
     if(!e.priceConfirmed) e.targetThreshold = "";   // 2026-09-20: 버튼을 안 누르거나 직접 안 고친 가격은 밖으로 안 보낸다 (기본값 59,000 오인 방지)
     e.selectedColors = Array.isArray(s.selectedColors) ? s.selectedColors : null;
@@ -6674,6 +6681,10 @@
 
   // 2026-08-13 추가 (13-5): 고친 기록. 카피 생성기 쪽에서 읽고 씁니다.
   let editLog_ = [];
+  let nameReviewState_=null,nameReviewPanel_=null,nameSaveFlight_=null;
+  const nameActor_=()=>({uid:window.AiselAccess?.session?.uid,name:window.AiselAccess?.session?.displayName||window.AiselAccess?.session?.email,isOwner:window.AiselAccess?.isOwner===true});
+  function renderNameReview_(){nameReviewPanel_?.render();}
+  function nameOrderAllowed_(target){return window.AiselNames.canOrder({...lastSavedState_,pumMyeong:pumInput.value.trim()},target);}
   // 2026-08-13 추가: 카피 생성기에서 조립한 품명을 작지 품명칸에도 넣습니다.
   // 예전에는 작지 품명이 카테고리 이름(니트 / 스웨터)으로만 채워져 목록이 전부 같은 이름으로 보였습니다.
   // 직접 고치신 품명이 있으면(dataset.auto === "0") 덮어쓰지 않습니다.
@@ -6907,6 +6918,7 @@
         const saved=await save(null,{beforeStatusChange:true}),writes=await Promise.all([...pendingSaveWrites_]);
         if(saved===false||writes.includes(false))throw Error('최신 내용 저장을 확인하지 못했습니다.');
         if(currentCode !== code) return;
+        if(next==='order'&&!nameOrderAllowed_('order')){alert('발주 전에 대표님이 품명 아래의 최종 이름 확정을 체크해주세요.');return;}
         // 원본·목록·제품 진행 현황을 함께 바꿔 세 화면의 상태가 어긋나지 않게 합니다.
         const now = Date.now();
         const sharing = shareKeeps_({...((allWorkOrders || {})[code] || {}), status: next, updatedAt: now});
@@ -7207,6 +7219,7 @@
     st.fabricMemoSync = JSON.parse(JSON.stringify(fabricMemoSync_));
     TXT_IDS.forEach(id=> st[id] = document.getElementById(id).value);
     st.modifiedDate = manualModifiedDate_;
+    if(nameReviewState_)st.nameReview=JSON.parse(JSON.stringify(nameReviewState_));
     if(workorderPlanning_){
       const priorName=editorContentBaseline_?.pumMyeong;
       if(priorName!==undefined&&priorName!==st.pumMyeong&&String(st.output||'').trim())workorderPlanning_.descriptionNeedsReview=true;
@@ -7772,7 +7785,14 @@
       if(mobileDraftMode_()&&draftContext?.liveConflict&&!draftContext.awaitingServer&&!draftContext.serverMissing&&!document.querySelector('.draft-conflict-dialog'))restoreDraft_(draftContext);
       return result;
     }
+    if(nameSaveFlight_){saveSoon();return nameSaveFlight_;}
     const targetRef=woRef,targetCode=currentCode,st=collect();
+    const expectedNameState=JSON.parse(JSON.stringify(lastSavedState_||{})),nameActor=nameActor_();
+    let namePatch=null;
+    if(String(editorContentBaseline_?.pumMyeong||'').trim()!==String(st.pumMyeong||'').trim()){
+      try{namePatch=window.AiselNames.change(expectedNameState,'edit',st.pumMyeong,nameActor);if(namePatch)Object.assign(st,namePatch);}
+      catch(error){return rejectEditorSave_(error.message);}
+    }
     if(newOrderMode_&&!editorContentBaseline_&&window.AiselAccess?.session&&!window.AiselAccess.legacy){
       st.createdByUid=window.AiselAccess.session.uid;
       st.createdByName=window.AiselAccess.session.displayName||window.AiselAccess.session.email||'';
@@ -7812,7 +7832,16 @@
         if(window.AiselAccess?.session&&!window.AiselAccess.legacy)await window.AiselAccess.request('claimWorkorder',{code:targetCode});
         const result=await targetRef.transaction(value=>value===null?st:undefined,undefined,false);
         if(!result.committed)throw new Error('품번이 이미 사용 중입니다. 품번 설정에서 다시 생성해주세요.');
-      }else if(keys.length)await targetRef.update(patch);
+      }else if(keys.length){
+        if(namePatch){
+          // Merge changed fields into the latest value; compare names before committing.
+          const result=await targetRef.transaction(current=>{
+            if(!current||!window.AiselNames.sameVersion(current,expectedNameState)||nameActor.uid!==nameActor_().uid)return;
+            return {...current,...patch};
+          },undefined,false);
+          if(!result.committed)throw Error('다른 곳에서 이름이 변경됐습니다. 최신 이름을 확인해주세요.');
+        }else await targetRef.update(patch);
+      }
     }).then(async()=>{
       originalWritten=true;
       for(const key of keys){state.fieldSuccess.set(key,Math.max(id,state.fieldSuccess.get(key)||0));if(id>=(state.failedKeys.get(key)||0))state.failedKeys.delete(key);}
@@ -7831,7 +7860,8 @@
       }
       if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);window.AiselEditorEnhancements?.refresh(st,targetCode,{saved:true});}
       return true;
-    }).catch(()=>{
+    }).catch(error=>{
+      if(namePatch&&state.latest===id)state.blockReason=error.message||'이름 저장을 확인하지 못했습니다.';
       if(originalWritten && state.latest===id)state.indexFailed=true;
       for(const key of keys)if((state.fieldSuccess.get(key)||0)<id)state.failedKeys.set(key,Math.max(id,state.failedKeys.get(key)||0));
       if(state.latest===id)state.result=false;
@@ -7844,6 +7874,17 @@
       writePromise.then(ok=>{
         if(initialCreationWrite_===writePromise){initialCreationWrite_=null;initialCreationRef_=null;}
         if(ok&&isCurrentSaveState_(state)&&Object.keys(buildPatch_(editorContentBaseline_,collect())).some(k=>!['updatedAt','createdAt','myy','mmm','mdd'].includes(k)))saveSoon();
+      });
+    }
+    if(namePatch){
+      nameSaveFlight_=writePromise;
+      writePromise.then(ok=>{
+        if(nameSaveFlight_===writePromise)nameSaveFlight_=null;
+        if(ok&&isCurrentSaveState_(state)){
+          nameReviewState_=st.nameReview;
+          if(namePatch.nameReview.requestedName&&pumInput.value.trim()===namePatch.nameReview.requestedName)pumInput.value=st.pumMyeong;
+          renderNameReview_();renderMobileHeader_();
+        }
       });
     }
     pendingSaveWrites_.add(writePromise);
@@ -7919,6 +7960,7 @@
     }
   }
   function applyState(st){
+    nameReviewState_=st.nameReview?JSON.parse(JSON.stringify(st.nameReview)):null;
     workorderPlanning_=st.designMeetingPlanning?AiselDraftStorage.clone(st.designMeetingPlanning):null;
     renderWorkorderUsp_();
     manualModifiedDate_=validDateInput_(st.modifiedDate);
@@ -10807,6 +10849,7 @@
     // 2026-08-21 추가: 품명 칸이 빠져 있어서 새 작지를 만들어도 직전 작지 품명이 그대로 남아 있었습니다.
     // dataset.auto도 "1"로 되돌려서 카테고리를 고르면 다시 자동으로 이름이 채워지게 합니다.
     $("#pumMyeong").value = ""; pumInput.dataset.auto = "1";
+    nameReviewState_=null;renderNameReview_();
     $("#fabricVariantsData").value="";fabricVariants_.refresh();$("#costSizeNote").value="";$("#costVariantsData").value="";sizeCosts_.refresh();
     $("#materials").value="";
     fabricMemoLastText_="";
@@ -10998,6 +11041,7 @@
       const saved=await save(null,{beforeStatusChange:true}),writes=await Promise.all([...pendingSaveWrites_]);
       if(saved===false || writes.includes(false))throw Error("최신 작지 저장을 확인하지 못했습니다. 다시 눌러주세요.");
       if(!same())return;
+      if(!nameOrderAllowed_('initialOrder'))throw Error('발주 전에 대표님이 품명 아래의 최종 이름 확정을 체크해주세요.');
       // Claim this initial order once across tabs. A live snapshot avoids a cold-null transaction.
       order=buildInitialOrder_(presetKey,colors,code,Date.now());
       const orderRef=ref.child("initialOrder"),keep=()=>{};
@@ -11208,7 +11252,7 @@
     const hasCat = st.cat !== undefined && st.cat !== null && String(st.cat).trim() !== "";
     const category = (hasCat ? CATS[Number(st.cat)] : null)
       || CATS.find(cat=>cat.code === String(code).split("-")[2]);
-    return [st.pumMyeong, code, st.designer, st.currentAssigneeName, category?.name].some(value=>
+    return [st.pumMyeong, st.nameAliases, code, st.designer, st.currentAssigneeName, category?.name].some(value=>
       String(value || "").toLocaleLowerCase("ko").includes(q));
   }
 
@@ -12554,7 +12598,32 @@
     const code=document.getElementById("mobileProductCode"),value=document.getElementById("codeView").textContent.trim();
     if(code.textContent!==value)code.textContent=value;
     if(mobileUnifiedReady_)renderHeaderNames_();
+    renderNameReview_();
   }
+  nameReviewPanel_=window.AiselNames.mount({document,container:document.getElementById('nameReviewPanel'),
+    getDoc:()=>({pumMyeong:lastSavedState_?.pumMyeong||pumInput.value,nameReview:nameReviewState_}),
+    getActor:nameActor_,act:async(action,value)=>{
+      if(loading||!woRef||!currentCode||statusChanging_)throw Error('작업지시서를 불러온 뒤 다시 눌러주세요.');
+      if(!await waitForEditorComposition_())throw Error('한글 입력을 마쳐주세요.');
+      const code=currentCode,ref=woRef,actor=nameActor_();
+      clearTimeout(saveT);saveT=null;
+      if(await save()===false||(await Promise.all([...pendingSaveWrites_])).includes(false))throw Error('현재 내용 저장을 먼저 확인해주세요.');
+      if(code!==currentCode||ref!==woRef)throw Error('작업지시서가 바뀌었습니다.');
+      const expected=JSON.parse(JSON.stringify(lastSavedState_||{})),at=Date.now();
+      const patch=window.AiselNames.change(expected,action,value,actor,at);
+      if(!patch)return;
+      const result=await ref.transaction(current=>{
+        if(!current||!window.AiselNames.sameVersion(current,expected)||actor.uid!==nameActor_().uid)return;
+        return {...current,...patch,updatedAt:at};
+      },undefined,false);
+      if(!result.committed)throw Error('다른 곳에서 이름이 변경됐습니다. 최신 이름을 확인해주세요.');
+      const saved=result.snapshot.val();
+      if(code===currentCode&&ref===woRef){applyState(saved);renderNameReview_();}
+      if(await writeIndexIfChanged_(code,saved)===false)throw Error('이름은 저장됐습니다. 목록 반영을 다시 확인해주세요.');
+      window.dispatchEvent(new CustomEvent('aisel-access-workorders-changed'));
+      if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(code,at)).catch(()=>{});
+    }});
+  window.addEventListener('aisel-access-change',renderNameReview_);
   // Reuse the actual name input, including its IME/save listeners, only while editing.
   const mobileName=document.getElementById('mobileProductName');
   const nameHome=document.createComment('original product name input');pumInput.before(nameHome);
