@@ -27,7 +27,7 @@
    const ctx=await context();if(selection!==epoch)return;
    ref=ctx.app.database().ref(PATH);
    await new Promise((resolve,reject)=>{
-    listener=snapshot=>{if(selection!==epoch||ctx.stamp!==identity())return;const incoming=snapshot.val()||{};for(const id of pending.keys()){if(rows[id])incoming[id]=rows[id];else delete incoming[id];}rows=incoming;ready=true;onChange();resolve();};
+    listener=snapshot=>{if(selection!==epoch||ctx.stamp!==identity())return;const incoming=snapshot.val()||{};for(const id of pending.keys()){if(rows[id])incoming[id]=rows[id];else delete incoming[id];}rows=incoming;ready=true;resolve();onChange();};
     ref.on('value',listener,e=>{if(selection!==epoch)return;stop();ready=false;onError(Error('활용 기록을 불러오지 못했습니다. 다시 연결해주세요.'));reject(e);});
    });
   })();
@@ -599,7 +599,7 @@
   }
   function renderList(){
     if(!visible||pane.hidden||$('#rcList').hidden){gallerySignature='';return;}
-    if(account&&!lifecycle?.ready){$('#rcGrid').replaceChildren();$('#rcEmpty').hidden=false;$('#rcEmpty').textContent='활용 기록을 확인하고 있습니다.';$('#rcMore').hidden=true;return;}
+    if(account&&!lifecycle?.ready){const add=$('#rcCreate');if(add){add.hidden=true;$('#rcGrid').replaceChildren(add);}else $('#rcGrid').replaceChildren();gallerySignature='';$('#rcEmpty').hidden=false;$('#rcEmpty').textContent='활용 기록을 확인하고 있습니다.';$('#rcMore').hidden=true;return;}
     renderReferenceCategoryTabs();const category=selectedCategory(),search=$('#rcSearch').value.trim().toLocaleLowerCase(),noteCategory=$('#rcNoteCategoryFilter').value,dateFilter=$('#rcDateFilter').value,designerFilter=$('#rcDesignerFilter').value;
     const merged=new Map(records);for(const [id,draft]of draftRows)merged.set(id,{...draft.record,id,_draft:true,thumbnail:draft.record.thumbnail||draft.record.photos?.[0]?.thumb||draft.preview||''});
     const filterKey=JSON.stringify([category,search,noteCategory,dateFilter,designerFilter,lifeFilter]);if(filterKey!==listFilterKey){listFilterKey=filterKey;listLimit=restoredLimit||24;restoredLimit=null;}
