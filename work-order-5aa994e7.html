@@ -1,4 +1,5 @@
 <!-- native-dictation-20261031: shared phone keyboard help in Account; no AI integration. -->
+<!-- v283: reference usage history and 24-item lists. -->
 <!-- v282: recover transient sales reads once; preserve verified snapshots and access boundaries. -->
 <!-- v279: show assigned designer beside the gallery date in the same typography; hide unassigned names -->
 <!-- v278: consistent order controls and spacious color-size summaries under the action row -->
@@ -112,6 +113,28 @@
 <!-- v116: compact mobile header/code settings and eight-color palette (2026-10-08) -->
 <!-- v115: aligned desktop toolbar and confirmed three-row mobile actions (2026-10-08) -->
 <html lang="ko" translate="no" class="notranslate">
+<script id="aisel-list-pagination-v283">/* Render 24 records at a time; search and aggregates keep their full input. */
+(function(root){
+ 'use strict';
+ const states=new Map(),SIZE=24;
+ function state(key,filter){let s=states.get(key);if(!s||s.filter!==filter){s={filter,limit:SIZE};states.set(key,s);}return s;}
+ function take(key,items,options){
+  const s=state(key,String(options.filter||'')),host=options.host;
+  let control=document.getElementById('aisel-more-'+key);
+  if(!control){control=document.createElement('div');control.id='aisel-more-'+key;control.className='aisel-page-more noprint';control.innerHTML='<span aria-live="polite"></span><button type="button">더 보기</button>';host.after(control);}
+  control.hidden=items.length<=SIZE;
+  control.querySelector('span').textContent=Math.min(s.limit,items.length)+' / '+items.length+'개';
+  const button=control.querySelector('button');button.hidden=s.limit>=items.length;
+  button.textContent='더 보기 · '+Math.min(SIZE,Math.max(0,items.length-s.limit))+'개';
+  button.onclick=()=>{s.limit+=SIZE;options.onMore();};
+  return items.slice(0,s.limit);
+ }
+ function clear(key){states.delete(key);document.getElementById('aisel-more-'+key)?.remove();}
+ function reset(){states.clear();document.querySelectorAll('.aisel-page-more').forEach(el=>el.remove());}
+ root.addEventListener('aisel-session-change',reset);
+ root.AiselListPagination=Object.freeze({take,clear,reset,size:SIZE});
+})(window);
+</script>
 <script id="aisel-reload-position">
 (function(){
  'use strict';
@@ -213,12 +236,12 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=20261031-dictation1">
-<link rel="preload" as="script" href="design-meeting.js?v=269">
-<link rel="preload" as="script" href="reference-collection.js?v=20261031-sourcing2">
+<link rel="preload" as="script" href="unified-app.js?v=283">
+<link rel="preload" as="script" href="design-meeting.js?v=283">
+<link rel="preload" as="script" href="reference-collection.js?v=283">
 <link rel="preload" as="style" href="workorder-screen.css?v=270">
 <link rel="preload" as="style" href="unified-app.css?v=20261031-dictation1">
-<link rel="preload" as="style" href="aisel-list-controls.css?v=263">
+<link rel="preload" as="style" href="aisel-list-controls.css?v=283">
 <script id="aisel-ipad-layout-mode">
 /* All screens share the 390px mobile composition. Native print rules are preserved. */
 (function(root){
@@ -11256,10 +11279,11 @@
     });
     grid.appendChild(newCard);
 
-    Object.entries(allWorkOrders || {})
+    const pageOrders=Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)))
-      .sort(compareRegisteredOrders_)
+      .sort(compareRegisteredOrders_);
+    window.AiselListPagination.take("workorders",pageOrders,{host:grid,filter:JSON.stringify([q,galleryFilter,galleryOrganization_]),onMore:()=>{lastGallerySig_=null;renderGallery();}})
       .forEach(([code, st])=>{
         const statusInfo = STATUS_MAP[normalizeWorkOrderStatus_(st.status)] || STATUS_MAP.sampling;
         const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
@@ -16058,18 +16082,20 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   };
   throw Error('시트 반품 지표를 확인해 주세요.');
  }
- function render(host,snapshot,search){
+ function render(host,snapshot,search,pageScope=""){
   if(!snapshot||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');
   const metric=returnMetric(snapshot);
   host.replaceChildren();
   const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
   for(const label of ['상품명 (판매순)','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
   const query=String(search||'').trim().toLocaleLowerCase('ko');
-  for(const item of snapshot.items.filter(x=>{
+  const matching=snapshot.items.filter(x=>{
    const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
    const needle=normalize(query);
    return normalize(x.name).includes(needle) || normalize(root.AiselWorkorderCodeForName?.(x.name)).includes(needle);
-  })){
+  });
+  const displayed=root.AiselListPagination.take("sales",matching,{host,filter:JSON.stringify([pageScope,query]),onMore:()=>{if(root.AiselAccess?.allowed('sales'))render(host,snapshot,search,pageScope);}});
+  for(const item of displayed){
    const row=document.createElement('div');row.className='sheet-sales-grid';
    const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
    values.forEach((value,i)=>{
@@ -16176,10 +16202,11 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
     const signature=JSON.stringify([group,search.value,contentKey(snapshot),search.value?snapshot.items.map(row=>root.AiselWorkorderCodeForName?.(row.name)||''):[]]);
     if(signature!==lastPaint){
      lastPaint=signature;
-     if(snapshot.items.length)render(host,snapshot,search.value);
+     if(snapshot.items.length)render(host,snapshot,search.value,group);
      else host.textContent=root.AiselAccess.ownOnly?'배정된 신상성과가 없습니다. 담당 자료 연결을 확인해주세요.':group==='core'?'핵심 SKU로 지정된 상품이 없습니다.':'표시할 신상성과가 없습니다.';
     }
    }else{
+    root.AiselListPagination.clear('sales');
     const message=!root.AiselAccess?.allowed('sales')?'로그인 후 판매성과를 확인해주세요.':state.error?'시트 자료를 가져오지 못했습니다. 새로고침해 주세요.':'시트 자료를 불러오는 중입니다.';
     if(host.textContent!==message)host.textContent=message;lastPaint='';
    }
@@ -17562,7 +17589,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=233"></script>
 <script src="aisel-look-categories.js?v=233"></script>
-<script src="design-meeting.js?v=269"></script>
+<script src="design-meeting.js?v=283"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -17579,7 +17606,7 @@ window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:(
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=20261031-sourcing2">
+<link rel="stylesheet" href="reference-collection.css?v=283">
 <script>
 window.AiselUnifiedAdapter={
  async leave(){if(!await settleEditorSave_())return false;return true;},
@@ -17593,17 +17620,17 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=20261031-sourcing2"></script>
+<script src="reference-collection.js?v=283"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=233"></script>
-<script src="unified-app.js?v=20261031-dictation1"></script>
+<script src="unified-app.js?v=283"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=260" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=20261031-dictation1">
-<link rel="stylesheet" href="aisel-list-controls.css?v=263" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=283" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {

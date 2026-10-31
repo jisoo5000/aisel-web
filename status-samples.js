@@ -82,11 +82,12 @@
     rows.forEach(function(item){if(item.quantity === null) unknown++;else known += BigInt(item.quantity);if(item.review) reviews++;});
     var count = known.toLocaleString("ko-KR") + "개";
     if(unknown) count = (known > 0n ? count + " · " : "") + "수량 미확인 " + unknown + "건";
-    el.sampleResultCount.textContent = !rows.length && (message || busy) ? "" : rows.length || settled ? count : "";el.sampleResultCount.title = "표시된 기록 " + rows.length + "건의 사무실 보유 수량";
+    el.sampleResultCount.textContent = !rows.length && (message || busy) ? "" : rows.length || settled ? count : "";el.sampleResultCount.title = "전체 검색 결과 " + rows.length + "건의 사무실 보유 수량";
     el.sampleReset.hidden = !sampleFilters.query && sampleFilters.field === "name";
     el.sampleList.textContent = "";var fragment = document.createDocumentFragment();
-    rows.filter(function(item){return !item.review;}).forEach(function(item){fragment.appendChild(recordElement(item));});
-    if(reviews){var reviewSection = node("section","sample-office-review-group");reviewSection.appendChild(node("h4","sample-office-review-heading","진행 기록 확인 필요"));rows.filter(function(item){return item.review;}).forEach(function(item){reviewSection.appendChild(recordElement(item));});fragment.appendChild(reviewSection);}
+    var displayed=window.AiselListPagination.take("samples",rows.filter(function(item){return !item.review;}).concat(rows.filter(function(item){return item.review;})),{host:el.sampleList,filter:JSON.stringify(sampleFilters),onMore:render});
+    displayed.filter(function(item){return !item.review;}).forEach(function(item){fragment.appendChild(recordElement(item));});
+    if(displayed.some(function(item){return item.review;})){var reviewSection = node("section","sample-office-review-group");reviewSection.appendChild(node("h4","sample-office-review-heading","진행 기록 확인 필요"));displayed.filter(function(item){return item.review;}).forEach(function(item){reviewSection.appendChild(recordElement(item));});fragment.appendChild(reviewSection);}
     el.sampleList.appendChild(fragment);el.sampleEmpty.hidden = rows.length > 0;el.sampleColumns.hidden = rows.length === 0;
     el.sampleEmpty.textContent = (busy || !settled) && !rows.length ? "사무실 샘플을 불러오고 있습니다." : message && !rows.length ? "샘플 기록을 불러오지 못했습니다. 위 안내를 확인해 주세요." : sampleFilters.query ? "사무실 보유 샘플 중 검색 결과가 없습니다." : "사무실에 보유 중인 샘플이 없습니다.";
     if(typeof applyPendingScroll_ === "function") applyPendingScroll_();

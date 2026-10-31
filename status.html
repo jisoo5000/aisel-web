@@ -118,7 +118,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 </style>
 <link rel="stylesheet" href="aisel-ui.css?v=178" />
 <link rel="stylesheet" href="status-samples.css?v=37" />
-<link rel="stylesheet" href="aisel-list-controls.css?v=263" media="screen" />
+<link rel="stylesheet" href="aisel-list-controls.css?v=283" media="screen" />
 
 <style id="aisel-status-embedded-style">
 @media screen {
@@ -126,6 +126,28 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
   html.aisel-status-embedded .page-header{display:none}
 }
 </style>
+<script>/* Render 24 records at a time; search and aggregates keep their full input. */
+(function(root){
+ 'use strict';
+ const states=new Map(),SIZE=24;
+ function state(key,filter){let s=states.get(key);if(!s||s.filter!==filter){s={filter,limit:SIZE};states.set(key,s);}return s;}
+ function take(key,items,options){
+  const s=state(key,String(options.filter||'')),host=options.host;
+  let control=document.getElementById('aisel-more-'+key);
+  if(!control){control=document.createElement('div');control.id='aisel-more-'+key;control.className='aisel-page-more noprint';control.innerHTML='<span aria-live="polite"></span><button type="button">더 보기</button>';host.after(control);}
+  control.hidden=items.length<=SIZE;
+  control.querySelector('span').textContent=Math.min(s.limit,items.length)+' / '+items.length+'개';
+  const button=control.querySelector('button');button.hidden=s.limit>=items.length;
+  button.textContent='더 보기 · '+Math.min(SIZE,Math.max(0,items.length-s.limit))+'개';
+  button.onclick=()=>{s.limit+=SIZE;options.onMore();};
+  return items.slice(0,s.limit);
+ }
+ function clear(key){states.delete(key);document.getElementById('aisel-more-'+key)?.remove();}
+ function reset(){states.clear();document.querySelectorAll('.aisel-page-more').forEach(el=>el.remove());}
+ root.addEventListener('aisel-session-change',reset);
+ root.AiselListPagination=Object.freeze({take,clear,reset,size:SIZE});
+})(window);
+</script>
 </head>
 <body>
 
@@ -541,7 +563,7 @@ function render(){
   if(workflowView === "samples"){if(photoObserver) photoObserver.disconnect();return;}
   var rows = rowsNow();
   document.getElementById("resultCount").textContent = dataReady ? (query ? "검색 " : "") + rows.length + "개" : "";
-  if(!dataReady){
+  if(!dataReady){window.AiselListPagination.clear('shipments');
     if(photoObserver) photoObserver.disconnect();
     gridEl.innerHTML = "";lastSig = null;
     emptyEl.style.display = "block";
@@ -557,7 +579,7 @@ function render(){
   emptyEl.style.display = rows.length ? "none" : "block";
   emptyEl.textContent = query ? "검색 결과가 없습니다. 품명이나 품번을 다시 확인해 주세요."
     : TABS.filter(function(tab){return tab.key === filter;})[0].empty;
-  rows.forEach(function(row){
+  window.AiselListPagination.take("shipments",rows,{host:gridEl,filter:JSON.stringify([filter,query]),onMore:function(){lastSig=null;render();}}).forEach(function(row){
     var entry = row.e;
     var card = document.createElement("article");card.className = "card";
     var thumb = document.createElement("div");thumb.className = "thumb";thumb.textContent = "▧";
@@ -800,7 +822,7 @@ window.addEventListener('pageshow',function(event){if(event.persisted){clearInte
 </script>
 <script src="status-samples-flow.js?v=samples-office-20261004-v16-4"></script>
 <script src="status-samples-data.js?v=status-public-v35"></script>
-<script src="status-samples.js?v=233"></script>
+<script src="status-samples.js?v=283"></script>
 
 <script id="aisel-status-embed-bridge">
 (function(){

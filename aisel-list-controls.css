@@ -209,3 +209,5 @@
  html:root body #designMeetingView #dmReview .dm-manual-table tr:has(#dmUspKeywords) {grid-template-columns:80px minmax(0,1fr);}
  html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>td {padding-left:2px;}
 }
+
+@media screen{.aisel-page-more{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0 24px;color:#6C727C;font-size:12px}.aisel-page-more[hidden]{display:none}.aisel-page-more button,#rcMore,#dmMore{height:28px!important;background:#fff!important;color:#2F3B52!important;border:1px solid #E3E5E7!important;border-radius:3px!important;padding:0 12px!important;font-size:12px!important;line-height:18px!important;font-weight:400!important}.aisel-page-more button:hover,#rcMore:hover,#dmMore:hover{background:#EEF0F3!important}.aisel-page-more button:focus-visible{outline:2px solid #2F3B52;outline-offset:2px}}

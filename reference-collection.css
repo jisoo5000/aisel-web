@@ -282,3 +282,26 @@
  #referenceCollectionView .rc-list-tools .rc-search{min-width:0;flex:1 1 0}
  #referenceCollectionView #rcSourcingStatus[hidden]{display:none}
 }
+
+@media screen {
+ #referenceCollectionView .rc-lifecycle-card{position:relative;min-width:0;border:1px solid #E3E5E7;border-radius:3px;background:#fff;overflow:hidden}
+ #referenceCollectionView .rc-lifecycle-card>.rc-card{width:100%;border:0;border-radius:0;height:auto}
+ #referenceCollectionView .rc-usage-check{position:absolute;right:0;top:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+ #referenceCollectionView .rc-usage-check input{appearance:none;width:18px;height:18px;margin:0;border:1px solid #AEB4BC;border-radius:3px;background:#fff;cursor:pointer;display:grid;place-items:center}
+ #referenceCollectionView .rc-usage-check input:checked{background:#2F3B52;border-color:#2F3B52}
+ #referenceCollectionView .rc-usage-check input:checked::after{content:'✓';color:#fff;font-size:14px;font-weight:600}
+ #referenceCollectionView .rc-usage-check input:disabled{cursor:wait;opacity:.55}
+ #referenceCollectionView .rc-usage-check input:focus-visible{outline:2px solid #2F3B52;outline-offset:2px}
+ #referenceCollectionView .rc-usage-actions{display:flex;gap:4px;justify-content:flex-end;padding:0 8px 8px}
+ #referenceCollectionView .rc-usage-actions button{height:28px;padding:0 8px;background:#fff;border:1px solid #E3E5E7;color:#2F3B52;font-family:inherit;font-weight:400;font-size:12px;line-height:18px;border-radius:3px}
+ #referenceCollectionView .rc-usage-stamp{font-size:11px;line-height:16px;color:#6C727C;margin:0 8px 8px;overflow-wrap:anywhere}
+ #referenceCollectionView .rc-life-toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%);z-index:2000;box-sizing:border-box;width:min(374px,calc(100vw - 24px));display:flex;gap:8px;align-items:center;justify-content:space-between;background:#2F3B52;color:#fff;padding:12px;border-radius:3px;font-size:12px}
+ #referenceCollectionView .rc-life-toast[hidden]{display:none}
+ #referenceCollectionView .rc-life-toast button{border:0;background:transparent;color:#fff;text-decoration:underline;font-size:12px;white-space:nowrap}
+ #referenceCollectionView .rc-usage-history{padding-left:18px;font-size:12px;line-height:20px;max-height:240px;overflow:auto;overflow-wrap:anywhere}
+ #referenceCollectionView #rcDialogBody label{display:block;margin-top:12px;font-size:12px;color:#6C727C}
+ #referenceCollectionView #rcUsageNote,#referenceCollectionView #rcUsageLink{display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:6px;border:1px solid #E3E5E7;border-radius:3px;font-size:14px;color:#34383C;background:#fff}
+ #referenceCollectionView #rcUsageNote{min-height:64px}
+ #referenceCollectionView .rc-list-tools{flex-wrap:wrap}#referenceCollectionView .rc-list-tools .rc-search{min-width:100px;flex:1 1 100px}
+ #referenceCollectionView #rcLifeFilter{max-width:90px;height:28px;font-size:12px;color:#2F3B52;background:#fff;border:1px solid #E3E5E7;border-radius:3px}
+}
