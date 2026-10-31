@@ -239,10 +239,10 @@
 <!-- v267: parallel downloads without changing script execution order -->
 <link rel="preload" as="script" href="unified-app.js?v=283">
 <link rel="preload" as="script" href="design-meeting.js?v=283">
-<link rel="preload" as="script" href="reference-collection.js?v=285">
+<link rel="preload" as="script" href="reference-collection.js?v=286">
 <link rel="preload" as="style" href="workorder-screen.css?v=270">
 <link rel="preload" as="style" href="unified-app.css?v=20261031-dictation1">
-<link rel="preload" as="style" href="aisel-list-controls.css?v=283.2">
+<link rel="preload" as="style" href="aisel-list-controls.css?v=286">
 <script id="aisel-ipad-layout-mode">
 /* All screens share the 390px mobile composition. Native print rules are preserved. */
 (function(root){
@@ -3435,7 +3435,7 @@
   <div class="gallery-search" id="gallerySearchRow">
     <label class="aisel-search-field">
       <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
-      <input type="search" id="gallerySearchInput" placeholder="품명·품번·디자이너·카테고리 전체 검색" aria-label="전체 검색" autocomplete="off">
+      <input type="search" id="gallerySearchInput" placeholder="검색" aria-label="검색" autocomplete="off">
     </label>
     <button type="button" class="btn ghost nav-btn" id="galleryTrashBtn" aria-expanded="false" aria-controls="workOrderTrashPanel">삭제 복원</button>
   </div>
@@ -3513,7 +3513,7 @@
   <div class="gallery-tabs" id="qoStatusFilter"></div>
   <div id="qoCounts" class="gallery-counts" role="status" aria-live="polite" aria-label="상태별 발주 대상 개수"></div>
   <div class="qo-search-wrap">
-    <input type="text" id="qoSearchInput" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
+    <input type="text" id="qoSearchInput" placeholder="검색" autocomplete="off" aria-label="검색">
     <div class="qo-search-results" id="qoSearchResults" style="display:none"></div>
   </div>
   <div id="qoSelectedInfo" class="qo-selected-info" style="display:none">
@@ -4056,7 +4056,7 @@
 <button class="copygen-btn-secondary" id="toggleNameList" style="padding:4px 10px;font-size:11.5px;">전체 품명 목록 보기</button>
 </div>
 </div>
-<input id="name1Search" placeholder="검색 (예: 리, 벨, 아...)" style="margin-top:8px;" type="text"/>
+<input id="name1Search" placeholder="검색" style="margin-top:8px;" type="text" aria-label="검색"/>
 <div class="copygen-chip-group" id="chipsName1" style="flex-wrap:nowrap;overflow-x:auto;padding:2px 2px 8px;"></div>
 <div class="copygen-inline-add" id="addNameRow">
 <input id="newNameInput" placeholder="새 고유명 입력" type="text"/>
@@ -4464,7 +4464,7 @@
     <div class="coordi-picked" id="coordiPicked3" style="display:none"></div>
     <!-- 2026-08-25 추가: 내 제품 고르는 창. 고르는 칸 바로 아래로 옮겨 붙습니다 -->
     <div class="coordi-pick-panel" id="coordiPickPanel" style="display:none">
-      <input id="coordiPickSearch" type="text" placeholder="품명 또는 품번으로 검색해서 골라주세요" autocomplete="off">
+      <input id="coordiPickSearch" type="text" placeholder="검색" autocomplete="off" aria-label="검색">
       <div class="coordi-pick-results" id="coordiPickResults"></div>
     </div>
   </div>
@@ -17689,17 +17689,17 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=285"></script>
+<script src="reference-collection.js?v=286"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
-<script src="aisel-moodboards.js?v=233"></script>
+<script src="aisel-moodboards.js?v=286"></script>
 <script src="unified-app.js?v=283"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=260" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=20261031-dictation1">
-<link rel="stylesheet" href="aisel-list-controls.css?v=283.2" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=286" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {

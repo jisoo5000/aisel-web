@@ -221,3 +221,21 @@
  html:root body #referenceCollectionView #rcMore,
  html:root body #designMeetingView #dmMore {margin:16px 0 24px;}
 }
+
+/* v286: every search uses the design-meeting magnifier, compact type and neutral outline. */
+@media screen {
+ html:root body :is(#quickOrderView #qoSearchInput,#name1Search,#coordiPickSearch,#aiselMoodboardsView .mb-search) {
+  box-sizing:border-box;display:block;width:100%;min-width:0;
+  height:var(--aisel-list-height,28px)!important;min-height:var(--aisel-list-height,28px)!important;
+  padding:0 var(--aisel-list-inset,4px) 0 26px!important;
+  border:1px solid var(--aisel-list-border,#E3E5E7);border-radius:var(--aisel-list-radius,3px);
+  background:#fff url("data:image/svg+xml,%3Csvg%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%236C727C%22%20stroke-width%3D%221.7%22%20aria-hidden%3D%22true%22%3E%3Ccircle%20cx%3D%2210.8%22%20cy%3D%2210.8%22%20r%3D%226.5%22%2F%3E%3Cpath%20d%3D%22m16%2016%204.5%204.5%22%2F%3E%3C%2Fsvg%3E") no-repeat 4px center / 14px 14px;
+  font-family:var(--aisel-font)!important;font-size:var(--aisel-list-font,12px)!important;
+  font-weight:400!important;line-height:var(--aisel-list-line,18px)!important;
+  color:var(--aisel-list-color,#6C727C);letter-spacing:0;text-align:left;
+ }
+ html:root body :is(#gallerySearchInput,#salesSearchInput,#dmSearch,#rcSearch,#search,#sampleSearch,#qoSearchInput,#name1Search,#coordiPickSearch,#aiselMoodboardsView .mb-search)::placeholder {
+  color:var(--aisel-list-color,#6C727C);opacity:1;font:inherit;letter-spacing:0;
+ }
+ html:root body :is(.aisel-search-field,.rc-search) > svg {pointer-events:none}
+}

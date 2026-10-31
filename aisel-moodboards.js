@@ -124,7 +124,7 @@
     const editor = el('div', undefined, 'mb-editor'); editor.hidden = true;
     const toolbar = el('div', undefined, 'mb-actions'), title = el('input'); title.className = 'mb-title'; title.placeholder = '보드 제목'; title.maxLength = 120; title.setAttribute('aria-label', '보드 제목'); title.addEventListener('input', () => { selected.title = title.value; change(); });
     toolbar.append(button('목록', back), button('저장', persist), button('취소', () => { if (dirty && !confirm('저장 전 변경을 취소할까요?')) return; try { localStorage.removeItem(draftKey()); } catch (_) {} dirty = false; selected = base = null; $('.mb-editor').hidden = true; $('.mb-board-list').hidden = false; renderList(); notice(); }), button('보관', async () => { if (!selected || !confirm('보드를 보관할까요? 연결된 원본 자료는 유지됩니다.')) return; selected.archivedAt = Date.now(); change(); await back(); }));
-    const search = el('input'); search.className = 'mb-search'; search.placeholder = '🔍 검색'; search.setAttribute('aria-label', '검색'); search.addEventListener('input', renderChoices);
+    const search = el('input'); search.className = 'mb-search'; search.placeholder = '검색'; search.setAttribute('aria-label', '검색'); search.addEventListener('input', renderChoices);
     const choices = el('details'); choices.append(el('summary', '+ 자료 연결'), search, el('div', undefined, 'mb-choices'));
     editor.append(toolbar, title, el('div', undefined, 'mb-linked'), choices);
     const restore = button('보관한 보드', async () => {
