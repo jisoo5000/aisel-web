@@ -70,3 +70,15 @@
 @media screen {
  html:root body #mainBar:has(>[data-main="moodboards"]:not([hidden]))>.maintab {font-size:11px;letter-spacing:-.4px;}
 }
+
+/* Native keyboard dictation help: shared account menu, never printed. */
+@media screen {
+ html:root body #aiselDictationHelp {margin-top:16px;padding-top:12px;border-top:1px solid var(--aisel-line,#E3E5E7);}
+ html:root body #aiselDictationHelp summary {box-sizing:border-box;min-height:32px;padding:6px 0;cursor:pointer;color:var(--aisel-accent,#2F3B52);font-size:12px;line-height:20px;font-weight:600;overflow-wrap:anywhere;}
+ html:root body #aiselDictationHelp summary:focus-visible {outline:1px solid var(--aisel-accent,#2F3B52);outline-offset:2px;}
+ html:root body #aiselDictationHelp ol {margin:8px 0 12px;padding-left:20px;font-size:12px;line-height:20px;}
+ html:root body #aiselDictationHelp li+li {margin-top:4px;}
+ html:root body #aiselDictationHelp details {margin:0 0 12px;}
+ html:root body #aiselDictationHelp details summary {font-weight:400;}
+ html:root body #aiselDictationHelp .dictation-help-note {margin-bottom:0;color:var(--aisel-muted,#6C727C);}
+}
