@@ -30,8 +30,10 @@
   // SOURCING_NAV_START: navigation metadata only; Google controls document access.
   const sourcingLatest='https://docs.google.com/presentation/d/1sfjYP5JImXIxGhDv8sPzvIRWhP1MsniXv8QSq3qvOB0/edit';
   const sourcingSheet='https://docs.google.com/spreadsheets/d/1T0ZMTgXfY4mnqVL7yJBDxPZWHJ9B-bBfl_f_xMYj2Xc/edit';
-  let sourcingFlight=null,sourcingReadAt=0,sourcingSignature='';
+  const sourcingCacheKey='aisel:sourcing-navigation:daily:v1';
+  let sourcingFlight=null,sourcingMemory=null,sourcingSignature='';
   let sourcingTargets=new Map([['latest',sourcingLatest],['sheet',sourcingSheet]]);
+  function sourcingDay(){return new Date(Date.now()+9*60*60*1000).toISOString().slice(0,10);}
   function sourcingGoogleUrl(value,kind='presentation'){
     try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='docs.google.com'&&!u.username&&!u.password&&new RegExp('^/'+kind+'/d/[A-Za-z0-9_-]+/(?:edit|view|preview)(?:/)?$').test(u.pathname)?u.href:'';}catch(_){return '';}
   }
@@ -45,35 +47,70 @@
     if(!rows.length)throw Error('확인된 소싱 날짜 없음');
     return rows.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,90);
   }
+  function readSourcingCache(){
+    try{
+      const raw=localStorage.getItem(sourcingCacheKey);
+      if(raw&&raw.length<=65536){
+        const data=JSON.parse(raw);
+        if(data.version===1&&/^\d{4}-\d{2}-\d{2}$/.test(data.attempt_day)&&Array.isArray(data.rows)){
+          data.rows=data.rows.length?sourcingDates({version:1,dates:data.rows}):[];return data;
+        }
+      }
+    }catch(_){}
+    return sourcingMemory;
+  }
+  function writeSourcingCache(data){
+    sourcingMemory=data;
+    try{localStorage.setItem(sourcingCacheKey,JSON.stringify(data));}catch(_){}
+  }
+  function renderSourcingDates(rows){
+    const day=sourcingDay(),signature=JSON.stringify([day,rows]);
+    if(signature===sourcingSignature)return;
+    const select=$('#rcSourcingDate'),options=[],targets=new Map([['latest',sourcingLatest],['sheet',sourcingSheet]]);
+    const placeholder=document.createElement('option');placeholder.value='';placeholder.disabled=true;placeholder.textContent='소싱 날짜 선택';options.push(placeholder);
+    let hasLatest=false;
+    for(const row of rows){
+      const option=document.createElement('option');
+      // A stale cached fixed link must never claim it still contains an older date.
+      const staleLatest=row.url===sourcingLatest&&row.date!==day;
+      option.value=staleLatest?'latest':row.date;
+      option.textContent=staleLatest?'최신 사진':row.date.slice(2).replaceAll('-','.')+(row.url===sourcingLatest?' · 최신':'');
+      hasLatest=hasLatest||row.url===sourcingLatest;targets.set(option.value,row.url);options.push(option);
+    }
+    if(!hasLatest){const latest=document.createElement('option');latest.value='latest';latest.textContent='최신 사진';options.splice(1,0,latest);}
+    const sheet=document.createElement('option');sheet.value='sheet';sheet.textContent='시트 · 지난 자료';options.push(sheet);
+    select.replaceChildren(...options);select.value='';sourcingTargets=targets;sourcingSignature=signature;
+  }
   async function loadSourcingLinks(){
     if(sourcingFlight)return sourcingFlight;
-    if(Date.now()-sourcingReadAt<300000)return;
-    sourcingReadAt=Date.now();
-    sourcingFlight=(async()=>{
+    const readOnce=async()=>{
+      const day=sourcingDay(),cached=readSourcingCache();
+      if(cached?.rows.length)renderSourcingDates(cached.rows);
+      if(cached?.attempt_day===day)return;
+      const pending={version:1,attempt_day:day,rows:cached?.rows||[],state:'pending'};
+      writeSourcingCache(pending); // Mark before I/O; reloads and failures do not start a retry loop.
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
       try{
         const response=await fetch(new URL('sourcing-links.json',location.href).href,{cache:'no-cache',credentials:'omit',signal:controller.signal});
         if(!response.ok)throw Error('HTTP '+response.status);
         const body=await response.text();if(body.length>65536)throw Error('날짜 목록 크기 초과');
-        const rows=sourcingDates(JSON.parse(body)),select=$('#rcSourcingDate'),old=select.value;
-        const signature=JSON.stringify(rows);
-        if(signature===sourcingSignature){$('#rcSourcingStatus').hidden=true;return;}
-        const targets=new Map(rows.map(row=>[row.date,row.url]));targets.set('latest',sourcingLatest);targets.set('sheet',sourcingSheet);
-        const options=rows.map((row,i)=>{const option=document.createElement('option');option.value=row.date;option.textContent=row.date.slice(2).replaceAll('-','.')+(i===0?' · 최신':'');return option;});
-        const sheet=document.createElement('option');sheet.value='sheet';sheet.textContent='시트 · 지난 자료';options.push(sheet);
-        select.replaceChildren(...options);sourcingSignature=signature;sourcingTargets=targets;select.value=targets.has(old)&&old!=='latest'?old:rows[0].date;
+        const rows=sourcingDates(JSON.parse(body));
+        writeSourcingCache({...pending,rows,state:'success'});renderSourcingDates(rows);
         $('#rcSourcingStatus').hidden=true;
       }catch(error){
-        $('#rcSourcingStatus').textContent='날짜 목록을 불러오지 못했습니다. 최신 사진·시트는 열 수 있습니다.';
+        writeSourcingCache({...pending,state:'failed'});
+        $('#rcSourcingStatus').textContent='오늘 날짜 목록을 갱신하지 못했습니다. 저장된 자료·최신 사진·시트는 열 수 있습니다.';
         $('#rcSourcingStatus').hidden=false;
-      }finally{clearTimeout(timer);sourcingFlight=null;}
-    })();
-    return sourcingFlight;
+      }finally{clearTimeout(timer);}
+    };
+    const run=navigator.locks?.request?navigator.locks.request(sourcingCacheKey,readOnce):readOnce();
+    sourcingFlight=run.finally(()=>{sourcingFlight=null;});return sourcingFlight;
   }
   function openSourcingSelection(){
-    const value=$('#rcSourcingDate').value,target=sourcingTargets.get(value);
+    const select=$('#rcSourcingDate'),target=sourcingTargets.get(select.value);
     if(!target)return;
     window.open(target,'_blank','noopener,noreferrer');
+    select.value=''; // The same date can be chosen again without another request.
   }
   // SOURCING_NAV_END
 
@@ -81,7 +118,7 @@
     if(pane)return pane;
     pane=document.createElement('section');pane.id='referenceCollectionView';pane.className='noprint';pane.hidden=true;pane.setAttribute('aria-label','레퍼런스 수집');
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
-      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><select id="rcSourcingDate" aria-label="소싱 자료 날짜"><option value="latest">소싱 자료 · 최신</option><option value="sheet">시트 · 지난 자료</option></select><button type="button" id="rcSourcingOpen" aria-label="선택한 소싱 자료 검색하여 열기">검색</button><button type="button" id="rcRestore" hidden>복원</button></div><p id="rcSourcingStatus" class="rc-filter-status" role="status" hidden></p>
+      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><select id="rcSourcingDate" aria-label="소싱 날짜 선택하면 새 탭에서 열기"><option value="" selected disabled>소싱 날짜 선택</option><option value="latest">최신 사진</option><option value="sheet">시트 · 지난 자료</option></select><button type="button" id="rcRestore" hidden>복원</button></div><p id="rcSourcingStatus" class="rc-filter-status" role="status" hidden></p>
       <div class="rc-collection-filters"><div class="rc-date-filter"></div><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 담당자 필터"><option value="">담당자</option></select></div>
       <div id="rcListTaxonomyManager"></div><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
       <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
@@ -127,7 +164,7 @@
     if(!categoryFilterPicker)$('#rcNoteCategoryFilter').onchange=()=>{gallerySignature='';renderList();rememberList();};$('#rcNoteCategoryFilter').onfocus=()=>window.AiselNoteCategories?.load().catch(()=>{});
     $('#rcDesignerFilter').onchange=()=>{if(window.AiselDesigners)return;gallerySignature='';renderList();rememberList();};
     $('#rcDesigner').onchange=()=>{if(window.AiselDesigners||!active||!canEdit()||permissions.referenceDesignerVersion!==212)return;active.designer=$('#rcDesigner').value;renderDesigner();markDirty();};
-    $('#rcSourcingDate').onfocus=()=>loadSourcingLinks();$('#rcSourcingOpen').onclick=openSourcingSelection;
+    $('#rcSourcingDate').onchange=openSourcingSelection;
     $('#rcSearch').oninput=()=>{gallerySignature='';renderList();rememberList();};
     $('.rc-filters').onclick=e=>{const b=e.target.closest('[data-category]');if(!b)return;topCategory=b.dataset.category;$('.rc-filters').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));gallerySignature='';renderList();rememberList();};
     fields.forEach(k=>$('[data-rc-field="'+k+'"]').addEventListener('input',()=>{if(!active)return;active[k]=$('[data-rc-field="'+k+'"]').value;markDirty();}));
