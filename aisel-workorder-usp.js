@@ -64,7 +64,7 @@
         const title = document.createElement('h2'); title.id = 'workorderUspPickerTitle'; title.textContent = '디자인회의에서 가져오기';
         const closeButton = document.createElement('button'); closeButton.type = 'button'; closeButton.textContent = '×'; closeButton.setAttribute('aria-label', '닫기');
         heading.append(title, closeButton);
-        const search = document.createElement('input'); search.type = 'search'; search.placeholder = '품명·담당자 검색'; search.setAttribute('aria-label', '디자인회의 검색');
+        const search = document.createElement('input'); search.type = 'search'; search.placeholder = '검색'; search.setAttribute('aria-label', '디자인회의 검색');
         const status = document.createElement('p'); status.setAttribute('role', 'status'); status.textContent = '디자인회의를 불러오는 중…';
         const list = document.createElement('div'); list.className = 'aisel-workorder-usp-picker-list';
         dialog.setAttribute('aria-labelledby', title.id); dialog.append(heading, search, status, list); document.body.append(dialog);
