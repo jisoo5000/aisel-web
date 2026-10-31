@@ -305,3 +305,21 @@
  #referenceCollectionView .rc-list-tools{flex-wrap:wrap}#referenceCollectionView .rc-list-tools .rc-search{min-width:100px;flex:1 1 100px}
  #referenceCollectionView #rcLifeFilter{max-width:90px;height:28px;font-size:12px;color:#2F3B52;background:#fff;border:1px solid #E3E5E7;border-radius:3px}
 }
+
+/* v285: usage filter below metadata, using the adjacent list-control tokens. */
+@media screen {
+ html:root body #referenceCollectionView .rc-lifecycle-filter-row {
+  display:flex;justify-content:flex-end;align-items:center;
+  gap:var(--aisel-list-gap,4px);margin:0 0 var(--aisel-list-group-gap,8px);min-width:0;
+ }
+ html:root body #referenceCollectionView #rcLifeFilter {
+  box-sizing:border-box;flex:0 1 90px;width:90px;max-width:100%;min-width:0;
+  height:var(--aisel-list-height,28px)!important;min-height:var(--aisel-list-height,28px)!important;
+  margin:0;padding:0 var(--aisel-list-inset,4px)!important;
+  border:1px solid var(--aisel-list-border,#E3E5E7);border-radius:var(--aisel-list-radius,3px);
+  background:#fff;color:var(--aisel-list-color,#6C727C);
+  font-family:var(--aisel-font,sans-serif)!important;font-size:var(--aisel-list-font,12px)!important;
+  font-weight:400;line-height:var(--aisel-list-line,18px)!important;
+ }
+ html:root body #referenceCollectionView #rcLifeFilter option {font:inherit;color:inherit;background:#fff}
+}
