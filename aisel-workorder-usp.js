@@ -106,7 +106,7 @@
         dialog.showModal();
         (async () => {
           try {
-            await index.warm('meetings', { refresh: true });
+            await index.warm('meetings', { refresh: true, all: true });
             if (!current()) { finish(null); return; }
             ready = true; unsubscribe = index.subscribe('meetings', render);
           } catch (_) { if (current()) status.textContent = '디자인회의 목록을 확인하지 못했습니다. 닫은 뒤 다시 시도해주세요.'; }

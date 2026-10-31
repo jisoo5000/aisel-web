@@ -33,7 +33,7 @@
     validKind(kind); const key = bucketKey(kind, archived);
     if (!buckets.has(key)) buckets.set(key, { kind, archived, rows: new Map(), sourceRows: null, meta: null, observedMeta: null, available: false,
       authorized: null, complete: false, mode: enabled ? 'unavailable' : 'disabled', error: null,
-      flight: null, revision: 0, loadedRevision: -1, confirmedAt: 0, retryAt: 0, retryCount: 0 });
+      flight: null, paged:false, hasMore:false, pageCursor:null, nextPage:false, revision: 0, loadedRevision: -1, confirmedAt: 0, retryAt: 0, retryCount: 0 });
     return buckets.get(key);
   }
   function hasAuthority(kind, archived = false) {
@@ -45,7 +45,7 @@
   function snapshot(kind, options = {}) {
     const b = bucket(kind, options.archived === true), trusted = enabled && hasAuthority(kind, b.archived);
     return { available: trusted && b.available, authorized: b.authorized === false ? false : (trusted ? true : null),
-      complete: trusted && b.complete, mode: enabled ? b.mode : 'disabled',
+      complete: trusted && b.complete, paged:trusted && b.paged, hasMore:trusted && b.hasMore, mode: enabled ? b.mode : 'disabled',
       records: trusted && b.available ? [...b.rows.values()].map(row => ({ ...row })) : [],
       uid: enabled ? uid || null : null, role: trusted ? access.role : '', error: b.error ? { code: b.error.code } : null };
   }
@@ -108,13 +108,13 @@
       catch (_) { return false; }
     }) || null;
   }
-  async function read(path, stamp, rootPath = ROOT) {
+  async function read(path, stamp, rootPath = ROOT, query = '') {
     assertSession(stamp); const user = canonical(), token = await user.getIdToken(); assertSession(stamp);
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), REQUEST_MS);
     let response;
     try {
       const base = app.options.databaseURL.replace(/\/$/, '');
-      response = await fetch(base + '/' + (rootPath ? rootPath + '/' : '') + path + '.json?auth=' + encodeURIComponent(token), {
+      response = await fetch(base + '/' + (rootPath ? rootPath + '/' : '') + path + '.json?auth=' + encodeURIComponent(token) + query, {
         cache: 'no-store', credentials: 'omit', signal: controller.signal, headers: { Accept: 'application/json' }
       });
       assertSession(stamp);
@@ -328,7 +328,7 @@
   function applyRows(b, rows, meta, mode) {
     if (!hasAuthority(b.kind, b.archived)) return;
     b.sourceRows = rows; b.rows = mergeRemembered(b.kind, rows, b.archived, true, meta); b.meta = meta;
-    b.available = b.complete = true; b.authorized = true; b.mode = mode; b.error = null; emit(b.kind, b.archived);
+    b.available = true; b.complete = !b.paged; b.authorized = true; b.mode = mode; b.error = null; emit(b.kind, b.archived);
   }
   function failBucket(b, code) {
     // A failed revision cannot erase a previously confirmed list or a sibling
@@ -472,7 +472,7 @@
               if (![...buckets.values()].some(b => b.kind === kind && b.meta && (!validMeta(value) || !sameMeta(b.meta, value)))) return;
             }
             for (const b of buckets.values()) if (b.kind === kind) b.revision++;
-            scheduleRefresh(kind);
+            // v287: refresh changed summaries on next explicit view entry; no idle body refetch.
           }, () => { if (stamp === epoch) invalidate('permission_denied', true); });
         }
       }
@@ -481,6 +481,20 @@
   async function loadBucket(b, stamp) {
     if (!roles[b.kind].includes(access.role) || (b.archived && access.role !== 'owner')) {
       b.available = b.complete = false; b.authorized = false; b.rows.clear(); b.mode = 'denied'; b.error = error('permission_denied'); emit(b.kind, b.archived); return;
+    }
+    if(b.paged){
+      const append=b.nextPage&&b.available&&b.pageCursor;b.nextPage=false;
+      const meta=await read(b.kind+'/_meta',stamp);if(!validMeta(meta))throw error('index_not_ready');
+      let query='&orderBy='+encodeURIComponent(JSON.stringify('date'))+'&limitToLast=21';
+      if(append)query+='&endAt='+encodeURIComponent(JSON.stringify(b.pageCursor.date)+','+JSON.stringify(b.pageCursor.id));
+      const value=await read(b.kind+(b.archived?'/archived':'/active'),stamp,ROOT,query);assertSession(stamp);
+      if(value!==null&&(typeof value!=='object'||Array.isArray(value)))throw error('schema_mismatch');
+      let page=Object.entries(value||{}).map(([id,raw])=>{const row=summary(raw,id);if(!row||raw.schemaVersion!==1||raw.id!==id||!!row.archivedAt!==b.archived)throw error('schema_mismatch');return row;}).sort((a,b)=>a.date.localeCompare(b.date)||(a.id<b.id?-1:a.id>b.id?1:0));
+      if(append)page=page.filter(row=>row.date<b.pageCursor.date||row.date===b.pageCursor.date&&row.id<b.pageCursor.id);
+      b.hasMore=page.length>20||!!append&&page.length===20;page=page.slice(-20);
+      const merged=append?new Map(b.sourceRows||b.rows):new Map();for(const row of page)merged.set(row.id,row);
+      if(page.length)b.pageCursor={date:page[0].date,id:page[0].id};else if(!append)b.pageCursor=null;
+      applyRows(b,merged,meta,'paged');return;
     }
     let meta = null;
     if (atomicSnapshots) {
@@ -548,7 +562,7 @@
       provenUids.add(uid);
       clearTimeout(leaseTimer); clearTimeout(authorityTimer);
       if(!native)leaseTimer = setTimeout(() => { if (stamp === epoch) invalidate('lease_expired', true); }, Math.max(0, Math.min(2147483647, number(access.expiresAt) - now())));
-      authorityTimer = setTimeout(() => {
+      authorityTimer = native ? null : setTimeout(() => {
         authorityTimer = null;
         if (stamp === epoch) warm(null, { authorityOnly: true }).catch(() => {});
       }, native ? RECHECK_MS : Math.max(1000, Math.min(RECHECK_MS, number(access.expiresAt) - now() - 1000)));
@@ -602,6 +616,12 @@
     if (accessProved && !native && number(access?.expiresAt) <= now()) invalidate('lease_expired', true);
     const stamp = epoch;
     const targets = kind ? [bucket(kind, options.archived === true)] : [...buckets.values()];
+    for(const b of targets){
+      if(options.all===true&&b.paged&&b.flight){await b.flight;assertSession(stamp);}
+      if(options.all===true&&b.paged){b.paged=false;b.available=false;b.sourceRows=null;b.meta=null;b.pageCursor=null;b.hasMore=false;}
+      else if(options.paged===true&&!b.available)b.paged=true;
+      if(options.more&&b.paged){b.nextPage=true;options.refresh=true;}
+    }
     if (options.preferCache && !options.refresh && targets.every(b => hasAuthority(b.kind, b.archived) && b.available)) {
       for (const b of targets) if (accessNeedsRefresh || b.error || b.loadedRevision !== b.revision || now() - b.confirmedAt >= RECHECK_MS) {
         if (!b.retryAt || b.retryAt <= now()) scheduleRefresh(b.kind, b.archived);
@@ -629,7 +649,7 @@
         bindSession(); scheduleRefresh();
       });
     }
-    return warm(null, { preferCache: !first });
+    return warm(null, native ? {authorityOnly:true,preferCache:true} : { preferCache: !first });
   }
   function detailGrant(kind) {
     if (!hasAuthority(kind)) throw error('permission_denied');

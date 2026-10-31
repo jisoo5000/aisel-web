@@ -276,7 +276,7 @@
  html:root body #designMeetingView .dm-detail-meta #dmLinks {grid-column:1 / -1;}
  html:root body #designMeetingView .dm-assignee {width:auto;min-width:0;padding:0 6px;}
  html:root body #designMeetingView .dm-assignee label {display:none;}
- html:root body #designMeetingView #dmDesigner {flex:1;width:100%;max-width:100%;margin:0;padding:0;height:26px;min-height:26px;text-align:center;text-align-last:center;}
+ html:root body #designMeetingView #dmDesigner {flex:1;width:100%;max-width:100%;margin:0;padding:0;height:26px;min-height:26px;}
  html:root body #designMeetingView #dmLookCategory {width:100%;min-width:0;height:28px;min-height:28px;border:1px solid var(--aisel-line);border-radius:3px;background:var(--aisel-bg);padding:0 6px;color:#6C727C;font-size:12px!important;font-weight:400;line-height:18px;}
  html:root body #designMeetingView #dmHeaderSave {flex:none;width:52px;height:28px;min-height:28px;padding:0 6px;font-size:12px;line-height:18px;font-weight:500;background:#343A3E;color:#fff;border:1px solid #343A3E;}
  #designMeetingView #dmLookManager:empty {display:none;}
@@ -357,4 +357,11 @@
  html:root body #designMeetingView .dm-section-title {margin-top:8px;}
  html:root body #designMeetingView #dmReferenceNotes {margin-top:8px;}
  html:root body #designMeetingView .dm-reference-header {margin-bottom:4px;}
+}
+
+/* v287: compact meeting actions. */
+@media screen {
+ html:root body #designMeetingView #dmLinks:not(.is-editing){display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+ html:root body #designMeetingView #dmLinks :is(.dm-materials-action,.dm-presentation-action,.dm-link-open){flex:0 0 auto;width:auto;height:28px;min-height:28px;min-width:0;padding:0 6px;font:400 12px/18px var(--aisel-font,sans-serif);color:#34383C;background:#fff;border:1px solid #E3E5E7;border-radius:3px;white-space:nowrap}
+ html:root body #designMeetingView #dmLinks .dm-link-open{padding:0 4px;color:#6C727C}
 }

@@ -117,7 +117,7 @@
 <script id="aisel-list-pagination-v283">/* Render 24 records at a time; search and aggregates keep their full input. */
 (function(root){
  'use strict';
- const states=new Map(),SIZE=24;
+ const states=new Map(),SIZE=20;
  function state(key,filter){let s=states.get(key);if(!s||s.filter!==filter){s={filter,limit:SIZE};states.set(key,s);}return s;}
  function take(key,items,options){
   const s=state(key,String(options.filter||'')),host=options.host;
@@ -237,9 +237,9 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=283">
-<link rel="preload" as="script" href="design-meeting.js?v=283">
-<link rel="preload" as="script" href="reference-collection.js?v=286">
+<link rel="preload" as="script" href="unified-app.js?v=287">
+<link rel="preload" as="script" href="design-meeting.js?v=287">
+<link rel="preload" as="script" href="reference-collection.js?v=287">
 <link rel="preload" as="style" href="workorder-screen.css?v=270">
 <link rel="preload" as="style" href="unified-app.css?v=20261031-dictation1">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=286">
@@ -5442,7 +5442,7 @@
 <script src="aisel-photo.js?v=275"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=254">
 <script src="aisel-usp.js?v=262"></script>
-<script src="aisel-workorder-usp.js?v=286"></script>
+<script src="aisel-workorder-usp.js?v=287"></script>
 <script src="aisel-editor-values.js?v=272"></script>
 <script src="aisel-fabric-variants.js?v=260"></script>
 <script src="aisel-size-costs.js?v=275"></script>
@@ -17618,7 +17618,7 @@ AiselSheetSalesView.start();
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=261">
+<link rel="stylesheet" href="design-meeting.css?v=287">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -17643,7 +17643,7 @@ window.AiselDesignMeetingAdapter={
 <script>window.AISEL_GALLERY_INDEX_ENABLED = true; window.AISEL_COLLECTION_WRITES_ENABLED = true;</script>
 <script>window.AISEL_NATIVE_ENABLED=true; window.AISEL_GALLERY_SNAPSHOTS_ENABLED=true;</script>
 <script src="aisel-native-bridge.js?v=217"></script>
-<script src="aisel-gallery-index.js?v=221"></script>
+<script src="aisel-gallery-index.js?v=287"></script>
 <script src="aisel-gallery-images.js?v=221"></script>
 <script src="aisel-collection-writes.js?v=264"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=230">
@@ -17658,7 +17658,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=233"></script>
 <script src="aisel-look-categories.js?v=233"></script>
-<script src="design-meeting.js?v=283"></script>
+<script src="design-meeting.js?v=287"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -17689,12 +17689,12 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=286"></script>
+<script src="reference-collection.js?v=287"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
-<script src="aisel-moodboards.js?v=286"></script>
-<script src="unified-app.js?v=283"></script>
+<script src="aisel-moodboards.js?v=287"></script>
+<script src="unified-app.js?v=287"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=260" media="screen">

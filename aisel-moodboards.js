@@ -140,7 +140,7 @@
     try {
       const grant = await window.AiselGalleryIndex.authorize('references');
       if (grant.role !== 'owner') throw Error('대표자 계정에서 사용할 수 있습니다.');
-      await window.AiselGalleryIndex.warm('references'); if (stamp !== epoch || !visible) return false;
+      await window.AiselGalleryIndex.warm('references',{all:true,preferCache:true}); if (stamp !== epoch || !visible) return false;
       references = new Map(currentReferences().map(record => [record.id, record]));
       const result = await request(); if (stamp !== epoch || !visible) return false;
       boards = Object.entries(result.value || {}).map(([id, board]) => ({ ...board, id, referenceIds: board.referenceIds || [] }));

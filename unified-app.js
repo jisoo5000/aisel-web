@@ -77,13 +77,13 @@
   const styleReady=new Promise((resolve,reject)=>{
    let css=document.getElementById('meetingMaterialsCss');
    if(css?.sheet){resolve();return;}
-   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=283';}
+   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=287';}
    css.addEventListener('load',()=>resolve(),{once:true});
    css.addEventListener('error',()=>{css.remove();reject(Error('회의자료 화면을 불러오지 못했습니다. 다시 열어주세요.'));},{once:true});
    if(!css.isConnected)document.head.append(css);
   });
   const moduleReady=window.AiselMeetingMaterials?Promise.resolve(window.AiselMeetingMaterials):new Promise((resolve,reject)=>{
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=283';
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=287';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
