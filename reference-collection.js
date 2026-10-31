@@ -26,11 +26,62 @@
   let draftStored=true;
   let galleryScroll=0,gallerySignature='',pendingFiles=[],objectUrls=[],draftDb=null,draftTimer=null;
   const $=s=>pane.querySelector(s);
+
+  // SOURCING_NAV_START: navigation metadata only; Google controls document access.
+  const sourcingLatest='https://docs.google.com/presentation/d/1sfjYP5JImXIxGhDv8sPzvIRWhP1MsniXv8QSq3qvOB0/edit';
+  const sourcingSheet='https://docs.google.com/spreadsheets/d/1T0ZMTgXfY4mnqVL7yJBDxPZWHJ9B-bBfl_f_xMYj2Xc/edit';
+  let sourcingFlight=null,sourcingReadAt=0,sourcingSignature='';
+  let sourcingTargets=new Map([['latest',sourcingLatest],['sheet',sourcingSheet]]);
+  function sourcingGoogleUrl(value,kind='presentation'){
+    try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='docs.google.com'&&!u.username&&!u.password&&new RegExp('^/'+kind+'/d/[A-Za-z0-9_-]+/(?:edit|view|preview)(?:/)?$').test(u.pathname)?u.href:'';}catch(_){return '';}
+  }
+  function sourcingDates(data){
+    if(data?.version!==1||!Array.isArray(data.dates))throw Error('날짜 목록 형식 오류');
+    const seen=new Set(),rows=[];
+    for(const row of data.dates){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(row?.date||'')||!sourcingGoogleUrl(row.url)||seen.has(row.date))continue;
+      seen.add(row.date);rows.push({date:row.date,url:sourcingGoogleUrl(row.url)});
+    }
+    if(!rows.length)throw Error('확인된 소싱 날짜 없음');
+    return rows.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,90);
+  }
+  async function loadSourcingLinks(){
+    if(sourcingFlight)return sourcingFlight;
+    if(Date.now()-sourcingReadAt<300000)return;
+    sourcingReadAt=Date.now();
+    sourcingFlight=(async()=>{
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+      try{
+        const response=await fetch(new URL('sourcing-links.json',location.href).href,{cache:'no-cache',credentials:'omit',signal:controller.signal});
+        if(!response.ok)throw Error('HTTP '+response.status);
+        const body=await response.text();if(body.length>65536)throw Error('날짜 목록 크기 초과');
+        const rows=sourcingDates(JSON.parse(body)),select=$('#rcSourcingDate'),old=select.value;
+        const signature=JSON.stringify(rows);
+        if(signature===sourcingSignature){$('#rcSourcingStatus').hidden=true;return;}
+        const targets=new Map(rows.map(row=>[row.date,row.url]));targets.set('latest',sourcingLatest);targets.set('sheet',sourcingSheet);
+        const options=rows.map((row,i)=>{const option=document.createElement('option');option.value=row.date;option.textContent=row.date.slice(2).replaceAll('-','.')+(i===0?' · 최신':'');return option;});
+        const sheet=document.createElement('option');sheet.value='sheet';sheet.textContent='시트 · 지난 자료';options.push(sheet);
+        select.replaceChildren(...options);sourcingSignature=signature;sourcingTargets=targets;select.value=targets.has(old)&&old!=='latest'?old:rows[0].date;
+        $('#rcSourcingStatus').hidden=true;
+      }catch(error){
+        $('#rcSourcingStatus').textContent='날짜 목록을 불러오지 못했습니다. 최신 사진·시트는 열 수 있습니다.';
+        $('#rcSourcingStatus').hidden=false;
+      }finally{clearTimeout(timer);sourcingFlight=null;}
+    })();
+    return sourcingFlight;
+  }
+  function openSourcingSelection(){
+    const value=$('#rcSourcingDate').value,target=sourcingTargets.get(value);
+    if(!target)return;
+    window.open(target,'_blank','noopener,noreferrer');
+  }
+  // SOURCING_NAV_END
+
   function ensure(){
     if(pane)return pane;
     pane=document.createElement('section');pane.id='referenceCollectionView';pane.className='noprint';pane.hidden=true;pane.setAttribute('aria-label','레퍼런스 수집');
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
-      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><button type="button" id="rcRestore" hidden>복원</button></div>
+      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><select id="rcSourcingDate" aria-label="소싱 자료 날짜"><option value="latest">소싱 자료 · 최신</option><option value="sheet">시트 · 지난 자료</option></select><button type="button" id="rcSourcingOpen" aria-label="선택한 소싱 자료 검색하여 열기">검색</button><button type="button" id="rcRestore" hidden>복원</button></div><p id="rcSourcingStatus" class="rc-filter-status" role="status" hidden></p>
       <div class="rc-collection-filters"><div class="rc-date-filter"></div><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 담당자 필터"><option value="">담당자</option></select></div>
       <div id="rcListTaxonomyManager"></div><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
       <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
@@ -76,6 +127,7 @@
     if(!categoryFilterPicker)$('#rcNoteCategoryFilter').onchange=()=>{gallerySignature='';renderList();rememberList();};$('#rcNoteCategoryFilter').onfocus=()=>window.AiselNoteCategories?.load().catch(()=>{});
     $('#rcDesignerFilter').onchange=()=>{if(window.AiselDesigners)return;gallerySignature='';renderList();rememberList();};
     $('#rcDesigner').onchange=()=>{if(window.AiselDesigners||!active||!canEdit()||permissions.referenceDesignerVersion!==212)return;active.designer=$('#rcDesigner').value;renderDesigner();markDirty();};
+    $('#rcSourcingDate').onfocus=()=>loadSourcingLinks();$('#rcSourcingOpen').onclick=openSourcingSelection;
     $('#rcSearch').oninput=()=>{gallerySignature='';renderList();rememberList();};
     $('.rc-filters').onclick=e=>{const b=e.target.closest('[data-category]');if(!b)return;topCategory=b.dataset.category;$('.rc-filters').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));gallerySignature='';renderList();rememberList();};
     fields.forEach(k=>$('[data-rc-field="'+k+'"]').addEventListener('input',()=>{if(!active)return;active[k]=$('[data-rc-field="'+k+'"]').value;markDirty();}));
@@ -378,7 +430,7 @@
       if(!await persistDraft()){message('입력을 이 기기에 보관하지 못했습니다. 현재 화면을 유지해주세요.',true);return false;}
       if(epoch!==showEpoch)return false;
     }
-    pane.hidden=false;visible=true;window.dispatchEvent(new CustomEvent('aisel-view-change',{detail:{view:'references'}}));
+    pane.hidden=false;visible=true;void loadSourcingLinks();window.dispatchEvent(new CustomEvent('aisel-view-change',{detail:{view:'references'}}));
     if(gallery){$('#rcDialog').close();showList();if(options.history!==false&&location.hash!=='#references')setRoute(null);message(dirty?'입력을 이 기기에 보관했습니다.':initialized?'':'불러오는 중…');}
     else if(!active){showList();message('불러오는 중…');}
     // Both read actions authorize on the server. Hold the read result until the

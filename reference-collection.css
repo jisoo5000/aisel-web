@@ -270,3 +270,16 @@
  #referenceCollectionView .rc-note-entry textarea{font-size:12px!important;font-weight:400;line-height:18px;color:var(--aisel-muted)}
  #referenceCollectionView .rc-note-entry textarea::placeholder{font-size:12px;color:var(--aisel-muted);opacity:1}
 }
+
+/* Sourcing navigation: visible select + adjacent search action, same AZ list controls. */
+@media screen {
+ html:root body #referenceCollectionView .rc-list-tools :is(#rcSourcingDate,#rcSourcingOpen){
+  box-sizing:border-box;height:28px;min-height:28px;margin:0;padding:0 4px;
+  border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C;
+  font-family:inherit;font-size:12px!important;font-weight:400;line-height:18px;
+ }
+ #referenceCollectionView .rc-list-tools #rcSourcingDate{flex:0 1 126px;width:126px;min-width:100px;max-width:36%}
+ #referenceCollectionView .rc-list-tools #rcSourcingOpen{flex:0 0 36px;white-space:nowrap;cursor:pointer}
+ #referenceCollectionView .rc-list-tools .rc-search{min-width:0;flex:1 1 0}
+ #referenceCollectionView #rcSourcingStatus[hidden]{display:none}
+}
