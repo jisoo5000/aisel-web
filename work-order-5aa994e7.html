@@ -1,3 +1,4 @@
+<!-- v289: visible-first thumbnails; bounded same-day media reuse; one daily failed-thumbnail recovery. -->
 <!-- v288: separate sales availability, preserve production stages and printed sheet. -->
 <!-- v284: provisional product names, owner confirmation and reversible history. -->
 <!-- native-dictation-20261031: shared phone keyboard help in Account; no AI integration. -->
@@ -306,7 +307,8 @@
 })(window);
 </script>
 <script>window.AiselSheetSalesMode=true;</script>
-<script src="aisel-protected-media.js?v=246.1"></script>
+<script src="aisel-protected-media.js?v=289"></script>
+<script src="aisel-workorder-images.js?v=289"></script>
 <script src="aisel-access-core.js?v=247"></script>
 <script src="aisel-sales-availability.js?v=288"></script>
 <script src="aisel-name-review.js?v=284"></script>
@@ -11339,7 +11341,7 @@
       .filter(([,st])=>window.AiselSalesAvailability.matches(st,galleryOrganization_.salesAvailability))
       .sort(compareRegisteredOrders_);
     window.AiselListPagination.take("workorders",pageOrders,{host:grid,filter:JSON.stringify([q,galleryFilter,galleryOrganization_]),onMore:()=>{lastGallerySig_=null;renderGallery();}})
-      .forEach(([code, st])=>{
+      .forEach(([code, st], photoIndex)=>{
         const statusInfo = STATUS_MAP[normalizeWorkOrderStatus_(st.status)] || STATUS_MAP.sampling;
         const thumb = st.thumb || "";   // 2026-08-25 수정: 색인의 압축 썸네일만 씁니다
         // 2026-08-13 수정: 카드 아래 표시를 품번에서 날짜로 변경.
@@ -11357,7 +11359,7 @@
         const names=window.colorNames_?window.colorNames_(st.selectedColors||[]):(Array.isArray(st.selectedColors)?st.selectedColors:[]);
         const sampleBadge=st.sampleRecoveryStatus==="factory"?'<button type="button" class="gcard-sample-pickup" title="원샘플 위치 확인 및 회수 기록 열기" aria-label="공장 보관 원샘플 확인">샘플 수거</button>':"";
         const safeThumb=/^(data:image\/[^,]+,|https?:\/\/|blob:)/i.test(thumb)?thumb:"";
-        card.innerHTML=`<div class="gcard-thumb">${safeThumb?`<img loading="lazy" alt="${esc_(productName)}" src="${esc_(safeThumb)}">`:'<span class="empty" aria-label="사진 없음">✎</span>'}</div>
+        card.innerHTML=`<div class="gcard-thumb">${safeThumb?`<img loading="lazy" alt="${esc_(productName)}" data-photo-source="${esc_(safeThumb)}">`:'<span class="empty" aria-label="사진 없음">✎</span>'}</div>
           <div class="gcard-info">
             <div class="gcard-name" title="${esc_(productName)}">${esc_(productName)}</div>
             <div class="gcard-code-row"><span class="gcard-code-value" title="${esc_(code)}">${esc_(code)}</span>${sampleBadge}</div>
@@ -11381,6 +11383,9 @@
           openWorkOrderByCode_(code);
         });
         grid.appendChild(card);
+        const photo=card.querySelector(".gcard-thumb img");
+        if(photo)window.AiselWorkorderImages.attach(photo,{code,source:safeThumb,version:String(st.updatedAt||""),priority:photoIndex<4,
+          readThumbnail:async key=>{const result=await woRoot.child(key).child("p1Thumb").once("value");return result.val()||"";}});
       });
   }
   // ---------- 판매성과: 카페24 요약만 읽으며 작지 원본에는 쓰지 않습니다. ----------
