@@ -1,3 +1,4 @@
+<!-- v288: separate sales availability, preserve production stages and printed sheet. -->
 <!-- v284: provisional product names, owner confirmation and reversible history. -->
 <!-- native-dictation-20261031: shared phone keyboard help in Account; no AI integration. -->
 <!-- v283: reference usage history and 24-item lists. -->
@@ -237,11 +238,11 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=287">
+<link rel="preload" as="script" href="unified-app.js?v=288">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=287">
 <link rel="preload" as="style" href="workorder-screen.css?v=270">
-<link rel="preload" as="style" href="unified-app.css?v=20261031-dictation1">
+<link rel="preload" as="style" href="unified-app.css?v=288-dictation1">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=286">
 <script id="aisel-ipad-layout-mode">
 /* All screens share the 390px mobile composition. Native print rules are preserved. */
@@ -307,6 +308,7 @@
 <script>window.AiselSheetSalesMode=true;</script>
 <script src="aisel-protected-media.js?v=246.1"></script>
 <script src="aisel-access-core.js?v=247"></script>
+<script src="aisel-sales-availability.js?v=288"></script>
 <script src="aisel-name-review.js?v=284"></script>
 <link rel="stylesheet" href="aisel-name-review.css?v=284">
 <meta name="google" content="notranslate">
@@ -3633,6 +3635,11 @@
     <div class="editor-mobile-title"><span class="editor-identity-label">품명</span><strong id="mobileProductName" role="button" tabindex="0" aria-label="품명 수정">작업지시서</strong></div>
     <div class="editor-mobile-caption"><span class="editor-identity-label">품번</span><span id="mobileProductCode" role="button" tabindex="0" aria-label="카테고리 수정"></span></div>
   </div>
+  <section id="workorderSalesAvailability" class="noprint" aria-label="판매 여부">
+    <label>판매 여부<select id="salesAvailability" aria-label="판매 여부"><option value="">미확인</option><option value="selling">판매중</option><option value="not_selling">판매 안 함</option></select></label>
+    <label id="salesUnavailableReasonField" hidden>사유<select id="salesUnavailableReason" aria-label="판매 안 함 사유"><option value="">미확인</option><option value="prelaunch">출시 전</option><option value="paused">일시 중지</option><option value="ended">판매 종료</option></select></label>
+    <span class="availability-help">작지 분류용 · 쇼핑몰 판매 설정은 변경하지 않아요.</span>
+  </section>
   <section id="nameReviewPanel" class="noprint" aria-label="상품명 확정과 변경 이력" hidden></section>
   <input type="hidden" id="supplierQualityData" value="">
   <!-- TOOLBAR (화면 전용) -->
@@ -5332,7 +5339,7 @@
   const WO_INDEX_VERSION = 4;   // 2026-09-20: 4 — 확정 안 된 가격(기본값 59,000 포함)은 색인에서 비웁니다
 
   // 목록에 실제로 쓰이는 칸만 뽑습니다. p1(사진 원본)은 어떤 경우에도 넣지 않습니다.
-  const WO_INDEX_KEYS = ["status","createdAt","updatedAt","pumMyeong","cat","yy","mm","dd","cafe24Done",
+  const WO_INDEX_KEYS = ["salesAvailability","salesUnavailableReason","status","createdAt","updatedAt","pumMyeong","cat","yy","mm","dd","cafe24Done",
     "fabricNameField","fabricSupplierField","designer","blend","factory",
     "predExpectedQty","predExpectedDays","predActualQty","predActualDays",
     "sampleRecoveryStatus","photoStage",
@@ -6712,7 +6719,7 @@
 
   const fabricVariants_=window.AiselFabricVariants.mount({document,getKey:()=>currentCode,getColors:()=>window.getSelectedColors_?.()||[]});
   const sizeCosts_=window.AiselSizeCosts.mount({document,getKey:()=>currentCode,negotiation:negotiation_,getBase:()=>({lines:[...linesWrap.querySelectorAll(".line")].map(readCostRow_),gongim:$("#gongim").value,siyage:$("#siyage").value,fixedNegotiations:fixedNegotiations_()})});
-  const TXT_IDS = ["costSizeNote","costVariantsData","fabricVariantsData","supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
+  const TXT_IDS = ["salesAvailability","salesUnavailableReason","costSizeNote","costVariantsData","fabricVariantsData","supplierQualityData","costNegotiationData","costNegotiationLinesData","yy","mm","dd","myy","mmm","mdd","designer","phone","factory","factoryPhone","fabricSupplierField","fabricNameField","blend","gongim","siyage","seq","pumMyeong","targetThreshold","fabricExpectedArrivalDate","fabricActualArrivalDate","fabricDelayReason","factoryExpectedShipDate","factoryActualShipDate","factoryDelayReason","productExpectedArrivalDate","productActualArrivalDate","productDelayReason","output",
     "predExpectedQty","predExpectedDays","predNote","predActualQty","predActualDays","predReflection",
     "planChecksData","planGrade","planWhy","planCheckCustom",
     "refLink", "refLink2",
@@ -6726,6 +6733,7 @@
     // 2026-08-13 추가: 원단정보 섹션 7개 칸. 예전에는 구글시트로만 보내고 앱에는 저장되지 않아
     // 새로고침하거나 다른 작지로 옮기면 입력값이 전부 사라졌음. 이제 다른 칸과 똑같이 자동저장됨.
     "fabricSupplier","fabricName","fabricPrice","fabricWidth","fabricSwatchNo","fabricBlend","fabricSupplierPhone","fabricNegoPrice"];
+  window.AiselSalesAvailability.mount(document);
   let loading = false;
   let lastSentJSON = null;   // 내가 방금 보낸 내용 (그대로 되돌아오면 다시 그릴 필요 없음)
   // 2026-09-20 추가: 위 lastSentJSON 비교는 서버가 키를 정렬해서 돌려주고 null 칸은 빼서 돌려주므로
@@ -8005,6 +8013,7 @@
       if(document.activeElement === el) return;
       if(el.value !== v) el.value = v;
     });
+    window.AiselSalesAvailability.refresh(document);
     refreshModifiedDateInput_();
     renderReferenceLinks_(referenceLinksFromState_(st), true);
     refreshAllDelays_();
@@ -11182,7 +11191,7 @@
     return codes.length===1?codes[0]:'';
   };
   let galleryFilter = "sampling";
-  let galleryOrganization_={date:'',category:'',designer:''},galleryFilterRefresh_=null;
+  let galleryOrganization_={date:'',category:'',designer:'',salesAvailability:'active'},galleryFilterRefresh_=null;
   function galleryCategory_(code,st){
     const raw=st.cat,provided=raw!==undefined&&raw!==null&&String(raw).trim()!=='';
     const index=provided?Number(raw):CATS.findIndex(cat=>cat.code===String(code).split('-')[2]);return CATS[window.AiselEditorValues.categoryIndex(index)]||null;
@@ -11202,7 +11211,7 @@
       for(const [code,st] of Object.entries(allWorkOrders||{})){const category=galleryCategory_(code,st);if(category)categories.set(category.code,category.name);const assignee=String(st.designer??st.currentAssigneeName??'').trim();if(assignee)designers.add(assignee);}
       return {categories:[...categories].sort((a,b)=>a[1].localeCompare(b[1],'ko')),designers:[...designers].filter(Boolean).sort((a,b)=>a.localeCompare(b,'ko'))};
     },
-    set(value){galleryOrganization_={date:validDateInput_(value.date)||'',category:String(value.category||''),designer:String(value.designer||'')};renderGallery();},
+    set(value){galleryOrganization_={date:validDateInput_(value.date)||'',category:String(value.category||''),designer:String(value.designer||''),salesAvailability:window.AiselSalesAvailability.filter(value.salesAvailability)};renderGallery();},
     subscribe(fn){galleryFilterRefresh_=fn;fn();return()=>{if(galleryFilterRefresh_===fn)galleryFilterRefresh_=null;};}
   };
   let qoStatusFilterVal = "sampling";
@@ -11213,7 +11222,7 @@
   // 탭과 같은 상태 기준으로 집계합니다. 검색 중에도 상태별 전체 개수를 유지합니다.
   function renderStatusCounts_(box, activeFilter){
     if(!box) return;
-    const orders = Object.values(allWorkOrders || {});
+    const orders = Object.values(allWorkOrders || {}).filter(st=>box.id!=="galleryCounts"||window.AiselSalesAvailability.matches(st,galleryOrganization_.salesAvailability));
     const counts = { all: orders.length };
     orders.forEach(st=>{
       const status = galleryStatus_(st);
@@ -11261,7 +11270,8 @@
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const list = Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
-      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)));
+      .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)))
+      .filter(([,st])=>window.AiselSalesAvailability.matches(st,galleryOrganization_.salesAvailability));
     if(!list.length){ alert("지금 목록에 보이는 작지가 없습니다."); return; }
     if(!confirm(`지금 화면에 보이는 작지 ${list.length}개를 구글시트로 내보낼까요? 같은 품번이 이미 시트에 있으면 그 줄을 덮어씁니다.`)) return;
     const btn = $("#galleryExportSheetBtn");
@@ -11306,7 +11316,7 @@
     const q = ($("#gallerySearchInput").value || "").trim().toLowerCase();
     const sig = JSON.stringify({
       f: galleryFilter, q, organization:galleryOrganization_,
-      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.updatedAt, st.createdAt, st.pumMyeong, st.cat, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.currentAssigneeName, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length, st.coordiCode1, st.coordiCode2, st.coordiCode3])
+      items: Object.entries(allWorkOrders || {}).map(([code, st])=> [code, st.status, st.salesAvailability, st.salesUnavailableReason, st.updatedAt, st.createdAt, st.pumMyeong, st.cat, st.yy, st.mm, st.dd, st.cafe24Done, st.fabricNameField, st.designer, st.currentAssigneeName, st.blend, st.factory, st.predExpectedQty, st.hasSp, st.spTwist, st.spSlim, st.hasSize, st.sampleRecoveryStatus, st.photoStage, JSON.stringify(st.selectedColors||null), (st.thumb||"").length, st.coordiCode1, st.coordiCode2, st.coordiCode3])
     });
     if(sig === lastGallerySig_) return; // 실제로 바뀐 게 없으면 다시 그리지 않음 (썸네일 깜빡임 방지)
     lastGallerySig_ = sig;
@@ -11326,6 +11336,7 @@
     const pageOrders=Object.entries(allWorkOrders || {})
       .filter(([code, st])=> q !== "" || galleryFilter === "all" || galleryStatus_(st) === galleryFilter)
       .filter(([code, st])=>matchesGallerySearch_(code, st, q)&&(q !== "" || matchesGalleryOrganization_(code,st)))
+      .filter(([,st])=>window.AiselSalesAvailability.matches(st,galleryOrganization_.salesAvailability))
       .sort(compareRegisteredOrders_);
     window.AiselListPagination.take("workorders",pageOrders,{host:grid,filter:JSON.stringify([q,galleryFilter,galleryOrganization_]),onMore:()=>{lastGallerySig_=null;renderGallery();}})
       .forEach(([code, st])=>{
@@ -11353,6 +11364,7 @@
             <div class="gcard-colors-row" title="${esc_(names.join(' · '))}"></div>
             <div class="gcard-date">${esc_(dateLabel)||'—'}${designerLabel && designerLabel !== '미지정' ? '　'+esc_(designerLabel) : ''}</div>
           </div>`;
+        const availability=document.createElement("div");availability.className="gcard-availability";availability.textContent=window.AiselSalesAvailability.label(st);card.querySelector(".gcard-info").append(availability);
         const colorRow=card.querySelector(".gcard-colors-row");
         names.forEach((name,index)=>{
           const chip=document.createElement("span");chip.className="gcard-color-chip"+(index>=2?" gcard-color-mobile-extra":"");chip.textContent=name;
@@ -12554,7 +12566,7 @@
     try{
       galleryFilter=state.filter === "all" ? "all" : normalizeWorkOrderStatus_(state.filter);
       $("#gallerySearchInput").value=state.query||"";
-      galleryOrganization_={date:'',category:'',designer:'',...(state.organization||{})};
+      galleryOrganization_={date:'',category:'',designer:'',salesAvailability:'active',...(state.organization||{})};
       $("#galleryTabs").querySelectorAll(".gtab").forEach(b=>b.classList.toggle("active",b.dataset.status===galleryFilter));
       detachWoRefNow_("뒤로/앞으로 이동");
       if(state.view==="editor"&&state.code&&allWorkOrders[state.code])openWorkOrderBeforeHistory_(state.code);
@@ -17694,11 +17706,11 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=287"></script>
-<script src="unified-app.js?v=287"></script>
+<script src="unified-app.js?v=288"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
 <link rel="stylesheet" href="workorder-screen.css?v=260" media="screen">
-<link rel="stylesheet" href="unified-app.css?v=20261031-dictation1">
+<link rel="stylesheet" href="unified-app.css?v=288-dictation1">
 <link rel="stylesheet" href="aisel-list-controls.css?v=286" media="screen">
 
 <style id="aisel-v198-sales-column-balance">

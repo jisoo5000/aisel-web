@@ -82,3 +82,16 @@
  html:root body #aiselDictationHelp details summary {font-weight:400;}
  html:root body #aiselDictationHelp .dictation-help-note {margin-bottom:0;color:var(--aisel-muted,#6C727C);}
 }
+
+/* Sales availability stays outside the printed workorder and production tabs. */
+html:root body #galleryView #galleryFilters {grid-template-columns:repeat(2,minmax(0,1fr));}
+html:root body #workorderSalesAvailability {display:flex;flex-wrap:wrap;align-items:end;gap:8px;padding:8px 0;color:#6C727C;font-size:12px;}
+html:root body #workorderSalesAvailability label {display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:400;}
+html:root body #workorderSalesAvailability label[hidden] {display:none!important;}
+html:root body #workorderSalesAvailability select {height:28px;min-height:28px;min-width:120px;margin:0;padding:0 4px;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;color:#6C727C;font:inherit;}
+html:root body .availability-help {line-height:28px;}
+html:root body .gcard-availability {color:#6C727C;font-size:11px;line-height:16px;overflow-wrap:anywhere;}
+@media(max-width:600px){html:root body #galleryFilters {grid-template-columns:repeat(2,minmax(0,1fr));}html:root body .availability-help{flex-basis:100%;line-height:18px;}}
+@media print {#workorderSalesAvailability,.gcard-availability {display:none!important;}}
+
+@media screen {html:root body #galleryFilters>select,html:root body #editorView #workorderSalesAvailability select {font-size:12px!important;font-weight:400;line-height:18px;}}

@@ -24,12 +24,13 @@
  const galleryFilters=window.AiselWorkorderListFilters;
  if(galleryFilters&&window.AiselDateFilter){
   const row=document.createElement('div');row.id='galleryFilters';
-  row.innerHTML='<div class="gallery-date-filter"></div><select id="galleryCategoryFilter" aria-label="카테고리"><option value="">카테고리</option></select><select id="galleryDesignerFilter" aria-label="담당자"><option value="">담당자</option></select>';
+  row.innerHTML='<div class="gallery-date-filter"></div><select id="galleryCategoryFilter" aria-label="카테고리"><option value="">카테고리</option></select><select id="galleryDesignerFilter" aria-label="담당자"><option value="">담당자</option></select><select id="gallerySalesAvailabilityFilter" aria-label="판매 여부 필터"><option value="active">판매 종료 제외</option><option value="all">판매 여부 전체</option><option value="selling">판매중</option><option value="not_selling">판매 안 함</option><option value="unknown">판매 여부 미확인</option><option value="ended">판매 종료</option></select>';
   $('gallerySearchRow').after(row);$('galleryTrashBtn').textContent='복원';
   const category=$('galleryCategoryFilter'),designer=$('galleryDesignerFilter');
   const change=patch=>galleryFilters.set({...galleryFilters.snapshot(),...patch});
   const date=window.AiselDateFilter.mount(row.firstElementChild,{inputId:'galleryDateFilter',labelId:'galleryDateFilterLabel',label:'작업지시서 날짜 필터',format:value=>value.slice(2).replaceAll('-','. '),onChange:value=>change({date:value})});
   category.onchange=()=>change({category:category.value});
+  const availability=$('gallerySalesAvailabilityFilter');availability.onchange=()=>change({salesAvailability:availability.value});
   const designerManager=document.createElement('div');designerManager.id='galleryDesignerManager';row.after(designerManager);
   const designerPicker=window.AiselDesigners?.mountPicker(designer,{mode:'filter',value:galleryFilters.snapshot().designer,placeholder:'담당자',emptyOptions:[['__unassigned__','미지정']],managerHost:designerManager,onChange:value=>change({designer:value}),onError:error=>{notice.textContent=error.message;}});
   if(!designerPicker)designer.onchange=()=>change({designer:designer.value});
@@ -37,7 +38,7 @@
    if(value&&!items.some(item=>item[0]===value))items.push([value,value]);
    const signature=JSON.stringify(items);if(select.dataset.signature!==signature){select.replaceChildren(...items.map(([key,label])=>new Option(label,key)));select.dataset.signature=signature;}select.value=value;
   }
-  galleryFilters.subscribe(()=>{const state=galleryFilters.snapshot(),choices=galleryFilters.options();date.setValue(state.date);options(category,[['','카테고리'],...choices.categories],state.category);if(designerPicker)designerPicker.refresh({value:state.designer,includeNames:choices.designers});else options(designer,[['','담당자'],['__unassigned__','미지정'],...choices.designers.map(name=>[name,name])],state.designer);});
+  galleryFilters.subscribe(()=>{const state=galleryFilters.snapshot(),choices=galleryFilters.options();date.setValue(state.date);availability.value=state.salesAvailability||"active";options(category,[['','카테고리'],...choices.categories],state.category);if(designerPicker)designerPicker.refresh({value:state.designer,includeNames:choices.designers});else options(designer,[['','담당자'],['__unassigned__','미지정'],...choices.designers.map(name=>[name,name])],state.designer);});
  }
  function info(s=''){notice.textContent=s||(window.AiselAccess?.legacy?'계정별 접근 제한 적용 전 · 기존 작업지시서를 이용할 수 있습니다.':'');}
  // Warm each collection without changing the visible pane or waiting in navigation.
