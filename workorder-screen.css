@@ -545,3 +545,53 @@
  html:root body #editorView #mobileSampleRecords .mobile-change-text,
  html:root body #editorView #sheet #materials{box-sizing:border-box;height:220px!important;min-height:220px!important;max-height:none;overflow-y:auto;resize:vertical}
 }
+
+/* v295: balanced column gutters, aligned labels, and quieter inline USP. Screen only. */
+@media screen {
+ html:root body #editorView #sheet{--aisel-editor-section-inset:12px;--aisel-photo-cost-gap:16px}
+ html:root body #editorView #sheet>.photos{padding-inline:var(--aisel-editor-section-inset)}
+ html:root body #editorView #sheet #costCell .fixed-row>.k,
+ html:root body #editorView #sheet #costCell .total-row>.k,
+ html:root body #editorView #sheet #costCell #ownerRetailRow>label{
+  box-sizing:border-box;margin:0;padding:0;white-space:nowrap;text-indent:0;text-align:left;
+  font-family:var(--aisel-font);font-size:14px!important;font-weight:600;line-height:20px;letter-spacing:0;
+ }
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption{gap:8px}
+ html:root body #editorView #workorderUspPanel .aisel-usp-heading{justify-content:flex-end;margin-bottom:4px}
+ html:root body #editorView #workorderUspPanel .aisel-usp-heading>span{display:none}
+ html:root body #editorView #workorderUspPanel #workorderUspRefresh{background:transparent}
+}
+@media screen and (max-width:359px){
+ html:root body #editorView #sheet{--aisel-editor-section-inset:6px;--aisel-photo-cost-gap:12px}
+ html:root body #editorView #sheet #costCell .cost-col-qty{width:34px}
+ html:root body #editorView #sheet #costCell .cost-col-amount{width:40px}
+}
+
+/* v295 follow-up: conditional name controls share the identity inset; row gaps use 8px. */
+@media screen {
+ html:root body #editorView .editor-mobile-head{--aisel-identity-label-width:24px;--aisel-identity-gap:8px}
+ html:root body #editorView .editor-mobile-head .editor-mobile-title{grid-template-columns:var(--aisel-identity-label-width) minmax(0,1fr);gap:var(--aisel-identity-gap)}
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption{gap:var(--aisel-identity-gap)}
+ html:root body #editorView .editor-mobile-head .editor-mobile-caption>.editor-identity-label{width:var(--aisel-identity-label-width);flex:0 0 var(--aisel-identity-label-width)}
+ html:root body #editorView .editor-mobile-head #nameReviewPanel{margin-left:calc(var(--aisel-identity-label-width) + var(--aisel-identity-gap))}
+ html:root body #editorView .toolbar{padding-top:8px;padding-bottom:4px;margin-block:0}
+ html:root body #editorView #statusBar{padding-top:4px;padding-bottom:4px;margin-block:0}
+ html:root body #editorView #mobileMeetingSummary{padding-top:4px;padding-bottom:8px;margin-top:0}
+ html:root body #editorView #sheet #costCell #costSizeNote{white-space:normal}
+}
+@media screen and (max-width:359px){
+ html:root body #editorView #sheet #costCell .cost-col-amount{width:38px}
+ html:root body #editorView #sheet #costCell .cost-table .cost-pair{padding-inline:0}
+ html:root body #editorView #sheet #costCell .cost-table .cost-pair input{padding-inline:0}
+ html:root body #editorView #sheet #costCell #costSizeNote{padding-block:0;line-height:14px}
+}
+
+/* Preserve approved final title when it wraps on a narrow screen. */
+@media screen {html:root body #editorView #sheet .cell.mat>.sec-title{height:auto;min-height:24px;white-space:normal;overflow-wrap:anywhere;font-size:16px;line-height:24px;font-weight:600}}
+
+/* The marked USP toggle is reduced by 2px in each total dimension. */
+@media screen {
+ html:root body #editorView #uspToggleBtn{box-sizing:border-box;width:calc(100% - 2px);height:26px!important;min-height:26px!important;max-height:26px!important;justify-self:center;align-self:center}
+ html:root body #editorView #uspToggleBtn[aria-expanded="true"]{background:#E9ECF2;border-color:var(--aisel-line)}
+ html:root body #editorView #sheet #costCell .fixed-loss-value{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;height:36px;min-width:0;padding:5px 8px;border:1px solid transparent;font-size:16px;font-weight:400;line-height:24px;white-space:nowrap}
+}
