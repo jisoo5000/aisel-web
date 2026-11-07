@@ -80,13 +80,13 @@
   const styleReady=new Promise((resolve,reject)=>{
    let css=document.getElementById('meetingMaterialsCss');
    if(css?.sheet){resolve();return;}
-   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=287';}
+   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=meeting-20261108';}
    css.addEventListener('load',()=>resolve(),{once:true});
    css.addEventListener('error',()=>{css.remove();reject(Error('회의자료 화면을 불러오지 못했습니다. 다시 열어주세요.'));},{once:true});
    if(!css.isConnected)document.head.append(css);
   });
   const moduleReady=window.AiselMeetingMaterials?Promise.resolve(window.AiselMeetingMaterials):new Promise((resolve,reject)=>{
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=287';
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=meeting-20261108';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
@@ -226,6 +226,7 @@
  function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='operations'?'operations':view==='staff'?'staff':view==='samples'?'samples':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
  async function guard(target,intent=navigationRevision){
   const isCurrent=()=>intent===navigationRevision;
+  if(current==='meetingmaterials'&&target!=='meetingmaterials'&&window.AiselMeetingMaterials?.canLeave()===false)return false;
   if(current==='operations'&&target!=='operations'&&window.AiselOperations?.canLeave()===false){info('작성 중인 요청을 저장하거나 닫은 뒤 이동해 주세요.');return false;}
   // A menu switch keeps the same account and document alive. Once the current
   // input is durable locally, the reference request can finish in its own pane.
@@ -595,5 +596,6 @@
   renderAccount();
  }
 })();
+
 
 

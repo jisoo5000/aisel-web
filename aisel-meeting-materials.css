@@ -80,6 +80,60 @@
  @page aiselMeeting{size:A4 landscape;margin:8mm}
 }
 
+/* Line-budgeted output shares the same human/AI fields with the live view. */
+@media print {
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page {height:190mm;min-height:190mm;box-sizing:border-box;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-grid {min-height:0;grid-template-columns:44% minmax(0,1fr);gap:6mm;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-photos {height:134mm;min-height:134mm;max-height:134mm;grid-template-columns:repeat(2,minmax(0,1fr));padding:0;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-photos:has(img:only-child) {grid-template-columns:minmax(0,1fr);}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-photos img {width:100%;height:134mm;max-height:134mm;object-fit:contain;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-field {min-height:0;padding:0;margin:0;border:0;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-right {display:flex;flex-direction:column;gap:2mm;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-value {min-height:0;font-size:10pt;line-height:12pt;white-space:pre-wrap;overflow-wrap:anywhere;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-field strong {font-size:10pt;line-height:12pt;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-title {margin-bottom:3mm;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-title .amm-value {font-size:14pt;line-height:17pt;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-handnotes {white-space:pre-line;font-size:9pt;line-height:11pt;margin:2mm 0;color:#6C727C;}
+ body.aisel-meeting-print #aiselMeetingPrintRoot .amm-output-page .amm-left>a {font-size:8pt;}
+}
+
+/* Meeting decisions and a presentation view, using the existing app tokens. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView .amm-judgment {padding:8px;border:1px solid #E3E5E7;background:#F6F7F8;border-radius:3px;margin:8px 0;}
+ html:root body #aiselMeetingMaterialsView .amm-judgment h3 {margin:0 0 6px;font-size:12px;line-height:18px;color:#2F3B52;}
+ html:root body #aiselMeetingMaterialsView .amm-decision {border-top:1px solid #E3E5E7;}
+ html:root body #aiselMeetingMaterialsView .amm-experiment summary {font-size:12px;cursor:pointer;}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form {padding:12px;margin-top:8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form label {display:block;margin:0 0 8px;font:400 12px/18px var(--aisel-font,sans-serif);}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form :is(select,textarea) {display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:6px;border:1px solid #E3E5E7;border-radius:3px;font:400 12px/18px var(--aisel-font,sans-serif);}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form textarea {height:72px;text-align:left;}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form button {margin-right:4px;}
+ html:root body #aiselMeetingMaterialsView .amm-save-status {font-size:12px;color:#6C727C;}
+ body.aisel-presenting {overflow:hidden!important;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting {position:fixed;inset:0;z-index:10020;box-sizing:border-box;width:100vw!important;max-width:none!important;height:100dvh;margin:0!important;padding:16px!important;background:#F6F7F8;display:flex;flex-direction:column;overflow:hidden;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting>:is(.amm-top,.amm-navigation,.amm-controls,.amm-count,.amm-message,.amm-more) {display:none!important;}
+ html:root body #aiselMeetingMaterialsView .amm-presenter {display:flex;flex:0 0 auto;justify-content:center;align-items:center;gap:8px;padding:0 0 12px;}
+ html:root body #aiselMeetingMaterialsView .amm-presenter[hidden] {display:none!important;}
+ html:root body #aiselMeetingMaterialsView .amm-position {min-width:80px;text-align:center;font-size:14px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-pages {display:block;overflow:auto;min-height:0;flex:1;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-page {max-width:1280px;margin:0 auto;padding:20px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-page[hidden] {display:none!important;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-grid {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-left {align-self:start;position:sticky;top:0;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-photos {height:65vh;max-height:65vh;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-photos img {height:62vh;max-height:62vh;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting :is(.amm-value,.amm-field strong,.amm-judgment h3) {font-size:16px;line-height:24px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-title .amm-value {font-size:24px;line-height:32px;}
+}
+@media screen and (max-width:700px) {
+ html:root body #aiselMeetingMaterialsView.amm-presenting {padding:8px!important;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-page {padding:8px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-grid {grid-template-columns:minmax(0,1fr);gap:12px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-left {position:static;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-photos {height:240px;max-height:240px;}
+ html:root body #aiselMeetingMaterialsView.amm-presenting .amm-photos img {height:230px;max-height:230px;}
+}
+
 /* v287: meeting directory, same app tokens; printable pages remain unchanged. */
 @media screen {
  html:root body #aiselMeetingMaterialsView .amm-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
@@ -93,3 +147,4 @@
  html:root body #aiselMeetingMaterialsView .amm-directory-more{width:100%;margin:16px 0 24px}
  html:root body #aiselMeetingMaterialsView .amm-directory[hidden]{display:none!important}
 }
+
