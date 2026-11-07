@@ -1,0 +1,37 @@
+/* Scoped to the operations workspace; never changes the workorder or print sheet. */
+#erpOperationsView{max-width:1120px;margin:0 auto;padding:16px;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif}
+#erpOperationsView[hidden]{display:none!important}
+#erpOperationsView *{box-sizing:border-box}
+#erpOperationsView h2{font-size:16px;line-height:24px;font-weight:600;margin:0 0 6px}
+#erpOperationsView p{margin:6px 0}
+#erpOperationsView .ops-muted{color:#6C727C}
+#erpOperationsView .ops-toolbar,#erpOperationsView .ops-tabs,#erpOperationsView .ops-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+#erpOperationsView button,#erpOperationsView input,#erpOperationsView select,#erpOperationsView a.ops-button{font:inherit;color:inherit;min-height:28px;border:1px solid #E3E5E7;border-radius:3px;background:white;padding:4px 8px}
+#erpOperationsView button{cursor:pointer}
+#erpOperationsView button:disabled{cursor:default;opacity:.5}
+#erpOperationsView button[aria-selected=true]{background:#EEF0F3;color:#2F3B52;font-weight:600}
+#erpOperationsView button:focus-visible,#erpOperationsView a:focus-visible{outline:2px solid #8A96A5;outline-offset:2px}
+#erpOperationsView .ops-notice{padding:12px;border:1px solid #E3E5E7;background:#F6F7F8;border-radius:3px;margin:0 0 12px}
+#erpOperationsView .ops-error{background:#FFF4F6;color:#7B4652}
+#erpOperationsView .ops-scroll{overflow:auto;border:1px solid #E3E5E7;border-radius:3px}
+#erpOperationsView table{width:100%;border-collapse:collapse;text-align:left;table-layout:auto}
+#erpOperationsView th{color:#6C727C;font-weight:400;background:#F6F7F8;white-space:nowrap}
+#erpOperationsView td,#erpOperationsView th{padding:10px 12px;border-bottom:1px solid #E3E5E7;vertical-align:top;min-width:90px}
+#erpOperationsView td.ops-name{min-width:180px;max-width:300px;overflow-wrap:anywhere}
+#erpOperationsView tr:last-child td{border:0}
+#erpOperationsView a{color:#52677F;text-decoration:underline;text-underline-offset:3px}
+#erpOperationsView details{margin-top:6px}
+#erpOperationsView summary{cursor:pointer;color:#52677F}
+#erpOperationsView .ops-empty{padding:28px;text-align:center;color:#6C727C}
+#erpOperationsView .ops-form{border:1px solid #E3E5E7;border-radius:3px;padding:16px;margin:12px 0;max-width:760px}
+#erpOperationsView .ops-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#erpOperationsView label{display:flex;flex-direction:column;gap:4px;color:#6C727C;min-width:0}
+#erpOperationsView textarea{font:inherit;color:#34383C;min-height:72px;resize:vertical;border:1px solid #E3E5E7;border-radius:3px;padding:8px;width:100%}
+#erpOperationsView input{width:100%;color:#34383C}
+#erpOperationsView .ops-badge{display:inline-block;padding:2px 6px;border-radius:3px;background:#EEF0F3;color:#52677F;white-space:nowrap}
+#erpOperationsView .ops-form .ops-actions{margin:12px 0 0}
+#erpOperationsView .ops-progress{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}
+#erpOperationsView .ops-progress div{padding:12px;border:1px solid #E3E5E7;border-radius:3px}
+#erpOperationsView .ops-progress strong{display:block;font-weight:600;margin-bottom:4px}
+@media(max-width:600px){#erpOperationsView{padding:8px}#erpOperationsView .ops-form-grid,#erpOperationsView .ops-progress{grid-template-columns:1fr}#erpOperationsView .ops-form{padding:12px}#erpOperationsView td,#erpOperationsView th{padding:8px}}
+@media print{#erpOperationsView{display:none!important}}

@@ -33,7 +33,7 @@
       :role==='logistics'?[['물류',['products','samples']],['기타',['orders','designmeeting','meetingmaterials','references','sales']]]
       :role==='md'?[['판매',['sales']],['상품',['references','orders','designmeeting','meetingmaterials']],['물류',['products','samples']]]
       :[['상품·제작',['references','designmeeting','meetingmaterials','orders']],['판매',['sales']],['물류',['products','samples']]];
-    groups.push(['관리',['staff']]);
+    groups.push(['업무',['operations']],['관리',['staff']]);
     groups.forEach(([label,views])=>{
       const caption=document.createElement('div');caption.className='erp-nav-group';caption.textContent=label;main.append(caption);
       const buttons=views.map(view=>main.querySelector('[data-main="'+view+'"]')).filter(Boolean);
