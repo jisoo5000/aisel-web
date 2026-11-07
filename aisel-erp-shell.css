@@ -50,3 +50,14 @@
 @media print {
   #aiselErpNavigation,#aiselErpMenuToggle,#aiselErpBackdrop {display:none!important;}
 }
+
+/* v299: shared navigation, restrained selection, consistent vertical spacing. */
+@media screen {
+ html:root body.aisel-erp-shell #mainBar{gap:6px}
+ html:root body.aisel-erp-shell #mainBar>.maintab{min-height:44px;height:44px}
+ html:root body.aisel-erp-shell .erp-nav-subtitle{margin:6px 0}
+ html:root body.aisel-erp-shell .erp-nav-group{margin:6px 12px 0}
+ html:root body.aisel-erp-shell #mainBar>.maintab.active{background:#EEF0F3;color:#2F3B52;border-color:transparent;font-weight:600}
+ html:root body.aisel-erp-shell #mainBar>.maintab:not(.active):not(:disabled):hover{background:#F6F6F6;border-color:transparent}
+ html:root body.aisel-erp-shell .erp-nav-close{border-color:transparent;background:transparent}
+}
