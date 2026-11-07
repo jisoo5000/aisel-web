@@ -1,12 +1,12 @@
 /* Only the application frame changes. Printed sheets and compact editors keep their rules. */
 @media screen {
-  html:root body.aisel-erp-shell {--erp-sidebar:208px;box-sizing:border-box;width:100%;max-width:none!important;min-width:0;margin:0!important;padding:64px 0 20px;background:#FFF;}
+  html:root body.aisel-erp-shell {--erp-sidebar:184px;box-sizing:border-box;width:100%;max-width:none!important;min-width:0;margin:0!important;padding:64px 0 20px;background:#FFF;}
   html:root body.aisel-erp-shell #appBrandHeader {position:fixed;inset:0 0 auto;z-index:40;max-width:none;width:100%;min-height:56px;padding:8px 12px;background:#FFF;border-bottom:1px solid #E3E5E7;}
   html:root body.aisel-erp-shell #aiselErpMenuToggle {display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px;width:36px;height:36px;padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#FFF;color:#34383C;}
   html:root body.aisel-erp-shell #aiselErpMenuToggle svg {width:20px;height:20px;}
   html:root body.aisel-erp-shell #appBrandHeader h1 {gap:6px;}
   html:root body.aisel-erp-shell #appPageTitle {font-size:14px;padding-left:6px;white-space:nowrap;}
-  html:root body.aisel-erp-shell #aiselErpNavigation {box-sizing:border-box;position:fixed;inset:0 auto 0 0;z-index:1001;width:min(280px,calc(100vw - 44px));height:100dvh;padding:20px 16px;overflow-y:auto;overscroll-behavior:contain;background:#FFF;border-right:1px solid #E3E5E7;color:#34383C;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+  html:root body.aisel-erp-shell #aiselErpNavigation {box-sizing:border-box;position:fixed;inset:0 auto 0 0;z-index:1001;width:min(224px,calc(100vw - 44px));height:100dvh;padding:20px 16px;overflow-y:auto;overscroll-behavior:contain;background:#FFF;border-right:1px solid #E3E5E7;color:#34383C;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);}
   html:root body.aisel-erp-shell #aiselErpNavigation[hidden],html:root body.aisel-erp-shell #aiselErpBackdrop[hidden] {display:none!important;}
   html:root body.aisel-erp-shell .erp-nav-heading {display:flex;align-items:center;justify-content:space-between;height:32px;}
   html:root body.aisel-erp-shell .erp-brand {font-size:22px;font-weight:700;letter-spacing:1px;}
@@ -53,10 +53,10 @@
 
 /* v299: shared navigation, restrained selection, consistent vertical spacing. */
 @media screen {
- html:root body.aisel-erp-shell #mainBar{gap:6px}
+ html:root body.aisel-erp-shell #mainBar{gap:0}
  html:root body.aisel-erp-shell #mainBar>.maintab{min-height:44px;height:44px}
  html:root body.aisel-erp-shell .erp-nav-subtitle{margin:6px 0}
- html:root body.aisel-erp-shell .erp-nav-group{margin:6px 12px 0}
+ html:root body.aisel-erp-shell .erp-nav-group{margin:12px 12px 6px}
  html:root body.aisel-erp-shell #mainBar>.maintab.active{background:#EEF0F3;color:#2F3B52;border-color:transparent;font-weight:600}
  html:root body.aisel-erp-shell #mainBar>.maintab:not(.active):not(:disabled):hover{background:#F6F6F6;border-color:transparent}
  html:root body.aisel-erp-shell .erp-nav-close{border-color:transparent;background:transparent}
