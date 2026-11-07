@@ -20,6 +20,7 @@
  const boards=main.querySelector('[data-main="meetingmaterials"]')||document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='meetingmaterials';boards.textContent='회의자료';
  const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
  main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),boards,orders);
+ const staffTab=document.createElement('button');staffTab.type='button';staffTab.className='maintab';staffTab.dataset.main='staff';staffTab.textContent='직원·권한 관리';staffTab.hidden=true;main.append(staffTab);
  // Workorder filters use only the authorized lightweight index already loaded.
  const galleryFilters=window.AiselWorkorderListFilters;
  if(galleryFilters&&window.AiselDateFilter){
@@ -93,11 +94,11 @@
  }
  function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
  function allowedWorkorder(){return window.AiselAccess?.allowed('orders')===true;}
- function allowedView(view){return view==='products'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
+ function allowedView(view){if(view==='staff')return window.AiselAccess?.isOwner===true;return view==='products'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
  function applyRole(){
   const awaitingAccess=!window.AiselAccess?.session;
   for(const button of main.querySelectorAll('[data-main]')){
-   button.hidden=!awaitingAccess&&!allowedView(button.dataset.main);
+   button.hidden=button.dataset.main==='staff'?!allowedView('staff'):!awaitingAccess&&!allowedView(button.dataset.main);
    button.disabled=awaitingAccess&&button.dataset.main!=='products';
   }
   post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
@@ -110,7 +111,7 @@
   const hash=location.hash,code=requestedLocation()?.code;
   if(!session){
    if(accessIdentity&&current)accessRestore={uid:accessIdentity,view:current,code};
-   A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();window.AiselMeetingMaterials?.hide();unmount();current='';
+   A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();window.AiselMeetingMaterials?.hide();window.AiselStaffDirectory?.hide();unmount();current='';
    document.getElementById('aiselStartupNotice')?.remove();$('appBrandHeader').hidden=false;
     info(event.detail?.error?.message||event.detail?.error||'로그인 후 작업지시서를 이용할 수 있습니다.');
     if(requestedLocation(initialLocation)?.view==='products')show('products',{replace:true});
@@ -201,7 +202,7 @@
  function select(view){
   current=view;
   document.getElementById('aiselStartupNotice')?.remove();
-  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료',orders:'작업지시서',editor:'작업지시서'})[view]||'작업지시서';
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료',orders:'작업지시서',editor:'작업지시서',staff:'직원·권한 관리'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(view!=='products')unmount();pane.hidden=view!=='products';
@@ -209,8 +210,9 @@
   if(view!=='designmeeting')$('designMeetingView').hidden=true;
   if(view!=='moodboards')window.AiselMoodboards?.hide();
   if(view!=='meetingmaterials')window.AiselMeetingMaterials?.hide();
+  if(view!=='staff')window.AiselStaffDirectory?.hide();
  }
- function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
+ function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='staff'?'staff':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
  async function guard(target,intent=navigationRevision){
   const isCurrent=()=>intent===navigationRevision;
   // A menu switch keeps the same account and document alive. Once the current
@@ -237,13 +239,14 @@
   else if(view==='moodboards')await window.AiselMoodboards.show();
   else if(view==='meetingmaterials')await (await meetingMaterials()).show();
   else if(view==='products')mount();
+  else if(view==='staff')window.AiselStaffDirectory?.show();
   else if(view==='sales')await A.sales();
   else if(view==='editor'&&previousCode)await A.open(previousCode);
   else{await A.orders();select('orders');}
   restoreLocation(previousLocation);
  }
  async function show(view,{history:writeHistory=true,replace=false,code,id}={}){
-  if(!['products','orders','sales','editor','references','designmeeting','moodboards','meetingmaterials'].includes(view))return false;
+  if(!['products','orders','sales','editor','references','designmeeting','moodboards','meetingmaterials','staff'].includes(view))return false;
   if(!allowedView(view)){info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return false;}
   if(view==='moodboards'&&current===view&&window.AiselMoodboards?.visible)return true;
   if(view==='editor'&&(typeof code!=='string'||!code.trim()||code.length>160||/[.#$\[\]\/\u0000-\u001f]/.test(code)))return false;
@@ -271,6 +274,11 @@
     const materials=await meetingMaterials();if(intent!==navigationRevision||!allowedView(view))return false;
     await materials.show({hash:id,background:true});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
     document.body.dataset.aiselListView='meetingmaterials';
+   }
+   else if(view==='staff'){
+    if(!window.AiselStaffDirectory)await new Promise(resolve=>queueMicrotask(resolve));
+    if(!window.AiselStaffDirectory?.show())throw Error('직원 목록을 불러오지 못했습니다. 새로고침 후 다시 열어주세요.');
+    document.body.dataset.aiselListView='staff';
    }
    else if(view==='orders')await A.orders();
    else if(view==='sales'){await A.sales();window.AiselSheetSalesSource?.refreshIfStale?.();}
@@ -391,6 +399,7 @@
    const reloadCode=window.AiselReloadStartup?.workorderCode;
    if(reloadCode)return {view:'editor',code:reloadCode};
    if(hash==='#workorders')return {view:'orders'};
+   if(hash==='#staff')return {view:'staff'};
    if(hash==='#sales')return {view:'sales'};
    if(hash==='#products')return {view:'products'};
    const code=new URLSearchParams(locationSnapshot?.search??location.search).get('code');if(code)return {view:'editor',code};

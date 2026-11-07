@@ -725,3 +725,8 @@
   color:var(--aisel-muted,#6C727C);-webkit-text-fill-color:var(--aisel-muted,#6C727C);
  }
 }
+
+/* v300: align both five-button rows; the USP toggle keeps its compact height. */
+@media screen {
+ html:root body #editorView #uspToggleBtn{width:100%}
+}

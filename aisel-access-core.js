@@ -75,13 +75,19 @@
    return [code,projected];
   }));
  }
+ // The authenticated account supplies only the default for a NEW workorder.
+ function defaultDesigner(){
+  if(!session?.uid||session.uid!==user()?.uid||session.active!==true||session.role!=='designer'||session.passwordChangeRequired)return '';
+  const name=String(session.displayName||'').trim();
+  return name&&!name.includes('@')&&name.length<=80?name:'';
+ }
  function start(){if(started||!auth())return;started=true;
   auth().subscribe(()=>{clear();refresh().catch(()=>{});});
   auth().initialized.then(()=>refresh()).catch(()=>{});
   timer=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},60000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh().catch(()=>{});});
  }
- root.AiselAccess={request,refresh,subscribe,allowed,watchLegacy,projectWorkorders,start,get session(){return session;},get legacy(){return session?.legacy===true;},get generation(){return epoch;},get ownOnly(){return !!session?.permissions?.ownOnly;},get isOwner(){return session?.role==='owner'&&session.active===true;}};
+ root.AiselAccess={request,refresh,subscribe,allowed,watchLegacy,projectWorkorders,defaultDesigner,start,get session(){return session;},get legacy(){return session?.legacy===true;},get generation(){return epoch;},get ownOnly(){return !!session?.permissions?.ownOnly;},get isOwner(){return session?.role==='owner'&&session.active===true;}};
  root.addEventListener('aisel-session-ready',start);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })(window);

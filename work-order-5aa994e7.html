@@ -248,10 +248,10 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=role-start-20261108">
+<link rel="preload" as="script" href="unified-app.js?v=staff-20261108">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
-<link rel="preload" as="style" href="workorder-screen.css?v=20261108-date">
+<link rel="preload" as="style" href="workorder-screen.css?v=staff-20261108">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=294">
 <script id="aisel-ipad-layout-mode">
@@ -318,7 +318,7 @@
 <script>window.AiselSheetSalesMode=true;</script>
 <script src="aisel-protected-media.js?v=289"></script>
 <script src="aisel-workorder-images.js?v=289"></script>
-<script src="aisel-access-core.js?v=247"></script>
+<script src="aisel-access-core.js?v=staff-20261108"></script>
 <script src="aisel-sales-availability.js?v=288"></script>
 <script src="aisel-name-review.js?v=290"></script>
 <link rel="stylesheet" href="aisel-name-review.css?v=290">
@@ -10933,7 +10933,7 @@
     linesWrap.querySelectorAll(".line").forEach(row=>row.negotiationEditor_?.remove());linesWrap.innerHTML="";$("#costNegotiationData").value="";$("#costNegotiationLinesData").value="";$("#supplierQualityData").value="";
     [["원단","5,000","1"],["밴드","",""]].forEach(l=>makeLine(l[0],l[1],l[2]));
     setPhoto("#ph1", "", "");
-    $("#designer").value=""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
+    $("#designer").value=window.AiselAccess?.defaultDesigner?.()||""; $("#phone").value=""; $("#factory").value=""; $("#factoryPhone").value=""; $("#fabricSupplierField").value=""; $("#fabricNameField").value=""; $("#blend").value="";
     // 2026-08-21 추가: 품명 칸이 빠져 있어서 새 작지를 만들어도 직전 작지 품명이 그대로 남아 있었습니다.
     // dataset.auto도 "1"로 되돌려서 카테고리를 고르면 다시 자동으로 이름이 채워지게 합니다.
     $("#pumMyeong").value = ""; pumInput.dataset.auto = "1";
@@ -17798,10 +17798,10 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=287"></script>
-<script src="unified-app.js?v=role-start-20261108"></script>
-<link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
-<script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=20261108-date" media="screen">
+<script src="aisel-access-ui.js?v=staff-20261108"></script>
+<script src="unified-app.js?v=staff-20261108"></script>
+<link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=staff-20261108" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
 <link rel="stylesheet" href="aisel-list-controls.css?v=294" media="screen">
 
@@ -17859,4 +17859,4 @@ window.AiselUnifiedAdapter={
 
 <!-- ERP navigation: existing router and permissions remain authoritative. -->
 <link rel="stylesheet" href="aisel-erp-shell.css?v=299" media="screen">
-<script src="aisel-erp-shell.js?v=1"></script>
+<script src="aisel-erp-shell.js?v=staff-20261108"></script>

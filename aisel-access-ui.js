@@ -6,7 +6,9 @@
  const el=(tag,text,attrs={})=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;for(const [key,value]of Object.entries(attrs))node.setAttribute(key,String(value));return node;};
  const button=(text,action)=>{const node=el('button',text,{type:'button'});node.addEventListener('click',action);return node;};
  const id=()=>crypto.randomUUID();
- let staff=[],manager=null,detailCode='',metaEpoch=0;
+ let staff=[],manager=null,detailCode='',metaEpoch=0,staffEpoch=0;
+ const roleLabels={owner:'대표',designer:'디자이너',md:'MD',logistics:'물류'};
+ const startLabels={owner:'작업지시서',designer:'작업지시서',md:'판매성과',logistics:'출고현황'};
  function modal(title){const dialog=el('dialog',null,{class:'aisel-access-dialog noprint'}),heading=el('div',null,{class:'access-heading'}),body=el('div',null,{class:'access-content'}),status=el('p','',{role:'status','aria-live':'polite'});heading.append(el('h2',title),button('닫기',()=>dialog.close()));dialog.append(heading,body,status);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();return {dialog,body,status};}
  async function run(view,fn){if(view.busy)return;view.busy=true;view.status.textContent='확인 중…';const buttons=[...view.dialog.querySelectorAll('button')];buttons.forEach(node=>node.disabled=true);try{await fn();}catch(error){view.status.textContent=error.message||'처리하지 못했습니다. 다시 확인해주세요.';}finally{view.busy=false;buttons.filter(node=>node.isConnected).forEach(node=>node.disabled=false);}}
  function field(parent,label,type='text'){const wrap=el('label',null,{class:'access-field'}),input=el('input',null,{type});wrap.append(el('span',label),input);parent.append(wrap);return input;}
@@ -58,10 +60,69 @@
   const load=button('대상 확인',()=>run(view,async()=>{if(!select.value)throw Error('받는 사람을 선택해주세요.');const data=await access.request(assign?'unassignedWorkorders':'previewHandover',assign?{}:{fromUid:person.uid,toUid:select.value});rows=data.items||[];loadedTo=select.value;retryItems=null;requestId=null;list.replaceChildren();for(const row of rows){const label=el('label',null,{class:'access-check'}),check=el('input',null,{type:'checkbox','data-code':row.code});label.append(check,el('span',(row.title||row.code)+' · '+row.code));list.append(label);}view.status.textContent=rows.length+'건 · 인계할 자료를 선택해주세요.';update();}));toolbar.append(load,button('전체 선택',()=>{list.querySelectorAll('input').forEach(node=>node.checked=true);update();}),button('선택 해제',()=>{list.querySelectorAll('input').forEach(node=>node.checked=false);update();}));
   const submit=button('0건 '+(assign?'배정':share?'공동 접근':'인계'),()=>run(view,async()=>{if(!select.value||loadedTo!==select.value)throw Error('받는 사람이 바뀌었습니다. 대상을 다시 확인해주세요.');const items=retryItems||rows.filter(row=>list.querySelector('input[data-code="'+CSS.escape(row.code)+'"]')?.checked).map(row=>({code:row.code,revision:row.revision}));if(!items.length)throw Error('자료를 선택해주세요.');requestId=requestId||id();const data=await access.request(assign?'assignWorkorders':share?'shareHandover':'handover',{...(assign?{}:{fromUid:person.uid}),toUid:select.value,items,requestId});const done=data.completed||[],conflicts=data.conflicts||[];result.textContent='완료 '+done.length+'건 · 변경되어 제외 '+conflicts.length+'건';for(const code of done){const node=list.querySelector('input[data-code="'+CSS.escape(code)+'"]');if(node){node.checked=false;node.disabled=true;}}retryItems=null;requestId=null;view.status.textContent=conflicts.length?'제외된 자료는 현재 담당자를 다시 확인해주세요.':'선택한 자료를 처리했습니다.';update();window.dispatchEvent(new CustomEvent('aisel-access-workorders-changed'));await loadStaff();}));view.body.append(submit);function update(){const count=list.querySelectorAll('input:checked:not(:disabled)').length;submit.textContent=count+'건 '+(assign?'배정':share?'공동 접근':'인계');submit.disabled=!count||loadedTo!==select.value;}list.addEventListener('change',()=>{retryItems=null;requestId=null;update();});select.addEventListener('change',update);
  }
- function openAssigned(person){const view=modal((person.displayName||person.email)+' · 담당 자료');run(view,async()=>{const data=await access.request('staffWorkorders',{uid:person.uid});view.body.replaceChildren();for(const row of data.items||[]){const link=button((row.title||row.code)+' · '+row.code,()=>{view.dialog.close();manager?.dialog.close();window.AiselUnified?.show('editor',{code:row.code});});view.body.append(link);}view.status.textContent=(data.items||[]).length+'건';});}
- async function loadStaff(){if(!manager?.dialog.open)return;const data=await access.request('staffList');staff=data.staff||[];const body=manager.body;body.replaceChildren();const enabled=access.session?.enabled===true;body.append(el('p',enabled?'계정별 접근 제한이 적용되어 있습니다.':'계정별 접근 제한 준비 중입니다. 자료 배정과 공유 경로 확인 후 적용할 수 있습니다.',{class:'access-hint'}));const actions=el('div',null,{class:'access-actions'});actions.append(button('계정 추가',openCreate),button('기존 계정 연결',openLink),button('미배정 '+(data.unassignedCount||0)+'건',()=>openSelection(null,true)),button('판매성과 연결',openSalesMappings),button('적용 준비 확인',openPreflight));body.append(actions);for(const person of staff){const row=el('article',null,{class:'access-staff-row'}),heading=el('div');heading.append(el('strong',person.displayName||person.email),el('small',(person.credentialState==='unissued'?'비밀번호 미발급':person.active?'사용 중':'사용 중지')+' · '+(person.assignedCount||0)+'건'));row.append(heading,el('p',person.loginId||person.email||''));const controls=el('div',null,{class:'access-actions'});controls.append(button('담당 자료 보기',()=>openAssigned(person)),button('공동 인수인계',()=>openSelection(person,false,true)),button('담당자 이관',()=>openSelection(person)),button(person.active?'사용 중지':'다시 사용',()=>openToggle(person)));if(person.loginId){const password=button('비밀번호 설정',()=>issuePassword(person));password.disabled=!enabled||!person.active;password.title=enabled?'':'접근 제한을 적용한 뒤 발급할 수 있습니다.';controls.append(password);}row.append(controls);body.append(row);}manager.status.textContent=staff.length+'명';}
+ function openAssigned(person){const view=modal((person.displayName||person.email)+' · 담당 자료');run(view,async()=>{const data=await access.request('staffWorkorders',{uid:person.uid});view.body.replaceChildren();for(const row of data.items||[]){const link=button((row.title||row.code)+' · '+row.code,()=>{view.dialog.close();window.AiselUnified?.show('editor',{code:row.code});});view.body.append(link);}view.status.textContent=(data.items||[]).length+'건';});}
+ function managerVisible(){return manager&&manager.dialog.isConnected&&!manager.dialog.hidden;}
+ function hideManager(){staffEpoch++;if(managerVisible())document.querySelectorAll('.aisel-access-dialog').forEach(dialog=>dialog.close());if(manager){manager.dialog.hidden=true;manager.body.replaceChildren();manager.status.textContent='';}staff=[];}
+ function staffActions(person){
+  const view=modal((person.displayName||person.email)+' · 계정 관리');
+  view.body.append(el('p',[person.loginId||person.email,roleLabels[person.role]||person.role].filter(Boolean).join(' · ')));
+  const controls=el('div',null,{class:'access-actions'});
+  if(person.role==='designer')controls.append(button('담당 자료 보기',()=>openAssigned(person)),button('공동 인수인계',()=>openSelection(person,false,true)),button('담당자 이관',()=>openSelection(person)));
+  controls.append(button(person.active?'사용 중지':'다시 사용',()=>openToggle(person)));
+  if(person.loginId){const password=button('비밀번호 설정',()=>issuePassword(person));password.disabled=access.session?.enabled!==true||!person.active;password.title=access.session?.enabled?'':'접근 제한을 적용한 뒤 발급할 수 있습니다.';controls.append(password);}
+  view.body.append(controls);
+ }
+ function renderStaff(){
+  if(!managerVisible()||!access.isOwner)return;
+  const query=manager.query.trim().toLocaleLowerCase(),rows=staff.filter(person=>[person.displayName,person.loginId,person.email,roleLabels[person.role]].join(' ').toLocaleLowerCase().includes(query));
+  const tbody=manager.body.querySelector('tbody');if(!tbody)return;tbody.replaceChildren();
+  for(const person of rows){
+   const row=el('tr',null,{'data-staff-uid':person.uid}),name=String(person.displayName||'').trim();
+   const automatic=person.role==='designer'&&name&&!name.includes('@')?name:'—';
+   const values=[name||'이름 미등록',person.loginId||person.email||'미연결',roleLabels[person.role]||person.role||'확인 필요',startLabels[person.role]||'—',automatic,person.credentialState==='unissued'?'비밀번호 미발급':person.active?'사용 중':'사용 중지'];
+   values.forEach((value,index)=>{const cell=el(index===0?'th':'td',value,{'data-label':['이름','로그인 아이디','역할·권한','시작 화면','자동 담당자','상태'][index]});if(index===0)cell.scope='row';row.append(cell);});
+   const cell=el('td',null,{'data-label':'관리'});if(person.role!=='owner')cell.append(button('관리',()=>staffActions(person)));else cell.textContent='대표 계정';row.append(cell);tbody.append(row);
+  }
+  if(!rows.length){const row=el('tr'),cell=el('td','검색 결과가 없습니다.',{colspan:7});row.append(cell);tbody.append(row);}
+  manager.status.textContent=(query?'검색 '+rows.length+'명 / ':'')+'등록 계정 '+staff.length+'명';
+ }
+ async function loadStaff(){
+  if(!managerVisible()||!access.isOwner)return;
+  const view=manager,epoch=++staffEpoch,uid=access.session?.uid;
+  view.status.textContent='직원 목록을 불러오는 중…';
+  let data;
+  try{data=await access.request('staffList');}catch(error){
+   if(epoch===staffEpoch&&managerVisible()&&access.isOwner&&uid===access.session?.uid){view.status.textContent=error.message||'직원 목록을 불러오지 못했습니다.';view.body.replaceChildren(button('다시 불러오기',loadStaff));}
+   return;
+  }
+  if(epoch!==staffEpoch||manager!==view||!managerVisible()||!access.isOwner||uid!==access.session?.uid)return;
+  // Live registered accounts only. Never infer an ID or grant from an employee name.
+  const accounts=new Map((data.staff||[]).map(person=>[person.uid,person]));
+  if(uid)accounts.set(uid,{...access.session});
+  staff=[...accounts.values()].sort((a,b)=>(a.role==='owner'?-1:b.role==='owner'?1:0)||String(a.displayName||'').localeCompare(String(b.displayName||''),'ko'));
+  const body=view.body;body.replaceChildren();
+  const actions=el('div',null,{class:'access-actions'});
+  actions.append(button('디자이너 아이디 추가',openCreate),button('기존 직원 계정 연결',openLink),button('미배정 '+(data.unassignedCount||0)+'건',()=>openSelection(null,true)),button('새로고침',loadStaff));
+  body.append(actions);
+  const search=el('input',null,{type:'search',placeholder:'검색','aria-label':'직원 검색',class:'staff-search'});search.value=view.query;search.addEventListener('input',()=>{view.query=search.value;renderStaff();});body.append(search);
+  const wrap=el('div',null,{class:'staff-table-wrap',tabindex:0,'aria-label':'직원 아이디와 권한 표'}),table=el('table',null,{class:'staff-table'}),caption=el('caption','등록된 직원 계정과 담당자 연결'),head=el('thead'),tr=el('tr');
+  for(const title of ['이름','로그인 아이디','역할·권한','시작 화면','자동 담당자','상태','관리'])tr.append(el('th',title,{scope:'col'}));
+  head.append(tr);table.append(caption,head,el('tbody'));wrap.append(table);body.append(wrap);
+  body.append(el('p','자동 담당자는 새 작업지시서에 입력됩니다. 기존 자료의 담당자는 유지됩니다.',{class:'access-hint'}));
+  const more=el('details'),summary=el('summary','접근 설정');more.append(summary);
+  more.append(el('p',access.session?.enabled===true?'계정별 접근 제한 적용 중':'계정별 접근 제한 준비 중 · 자료 배정과 공유 경로를 확인해주세요.',{class:'access-hint'}),el('p','출고현황은 공통 메뉴입니다. 자료 조회·수정은 계정에 등록된 권한과 배정을 따릅니다.',{class:'access-hint'}));
+  const settings=el('div',null,{class:'access-actions'});settings.append(button('판매성과 연결',openSalesMappings),button('적용 준비 확인',openPreflight));more.append(settings);body.append(more);renderStaff();
+ }
+ function showManager(){
+  if(!access.isOwner)return false;
+  if(!manager){
+   const panel=el('section',null,{id:'aiselStaffDirectoryView',class:'aisel-staff-directory noprint','aria-label':'직원·권한 관리'}),heading=el('h2','직원·권한 관리'),body=el('div',null,{class:'access-content'}),status=el('p','',{role:'status','aria-live':'polite'});
+   panel.append(heading,body,status);document.body.append(panel);manager={dialog:panel,body,status,query:''};
+  }
+  manager.dialog.hidden=false;loadStaff();return true;
+ }
  function openPreflight(){const view=modal('계정별 접근 제한 준비');run(view,async()=>{const report=await access.request('preflight');view.body.append(el('p',report.enabled?'이미 적용되어 있습니다.':'실제 계정·자료 배정·공유 경로의 확인 결과입니다.'));const labels={unassigned_workorders:'미배정 작업지시서 '+(report.unassignedCount||0)+'건의 담당자를 연결해주세요.',unlinked_active_staff:'기존 직원 계정을 연결해주세요.',inactive_assignee:'사용 중지된 계정에 배정된 자료를 확인해주세요.',verify_rulesDeployed:'앱 접근 제한 연결 확인이 필요합니다.',verify_externalSalesSecured:'판매성과 공유 경로 확인이 필요합니다.',verify_photoAccessSecured:'사진 접근 제한 확인이 필요합니다.',verify_appsScriptRoutesSecured:'자동 수집과 공유 연결 확인이 필요합니다.'};const issues=report.blockers||report.issues||[];for(const issue of issues)view.body.append(el('p',typeof issue==='string'?(labels[issue]||'추가 연결 확인이 필요합니다.'):issue.message||'추가 연결 확인이 필요합니다.'));if(report.ready===true&&!report.enabled)view.body.append(button('접근 제한 적용',()=>run(view,async()=>{await access.request('activate',{expectedRevision:report.revision,requestId:id()});await access.refresh();view.status.textContent='계정별 접근 제한을 적용했습니다.';await loadStaff();})));else if(!report.enabled)view.body.append(el('p','준비가 완료되면 적용할 수 있습니다. 직원의 계정은 자동 중지되지 않습니다.'));view.status.textContent='확인 완료';});}
- function openManager(){if(!access.isOwner)return;manager=modal('계정 관리');run(manager,loadStaff);}
+ function openManager(){if(access.isOwner)window.AiselUnified?.show('staff');}
  function openSalesMappings(){
   const view=modal('판매성과 연결');let inventory=null,requestId=null;
   view.body.append(el('p','신상성과 상품을 작업지시서 품번에 연결합니다. 담당자 접근은 작업지시서 배정을 따릅니다.',{class:'access-hint'}));
@@ -75,14 +136,15 @@
   view.body.append(button('연결 저장',()=>run(view,async()=>{const row=item();if(!row||!target.value)throw Error('상품과 작업지시서 품번을 선택해주세요.');requestId=requestId||id();await access.request('mapSalesProduct',{itemKey:row.itemKey,code:target.value,expectedRevision:row.revision||0,coreSku:core.checked,expectedProductUpdatedAt:profile().updatedAt||0,requestId});await load();view.status.textContent='상품 연결을 저장했습니다.';window.AiselSheetSalesSource?.invalidate?.();})));
   run(view,load);
  }
- function mountAccount(){const actions=$('aiselAccountDialog')?.querySelector('.account-actions');if(!actions)return;let manage=$('aiselStaffManage');if(!manage){manage=button('계정 관리',()=>{$('aiselAccountDialog').close();openManager();});manage.id='aiselStaffManage';actions.prepend(manage);}manage.hidden=!access.isOwner;}
+ function mountAccount(){const actions=$('aiselAccountDialog')?.querySelector('.account-actions');if(!actions)return;let manage=$('aiselStaffManage');if(!manage){manage=button('직원·권한 관리',()=>{$('aiselAccountDialog').close();openManager();});manage.id='aiselStaffManage';actions.prepend(manage);}manage.hidden=!access.isOwner;}
  function metadata(code){detailCode=code||'';const epoch=++metaEpoch;let area=$('aiselWorkorderAttribution');if(!area){area=el('section',null,{id:'aiselWorkorderAttribution',class:'noprint'});$('editorView')?.append(area);}area.replaceChildren();area.hidden=access.legacy===true;if(!code||!access.session||access.legacy)return;
   access.request('assignmentMeta',{code}).then(data=>{if(epoch!==metaEpoch||detailCode!==code)return;const assignment=data.assignment||{};const line=el('div',null,{class:'access-attribution-line'}),name=assignmentText(assignment).replace(/^담당자 /,'');line.append(el('span','담당자 '+name,{class:'access-assignee-name'}));const details=el('div',null,{class:'access-attribution-history',id:'aiselAssignmentHistory'});details.hidden=true;const toggle=button('변경이력',()=>{details.hidden=!details.hidden;toggle.setAttribute('aria-expanded',String(!details.hidden));});toggle.className='access-history-toggle';toggle.setAttribute('aria-expanded','false');toggle.setAttribute('aria-controls',details.id);line.append(el('span','최초 작성자 '+(assignment.creatorName||'미확인'),{class:'access-original-creator'}),toggle);area.append(line);for(const entry of data.history||[]){const date=entry.at?new Date(entry.at).toLocaleString('ko-KR'):'';details.append(el('p',[date,entry.type||'인수인계',entry.actorName||'',entry.fromName||entry.oldCode||'',entry.toName||entry.newCode||''].filter(Boolean).join(' · ')));}if(!(data.history||[]).length)details.append(el('p','등록된 변경 이력이 없습니다.'));area.append(details);if(access.isOwner)details.append(button('담당자 변경',()=>{openManager();}));}).catch(error=>{if(epoch===metaEpoch)area.textContent=error.code==='not_found'?'최초 작성자 미확인':error.message;});
  }
- access.subscribe(()=>{mountAccount();if(detailCode)metadata(detailCode);if(!access.isOwner){staff=[];manager?.dialog.close();document.querySelectorAll('.aisel-access-dialog').forEach(dialog=>dialog.close());}});
+ access.subscribe(()=>{mountAccount();if(detailCode)metadata(detailCode);if(!access.isOwner){hideManager();document.querySelectorAll('.aisel-access-dialog').forEach(dialog=>dialog.close());}});
  window.addEventListener('aisel-session-ready',mountAccount);
  window.addEventListener('aisel-workorder-loaded',event=>{if(detailCode!==event.detail?.code)metadata(event.detail?.code);});
  window.addEventListener('aisel-workorder-detached',()=>metadata(''));
  window.addEventListener('aisel-access-workorders-changed',()=>{if(detailCode)metadata(detailCode);});
+ window.AiselStaffDirectory={show:showManager,hide:hideManager};
  mountAccount();
 })();

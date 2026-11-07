@@ -32,3 +32,33 @@
 @media screen { html:root body #salesView #salesGroupTabs {display:flex!important;gap:0;} html:root body #salesView #salesGroupTabs [hidden] {display:none!important;} }
 
 @media screen { body[data-aisel-access="restricted"] :is(#deleteBtn,#galleryTrashBtn,#moveCodeBtn,#workOrderTrashPanel) {display:none!important;} }
+
+/* Staff directory: screen only; compact six-pixel spacing and readable mobile rows. */
+@media screen {
+ html:root body .aisel-staff-directory {box-sizing:border-box;width:100%;max-width:1040px;margin:0 auto;padding:6px;color:var(--aisel-ink,#34383C);font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body .aisel-staff-directory[hidden] {display:none!important;}
+ .aisel-staff-directory h2 {font:600 16px/24px var(--aisel-screen-font,'AISEL Screen',sans-serif);margin:0 0 6px;}
+ .aisel-staff-directory p,.aisel-staff-directory details {margin:6px 0;}
+ .aisel-staff-directory .access-hint {color:var(--aisel-muted,#6C727C);}
+ .aisel-staff-directory .access-actions {display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;}
+ html:root body .aisel-staff-directory :is(button,input) {box-sizing:border-box;height:32px!important;min-height:32px!important;padding:0 8px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px;background:white;color:inherit;font:inherit;font-size:12px!important;line-height:18px!important;max-width:100%;}
+ html:root body .aisel-staff-directory .staff-search {height:28px!important;min-height:28px!important;width:220px;padding-left:26px;background:no-repeat 6px center/14px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236C727C' stroke-width='1.4'%3E%3Ccircle cx='8.5' cy='8.5' r='5.5'/%3E%3Cpath d='m13 13 4 4'/%3E%3C/svg%3E");}
+ html:root body .aisel-staff-directory :is(button,input,summary,.staff-table-wrap):focus-visible {outline:2px solid #8A96A5;outline-offset:2px;}
+ .staff-table-wrap {width:100%;overflow-x:auto;margin:6px 0;}
+ html:root body .staff-table {width:100%;min-width:720px;border-collapse:collapse;table-layout:auto;font:inherit;}
+ html:root body .staff-table caption {text-align:left;color:#6C727C;padding:6px 0;}
+ html:root body .staff-table :is(th,td) {padding:6px;text-align:left;vertical-align:middle;border:1px solid #E3E5E7;overflow-wrap:anywhere;font:inherit;}
+ html:root body .staff-table thead th {font-weight:600;background:#F4F5F6;white-space:nowrap;}
+ html:root body .staff-table tbody th {font-weight:600;}
+ .aisel-staff-directory summary {cursor:pointer;color:#6C727C;}
+}
+@media screen and (max-width:639px) {
+ html:root body .staff-table {min-width:0;}
+ .staff-table thead {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+ .staff-table caption,.staff-table tbody {display:block;width:100%;}
+ .staff-table tbody tr {display:block;border:1px solid #E3E5E7;border-radius:3px;margin-bottom:6px;padding:6px;}
+ html:root body .staff-table tbody :is(th,td) {display:grid;grid-template-columns:84px minmax(0,1fr);gap:6px;border:0;padding:3px 0;text-align:left;min-width:0;}
+ .staff-table tbody :is(th,td)::before {content:attr(data-label);font-weight:400;color:#6C727C;}
+ .staff-table tbody button {justify-self:start;}
+ .staff-table tbody td[colspan] {display:block;}
+}

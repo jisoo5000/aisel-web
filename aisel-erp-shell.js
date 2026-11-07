@@ -22,17 +22,23 @@
   backdrop.className = 'noprint'; backdrop.tabIndex = -1; backdrop.setAttribute('aria-label', '업무 메뉴 닫기');
   header.prepend(toggle); header.before(aside, backdrop); aside.append(heading, subtitle, main);
   main.setAttribute('role', 'navigation'); main.setAttribute('aria-label', '업무 순서');
-  const groups = [
-    ['상품·제작', ['references', 'designmeeting', 'meetingmaterials', 'orders']],
-    ['판매', ['sales']], ['물류', ['products']]
-  ];
   const labels = [];
-  groups.forEach(([label, views]) => {
-    const caption = document.createElement('div'); caption.className = 'erp-nav-group'; caption.textContent = label;
-    main.append(caption);
-    const buttons = views.map(view => main.querySelector('[data-main="' + view + '"]')).filter(Boolean);
-    buttons.forEach(button => main.append(button)); labels.push({ caption, buttons });
-  });
+  let arrangedRole = null;
+  function arrangeForRole() {
+    const session=window.AiselAccess?.session,role=session?.role||'';
+    subtitle.textContent=session?.displayName?[session.displayName,({designer:'디자이너',logistics:'물류',md:'MD',owner:'대표'})[role]].filter(Boolean).join(' · '):'업무 관리';
+    if(arrangedRole===role)return;arrangedRole=role;
+    labels.forEach(({caption})=>caption.remove());labels.length=0;
+    const production=['상품·제작',role==='designer'?['orders','references','designmeeting','meetingmaterials']:['references','designmeeting','meetingmaterials','orders']];
+    const groups=role==='logistics'?[['물류',['products']],['판매',['sales']],production]:[production,['판매',['sales']],['물류',['products']]];
+    groups.push(['관리',['staff']]);
+    groups.forEach(([label, views]) => {
+      const caption=document.createElement('div');caption.className='erp-nav-group';caption.textContent=label;main.append(caption);
+      const buttons=views.map(view=>main.querySelector('[data-main="'+view+'"]')).filter(Boolean);
+      buttons.forEach(button=>main.append(button));labels.push({caption,buttons});
+    });
+  }
+  arrangeForRole();
   let drawerOpen = false, desktopCollapsed = false, savedInert = [];
   function restoreBackground() {
     savedInert.forEach(([element, wasInert]) => { element.inert = wasInert; }); savedInert = [];
@@ -87,7 +93,7 @@
     // A committed route updates active/aria-pressed. A refused save leaves the drawer open.
     if (drawerOpen && records.some(record => record.attributeName === 'aria-pressed')) setDrawer(false);
   }).observe(main, { subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'class', 'aria-pressed'] });
-  window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
+  window.addEventListener('aisel-access-change', () => { arrangeForRole(); sync(); if (drawerOpen) setDrawer(false); });
   media.addEventListener('change', () => { desktopCollapsed = false; setDrawer(false, false); });
   body.classList.add('aisel-erp-shell'); sync(); render();
 })();
