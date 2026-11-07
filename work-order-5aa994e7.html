@@ -1,3 +1,4 @@
+<!-- v291: remove default name controls; align section headings; factory save / PDF print labels. -->
 <!-- v290: compact name confirmation; thumbnail and one-line costs side by side; sales controls hidden in editor. -->
 <!-- v289: visible-first thumbnails; bounded same-day media reuse; one daily failed-thumbnail recovery. -->
 <!-- v288: separate sales availability, preserve production stages and printed sheet. -->
@@ -243,7 +244,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=288">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=287">
-<link rel="preload" as="style" href="workorder-screen.css?v=270">
+<link rel="preload" as="style" href="workorder-screen.css?v=291">
 <link rel="preload" as="style" href="unified-app.css?v=288-dictation1">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=286">
 <script id="aisel-ipad-layout-mode">
@@ -3677,10 +3678,10 @@
       <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizeOptions" aria-describedby="orderSizeContext" title="사이즈를 선택해 발주">발주완료</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
-      <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장 및 인쇄" title="공장 저장 및 인쇄"><span>공장 저장</span><span>인쇄</span></button>
+      <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
-      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 저장</span><span class="mobile-print-label">PDF 저장</span></button>
+      <button class="btn ghost nav-btn mfold" id="printBtn" style="border-width:1px;font-weight:600;"><span class="desktop-print-label">PDF 인쇄</span><span class="mobile-print-label">PDF 인쇄</span></button>
       <!-- 2026-08-29 추가: 폰에서만 보이는 접기 버튼. PC 에서는 안 보입니다.
            폰은 보는 게 위주라 새 작지·삭제·인쇄·카피생성기를 접어두고, 저장과 상태만 남깁니다. -->
 
@@ -6693,8 +6694,17 @@
   let editLog_ = [];
   let nameReviewState_=null,nameReviewPanel_=null,nameSaveFlight_=null;
   const nameActor_=()=>({uid:window.AiselAccess?.session?.uid,name:window.AiselAccess?.session?.displayName||window.AiselAccess?.session?.email,isOwner:window.AiselAccess?.isOwner===true});
-  function renderNameReview_(){nameReviewPanel_?.render();}
-  function nameOrderAllowed_(target){return window.AiselNames.canOrder({...lastSavedState_,pumMyeong:pumInput.value.trim()},target);}
+  function renderNameReview_(){
+    const panel=document.getElementById('nameReviewPanel');
+    if(panel&&(panel.dataset.reviewCode!==(currentCode||'')||window.AiselNames.final({...lastSavedState_,pumMyeong:pumInput.value.trim()})))panel.classList.remove('name-review-required');
+    if(panel)panel.dataset.reviewCode=currentCode||'';
+    nameReviewPanel_?.render();
+  }
+  function nameOrderAllowed_(target){
+    const allowed=window.AiselNames.canOrder({...lastSavedState_,pumMyeong:pumInput.value.trim()},target);
+    if(!allowed){const panel=document.getElementById('nameReviewPanel');if(panel){panel.classList.add('name-review-required');panel.dataset.reviewCode=currentCode||'';}}
+    return allowed;
+  }
   // 2026-08-13 추가: 카피 생성기에서 조립한 품명을 작지 품명칸에도 넣습니다.
   // 예전에는 작지 품명이 카테고리 이름(니트 / 스웨터)으로만 채워져 목록이 전부 같은 이름으로 보였습니다.
   // 직접 고치신 품명이 있으면(dataset.auto === "0") 덮어쓰지 않습니다.
@@ -17716,7 +17726,7 @@ window.AiselUnifiedAdapter={
 <script src="unified-app.js?v=288"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=290" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=291" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=288-dictation1">
 <link rel="stylesheet" href="aisel-list-controls.css?v=286" media="screen">
 

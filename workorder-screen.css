@@ -434,3 +434,9 @@
 @media screen and (max-width:359px){
  html:root body #editorView #sheet #costCell .cost-table .cost-pair input{font-size:14px!important}
 }
+
+/* v291: remove the default name controls; retain the existing required order confirmation. */
+@media screen {
+ html:root body #editorView .editor-mobile-head #nameReviewPanel:not(.name-review-required){display:none!important}
+ html:root body #editorView #sheet #costCell>.size-cost-heading>span:first-child{line-height:24px;min-height:28px;display:flex;align-items:center}
+}
