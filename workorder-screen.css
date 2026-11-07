@@ -488,3 +488,37 @@
 @media screen and (max-width:359px){
  html:root body #editorView #sheet #costCell{--aisel-cost-summary-width:164px}
 }
+
+/* v293: shared heading insets/baselines, one column divider, inline size note. Screen only. */
+@media screen {
+ html:root body #editorView #sheet{--aisel-editor-section-inset:12px;--aisel-photo-cost-gap:4px}
+ html:root body #editorView #sheet>.photos{padding:12px 8px 12px var(--aisel-editor-section-inset);gap:var(--aisel-photo-cost-gap)}
+ html:root body #editorView #sheet>.meta>.fabric-variant-base{padding-inline:var(--aisel-editor-section-inset)}
+ html:root body #editorView #sheet>.photos>.photos-right{position:relative;border-bottom:0!important}
+ html:root body #editorView #sheet>.photos>.photos-right::before{
+  content:"";position:absolute;top:-12px;bottom:-12px;left:calc(var(--aisel-photo-cost-gap) / -2);
+  width:0;border-left:1px solid var(--line,#dedede);pointer-events:none;
+ }
+ html:root body #editorView #sheet #ph1>.tag,
+ html:root body #editorView #sheet #costCell>.size-cost-heading>span:first-child,
+ html:root body #editorView #sheet .fabric-variant-title{
+  display:flex;align-items:center;box-sizing:border-box;height:28px;min-height:28px;
+  padding:0;font-family:var(--aisel-font);font-size:16px!important;font-weight:600;line-height:24px;letter-spacing:0;
+ }
+ html:root body #editorView #sheet #costCell>.size-cost-heading{
+  grid-template-columns:max-content minmax(0,1fr) 28px;grid-template-rows:28px;height:28px;min-height:28px;gap:4px;
+ }
+ html:root body #editorView #sheet #costCell>.size-cost-heading>.size-cost-add{grid-column:3;grid-row:1}
+ html:root body #editorView #sheet #costCell #costSizeNote{
+  grid-column:2;grid-row:1;box-sizing:border-box;width:100%;min-width:0;max-width:none;
+  height:28px;min-height:28px;max-height:28px;margin:0;padding:6px 0;border:0!important;border-radius:0;
+  background:transparent!important;box-shadow:none;font-size:11px!important;font-weight:400;line-height:16px;
+  color:var(--aisel-muted);white-space:pre;resize:none;
+ }
+ html:root body #editorView #sheet #costCell #costSizeNote::placeholder{font:inherit;color:var(--aisel-muted);opacity:1}
+ html:root body #editorView #sheet #costCell #costSizeNote:focus-visible{outline:1px solid var(--aisel-line);outline-offset:1px}
+}
+@media screen and (max-width:359px){
+ html:root body #editorView #sheet{--aisel-editor-section-inset:0px;--aisel-photo-cost-gap:4px}
+ html:root body #editorView #sheet>.photos{padding-right:0}
+}
