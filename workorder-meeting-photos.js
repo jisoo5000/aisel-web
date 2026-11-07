@@ -56,10 +56,19 @@
   if(dialog?.open)dialog.close();code=value||'';photos=nextPhotos;
   if(!ensure())return;trigger.hidden=!code||photos.length<2;trigger.textContent='회의 사진 '+photos.length+'장';trigger.dataset.code=code;
  }
+ function loadFailure(error){
+  const code=String(error?.code||'read_failed').toLowerCase().replace(/_/g,'-');
+  const message=code==='permission-denied'?'작업지시서 읽기 권한을 확인하지 못했습니다. 계정 연결을 확인해주세요.':
+   code==='not-found'?'작업지시서를 찾을 수 없습니다. 목록을 다시 확인해주세요.':
+   code==='state-apply-failed'?'작업지시서 내용은 받았지만 화면을 표시하지 못했습니다. 다시 열어주세요.':
+   code==='load-timeout'?'작업지시서를 불러오는 데 시간이 오래 걸리고 있습니다. 잠시 후 다시 열어주세요.':
+   '작업지시서 연결을 확인하지 못했습니다. 잠시 후 목록에서 다시 열어주세요.';
+  return Object.assign(new Error(message),{code,cause:error});
+ }
  function expectOpen(value,timeout=15000){
-  let request,timer;
-  const ready=new Promise(resolve=>{request={code:value,finish(result){clearTimeout(timer);pending.delete(request);resolve(result);}};pending.add(request);timer=setTimeout(()=>request.finish(false),timeout);});
-  return {ready,cancel(){request.finish(false);}};
+  let request,timer,finished=false;
+  const ready=new Promise(resolve=>{request={code:value,error:null,finish(result,error){if(finished)return;finished=true;this.error=error||null;clearTimeout(timer);pending.delete(request);resolve(result);}};pending.add(request);timer=setTimeout(()=>request.finish(false,loadFailure({code:'load-timeout'})),timeout);});
+  return {ready,get error(){return request.error;},cancel(){request.finish(false);}};
  }
  function liftRecovery(){
   if(!loadingCode||recoveryHome)return;
@@ -91,16 +100,17 @@
   const editor=document.getElementById('editorView');if(!editor)return;
   loadingCode=value;editor.inert=true;editor.setAttribute('aria-busy','true');
   if(!loadingNotice){loadingNotice=document.createElement('p');loadingNotice.id='workorderLoadingNotice';loadingNotice.className='noprint';loadingNotice.setAttribute('role','status');editor.before(loadingNotice);}
-  loadingNotice.textContent='작업지시서를 불러오는 중…';loadingNotice.hidden=false;
+  loadingNotice.textContent='작업지시서를 불러오는 중…';loadingNotice.title='';delete loadingNotice.dataset.errorCode;loadingNotice.hidden=false;
   // Keep the existing recovery buttons usable even while the previous form is
   // inert. Moving the same node preserves its draft context and click handlers.
   liftRecovery();recoveryObserver?.disconnect();recoveryObserver=new MutationObserver(liftRecovery);
   recoveryObserver.observe(editor,{childList:true,subtree:true});
  }
- function failed(value){
-  for(const request of [...pending])if(request.code===value)request.finish(false);
-  if(loadingCode===value&&loadingNotice){loadingNotice.textContent='작업지시서를 불러오지 못했습니다. 목록에서 다시 열어주세요.';loadingNotice.hidden=false;}
+ function failed(value,error){
+  const failure=loadFailure(error);
+  for(const request of [...pending])if(request.code===value)request.finish(false,failure);
+  if(loadingCode===value&&loadingNotice){loadingNotice.textContent=failure.message;loadingNotice.dataset.errorCode=failure.code;loadingNotice.title=String(error?.message||'');loadingNotice.hidden=false;}
  }
- function empty(value,isNew){if(isNew)render(value,{});else failed(value);}
+ function empty(value,isNew){if(isNew)render(value,{});else failed(value,{code:'not-found'});}
  root.AiselWorkorderMeetingPhotos={render,clear,open,expectOpen,failed,beginLoading,empty,get currentCode(){return code;}};
 })(window);

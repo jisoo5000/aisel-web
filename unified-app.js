@@ -309,7 +309,8 @@
     }
     const waiting=window.AiselWorkorderMeetingPhotos?.expectOpen(code);
     try{
-     if(await A.open(code)===false||waiting&&!await waiting.ready)throw Error('작업지시서를 불러오지 못했습니다. 입력 내용은 유지했습니다. 다시 열어주세요.');
+     if(await A.open(code)===false)throw Error('작업지시서를 열 수 없습니다. 입력 내용은 유지했습니다. 다시 열어주세요.');
+     if(waiting&&!await waiting.ready)throw waiting.error||Error('작업지시서를 불러오지 못했습니다. 입력 내용은 유지했습니다. 다시 열어주세요.');
     }finally{waiting?.cancel();}
     returnToProducts=['products','samples'].includes(previousView);if(returnToProducts)returnStatusView=previousView;
    }

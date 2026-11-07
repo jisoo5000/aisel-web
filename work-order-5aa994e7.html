@@ -8186,7 +8186,9 @@
     lastSavedState_ = st;
     document.getElementById("blend").value=englishBlend_(document.getElementById("blend").value);
     fabricVariants_.refresh();sizeCosts_.refresh();
-    window.AiselEditorEnhancements?.refresh(st,currentCode,{loaded:true});
+    // Optional view decoration must not prevent a received workorder from finishing its load.
+    try{window.AiselEditorEnhancements?.refresh(st,currentCode,{loaded:true});}
+    catch(error){console.error('AISEL loaded view refresh failed',error);}
     syncFabricFromMemo_();
     renderMobileHeader_();
     // 빈 판매가에만 추천값을 표시합니다. 조회만으로 서버에 저장하거나 기존 가격을 바꾸지 않습니다.
@@ -8820,7 +8822,15 @@
         return;
       }
       queueLegacySampleStatuses_({[code]:st});
-      applyState(st);renderDraft_();if(mobileDraftMode_()&&activeDraft_?.liveConflict&&activeDraft_.candidate)restoreDraft_(activeDraft_);
+      try{
+        applyState(st);renderDraft_();if(mobileDraftMode_()&&activeDraft_?.liveConflict&&activeDraft_.candidate)restoreDraft_(activeDraft_);
+      }catch(error){
+        // A partially rendered record must remain locked; never save the previous form into this code.
+        loading=true;console.error('AISEL workorder display failed',code,error);
+        paintEditorSaveStatus_("error","화면 표시 실패");
+        window.AiselWorkorderMeetingPhotos?.failed(code,{code:"state_apply_failed",message:error.message});
+        return;
+      }
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
       if(isFirst) syncIndexFromFull_(code, st);
     };
@@ -17923,14 +17933,14 @@ window.AiselUnifiedAdapter={
 <script src="reference-save-core.js?v=212"></script>
 <script src="reference-collection.js?v=294"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
-<script src="workorder-meeting-photos.js?v=201"></script>
+<script src="workorder-meeting-photos.js?v=201-load-feedback-20261108"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=287"></script>
 <script src="aisel-access-ui.js?v=20261108-staff-names"></script>
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=20261108-1"></script>
-<script src="unified-app.js?v=operations-20261108-1"></script>
+<script src="unified-app.js?v=operations-20261108-load-feedback"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261108-order-state" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
