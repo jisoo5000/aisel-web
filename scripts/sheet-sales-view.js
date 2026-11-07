@@ -172,7 +172,7 @@
       }
      }
      if(expected!==generation)return false;
-     state.snapshot=value;state.lastRead=Date.now();state.error=false;saveCache(selected,state);return true;
+     state.snapshot=value;state.lastRead=Date.now();state.error=false;saveCache(selected,state);root.dispatchEvent(new CustomEvent('aisel-sales-snapshot'));return true;
     }catch(error){
      if(expected!==generation)return false;
      if(['permission_denied','unauthenticated','session_changed'].includes(error?.code)){
@@ -217,7 +217,17 @@
    if(!root.AiselAccess.ownOnly)return;const codes=new Set(event.detail?.codes||[]);
    if([...groups.values()].some(state=>state.snapshot?.items.some(row=>row.code&&!codes.has(row.code))))invalidate();
   });
-  root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate};
+  async function readSummary(){
+   if(root.AiselAccess?.session?.role!=='designer'||!root.AiselAccess.ownOnly||!root.AiselAccess.allowed('sales'))return null;
+   const expected=generation,state=entry('new');
+   if(group!=='new')return null;
+   if(state.inFlight)await state.inFlight;
+   else if(!state.snapshot||Date.now()-Math.max(state.lastRead,state.lastAttempt)>=freshFor)await load();
+   if(expected!==generation||root.AiselAccess?.session?.role!=='designer'||!root.AiselAccess.ownOnly||!root.AiselAccess.allowed('sales'))return null;
+   return state.snapshot&&!state.error?compact(state.snapshot):null;
+  }
+  root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate,readSummary};
+  root.dispatchEvent(new CustomEvent('aisel-sales-source-ready'));
   document.addEventListener('visibilitychange',refreshIfStale);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshIfStale,{once:true});else queueMicrotask(refreshIfStale);
  }

@@ -4,7 +4,7 @@
  const A=window.AiselUnifiedAdapter,DM=window.AiselDesignMeeting,RC=window.AiselReferenceCollection;
  if(!A||!DM||!RC)return;
  const main=document.getElementById('mainBar'),$=id=>document.getElementById(id);
- let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,knownRole=null,navigationRevision=0;
+ let current='',busy=false,pendingNavigation=null,frame=null,productState=null,returnToProducts=false,knownRole=null,navigationRevision=0,returnStatusView='products',requestedStatusView=null;
  const directEntry=!!location.hash||!!new URLSearchParams(location.search).get('code');
  let landingOpen=!directEntry;
  let lastLocation={state:history.state,url:location.href},replayingPop=false;
@@ -16,10 +16,11 @@
  document.title='에이슬 앱';
  const orders=main.querySelector('[data-main="orders"]');orders.textContent='작업지시서';
  const products=main.querySelector('[data-main="products"]')||document.createElement('button');products.type='button';products.className='maintab';products.dataset.main='products';products.textContent='출고현황';
+ const samples=document.createElement('button');samples.type='button';samples.className='maintab';samples.dataset.main='samples';samples.textContent='샘플현황';
  const refs=main.querySelector('[data-main="references"]')||document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
  const boards=main.querySelector('[data-main="meetingmaterials"]')||document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='meetingmaterials';boards.textContent='회의자료';
  const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
- main.append(sales,products,refs,main.querySelector('[data-main="designmeeting"]'),boards,orders);
+ main.append(sales,products,samples,refs,main.querySelector('[data-main="designmeeting"]'),boards,orders);
  const staffTab=document.createElement('button');staffTab.type='button';staffTab.className='maintab';staffTab.dataset.main='staff';staffTab.textContent='직원·권한 관리';staffTab.hidden=true;main.append(staffTab);
  // Workorder filters use only the authorized lightweight index already loaded.
  const galleryFilters=window.AiselWorkorderListFilters;
@@ -94,12 +95,13 @@
  }
  function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
  function allowedWorkorder(){return window.AiselAccess?.allowed('orders')===true;}
- function allowedView(view){if(view==='staff')return window.AiselAccess?.isOwner===true;return view==='products'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
+ function allowedView(view){if(view==='staff')return window.AiselAccess?.isOwner===true;return view==='products'||view==='samples'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
  function applyRole(){
   const awaitingAccess=!window.AiselAccess?.session;
   for(const button of main.querySelectorAll('[data-main]')){
-   button.hidden=button.dataset.main==='staff'?!allowedView('staff'):!awaitingAccess&&!allowedView(button.dataset.main);
-   button.disabled=awaitingAccess&&button.dataset.main!=='products';
+   const preferred=role()==='designer'?['orders','designmeeting','sales','products']:role()==='logistics'?['products','samples']:null;
+   button.hidden=button.dataset.main==='staff'?!allowedView('staff'):!awaitingAccess&&(!allowedView(button.dataset.main)||preferred&&!preferred.includes(button.dataset.main));
+   button.disabled=awaitingAccess&&!['products','samples'].includes(button.dataset.main);
   }
   post('aisel-status-config',{canOpenWorkorder:allowedWorkorder()});
  }
@@ -114,7 +116,7 @@
    A.hide();$('referenceCollectionView').hidden=true;$('designMeetingView').hidden=true;window.AiselMoodboards?.hide();window.AiselMeetingMaterials?.hide();window.AiselStaffDirectory?.hide();unmount();current='';
    document.getElementById('aiselStartupNotice')?.remove();$('appBrandHeader').hidden=false;
     info(event.detail?.error?.message||event.detail?.error||'로그인 후 작업지시서를 이용할 수 있습니다.');
-    if(requestedLocation(initialLocation)?.view==='products')show('products',{replace:true});
+    if(['products','samples'].includes(requestedLocation(initialLocation)?.view))show(requestedLocation(initialLocation).view,{replace:true});
     return;
   }
   const changedIdentity=accessIdentity&&accessIdentity!==session.uid,restore=accessRestore?.uid===session.uid?accessRestore:null;
@@ -154,13 +156,13 @@
  },true);
  window.addEventListener('aisel-role-verified',e=>{if(!validRoles.includes(e.detail?.role))return;if(e.detail.uid!==undefined&&e.detail.uid!==window.AiselAuth?.currentUser()?.uid)return;if(e.detail.generation!==undefined&&e.detail.generation!==window.AiselAuth?.generation)return;knownRole=e.detail.role;rememberRole(knownRole);applyRole();restoreLanding();});
  function post(type,extra={}){frame?.contentWindow?.postMessage({type,...extra},location.origin);}
- function unmount(){if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
+ function unmount(){requestedStatusView=null;if(!frame)return;try{const state=frame.contentWindow?.AiselStatusEmbed?.getState();if(state)productState=state;}catch(_){}frame.remove();frame=null;}
 
  // The product list scrolls inside an iframe. Wheel/touch events over the shell's
  // header or side gutters belong to the parent document and never reach it.
  // Forward only those gestures; native gestures inside the iframe stay native.
  function productScrollRoot(){
-  if(current!=='products'||!frame||pane.hidden)return null;
+  if(!['products','samples'].includes(current)||!frame||pane.hidden)return null;
   try{
    const doc=frame.contentDocument,win=frame.contentWindow;
    if(!doc?.body||doc.querySelector('.viewer.on,dialog[open]'))return null;
@@ -198,21 +200,28 @@
  },{passive:false});
  for(const name of ['touchend','touchcancel'])document.addEventListener(name,()=>{productTouch=null;},{passive:true});
 
- function mount(){if(frame)return;frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title='출고현황';frame.src='status.html?embedded=1&v=294';pane.append(frame);}
+ function mount(){
+  const target=current==='samples'?'samples':'products';
+  const changed=productState?.view!==target;
+  productState={...(productState||{}),view:target,...(changed?{scrollY:0}:{})};requestedStatusView=target;
+  if(frame){frame.title=target==='samples'?'샘플현황':'출고현황';post('aisel-status-config',{canOpenWorkorder:allowedWorkorder(),state:productState});return;}
+  frame=document.createElement('iframe');frame.id='productProgressFrame';frame.title=target==='samples'?'샘플현황':'출고현황';frame.src='status.html?embedded=1&v=staff-workspace-20261108'+(target==='samples'?'&view=samples':'');pane.append(frame);
+ }
  function select(view){
   current=view;
   document.getElementById('aiselStartupNotice')?.remove();
-  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료',orders:'작업지시서',editor:'작업지시서',staff:'직원·권한 관리'})[view]||'작업지시서';
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({sales:'판매성과',products:'출고현황',samples:'샘플현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료',orders:'작업지시서',editor:'작업지시서',staff:'직원·권한 관리'})[view]||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
-  if(view!=='products')unmount();pane.hidden=view!=='products';
+  if(!['products','samples'].includes(view))unmount();pane.hidden=!['products','samples'].includes(view);
+  window.dispatchEvent(new CustomEvent('aisel-workspace-route',{detail:{view}}));
   if(view!=='references')$('referenceCollectionView').hidden=true;
   if(view!=='designmeeting')$('designMeetingView').hidden=true;
   if(view!=='moodboards')window.AiselMoodboards?.hide();
   if(view!=='meetingmaterials')window.AiselMeetingMaterials?.hide();
   if(view!=='staff')window.AiselStaffDirectory?.hide();
  }
- function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='staff'?'staff':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
+ function route(view,replace=false,code){const url=new URL(location.href);url.hash=view==='staff'?'staff':view==='samples'?'samples':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
  async function guard(target,intent=navigationRevision){
   const isCurrent=()=>intent===navigationRevision;
   // A menu switch keeps the same account and document alive. Once the current
@@ -238,7 +247,7 @@
   else if(view==='references')await RC.show({history:false,preserveDetail:true,background:true});
   else if(view==='moodboards')await window.AiselMoodboards.show();
   else if(view==='meetingmaterials')await (await meetingMaterials()).show();
-  else if(view==='products')mount();
+  else if(['products','samples'].includes(view))mount();
   else if(view==='staff')window.AiselStaffDirectory?.show();
   else if(view==='sales')await A.sales();
   else if(view==='editor'&&previousCode)await A.open(previousCode);
@@ -246,7 +255,7 @@
   restoreLocation(previousLocation);
  }
  async function show(view,{history:writeHistory=true,replace=false,code,id}={}){
-  if(!['products','orders','sales','editor','references','designmeeting','moodboards','meetingmaterials','staff'].includes(view))return false;
+  if(!['products','samples','orders','sales','editor','references','designmeeting','moodboards','meetingmaterials','staff'].includes(view))return false;
   if(!allowedView(view)){info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return false;}
   if(view==='moodboards'&&current===view&&window.AiselMoodboards?.visible)return true;
   if(view==='editor'&&(typeof code!=='string'||!code.trim()||code.length>160||/[.#$\[\]\/\u0000-\u001f]/.test(code)))return false;
@@ -260,7 +269,7 @@
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
    if(intent!==navigationRevision)return false;
    A.hide();select(view);
-   if(view==='products'){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent='출고현황';document.body.dataset.aiselListView='products';}
+   if(['products','samples'].includes(view)){mount();$('appBrandHeader').hidden=false;$('appPageTitle').textContent=view==='samples'?'샘플현황':'출고현황';document.body.dataset.aiselListView='products';}
    else if(view==='moodboards'){
     const openingUid=window.AiselAccess.session?.uid;
     if(!window.AiselMoodboards)throw Error('무드보드 화면을 불러오지 못했습니다. 새로고침 후 다시 열어주세요.');
@@ -294,7 +303,7 @@
     try{
      if(await A.open(code)===false||waiting&&!await waiting.ready)throw Error('작업지시서를 불러오지 못했습니다. 입력 내용은 유지했습니다. 다시 열어주세요.');
     }finally{waiting?.cancel();}
-    returnToProducts=previousView==='products';
+    returnToProducts=['products','samples'].includes(previousView);if(returnToProducts)returnStatusView=previousView;
    }
    select(view);
    if(writeHistory)route(view,replace,code);
@@ -325,7 +334,12 @@
   if(e.origin!==location.origin||e.source!==frame?.contentWindow)return;
   const data=e.data||{};
   if(data.type==='aisel-status-ready'){post('aisel-status-config',{canOpenWorkorder:allowedWorkorder(),state:productState});window.AiselAuth?.syncFrame?.();}
-  if(data.type==='aisel-status-state')productState=data.state;
+  if(data.type==='aisel-status-state'){
+   const next=data.state?.view==='samples'?'samples':'products';
+   if(requestedStatusView&&next!==requestedStatusView)return;
+   requestedStatusView=null;productState=data.state;
+   if(['products','samples'].includes(current)&&next!==current&&allowedView(next)){select(next);route(next,true);frame.title=next==='samples'?'샘플현황':'출고현황';}
+  }
   if(data.type==='aisel-status-open-workorder'&&allowedWorkorder()&&typeof data.code==='string'){
    productState=data.state||productState;show('editor',{code:data.code});
   }
@@ -336,7 +350,7 @@
  window.addEventListener('aisel-legacy-view-change',e=>{
   if(busy)return;queueMicrotask(()=>{if(busy)return;select(e.detail.view==='orders'?(A.editorVisible()?'editor':'orders'):e.detail.view);});
  });
- $('backToListBtn').addEventListener('click',e=>{if(!returnToProducts)return;e.preventDefault();e.stopImmediatePropagation();show('products',{replace:true}).then(ok=>{if(ok)returnToProducts=false;});},true);
+ $('backToListBtn').addEventListener('click',e=>{if(!returnToProducts)return;e.preventDefault();e.stopImmediatePropagation();show(returnStatusView,{replace:true}).then(ok=>{if(ok)returnToProducts=false;});},true);
  function historyTarget(state,hash){
   if(state?.aiselReference||/^#references?$|^#reference=/.test(hash))return {owner:'reference',view:'references'};
   if(state?.aiselDesignMeeting||/^#design-meeting(?:=|$)/.test(hash))return {owner:'meeting',view:'designmeeting'};
@@ -402,6 +416,7 @@
    if(hash==='#staff')return {view:'staff'};
    if(hash==='#sales')return {view:'sales'};
    if(hash==='#products')return {view:'products'};
+   if(hash==='#samples')return {view:'samples'};
    const code=new URLSearchParams(locationSnapshot?.search??location.search).get('code');if(code)return {view:'editor',code};
   }catch(_){}
   return null;

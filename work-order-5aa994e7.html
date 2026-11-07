@@ -248,7 +248,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=staff-20261108">
+<link rel="preload" as="script" href="unified-app.js?v=staff-workspace-20261108">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
 <link rel="preload" as="style" href="workorder-screen.css?v=staff-20261108">
@@ -16408,7 +16408,7 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
       }
      }
      if(expected!==generation)return false;
-     state.snapshot=value;state.lastRead=Date.now();state.error=false;saveCache(selected,state);return true;
+     state.snapshot=value;state.lastRead=Date.now();state.error=false;saveCache(selected,state);root.dispatchEvent(new CustomEvent('aisel-sales-snapshot'));return true;
     }catch(error){
      if(expected!==generation)return false;
      if(['permission_denied','unauthenticated','session_changed'].includes(error?.code)){
@@ -16453,7 +16453,17 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
    if(!root.AiselAccess.ownOnly)return;const codes=new Set(event.detail?.codes||[]);
    if([...groups.values()].some(state=>state.snapshot?.items.some(row=>row.code&&!codes.has(row.code))))invalidate();
   });
-  root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate};
+  async function readSummary(){
+   if(root.AiselAccess?.session?.role!=='designer'||!root.AiselAccess.ownOnly||!root.AiselAccess.allowed('sales'))return null;
+   const expected=generation,state=entry('new');
+   if(group!=='new')return null;
+   if(state.inFlight)await state.inFlight;
+   else if(!state.snapshot||Date.now()-Math.max(state.lastRead,state.lastAttempt)>=freshFor)await load();
+   if(expected!==generation||root.AiselAccess?.session?.role!=='designer'||!root.AiselAccess.ownOnly||!root.AiselAccess.allowed('sales'))return null;
+   return state.snapshot&&!state.error?compact(state.snapshot):null;
+  }
+  root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate,readSummary};
+  root.dispatchEvent(new CustomEvent('aisel-sales-source-ready'));
   document.addEventListener('visibilitychange',refreshIfStale);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshIfStale,{once:true});else queueMicrotask(refreshIfStale);
  }
@@ -17799,7 +17809,7 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=287"></script>
 <script src="aisel-access-ui.js?v=staff-20261108"></script>
-<script src="unified-app.js?v=staff-20261108"></script>
+<script src="unified-app.js?v=staff-workspace-20261108"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=staff-20261108" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
@@ -17858,5 +17868,5 @@ window.AiselUnifiedAdapter={
 </style>
 
 <!-- ERP navigation: existing router and permissions remain authoritative. -->
-<link rel="stylesheet" href="aisel-erp-shell.css?v=299" media="screen">
-<script src="aisel-erp-shell.js?v=staff-20261108"></script>
+<link rel="stylesheet" href="aisel-erp-shell.css?v=staff-workspace-20261108" media="screen">
+<script src="aisel-erp-shell.js?v=staff-workspace-20261108"></script>

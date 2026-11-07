@@ -61,3 +61,12 @@
  html:root body.aisel-erp-shell #mainBar>.maintab:not(.active):not(:disabled):hover{background:#F6F6F6;border-color:transparent}
  html:root body.aisel-erp-shell .erp-nav-close{border-color:transparent;background:transparent}
 }
+
+/* Staff workspaces: the cue is outside the protected editor and print sheet. */
+@media screen {
+ html:root body.aisel-erp-shell .erp-sales-cue{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;box-sizing:border-box;min-height:36px;margin:0 0 6px;padding:6px 8px;border:1px solid #E3E5E7;border-radius:3px;background:#F6F7F8;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif;text-align:left;cursor:pointer;flex-wrap:wrap}
+ html:root body.aisel-erp-shell .erp-sales-cue-detail{color:#6C727C;font-size:11px}
+ html:root body.aisel-erp-shell .erp-sales-cue[hidden]{display:none!important}
+ html:root body.aisel-erp-shell .erp-sales-cue:focus-visible{outline:2px solid #8A96A5;outline-offset:2px}
+}
+@media print{#aiselDesignerSalesCue{display:none!important}}

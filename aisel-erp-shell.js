@@ -23,22 +23,23 @@
   header.prepend(toggle); header.before(aside, backdrop); aside.append(heading, subtitle, main);
   main.setAttribute('role', 'navigation'); main.setAttribute('aria-label', '업무 순서');
   const labels = [];
-  let arrangedRole = null;
-  function arrangeForRole() {
-    const session=window.AiselAccess?.session,role=session?.role||'';
+  let menuRole;
+  function arrange(){
+    const session=window.AiselAccess?.session,role=session?.role||'pending';
     subtitle.textContent=session?.displayName?[session.displayName,({designer:'디자이너',logistics:'물류',md:'MD',owner:'대표'})[role]].filter(Boolean).join(' · '):'업무 관리';
-    if(arrangedRole===role)return;arrangedRole=role;
-    labels.forEach(({caption})=>caption.remove());labels.length=0;
-    const production=['상품·제작',role==='designer'?['orders','references','designmeeting','meetingmaterials']:['references','designmeeting','meetingmaterials','orders']];
-    const groups=role==='logistics'?[['물류',['products']],['판매',['sales']],production]:[production,['판매',['sales']],['물류',['products']]];
+    if(role===menuRole)return;menuRole=role;
+    for(const {caption}of labels)caption.remove();labels.length=0;
+    const groups=role==='designer'?[['내 작업',['orders','designmeeting','meetingmaterials','references']],['판매',['sales']],['공통',['products','samples']]]
+      :role==='logistics'?[['물류',['products','samples']],['기타',['orders','designmeeting','meetingmaterials','references','sales']]]
+      :role==='md'?[['판매',['sales']],['상품',['references','orders','designmeeting','meetingmaterials']],['물류',['products','samples']]]
+      :[['상품·제작',['references','designmeeting','meetingmaterials','orders']],['판매',['sales']],['물류',['products','samples']]];
     groups.push(['관리',['staff']]);
-    groups.forEach(([label, views]) => {
+    groups.forEach(([label,views])=>{
       const caption=document.createElement('div');caption.className='erp-nav-group';caption.textContent=label;main.append(caption);
       const buttons=views.map(view=>main.querySelector('[data-main="'+view+'"]')).filter(Boolean);
       buttons.forEach(button=>main.append(button));labels.push({caption,buttons});
     });
   }
-  arrangeForRole();
   let drawerOpen = false, desktopCollapsed = false, savedInert = [];
   function restoreBackground() {
     savedInert.forEach(([element, wasInert]) => { element.inert = wasInert; }); savedInert = [];
@@ -67,6 +68,7 @@
     close.hidden = media.matches;
   }
   function sync() {
+    arrange();
     labels.forEach(({caption, buttons}) => { const hidden = !buttons.some(button => !button.hidden); if (caption.hidden !== hidden) caption.hidden = hidden; });
     for (const button of main.querySelectorAll('.maintab')) {
       if (button.classList.contains('active') && !button.hidden) button.setAttribute('aria-current', 'page');
@@ -93,7 +95,39 @@
     // A committed route updates active/aria-pressed. A refused save leaves the drawer open.
     if (drawerOpen && records.some(record => record.attributeName === 'aria-pressed')) setDrawer(false);
   }).observe(main, { subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'class', 'aria-pressed'] });
-  window.addEventListener('aisel-access-change', () => { arrangeForRole(); sync(); if (drawerOpen) setDrawer(false); });
+  window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
   media.addEventListener('change', () => { desktopCollapsed = false; setDrawer(false, false); });
   body.classList.add('aisel-erp-shell'); sync(); render();
+  // A short, optional performance cue on the workorder list. Data comes only
+  // from the existing assigned-sales service and stays in this account's memory.
+  const gallery=document.getElementById('galleryView');
+  if(gallery){
+    const cue=document.createElement('button');cue.type='button';cue.id='aiselDesignerSalesCue';cue.className='erp-sales-cue noprint';cue.hidden=true;
+    const title=document.createElement('span');title.textContent='담당 상품 판매성과';
+    const detail=document.createElement('span');detail.className='erp-sales-cue-detail';detail.textContent='판매성과 보기';
+    cue.append(title,detail);gallery.prepend(cue);
+    let scope='',revision=0,flight=null,rendered=false;
+    function permitted(){const a=window.AiselAccess;return a?.session?.active===true&&a.session.role==='designer'&&a.ownOnly===true&&a.allowed('sales');}
+    function update(){
+      const a=window.AiselAccess,key=permitted()?JSON.stringify([a.session.uid,a.session.permissions]):'';
+      if(key!==scope){scope=key;revision++;flight=null;rendered=false;detail.textContent='판매성과 보기';cue.removeAttribute('title');}
+      cue.hidden=!permitted()||window.AiselUnified.view!=='orders';
+      if(cue.hidden||flight||rendered||!window.AiselSheetSalesSource?.readSummary)return;
+      rendered=true;
+      const expected=revision;flight=Promise.resolve(window.AiselSheetSalesSource.readSummary()).then(snapshot=>{
+        if(expected!==revision||!permitted())return;
+        if(!snapshot){detail.textContent='판매성과에서 연결 상태 확인';return;}
+        const rows=snapshot.items||[],ratings=rows.map(row=>window.AiselSheetSalesView?.performance(row)),low=ratings.filter(rating=>rating?.key==='low').length,unknown=ratings.filter(rating=>!rating).length;
+        detail.textContent=rows.length?'연결 '+rows.length+'개 · 확인 필요 '+low+'개'+(unknown?' · 판단 대기 '+unknown+'개':''):'연결된 담당 상품 없음';
+        cue.title=[snapshot.periodLabel||'운영시트 집계 기간','확인 필요: 판매비중 10% 미만 또는 반품 지표 20% 이상',snapshot.readAt?'자료 확인 '+snapshot.readAt:''].filter(Boolean).join(' · ');
+      }).catch(()=>{if(expected===revision)detail.textContent='판매성과에서 연결 상태 확인';}).finally(()=>{if(expected===revision)flight=null;});
+    }
+    cue.addEventListener('click',()=>window.AiselUnified.show('sales'));
+    window.addEventListener('aisel-access-change',update);
+    window.addEventListener('aisel-workspace-route',update);
+    window.addEventListener('aisel-sales-source-ready',update);
+    window.addEventListener('aisel-sales-snapshot',()=>{rendered=false;update();});
+    window.addEventListener('aisel-assigned-index-change',()=>{revision++;flight=null;rendered=false;detail.textContent='판매성과 보기';update();});
+    update();
+  }
 })();
