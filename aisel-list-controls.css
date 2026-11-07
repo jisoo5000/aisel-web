@@ -175,41 +175,6 @@
  html:root body #referenceCollectionView #rcNotices:not(:has(#rcStatus:not(:empty),.rc-notice-actions>button:not([hidden]))) {display:none;}
 }
 
-/* Compact planning controls with breathing room; keep 12px type on one row. */
-@media screen {
- html:root body #designMeetingView #dmReview {--aisel-list-border:#EAE7E2;}
- html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>th,
- html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>td {
-  min-height:36px;padding-top:6px;padding-bottom:6px;
- }
- html:root body #designMeetingView #dmReview :is(.dm-manual-select,.dm-choice,.aisel-usp-keyword) {
-  height:24px;min-height:24px;border-color:#EAE7E2;
- }
- html:root body #designMeetingView #dmReview .dm-choice.selected {border-color:#2F3B52;}
- html:root body #designMeetingView #dmReview .aisel-usp-row {
-  display:flex;flex-flow:row nowrap;gap:6px;align-items:center;
- }
- html:root body #designMeetingView #dmReview .aisel-usp-inline .aisel-usp-keyword {
-  flex:1 1 var(--aisel-usp-width,24px);width:var(--aisel-usp-width,24px);min-width:20px;
-  padding:0 4px;font-size:12px!important;white-space:nowrap;
- }
-}
-
-/* v263: compact label gap and a title focus box contained in its 28px row. */
-@media screen {
- html:root body #designMeetingView .dm-detail-header,
- html:root body #designMeetingView .dm-detail-meta {row-gap:var(--aisel-list-gap,4px);}
- html:root body #designMeetingView #dmDetailTitle,
- html:root body #designMeetingView #dmDetailTitle:focus {
-  box-sizing:border-box;height:28px;min-height:28px;max-height:28px;
-  margin:0;padding:4px 0;line-height:20px;
- }
- html:root body #designMeetingView #dmDetailTitle:focus {outline:1px solid var(--aisel-focus);outline-offset:-1px;}
- html:root body #designMeetingView #dmReview .dm-manual-table tr,
- html:root body #designMeetingView #dmReview .dm-manual-table tr:has(#dmUspKeywords) {grid-template-columns:80px minmax(0,1fr);}
- html:root body #designMeetingView #dmDetail #dmReview .dm-manual-table tr>td {padding-left:2px;}
-}
-
 @media screen{.aisel-page-more{display:flex;align-items:center;justify-content:center;gap:12px;margin:16px 0 24px;color:#6C727C;font-size:12px}.aisel-page-more[hidden]{display:none}.aisel-page-more button,#rcMore,#dmMore{height:28px!important;background:#fff!important;color:#2F3B52!important;border:1px solid #E3E5E7!important;border-radius:3px!important;padding:0 12px!important;font-size:12px!important;line-height:18px!important;font-weight:400!important}.aisel-page-more button:hover,#rcMore:hover,#dmMore:hover{background:#EEF0F3!important}.aisel-page-more button:focus-visible{outline:2px solid #2F3B52;outline-offset:2px}}
 
 /* v283.2: full-width more controls, separated from the final thumbnail row. */
@@ -250,4 +215,29 @@
  html:root body .aisel-status :is(.workflow-tab,.tab){box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:1 1 0;min-width:0;height:28px;min-height:28px;padding:0 2px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C;font-size:12px;line-height:18px;font-weight:400;box-shadow:none;gap:2px;white-space:nowrap;flex-wrap:nowrap}
  html:root body .aisel-status :is(.workflow-tab.on,.tab.on){border-color:#E3E5E7!important;background:#F6F7F8;color:#34383C;font-weight:600;box-shadow:none}
  html:root body .aisel-status :is(.workflow-tab,.tab)::after{display:none}
+}
+
+/* 2026-11-08: shared workorder-style bordered tab buttons. */
+@media screen {
+ html:root body :is(#galleryTabs,#salesTabs,#salesGroupTabs,#smStatusTabs,#qoStatusFilter,#mbSubTabs,#mbRefsDateTabs){gap:4px}
+ html:root body #galleryView #galleryTabs{gap:4px}
+ html:root body :is(#galleryView,#salesView,#sampleMgmtView,#moodBoardView,#mbRefsView,#quickOrderView) :is(.gtab,.mb-subtab,.ref-date-tab,.workflow-tab,.tab,.maintab),
+ html:root body #referenceCollectionView .rc-filters button,
+ html:root body #designMeetingView .dm-filters button,
+ html:root body .aisel-status :is(.workflow-tab,.tab),
+ html:root body #mbSubTabs .mb-subtab,
+ html:root body #mbRefsDateTabs .ref-date-tab {
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;min-width:0;
+  height:28px;min-height:28px;max-height:28px;padding:0 4px;
+  border:1px solid #E3E5E7!important;border-radius:3px!important;background:#fff;color:#34383C;
+  font-size:12px;line-height:18px;font-weight:400;white-space:nowrap;box-shadow:none;
+ }
+ html:root body :is(#galleryView,#salesView,#sampleMgmtView,#moodBoardView,#mbRefsView,#quickOrderView) :is(.gtab,.mb-subtab,.ref-date-tab,.workflow-tab,.tab,.maintab):is(.active,[aria-pressed="true"]),
+ html:root body #referenceCollectionView .rc-filters button[aria-pressed="true"],
+ html:root body #designMeetingView .dm-filters button:is(.active,[aria-pressed="true"]),
+ html:root body :is(#mbSubTabs,#mbRefsDateTabs) :is(.mb-subtab,.ref-date-tab).active{
+  background:#E9ECF2!important;color:#34383C;border-color:#E3E5E7!important;font-weight:600;
+ }
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main]{border:1px solid #E3E5E7;background:#fff;border-radius:3px}
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active{border-color:#E3E5E7;background:#E9ECF2;color:#34383C}
 }

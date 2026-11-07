@@ -222,7 +222,7 @@
 /* v251: additional links sit above the primary link; keep its product code aligned. */
 @media screen {
  html:root body #editorView .editor-mobile-head .editor-mobile-caption {align-self:end;align-items:center;min-height:28px;}
- html:root body #editorView .editor-mobile-head:has(#refLinksList > .ref-link-row[data-ref-index="0"].is-editing) .editor-mobile-caption {margin-bottom:44px;}
+ html:root body #editorView .editor-mobile-head:has(#refLinksList > .ref-link-row[data-ref-index="0"].is-editing) .editor-mobile-caption {margin-bottom:0;}
 }
 @media screen and (max-width:359px) {
  html:root body #editorView .editor-mobile-head:has(#refLinksList > .ref-link-row[data-ref-index="0"].is-editing) .editor-mobile-caption {margin-bottom:0;}
@@ -806,4 +806,31 @@
  html:root body #editorView #sheet #costCell .fixed-loss-value{
   height:24px;min-height:24px;max-height:24px;padding:0 9px;border:0;line-height:24px;
  }
+}
+
+/* 2026-11-08: inline links, bounded USP, equal order controls and pale retail. Screen only. */
+@media screen {
+ html:root body #editorView #refPanel #refLinksList>.ref-link-row>input[type="text"]{
+  grid-column:2;z-index:1;box-sizing:border-box;width:100%;min-width:0;max-width:100%;
+  height:28px;min-height:28px;max-height:28px;margin:0;padding:2px 5px;font:400 16px/20px var(--aisel-font);
+  border:1px solid var(--aisel-line);border-radius:3px;background:#fff;
+ }
+ html:root body #editorView .editor-mobile-head #refPanel #refLinksList>.ref-link-row>input[type="text"]{grid-column:1}
+ html:root body #editorView #refPanel .ref-link-row.is-editing>.ref-short-link{visibility:hidden}
+ html:root body #editorView #refPanel .ref-link-row.has-link>:is(.ref-short-link,input[type="text"]){background:#E9ECF2!important}
+ html:root body #editorView #workorderUspPanel #workorderUsp{border:1px solid var(--aisel-line);border-radius:3px;padding:6px}
+ html:root body #editorView #workorderUspPanel .aisel-usp-heading{display:none}
+ html:root body #editorView #orderSizePanel{padding:6px;gap:6px}
+ html:root body #editorView #orderSizeContext[data-order-state="draft"] .order-color-list{display:none}
+ html:root body #editorView #orderSizePanel .order-context-heading{margin:0;line-height:18px;gap:4px}
+ html:root body #editorView #orderSizePanel .order-context-total{min-width:0;overflow-wrap:anywhere}
+ html:root body #editorView #orderQuantityEditor :is(input,button){
+  box-sizing:border-box;height:28px;min-height:28px;max-height:28px;padding:2px 4px;line-height:22px;
+ }
+ html:root body #editorView #orderQuantityDefault{width:64px;flex-basis:64px}
+ html:root body #editorView .order-quantity-color{padding:6px;min-width:0}
+ html:root body #editorView .order-quantity-color legend{padding:0 4px;line-height:18px}
+ html:root body #editorView .order-quantity-grid label{grid-template-columns:minmax(0,1fr) minmax(0,56px);line-height:18px}
+ html:root body #editorView #orderSizeOptions .order-size-choice[aria-pressed="true"]{background:#E9ECF2;color:var(--aisel-ink);border-color:var(--aisel-line)}
+ html:root body #editorView #sheet #costCell #ownerRetailRow :is(#targetThreshold,.mobile-retail-unit){background:#F3F4F7}
 }

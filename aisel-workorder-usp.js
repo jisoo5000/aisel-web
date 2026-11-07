@@ -48,9 +48,9 @@
       if (viewKey !== current.code) { viewKey = current.code; message = ''; picker?.close(null); }
       section.hidden = false;
       panel.update({ key: current.code, serialized: current.planning?.uspKeywordsJson, disabled: busy || !current.editable });
-      button.hidden = !canImport();
+      button.hidden = true;
       button.disabled = busy || !current.editable;
-      button.textContent = busy ? '가져오는 중…' : '디자인회의에서 가져오기';
+      button.textContent = '';
       if (legacy) { legacy.textContent = current.planning?.uspValue || ''; legacy.hidden = !legacy.textContent; }
       notice.textContent = message || (current.planning?.descriptionNeedsReview ? '상품명·USP가 바뀌었습니다. 기존 상세설명을 확인해주세요.' : '');
       if (picker && (!sameAuth(picker.stamp) || !canImport())) picker.close(null);

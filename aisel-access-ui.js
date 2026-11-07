@@ -78,7 +78,7 @@
   const tbody=manager.body.querySelector('tbody');if(!tbody)return;tbody.replaceChildren();
   for(const person of rows){
    const row=el('tr',null,{'data-staff-uid':person.uid}),name=String(person.displayName||'').trim();
-   const automatic=person.role==='designer'&&name&&!name.includes('@')?name:'—';
+   const automatic=['designer','md','logistics'].includes(person.role)&&person.active&&!person.passwordChangeRequired&&name&&!name.includes('@')?name:'—';
    const values=[name||'이름 미등록',person.loginId||person.email||'미연결',roleLabels[person.role]||person.role||'확인 필요',startLabels[person.role]||'—',automatic,person.credentialState==='unissued'?'비밀번호 미발급':person.active?'사용 중':'사용 중지'];
    values.forEach((value,index)=>{const cell=el(index===0?'th':'td',value,{'data-label':['이름','로그인 아이디','역할·권한','시작 화면','자동 담당자','상태'][index]});if(index===0)cell.scope='row';row.append(cell);});
    const cell=el('td',null,{'data-label':'관리'});if(person.role!=='owner')cell.append(button('관리',()=>staffActions(person)));else cell.textContent='대표 계정';row.append(cell);tbody.append(row);

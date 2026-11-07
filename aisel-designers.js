@@ -47,7 +47,19 @@
         try{
           check(s);void Promise.resolve().then(()=>{check(s);return root.AiselCatalogOrder?.load('designers',{force});}).catch(()=>{});
           const response=await request('listDesigners',{});check(s);
-          if(atRevision===revision){accept(response);emit();}return snapshot();
+          if(atRevision===revision){
+            accept(response);
+            // User-requested additions (2026-11-08). Server acknowledgment is required;
+            // deleted entries, existing assignments and login permissions are never changed.
+            if(canManage)for(const name of config.requestedNames||[]){
+              check(s);if(entries.has(name))continue;
+              const added=await request('upsertDesigner',{name});check(s);
+              const row=checked(added?.designer);
+              if(row.name!==name||row.deletedAt)throw failure('designer_response','담당자 추가 결과를 확인하지 못했습니다.');
+              accept(added,{merge:true});
+            }
+            emit();
+          }return snapshot();
         }catch(cause){check(s);error=cause;if(['permission_denied','unauthenticated'].includes(cause?.code)){entries.clear();ready=false;canManage=false;forget(uid);}emit();throw cause;}
       });
       flight=task;try{return await task;}finally{if(flight===task)flight=null;}
@@ -161,7 +173,7 @@
     return {close,panel,input,flush,hasDraft:()=>!closed&&(!!operationFlight||composing||!!input.value.trim()),isComposing:()=>!closed&&composing};
   }
 
-  const store=createStore();
+  const store=createStore({requestedNames:['최연경','이주용','김가영']});
   function mountPicker(select,options={}){
     const document=select.ownerDocument;let config={...options},selected=String(options.value??select.value??''),destroyed=false,manager=null,signature='',catalogReady=false,priorOnchange=select.onchange;
     function close(){manager?.close();manager=null;}

@@ -253,9 +253,9 @@
 <link rel="preload" as="script" href="unified-app.js?v=staff-workspace-20261108">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
-<link rel="preload" as="style" href="workorder-screen.css?v=20261108-loss-spacing">
+<link rel="preload" as="style" href="workorder-screen.css?v=20261108-controls">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
-<link rel="preload" as="style" href="aisel-list-controls.css?v=294">
+<link rel="preload" as="style" href="aisel-list-controls.css?v=20261108-buttons">
 <script id="aisel-ipad-layout-mode">
 /* All screens share the 390px mobile composition. Native print rules are preserved. */
 (function(root){
@@ -320,7 +320,7 @@
 <script>window.AiselSheetSalesMode=true;</script>
 <script src="aisel-protected-media.js?v=289"></script>
 <script src="aisel-workorder-images.js?v=289"></script>
-<script src="aisel-access-core.js?v=staff-20261108"></script>
+<script src="aisel-access-core.js?v=20261108-staff-names"></script>
 <script src="aisel-sales-availability.js?v=288"></script>
 <script src="aisel-name-review.js?v=290"></script>
 <link rel="stylesheet" href="aisel-name-review.css?v=290">
@@ -3698,7 +3698,7 @@
     <div id="orderSizePanel" class="noprint" hidden>
       <div id="orderSizeContext"></div>
       <div id="orderSizeOptions" class="order-size-options" role="group" aria-label="발주 사이즈 구성" hidden>
-        <button type="button" class="order-size-choice" data-order-preset="numbered" aria-label="1번 (S M) · 2번 (L XL)">1·2</button>
+        <button type="button" class="order-size-choice" data-order-preset="numbered" aria-label="1번 (S M) · 2번 (L XL)">1(S M) 2(L XL)</button>
         <button type="button" class="order-size-choice" data-order-preset="s-xl">S–XL</button>
         <button type="button" class="order-size-choice" data-order-preset="s-3xl">S–3XL</button>
       </div>
@@ -5471,7 +5471,7 @@
 <script src="aisel-photo.js?v=290"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=254">
 <script src="aisel-usp.js?v=262"></script>
-<script src="aisel-workorder-usp.js?v=287"></script>
+<script src="aisel-workorder-usp.js?v=20261108-controls"></script>
 <script src="aisel-editor-values.js?v=272"></script>
 <script src="aisel-fabric-variants.js?v=260"></script>
 <script src="aisel-size-costs.js?v=295-harness"></script>
@@ -8229,13 +8229,17 @@
     shortLink.addEventListener("keydown", e=>{
       if(!(input.value || "").trim() && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); openReferenceEditor_(input); }
     });
-    // The editor follows its toolbar in the grid, spanning the whole card.
+    // The input shares the existing link cell, including direct clipboard paste.
     // Keep the original input in its reference row for legacy loading and saving.
     row.appendChild(input);
     input.autocomplete = "url";
     input.inputMode = "url";
     input.spellcheck = false;
-    input.placeholder = "https:// 링크 주소를 붙여넣으세요";
+    input.placeholder = "링크 붙여넣기";
+    input.setAttribute("aria-label", "링크 " + (index + 1) + " 주소");
+    input.addEventListener("input",()=>{row.classList.toggle("has-link",!!input.value.trim());saveSoon();});
+    input.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key==="Escape"){e.preventDefault();input.blur();shortLink.focus();}});
+    shortLink.addEventListener("paste",e=>{const value=e.clipboardData?.getData("text/plain");if(value==null)return;e.preventDefault();input.value=value.trim();updateOneRefLinkMode_("#"+input.id);saveSoon();});
     input.id = "refLink" + suffix;
     label.textContent = index === 0 ? "링크" : "링크 " + (index + 1);
     label.htmlFor = input.id;
@@ -8269,7 +8273,7 @@
     });
     updateRefLinkMode_();
   }
-  // v117: URL editors occupy a supplementary row; link and action buttons stay together.
+  // URL editing occupies the existing link cell; opening it never adds a row.
   function alignReferenceScreenRows_(){
     let gridRow=1;
     // Display new links above the primary link without changing saved link order.
@@ -8278,9 +8282,9 @@
       const link=row.querySelector('.ref-short-link'),actions=row.querySelector('.ref-actions'),input=row.querySelector('input');
       if(link)link.style.gridRow=String(gridRow);
       if(actions)actions.style.gridRow=String(gridRow);
-      if(input)input.style.gridRow=String(gridRow+1);
+      if(input)input.style.gridRow=String(gridRow);
       if(row.dataset.refIndex==='0')document.getElementById('refAddBtn').style.gridRow=String(gridRow);
-      gridRow+=row.classList.contains('is-editing')?2:1;
+      gridRow++;
     });
   }
   function openReferenceEditor_(input){
@@ -8296,6 +8300,7 @@
     const val = (input.value || "").trim();
     const refRow = input.closest("#refLinksList .ref-link-row");
     if(refRow){
+      refRow.classList.toggle("has-link",!!val);
       const shortLink = refRow.querySelector(".ref-short-link");
       const index = Number(refRow.dataset.refIndex || 0);
       if(shortLink){
@@ -11024,7 +11029,7 @@
     gallerySearchTimer_ = setTimeout(renderGallery, 200);
   });
   const ORDER_SIZE_PRESETS_ = Object.freeze({
-    numbered:{label:"1 (S M) · 2 (L XL)",sizes:["1번","2번"]},
+    numbered:{label:"1(S M) 2(L XL)",sizes:["1번","2번"]},
     "s-xl":{label:"S–XL",sizes:["S","M","L","XL"]},
     "s-3xl":{label:"S–3XL",sizes:["S","M","L","XL","2XL","3XL"]}
   });
@@ -11053,7 +11058,7 @@
   function updateOrderQuantityTotal_(){
     const draft=orderQuantityDraft_(),total=document.getElementById("orderQuantityTotal"),confirm=document.getElementById("orderQuantityConfirm");
     try{
-      if(!draft.preset)throw Error("");
+      if(!draft.preset){total.textContent="사이즈를 선택해주세요.";confirm.disabled=true;return;}
       const quantities=orderQuantitySnapshot_(draft.preset,orderColors_());
       total.textContent="총 "+Object.values(quantities).reduce((a,b)=>a+b,0)+"장";
       confirm.disabled=statusChanging_||!!currentInitialOrder_;
@@ -11061,19 +11066,19 @@
   }
   function renderOrderQuantityEditor_(){
     const editor=document.getElementById("orderQuantityEditor"),draft=orderQuantityDraft_(),preset=ORDER_SIZE_PRESETS_[draft.preset],colors=orderColors_();
-    editor.hidden=!!currentInitialOrder_||!preset||!colors.length;
+    editor.hidden=!!currentInitialOrder_||!colors.length;
     document.querySelectorAll("[data-order-preset]").forEach(b=>b.setAttribute("aria-pressed",String((currentInitialOrder_?.preset||draft.preset)===b.dataset.orderPreset)));
     if(editor.hidden)return;
     document.getElementById("orderQuantityDefault").value=String(draft.defaultQty);
     const rows=document.getElementById("orderQuantityRows");
     rows.replaceChildren();
-    for(const color of colors){
+    for(const color of preset?colors:[]){
       const fieldset=document.createElement("fieldset");fieldset.className="order-quantity-color";
       const legend=document.createElement("legend");legend.textContent=color;fieldset.append(legend);
       const grid=document.createElement("div");grid.className="order-quantity-grid";
       for(const size of preset.sizes){
         const key=orderQuantityKey_(color,size),label=document.createElement("label"),name=document.createElement("span"),input=document.createElement("input");
-        name.textContent=size==="1번"?"1번(S·M)":size==="2번"?"2번(L·XL)":size;
+        name.textContent=size==="1번"?"1(S M)":size==="2번"?"2(L XL)":size;
         input.type="number";input.inputMode="numeric";input.min="0";input.max="99999";input.step="1";
         input.value=String(draft.quantities[key]??draft.defaultQty);input.dataset.quantityKey=key;input.setAttribute("aria-label",color+" "+name.textContent+" 수량");
         input.addEventListener("input",()=>{draft.quantities[key]=input.value;setOrderSizeMessage_("");updateOrderQuantityTotal_();});
@@ -11111,11 +11116,12 @@
   function renderOrderContext_(order=currentInitialOrder_){
     const context=document.getElementById("orderSizeContext"),colors=Array.isArray(order?.colors)?order.colors:orderColors_();
     const signature=JSON.stringify([colors,order?.preset,order?.items,order?.totalQty]);
+    context.dataset.orderState=order?"saved":"draft";
     if(context.dataset.signature===signature)return;
     context.dataset.signature=signature;
     const heading=document.createElement("div");heading.className="order-context-heading";
     const title=document.createElement("strong");title.textContent=order?"발주 내역":"발주 사이즈 선택";
-    const total=document.createElement("span");total.className="order-context-total";total.textContent=order?"총 "+order.totalQty+"장":"기본 20장 · 변경 가능";
+    const total=document.createElement("span");total.className="order-context-total";total.textContent=order?"총 "+order.totalQty+"장":colors.join(" · ");
     heading.append(title,total);
     const list=document.createElement("div");list.className="order-color-list";
     for(const color of colors){
@@ -11291,15 +11297,17 @@
   document.querySelectorAll("[data-order-preset]").forEach(button=>{
     button.addEventListener("click",()=>selectOrderPreset_(button.dataset.orderPreset));
   });
-  document.getElementById("orderQuantityApply").addEventListener("click",()=>{
+  function applyOrderDefaultQuantity_(){
     if(statusChanging_||currentInitialOrder_)return;
     try{
       const draft=orderQuantityDraft_(),qty=orderQuantityValue_(document.getElementById("orderQuantityDefault").value);
       draft.defaultQty=qty;
-      for(const color of orderColors_())for(const size of ORDER_SIZE_PRESETS_[draft.preset].sizes)draft.quantities[orderQuantityKey_(color,size)]=qty;
+      for(const color of orderColors_())for(const size of ORDER_SIZE_PRESETS_[draft.preset]?.sizes||[])draft.quantities[orderQuantityKey_(color,size)]=qty;
       setOrderSizeMessage_("");renderOrderQuantityEditor_();
-    }catch(error){setOrderSizeMessage_(error.message,true);}
-  });
+    }catch(error){setOrderSizeMessage_(error.message,true);document.getElementById("orderQuantityConfirm").disabled=true;}
+  }
+  document.getElementById("orderQuantityApply").addEventListener("click",applyOrderDefaultQuantity_);
+  document.getElementById("orderQuantityDefault").addEventListener("input",applyOrderDefaultQuantity_);
   document.getElementById("orderQuantityConfirm").addEventListener("click",()=>confirmOrderSize_(orderQuantityDraft_().preset));
   document.getElementById("orderSizePanel").addEventListener("keydown",event=>{
     if(event.key==="Escape" && !statusChanging_){closeOrderSizePanel_();document.getElementById("newBtn").focus();}
@@ -12911,7 +12919,7 @@
   const mobileRecords=document.createElement('section');mobileRecords.id='mobileSampleRecords';mobileRecords.className='noprint';
   document.querySelector('#sheet > .detail2').before(mobileRecords);
   const workorderUsp=document.createElement('section');workorderUsp.id='workorderUsp';workorderUsp.className='noprint';
-  workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP</span><button type="button" id="workorderUspRefresh" hidden>디자인회의에서 가져오기</button></div><div id="workorderUspKeywords"></div><p id="workorderUspLegacy" hidden></p><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
+  workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP</span><button type="button" id="workorderUspRefresh" hidden></button></div><div id="workorderUspKeywords"></div><p id="workorderUspLegacy" hidden></p><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
   const uspPanel=document.createElement('div');uspPanel.id='workorderUspPanel';uspPanel.className='noprint';uspPanel.hidden=true;
   document.querySelector('#editorView .toolbar').after(uspPanel);uspPanel.append(workorderUsp);
   const uspToggle=document.createElement('button');uspToggle.type='button';uspToggle.id='uspToggleBtn';uspToggle.className='btn ghost nav-btn';uspToggle.textContent='USP';uspToggle.setAttribute('aria-expanded','false');uspToggle.setAttribute('aria-controls','workorderUspPanel');document.getElementById('saveBtn').after(uspToggle);
@@ -17851,7 +17859,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-collection-writes.js?v=264"></script>
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
-<script src="aisel-designers.js?v=280"></script>
+<script src="aisel-designers.js?v=20261108-staff-names"></script>
 <script src="aisel-editor-enhancements.js?v=294"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=233">
 <script src="aisel-date-filter.js?v=295-harness"></script>
@@ -17897,15 +17905,15 @@ window.AiselUnifiedAdapter={
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=287"></script>
-<script src="aisel-access-ui.js?v=staff-20261108"></script>
+<script src="aisel-access-ui.js?v=20261108-staff-names"></script>
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=20261108-1"></script>
 <script src="unified-app.js?v=operations-20261108-1"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
-<link rel="stylesheet" href="workorder-screen.css?v=20261108-loss-spacing" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=20261108-controls" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
-<link rel="stylesheet" href="aisel-list-controls.css?v=294" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=20261108-buttons" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {

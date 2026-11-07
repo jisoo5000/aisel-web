@@ -77,7 +77,7 @@
  }
  // The authenticated account supplies only the default for a NEW workorder.
  function defaultDesigner(){
-  if(!session?.uid||session.uid!==user()?.uid||session.active!==true||session.role!=='designer'||session.passwordChangeRequired)return '';
+  if(!session?.uid||session.uid!==user()?.uid||session.active!==true||!['designer','md','logistics'].includes(session.role)||session.passwordChangeRequired)return '';
   const name=String(session.displayName||'').trim();
   return name&&!name.includes('@')&&name.length<=80?name:'';
  }
