@@ -846,7 +846,7 @@
  html:root body #editorView #orderSizeMessage{font-size:11px;line-height:16px}
  html:root body #editorView #orderSizeMessage[hidden]{display:none!important}
  html:root body #editorView #uspToggleBtn:not(.has-usp){background:#fff}
- html:root body #editorView :is(#newBtn.order-completed,#uspToggleBtn.has-usp,#sampleRecoverySeg button.active),
+ html:root body #editorView #sampleRecoverySeg button.active,
  html:root body #editorView #sampleRecoverySeg button[data-value="factory"].active{
   background:#E9ECF2;border-color:var(--aisel-line,#E3E5E7);color:var(--aisel-ink)
  }
@@ -862,3 +862,10 @@
 }
 
 @media screen{html:root body #editorView #newBtn:not(.order-completed){background:#fff}}
+
+/* Completed initial orders and entered USP use the same selected fill as production status. */
+@media screen{
+ html:root body #editorView :is(#newBtn.order-completed,#uspToggleBtn.has-usp){
+  background:var(--aisel-soft,#F6F6F6);border-color:var(--aisel-line,#DEDEDE);color:var(--aisel-ink,#34383C)
+ }
+}

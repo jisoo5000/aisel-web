@@ -253,7 +253,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=staff-workspace-20261108">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
-<link rel="preload" as="style" href="workorder-screen.css?v=20261108-order-feedback">
+<link rel="preload" as="style" href="workorder-screen.css?v=20261108-order-state">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=20261108-buttons">
 <script id="aisel-ipad-layout-mode">
@@ -11094,10 +11094,15 @@
     }
     updateOrderQuantityTotal_();
   }
+  function orderDraftRequirement_(){
+    if(!orderColors_().length)return "작지의 컬러를 먼저 선택해주세요.";
+    const factory=!!$("#factory").value.trim(),name=!!$("#pumMyeong").value.trim();
+    return !factory&&!name?"작지의 공장과 품명을 먼저 입력해주세요.":!factory?"작지의 공장을 먼저 입력해주세요.":!name?"작지의 품명을 먼저 입력해주세요.":"";
+  }
   function selectOrderPreset_(presetKey){
     if(statusChanging_||initialOrderLocked_()||!ORDER_SIZE_PRESETS_[presetKey]||!orderColors_().length)return;
     orderQuantityDraft_().preset=presetKey;
-    setOrderSizeMessage_("");renderOrderQuantityEditor_();
+    const requirement=orderDraftRequirement_();setOrderSizeMessage_(requirement,!!requirement);renderOrderQuantityEditor_();
   }
   function orderColors_(){
     const raw=window.getSelectedColors_ ? window.getSelectedColors_() : [];
@@ -11183,7 +11188,8 @@
       b.disabled=initialOrderLocked_() || !colors.length;
       b.setAttribute("aria-pressed",String(order?.preset===b.dataset.orderPreset));
     });
-    setOrderSizeMessage_(order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":initialOrderLocked_()?"이미 초두발주가 등록된 작지입니다. 발주 시트에서 기존 수량을 확인해주세요.":!colors.length?"작지의 컬러를 먼저 선택해주세요.":"",!initialOrderLocked_()&&!colors.length,!!order);
+    const requirement=initialOrderLocked_()?"":orderDraftRequirement_();
+    setOrderSizeMessage_(order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":initialOrderLocked_()?"이미 초두발주가 등록된 작지입니다. 발주 시트에서 기존 수량을 확인해주세요.":requirement,!!requirement,!!order);
     document.getElementById("orderSizeOptions").hidden=initialOrderLocked_();
     renderOrderQuantityEditor_();
     panel.hidden=false;button.setAttribute("aria-expanded","true");
@@ -11203,10 +11209,8 @@
     if(statusChanging_ || initialOrderLocked_() || !ORDER_SIZE_PRESETS_[presetKey])return;
     if(loading || !woRef || !currentCode || codeConflictNow_())return;
     const colors=orderColors_();
-    if(!colors.length){setOrderSizeMessage_("작지의 컬러를 먼저 선택해주세요.",true);return;}
-    if(!$("#factory").value.trim() || !$("#pumMyeong").value.trim()){
-      setOrderSizeMessage_("작지의 공장과 품명을 먼저 입력해주세요.",true);return;
-    }
+    const requirement=orderDraftRequirement_();
+    if(requirement){setOrderSizeMessage_(requirement,true);return;}
     const code=currentCode,ref=woRef,button=document.getElementById("newBtn");
     const same=()=>currentCode===code && woRef===ref;
     let claimed=false,order=null,quantitySnapshot;
@@ -11554,7 +11558,9 @@
             <div class="gcard-colors-row" title="${esc_(names.join(' · '))}"></div>
             <div class="gcard-date">${esc_(dateLabel)||'—'}${designerLabel && designerLabel !== '미지정' ? '　'+esc_(designerLabel) : ''}</div>
           </div>`;
-        const availability=document.createElement("div");availability.className="gcard-availability";availability.textContent=window.AiselSalesAvailability.label(st);card.querySelector(".gcard-info").append(availability);
+        if(window.AiselSalesAvailability.state(st).availability){
+          const availability=document.createElement("div");availability.className="gcard-availability";availability.textContent=window.AiselSalesAvailability.label(st);card.querySelector(".gcard-info").append(availability);
+        }
         const colorRow=card.querySelector(".gcard-colors-row");
         names.forEach((name,index)=>{
           const chip=document.createElement("span");chip.className="gcard-color-chip"+(index>=2?" gcard-color-mobile-extra":"");chip.textContent=name;
@@ -17926,7 +17932,7 @@ window.AiselUnifiedAdapter={
 <script src="erp-operations.js?v=20261108-1"></script>
 <script src="unified-app.js?v=operations-20261108-1"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
-<link rel="stylesheet" href="workorder-screen.css?v=20261108-order-feedback" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=20261108-order-state" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
 <link rel="stylesheet" href="aisel-list-controls.css?v=20261108-buttons" media="screen">
 
@@ -17976,8 +17982,8 @@ window.AiselUnifiedAdapter={
 <style id="aisel-order-completed-style">
 @media screen {
  html:root body #editorView .toolbar .tb-row > #newBtn.order-completed {
-  background:#E9ECF2!important;border-color:#E3E5E7!important;color:#34383C!important;
-  -webkit-text-fill-color:#34383C!important;
+  background:var(--aisel-soft,#F6F6F6)!important;border-color:var(--aisel-line,#DEDEDE)!important;color:var(--aisel-ink,#34383C)!important;
+  -webkit-text-fill-color:var(--aisel-ink,#34383C)!important;
  }
 }
 </style>
