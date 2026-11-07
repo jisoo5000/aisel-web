@@ -1,4 +1,5 @@
 <!-- 2026-11-08: shared fabric/revision icon actions and equal four-pixel gaps. -->
+<!-- 2026-11-08: equal single-line size presets; editable initial-order quantities before explicit save. -->
 <!-- v299: calm shared navigation; retain v298 six-pixel editor spacing. -->
 <!-- v299: single-line fabric fields and scoped, non-repeating order registration feedback. -->
 <!-- v298: softer field focus and consistent 6px vertical editor spacing. -->
@@ -252,7 +253,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=staff-workspace-20261108">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
-<link rel="preload" as="style" href="workorder-screen.css?v=row-actions-20261108">
+<link rel="preload" as="style" href="workorder-screen.css?v=order-quantity-20261108">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=294">
 <script id="aisel-ipad-layout-mode">
@@ -3683,7 +3684,7 @@
     </div>
 
     <div class="tb-row">
-      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈를 선택해 발주">발주완료</button>
+      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈와 수량을 확인해 발주">발주완료</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle" hidden>저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
@@ -3697,9 +3698,18 @@
     <div id="orderSizePanel" class="noprint" hidden>
       <div id="orderSizeContext"></div>
       <div id="orderSizeOptions" class="order-size-options" role="group" aria-label="발주 사이즈 구성" hidden>
-        <button type="button" class="order-size-choice" data-order-preset="numbered" aria-label="1 (S M) · 2 (L XL)"><span class="order-numbered-line">1 (S M)</span><span class="order-numbered-line">2 (L XL)</span></button>
+        <button type="button" class="order-size-choice" data-order-preset="numbered" aria-label="1번 (S M) · 2번 (L XL)">1·2</button>
         <button type="button" class="order-size-choice" data-order-preset="s-xl">S–XL</button>
         <button type="button" class="order-size-choice" data-order-preset="s-3xl">S–3XL</button>
+      </div>
+      <div id="orderQuantityEditor" hidden>
+        <div class="order-quantity-bulk">
+          <label for="orderQuantityDefault">각 사이즈</label>
+          <input id="orderQuantityDefault" type="number" inputmode="numeric" min="0" max="99999" step="1" value="20" aria-label="전체 사이즈에 적용할 수량">
+          <span>장</span><button id="orderQuantityApply" type="button">전체 적용</button>
+        </div>
+        <div id="orderQuantityRows"></div>
+        <div class="order-quantity-footer"><span id="orderQuantityTotal" aria-live="polite"></span><button id="orderQuantityConfirm" type="button">발주 저장</button></div>
       </div>
       <div id="orderSizeMessage" role="status" aria-live="polite"></div>
     </div>
@@ -11018,21 +11028,81 @@
     "s-xl":{label:"S–XL",sizes:["S","M","L","XL"]},
     "s-3xl":{label:"S–3XL",sizes:["S","M","L","XL","2XL","3XL"]}
   });
+  // Draft quantities stay isolated by workorder and color/size; opening a panel never sends an order.
+  const orderQuantityDrafts_ = new Map();
+  function orderQuantityDraft_(){
+    let draft=orderQuantityDrafts_.get(currentCode);
+    if(!draft){draft={preset:null,defaultQty:20,quantities:Object.create(null)};orderQuantityDrafts_.set(currentCode,draft);}
+    return draft;
+  }
+  function orderQuantityKey_(color,size){return JSON.stringify([color,size]);}
+  function orderQuantityValue_(value){
+    const text=String(value).trim(),number=Number(text);
+    if(!/^\d+$/.test(text)||!Number.isSafeInteger(number)||number<0||number>99999)throw Error("수량은 0~99,999 사이의 정수로 입력해주세요.");
+    return number;
+  }
+  function orderQuantitySnapshot_(presetKey,colors){
+    const draft=orderQuantityDraft_(),quantities=Object.create(null);
+    for(const color of colors)for(const size of ORDER_SIZE_PRESETS_[presetKey].sizes){
+      const key=orderQuantityKey_(color,size);
+      quantities[key]=orderQuantityValue_(draft.quantities[key]??draft.defaultQty);
+    }
+    if(!Object.values(quantities).some(q=>q>0))throw Error("발주할 수량을 1장 이상 입력해주세요.");
+    return quantities;
+  }
+  function updateOrderQuantityTotal_(){
+    const draft=orderQuantityDraft_(),total=document.getElementById("orderQuantityTotal"),confirm=document.getElementById("orderQuantityConfirm");
+    try{
+      if(!draft.preset)throw Error("");
+      const quantities=orderQuantitySnapshot_(draft.preset,orderColors_());
+      total.textContent="총 "+Object.values(quantities).reduce((a,b)=>a+b,0)+"장";
+      confirm.disabled=statusChanging_||!!currentInitialOrder_;
+    }catch(_){total.textContent="수량을 확인해주세요.";confirm.disabled=true;}
+  }
+  function renderOrderQuantityEditor_(){
+    const editor=document.getElementById("orderQuantityEditor"),draft=orderQuantityDraft_(),preset=ORDER_SIZE_PRESETS_[draft.preset],colors=orderColors_();
+    editor.hidden=!!currentInitialOrder_||!preset||!colors.length;
+    document.querySelectorAll("[data-order-preset]").forEach(b=>b.setAttribute("aria-pressed",String((currentInitialOrder_?.preset||draft.preset)===b.dataset.orderPreset)));
+    if(editor.hidden)return;
+    document.getElementById("orderQuantityDefault").value=String(draft.defaultQty);
+    const rows=document.getElementById("orderQuantityRows");
+    rows.replaceChildren();
+    for(const color of colors){
+      const fieldset=document.createElement("fieldset");fieldset.className="order-quantity-color";
+      const legend=document.createElement("legend");legend.textContent=color;fieldset.append(legend);
+      const grid=document.createElement("div");grid.className="order-quantity-grid";
+      for(const size of preset.sizes){
+        const key=orderQuantityKey_(color,size),label=document.createElement("label"),name=document.createElement("span"),input=document.createElement("input");
+        name.textContent=size==="1번"?"1번(S·M)":size==="2번"?"2번(L·XL)":size;
+        input.type="number";input.inputMode="numeric";input.min="0";input.max="99999";input.step="1";
+        input.value=String(draft.quantities[key]??draft.defaultQty);input.dataset.quantityKey=key;input.setAttribute("aria-label",color+" "+name.textContent+" 수량");
+        input.addEventListener("input",()=>{draft.quantities[key]=input.value;setOrderSizeMessage_("");updateOrderQuantityTotal_();});
+        label.append(name,input);grid.append(label);
+      }
+      fieldset.append(grid);rows.append(fieldset);
+    }
+    updateOrderQuantityTotal_();
+  }
+  function selectOrderPreset_(presetKey){
+    if(statusChanging_||currentInitialOrder_||!ORDER_SIZE_PRESETS_[presetKey]||!orderColors_().length)return;
+    orderQuantityDraft_().preset=presetKey;
+    setOrderSizeMessage_("");renderOrderQuantityEditor_();
+  }
   function orderColors_(){
     const raw=window.getSelectedColors_ ? window.getSelectedColors_() : [];
     return [...new Set((window.colorNames_ ? window.colorNames_(raw) : raw).filter(v=>typeof v==="string").map(v=>v.trim()).filter(Boolean))];
   }
-  function buildInitialOrder_(presetKey,colors,code,now){
+  function buildInitialOrder_(presetKey,colors,code,now,quantities){
     const preset=ORDER_SIZE_PRESETS_[presetKey];
     if(!preset || !colors.length) throw Error("컬러와 사이즈 구성을 선택해주세요.");
     const date=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
     const items=colors.flatMap(color=>preset.sizes.map(size=>({
       orderType:"초기발주",orderCategory:"공장발주",styleCode:code,
       factory:$("#factory").value.trim(),itemName:$("#pumMyeong").value.trim(),
-      color,size,qty:20,unit:"장",orderDate:date,memo:""
-    })));
+      color,size,qty:quantities?quantities[orderQuantityKey_(color,size)]:20,unit:"장",orderDate:date,memo:""
+    }))).filter(item=>item.qty>0);
     return {version:1,id:"initial-"+code,preset:presetKey,colors:colors.slice(),sizes:preset.sizes.slice(),
-      items,totalQty:items.length*20,createdAt:now,transport:"registered"};
+      items,totalQty:items.reduce((sum,item)=>sum+item.qty,0),createdAt:now,transport:"registered"};
   }
   function setOrderSizeMessage_(message,error=false){
     const el=document.getElementById("orderSizeMessage");
@@ -11045,7 +11115,7 @@
     context.dataset.signature=signature;
     const heading=document.createElement("div");heading.className="order-context-heading";
     const title=document.createElement("strong");title.textContent=order?"발주 내역":"발주 사이즈 선택";
-    const total=document.createElement("span");total.className="order-context-total";total.textContent=order?"총 "+order.totalQty+"장":"사이즈별 20장";
+    const total=document.createElement("span");total.className="order-context-total";total.textContent=order?"총 "+order.totalQty+"장":"기본 20장 · 변경 가능";
     heading.append(title,total);
     const list=document.createElement("div");list.className="order-color-list";
     for(const color of colors){
@@ -11055,7 +11125,7 @@
       const items=Array.isArray(order?.items)?order.items.filter(item=>item.color===color):[];
       if(items.length)for(const item of items){
         const span=document.createElement("span");span.className="order-size-quantity";span.textContent=item.size+" "+item.qty+"장";quantities.append(span);
-      }else{const span=document.createElement("span");span.className="order-size-quantity";span.textContent="각 사이즈 20장";quantities.append(span);}
+      }else{const span=document.createElement("span");span.className="order-size-quantity";span.textContent="각 사이즈 기본 20장";quantities.append(span);}
       row.append(name,quantities);list.append(row);
     }
     if(!colors.length)list.textContent="작지의 컬러를 먼저 선택해주세요.";
@@ -11078,9 +11148,10 @@
     if(button.textContent!==text)button.textContent=text;
     button.classList.toggle("order-completed",!!complete);
     button.setAttribute("aria-pressed",String(!!complete));
-    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장":"사이즈를 선택해 발주";
+    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장":"사이즈와 수량을 확인해 발주";
     if(order){
       renderOrderContext_();
+      document.getElementById("orderQuantityEditor").hidden=true;
     }
   }
   function openOrderSizePanel_(){
@@ -11095,6 +11166,7 @@
     });
     setOrderSizeMessage_(order?order.transport==="confirmed"?"발주는 저장됐습니다.":"발주 내역은 저장되어 있습니다. 발주 시트에서 반영 여부를 확인해주세요. 중복 전송하지 않습니다.":"");
     document.getElementById("orderSizeOptions").hidden=!!order;
+    renderOrderQuantityEditor_();
     panel.hidden=false;button.setAttribute("aria-expanded","true");
   }
   $("#newBtn").addEventListener("click",()=>{
@@ -11118,9 +11190,11 @@
     }
     const code=currentCode,ref=woRef,button=document.getElementById("newBtn");
     const same=()=>currentCode===code && woRef===ref;
-    let claimed=false,order=null;
+    let claimed=false,order=null,quantitySnapshot;
+    try{quantitySnapshot=orderQuantitySnapshot_(presetKey,colors);}catch(error){setOrderSizeMessage_(error.message,true);return;}
     statusChanging_=true;button.disabled=true;
     document.querySelectorAll(".status-btn,[data-order-preset]").forEach(b=>b.disabled=true);
+    document.querySelectorAll("#orderQuantityEditor input,#orderQuantityEditor button").forEach(el=>el.disabled=true);
     setOrderSizeMessage_("발주 저장 중…");
     try{
       if(!await waitForEditorComposition_())throw Error("한글 입력을 마쳐주세요.");
@@ -11131,7 +11205,7 @@
       if(!same())return;
       if(!nameOrderAllowed_('initialOrder'))throw Error('발주 전에 대표님이 품명 아래의 최종 이름 확정을 체크해주세요.');
       // Claim this initial order once across tabs. A live snapshot avoids a cold-null transaction.
-      order=buildInitialOrder_(presetKey,colors,code,Date.now());
+      order=buildInitialOrder_(presetKey,colors,code,Date.now(),quantitySnapshot);
       const orderRef=ref.child("initialOrder"),keep=()=>{};
       orderRef.on("value",keep);
       let result;
@@ -11207,12 +11281,26 @@
     }finally{
       statusChanging_=false;button.disabled=false;
       document.querySelectorAll(".status-btn").forEach(b=>b.disabled=false);
-      if(same())document.querySelectorAll("[data-order-preset]").forEach(b=>b.disabled=!!currentInitialOrder_);
+      if(same()){
+        document.querySelectorAll("[data-order-preset]").forEach(b=>b.disabled=!!currentInitialOrder_);
+        document.querySelectorAll("#orderQuantityEditor input,#orderQuantityEditor button").forEach(el=>el.disabled=!!currentInitialOrder_);
+        if(!currentInitialOrder_)updateOrderQuantityTotal_();
+      }
     }
   }
   document.querySelectorAll("[data-order-preset]").forEach(button=>{
-    button.addEventListener("click",()=>confirmOrderSize_(button.dataset.orderPreset));
+    button.addEventListener("click",()=>selectOrderPreset_(button.dataset.orderPreset));
   });
+  document.getElementById("orderQuantityApply").addEventListener("click",()=>{
+    if(statusChanging_||currentInitialOrder_)return;
+    try{
+      const draft=orderQuantityDraft_(),qty=orderQuantityValue_(document.getElementById("orderQuantityDefault").value);
+      draft.defaultQty=qty;
+      for(const color of orderColors_())for(const size of ORDER_SIZE_PRESETS_[draft.preset].sizes)draft.quantities[orderQuantityKey_(color,size)]=qty;
+      setOrderSizeMessage_("");renderOrderQuantityEditor_();
+    }catch(error){setOrderSizeMessage_(error.message,true);}
+  });
+  document.getElementById("orderQuantityConfirm").addEventListener("click",()=>confirmOrderSize_(orderQuantityDraft_().preset));
   document.getElementById("orderSizePanel").addEventListener("keydown",event=>{
     if(event.key==="Escape" && !statusChanging_){closeOrderSizePanel_();document.getElementById("newBtn").focus();}
   });
@@ -17812,7 +17900,7 @@ window.AiselUnifiedAdapter={
 <script src="aisel-access-ui.js?v=staff-20261108"></script>
 <script src="unified-app.js?v=staff-workspace-20261108"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
-<link rel="stylesheet" href="workorder-screen.css?v=row-actions-20261108" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=order-quantity-20261108" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
 <link rel="stylesheet" href="aisel-list-controls.css?v=294" media="screen">
 

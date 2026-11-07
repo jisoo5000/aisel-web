@@ -731,6 +731,29 @@
  html:root body #editorView #uspToggleBtn{width:100%}
 }
 
+/* ERP 2026-11-08: size presets use one shared row; quantities are editable before sending. */
+@media screen {
+ html:root body #editorView #orderSizeOptions{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+ html:root body #editorView #orderSizePanel .order-size-choice{
+  flex-direction:row;white-space:nowrap;line-height:18px;font-size:12px;font-weight:400;
+  height:28px;min-height:28px;max-height:28px;padding:0 4px;border-radius:3px;
+ }
+ html:root body #editorView #orderQuantityEditor[hidden]{display:none!important}
+ html:root body #editorView #orderQuantityEditor{display:grid;gap:6px;margin-top:6px;min-width:0}
+ html:root body #editorView .order-quantity-bulk{display:flex;align-items:center;gap:4px;min-width:0;font:400 12px/18px var(--aisel-font);color:var(--aisel-ink)}
+ html:root body #editorView #orderQuantityEditor input{box-sizing:border-box;min-width:0;width:100%;height:36px;min-height:36px;margin:0;padding:4px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px;background:#fff;color:var(--aisel-ink);font:400 16px/24px var(--aisel-font);text-align:right}
+ html:root body #editorView #orderQuantityDefault{width:72px;flex:0 0 72px}
+ html:root body #editorView #orderQuantityEditor button{box-sizing:border-box;min-width:0;height:28px;min-height:28px;margin:0;padding:0 8px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px;background:#fff;color:var(--aisel-ink);font:400 12px/18px var(--aisel-font);white-space:nowrap}
+ html:root body #editorView #orderQuantityRows{display:grid;gap:6px;min-width:0}
+ html:root body #editorView .order-quantity-color{box-sizing:border-box;min-width:0;margin:0;padding:6px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px}
+ html:root body #editorView .order-quantity-color legend{max-width:100%;padding:0 4px;font:600 12px/18px var(--aisel-font);overflow-wrap:anywhere}
+ html:root body #editorView .order-quantity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 4px;min-width:0}
+ html:root body #editorView .order-quantity-grid label{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,64px);gap:4px;align-items:center;min-width:0;margin:0;font:400 12px/18px var(--aisel-font);white-space:nowrap}
+ html:root body #editorView .order-quantity-footer{display:flex;align-items:center;justify-content:space-between;gap:4px;min-width:0;font:400 12px/18px var(--aisel-font)}
+ html:root body #editorView #orderQuantityConfirm{background:#E9ECF2}
+ html:root body #editorView #orderQuantityEditor :disabled{opacity:.6}
+}
+
 /* 2026-11-08: identical fabric/revision delete and add controls, with real 4px gaps. */
 @media screen {
  html:root body #editorView{--aisel-row-action-size:28px;--aisel-row-action-gap:4px;--aisel-row-action-icon:16px}
