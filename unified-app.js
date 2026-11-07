@@ -133,7 +133,14 @@
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
  function rememberRole(value){const user=memberUser();if(!user?.emailVerified||!user.uid||!validRoles.includes(value))return;try{localStorage.setItem(landingKey,JSON.stringify({uid:user.uid,role:value,checkedAt:Date.now()}));}catch(_){} }
  function landingRole(){const verified=role();if(validRoles.includes(verified))return verified;const user=memberUser();if(!user?.emailVerified||!user.uid)return null;try{const hint=JSON.parse(localStorage.getItem(landingKey));const age=Date.now()-hint?.checkedAt;if(hint?.uid===user.uid&&age>=0&&age<86400000&&validRoles.includes(hint.role))return hint.role;}catch(_){}return null;}
- function landingView(){if(window.AiselAccess?.legacy)return 'orders';const value=landingRole();return value==='logistics'?'products':value==='md'?'sales':'orders';}
+ // Staff start with their primary task, including legacy-compatible sessions.
+ const staffLandingViews=Object.freeze({designer:'orders',logistics:'products'});
+ function landingView(){
+  const value=landingRole();
+  if(Object.prototype.hasOwnProperty.call(staffLandingViews,value))return staffLandingViews[value];
+  if(window.AiselAccess?.legacy)return 'orders';
+  return value==='md'?'sales':'orders';
+ }
  function restoreLanding(){if(!landingOpen||busy||!landingRole())return;landingOpen=false;const target=landingView();if(current!==target)show(target,{replace:true});}
  for(const event of ['pointerdown','keydown','input'])document.addEventListener(event,()=>{landingOpen=false;},{capture:true,once:true});
  // Resuming input cancels a destination chosen before that input. A delayed save
