@@ -253,7 +253,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=staff-workspace-20261108">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
-<link rel="preload" as="style" href="workorder-screen.css?v=20261108-controls">
+<link rel="preload" as="style" href="workorder-screen.css?v=20261108-order-feedback">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=20261108-buttons">
 <script id="aisel-ipad-layout-mode">
@@ -3684,7 +3684,7 @@
     </div>
 
     <div class="tb-row">
-      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈와 수량을 확인해 발주">발주완료</button>
+      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈와 수량을 확인해 발주">발주 요청</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle" hidden>저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
@@ -5471,7 +5471,7 @@
 <script src="aisel-photo.js?v=290"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=254">
 <script src="aisel-usp.js?v=262"></script>
-<script src="aisel-workorder-usp.js?v=20261108-controls"></script>
+<script src="aisel-workorder-usp.js?v=20261108-filled"></script>
 <script src="aisel-editor-values.js?v=272"></script>
 <script src="aisel-fabric-variants.js?v=260"></script>
 <script src="aisel-size-costs.js?v=295-harness"></script>
@@ -11109,10 +11109,15 @@
     return {version:1,id:"initial-"+code,preset:presetKey,colors:colors.slice(),sizes:preset.sizes.slice(),
       items,totalQty:items.reduce((sum,item)=>sum+item.qty,0),createdAt:now,transport:"registered"};
   }
-  function setOrderSizeMessage_(message,error=false){
+  function setOrderSizeMessage_(message,error=false,ownerOnly=false){
     const el=document.getElementById("orderSizeMessage");
     el.textContent=message;el.dataset.error=String(error);
+    el.dataset.ownerOnly=String(ownerOnly);el.hidden=ownerOnly&&window.AiselAccess?.isOwner!==true;
   }
+  window.addEventListener("aisel-access-change",()=>{
+    const el=document.getElementById("orderSizeMessage");
+    if(el?.dataset.ownerOnly==="true")el.hidden=window.AiselAccess?.isOwner!==true;
+  });
   function renderOrderContext_(order=currentInitialOrder_){
     const context=document.getElementById("orderSizeContext"),colors=Array.isArray(order?.colors)?order.colors:orderColors_();
     const signature=JSON.stringify([colors,order?.preset,order?.items,order?.totalQty]);
@@ -11148,13 +11153,15 @@
   function renderOrderCompletedButton_(){
     const button=document.getElementById("newBtn");
     if(!button)return;
-    const order=currentInitialOrder_,complete=currentOrderCompleted_ && order?.transport!=="unconfirmed" && order?.transport!=="sending";
+    const order=currentInitialOrder_,complete=!!order||currentOrderCompleted_;
+    // The button confirms the durable app record; transport confirmation remains separate.
     const colors=Array.isArray(order?.colors)?order.colors:[];
-    const text=order && !complete?"발주 확인":"발주완료";
+    const text=complete?"발주완료":"발주 요청";
     if(button.textContent!==text)button.textContent=text;
     button.classList.toggle("order-completed",!!complete);
+    button.dataset.transport=order?.transport||"none";
     button.setAttribute("aria-pressed",String(!!complete));
-    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장":"사이즈와 수량을 확인해 발주";
+    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장"+(order?.transport!=="confirmed"?" · 발주 시트에서 확인해주세요.":""):"사이즈와 수량을 확인해 발주";
     if(order){
       renderOrderContext_();
       document.getElementById("orderQuantityEditor").hidden=true;
@@ -11170,7 +11177,7 @@
       b.disabled=!!order || !colors.length;
       b.setAttribute("aria-pressed",String(order?.preset===b.dataset.orderPreset));
     });
-    setOrderSizeMessage_(order?order.transport==="confirmed"?"발주는 저장됐습니다.":"발주 내역은 저장되어 있습니다. 발주 시트에서 반영 여부를 확인해주세요. 중복 전송하지 않습니다.":"");
+    setOrderSizeMessage_(order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":"",false,!!order);
     document.getElementById("orderSizeOptions").hidden=!!order;
     renderOrderQuantityEditor_();
     panel.hidden=false;button.setAttribute("aria-expanded","true");
@@ -11282,7 +11289,7 @@
       if(same()){
         document.getElementById("orderSizePanel").hidden=false;
         button.setAttribute("aria-expanded","true");
-        setOrderSizeMessage_(claimed ? "발주 내역은 저장됐습니다. 전송 결과를 확인하지 못했으니 발주 시트에서 확인해주세요. 중복 전송하지 않습니다." : error.message||"발주 저장에 실패했습니다. 다시 눌러주세요.",true);
+        setOrderSizeMessage_(claimed ? "발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요." : error.message||"발주 저장에 실패했습니다. 다시 눌러주세요.",!claimed,claimed);
       }
     }finally{
       statusChanging_=false;button.disabled=false;
@@ -12975,7 +12982,7 @@
   function renderMobileSampleDate_(){
     const fullDate=document.getElementById('sampleRecoveryDates').textContent;
     const date=sampleRecoveryStatus==='returned'?sampleReturnedDate:sampleFactorySentDate;
-    sampleDate.textContent=date?(sampleRecoveryStatus==='returned'?'회수 ':'전달 ')+date.slice(2).replace(/-/g,'.'):'회수날짜';
+    sampleDate.textContent=date?date.slice(2).replace(/-/g,'.'):'회수날짜';
     sampleDate.classList.toggle('overdue',document.getElementById('sampleRecoveryRow').classList.contains('overdue'));
     sampleDate.title=fullDate||sampleDate.textContent;
     sampleSeg.querySelectorAll('button').forEach(button=>{button.disabled=mobileLayout.matches&&(loading||codeConflictNow_());});
@@ -17911,7 +17918,7 @@ window.AiselUnifiedAdapter={
 <script src="erp-operations.js?v=20261108-1"></script>
 <script src="unified-app.js?v=operations-20261108-1"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
-<link rel="stylesheet" href="workorder-screen.css?v=20261108-controls" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=20261108-order-feedback" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
 <link rel="stylesheet" href="aisel-list-controls.css?v=20261108-buttons" media="screen">
 
@@ -17961,8 +17968,8 @@ window.AiselUnifiedAdapter={
 <style id="aisel-order-completed-style">
 @media screen {
  html:root body #editorView .toolbar .tb-row > #newBtn.order-completed {
-  background:#34383C!important;border-color:#34383C!important;color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
+  background:#E9ECF2!important;border-color:#E3E5E7!important;color:#34383C!important;
+  -webkit-text-fill-color:#34383C!important;
  }
 }
 </style>

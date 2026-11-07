@@ -47,6 +47,9 @@
       const current = context();
       if (viewKey !== current.code) { viewKey = current.code; message = ''; picker?.close(null); }
       section.hidden = false;
+      const filled=root.AiselUsp.keywords(current.planning?.uspKeywordsJson).some(value=>value.trim())||!!String(current.planning?.uspValue||"").trim();
+      const toggle=document.getElementById("uspToggleBtn");
+      if(toggle){toggle.classList.toggle("has-usp",filled);toggle.dataset.filled=String(filled);}
       panel.update({ key: current.code, serialized: current.planning?.uspKeywordsJson, disabled: busy || !current.editable });
       button.hidden = true;
       button.disabled = busy || !current.editable;

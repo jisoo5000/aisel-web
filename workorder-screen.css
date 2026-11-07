@@ -834,3 +834,31 @@
  html:root body #editorView #orderSizeOptions .order-size-choice[aria-pressed="true"]{background:#E9ECF2;color:var(--aisel-ink);border-color:var(--aisel-line)}
  html:root body #editorView #sheet #costCell #ownerRetailRow :is(#targetThreshold,.mobile-retail-unit){background:#F3F4F7}
 }
+
+/* 2026-11-08: equal quantity widths, separated size groups and saved-state feedback. Screen only. */
+@media screen{
+ html:root body #editorView #orderQuantityEditor{--aisel-order-quantity-width:68px}
+ html:root body #editorView #orderQuantityEditor input{width:var(--aisel-order-quantity-width);min-width:var(--aisel-order-quantity-width);max-width:var(--aisel-order-quantity-width)}
+ html:root body #editorView #orderQuantityDefault{flex:0 0 var(--aisel-order-quantity-width)}
+ html:root body #editorView .order-quantity-bulk{gap:8px}
+ html:root body #editorView .order-quantity-grid{grid-template-columns:repeat(2,max-content);justify-content:space-between;gap:6px 16px}
+ html:root body #editorView .order-quantity-grid label{grid-template-columns:max-content var(--aisel-order-quantity-width);gap:6px}
+ html:root body #editorView #orderSizeMessage{font-size:11px;line-height:16px}
+ html:root body #editorView #orderSizeMessage[hidden]{display:none!important}
+ html:root body #editorView #uspToggleBtn:not(.has-usp){background:#fff}
+ html:root body #editorView :is(#newBtn.order-completed,#uspToggleBtn.has-usp,#sampleRecoverySeg button.active),
+ html:root body #editorView #sampleRecoverySeg button[data-value="factory"].active{
+  background:#E9ECF2;border-color:var(--aisel-line,#E3E5E7);color:var(--aisel-ink)
+ }
+ html:root body #editorView #mobileMeetingSummary #mobileSampleRecoveryDate{flex:0 0 58px;font-size:11px;line-height:16px;white-space:nowrap;overflow:visible;text-overflow:clip}
+ html:root body #editorView #sheet :is(#fabricSupplierField,#fabricNameField){text-align:center!important}
+ html:root body #editorView #sheet :is(#materials,.mobile-change-text){font-size:15px!important;line-height:24px}
+}
+
+@media screen{
+ html:root body #editorView #mobileMeetingSummary #sampleRecoverySeg button.active[data-value]{
+  background:#E9ECF2!important;border-color:#E3E5E7!important;color:#34383C!important;-webkit-text-fill-color:#34383C!important
+ }
+}
+
+@media screen{html:root body #editorView #newBtn:not(.order-completed){background:#fff}}
