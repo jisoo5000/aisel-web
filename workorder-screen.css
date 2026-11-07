@@ -605,7 +605,7 @@
  html:root body #editorView #mobileMeetingSummary{padding-top:var(--aisel-editor-half-gap);padding-bottom:var(--aisel-editor-gap);margin-bottom:var(--aisel-editor-gap)}
  html:root body #editorView #sheet>.title-row{padding-block:var(--aisel-editor-gap)}
  html:root body #editorView #sheet>.photos{padding-block:var(--aisel-editor-gap)}
- html:root body #editorView #sheet>.photos>.photos-right::before{top:calc(-1 * var(--aisel-editor-gap));bottom:calc(-1 * var(--aisel-editor-gap))}
+ html:root body #editorView #sheet>.photos>.photos-right::before{top:calc(-1 * var(--aisel-editor-gap));bottom:calc(2px - var(--aisel-editor-gap))}
  html:root body #editorView #sheet #costCell .cost-fixed>.fixed-row:first-child{margin-top:0}
  /* 40px summary rows have 2px inside the row: keep the visible control gap exactly 6px. */
  html:root body #editorView #sheet #costCell .cost-fixed{margin-top:calc(var(--aisel-editor-gap) - 2px)}
