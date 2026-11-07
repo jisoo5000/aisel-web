@@ -243,12 +243,12 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=288">
+<link rel="preload" as="script" href="unified-app.js?v=294">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
-<link rel="preload" as="script" href="reference-collection.js?v=287">
-<link rel="preload" as="style" href="workorder-screen.css?v=293">
+<link rel="preload" as="script" href="reference-collection.js?v=294">
+<link rel="preload" as="style" href="workorder-screen.css?v=294">
 <link rel="preload" as="style" href="unified-app.css?v=288-dictation1">
-<link rel="preload" as="style" href="aisel-list-controls.css?v=286">
+<link rel="preload" as="style" href="aisel-list-controls.css?v=294">
 <script id="aisel-ipad-layout-mode">
 /* All screens share the 390px mobile composition. Native print rules are preserved. */
 (function(root){
@@ -3679,7 +3679,7 @@
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizeOptions" aria-describedby="orderSizeContext" title="사이즈를 선택해 발주">발주완료</button>
       <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
-      <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle">저장</button>
+      <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle" hidden>저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
            다른 버튼들보다 눈에 띄게 테두리를 두껍게 했습니다. -->
@@ -6661,6 +6661,22 @@
       }finally{orderRegistrationFlights_.delete(code);}
     })();orderRegistrationFlights_.set(code,task);return task;
   }
+  async function confirmLatestPrintSave_(){
+    // Navigation's durable save barrier also rejects a newer keystroke or a
+    // switched workorder while waiting. Retry only new edits, never failures.
+    for(let attempt=0;attempt<3;attempt++){
+      const ref=woRef,code=currentCode,state=editorSaveState_(),revision=state.revision;
+      if(await settleEditorSave_()){
+        const remaining=captureDraft_();
+        if(!remaining?.dirty&&!state.queued&&!pendingSaveWrites_.size)return true;
+        continue;
+      }
+      if(ref!==woRef||code!==currentCode||loading)return false;
+      if(state.result===false||state.waiting||state.revision===revision)return false;
+    }
+    registrationNotice_("입력한 내용을 저장 중입니다. 잠시 뒤 PDF 인쇄를 눌러주세요.",false);
+    return false;
+  }
   $("#printBtn").addEventListener("click", async ()=>{
     if(printRegistrationBusy_) return;
     if(loading || !woRef || !currentCode || statusChanging_ || currentCode === justDeletedCode_ || codeConflictNow_()){
@@ -6674,11 +6690,10 @@
       }
       if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
       if(window.validateCostPrint_ && !window.validateCostPrint_())return;
-      const saved = await save();
-      const pending = await Promise.all([...pendingSaveWrites_]);
-      if(saved === false || pending.includes(false)) throw new Error("작업지시서 저장에 실패했습니다. 인터넷 연결을 확인해주세요.");
+      if(!await confirmLatestPrintSave_())return;
       if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
-      // PDF is an export of the confirmed document. No stage change or commerce request.
+      // Export the acknowledged content and fold the history on screen.
+      window.AiselEditorEnhancements?.collapseChanges?.();
       window.print();
     }catch(err){
       registrationNotice_(err.message || "저장 상태를 확인한 뒤 다시 눌러주세요.", false);
@@ -7408,36 +7423,17 @@
   }
   function currentDraft_(ctx){return !!ctx&&activeDraft_===ctx&&ctx.code===currentCode&&ctx.owner===draftOwner_();}
   function mobileDraftMode_(){return workOrderLayoutMedia_('screen and (max-width:600px)').matches;}
-  function draftBlocksSave_(ctx){return !!ctx?.candidate&&(!mobileDraftMode_()||ctx.liveConflict);}
-  function draftPanel_(){
-    let box=document.getElementById('localDraftStatus');if(box)return box;
-    box=document.createElement('div');box.id='localDraftStatus';box.className='noprint';box.hidden=true;
-    const note=document.createElement('span');note.className='local-draft-note';note.setAttribute('role','status');note.setAttribute('aria-live','polite');box.append(note);
-    for(const [action,label] of [['restore','초안 복원'],['export','초안 내보내기'],['discard','초안 버리기']]){
-      const button=document.createElement('button');button.type='button';button.dataset.draftAction=action;button.textContent=label;box.append(button);
-    }
-    document.querySelector('#editorView .toolbar').after(box);
-    box.addEventListener('click',event=>{const action=event.target.closest('[data-draft-action]')?.dataset.draftAction;if(!action)return;const ctx=activeDraft_;if(!currentDraft_(ctx))return;
-      if(action==='export')exportDraft_(ctx);
-      else if(action==='restore')restoreDraft_(ctx);
-      else if(action==='discard'&&ctx.candidate&&confirm('보관된 기기 초안을 버릴까요? 서버에 저장된 작지는 그대로 유지됩니다.'))discardDraftCandidates_(ctx);
-    });return box;
-  }
-  let lastLocalDraftSig_=null;
+  function draftBlocksSave_(ctx){return !!ctx?.candidate&&ctx.liveConflict;}
+  // Local recovery is automatic; stale backups never ask the designer to choose.
   function renderDraft_(ctx=activeDraft_){
-    if(ctx&&ctx!==activeDraft_)return;
-    const box=draftPanel_();if(!currentDraft_(ctx)){box.hidden=true;return;}
-    let text='';
-    if(ctx.candidate)text='최근 기기 초안이 있습니다';
-    else if(ctx.dirty&&ctx.local==='failed')text='기기 저장 실패 · 초안을 내보내 주세요';
-    else if(ctx.dirty&&(ctx.delayed||ctx.awaitingServer||navigator.onLine===false||editorSaveFeedback_?.result===false)){
-      text=ctx.local==='saved'?'기기에 저장됨 · 서버 저장 대기':'기기에 저장 중…';
+    const old=document.getElementById('localDraftStatus');if(old)old.remove();
+    if(!currentDraft_(ctx))return;
+    if(ctx.candidate&&ctx.serverReady&&!loading&&!ctx.reconciling){
+      queueMicrotask(()=>{if(currentDraft_(ctx)&&ctx.candidate&&!loading)restoreDraft_(ctx);});
     }
-    const sig=JSON.stringify([ctx.group,text,!!ctx.candidate,ctx.local]);
-    if(sig===lastLocalDraftSig_)return;lastLocalDraftSig_=sig;
-    box.hidden=!text;box.dataset.draftState=ctx.candidate?'recovery':ctx.local;
-    const note=box.querySelector('.local-draft-note');if(note.textContent!==text)note.textContent=text;
-    for(const button of box.querySelectorAll('button'))button.hidden=button.dataset.draftAction==='restore'||button.dataset.draftAction==='discard'?!ctx.candidate:!ctx.candidate&&ctx.local!=='failed';
+    if(ctx.dirty&&(ctx.awaitingServer||navigator.onLine===false||ctx.local==='failed')){
+      paintEditorSaveStatus_('waiting',ctx.local==='failed'?'저장 확인 필요':'연결 대기');
+    }
   }
   function draftQueue_(ctx,task){
     ctx.chain=(ctx.chain||Promise.resolve()).catch(()=>{}).then(task);return ctx.chain;
@@ -7646,49 +7642,29 @@
     const n=formatNumeric?negotiation_.number(value):null;if(n!==null)return n.toLocaleString('ko-KR',{maximumFractionDigits:20});
     return ({negotiated:'네고됨',no_discount:'할인 없음',unrecorded:'미기록',yes:'확인됨',no:'미확인',included:'포함',separate:'별도',excluded:'제외',exempt:'면세'}[value]||draftValueText_(value));
   }
-  function restoreDraft_(ctx){
-    if(!currentDraft_(ctx)||!ctx.candidate)return;
-    if(document.querySelector('.draft-conflict-dialog'))return;
-    ctx.choicePaused=false;
-    const record=ctx.candidate;
-    if(loading&&!ctx.serverReady){
-      clearTimeout(openWatchdog_);applyState(record.values);
-      editorContentBaseline_=record.newRecord?null:{...record.values,...record.base};
-      ctx.base=editorContentBaseline_;ctx.dirty=false;ctx.data=null;ctx.awaitingServer=true;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),...ctx.candidates.map(r=>r.id)])];ctx.candidate=null;ctx.candidates=[];loading=false;
-      captureDraft_();renderDraft_(ctx);return;
+  function restoreDraft_(ctx,schedule=true){
+    if(!currentDraft_(ctx)||!ctx.candidate||loading||!ctx.serverReady||isEditorComposing_())return false;
+    const record=ctx.candidate,live=!!ctx.liveConflict;
+    // Previously cached drafts stay as a quiet backup. The latest server document
+    // wins stale snapshots, reused product codes and concurrent edits to one field.
+    if(!live&&(ctx.dirty||isTypingNow()||ctx.serverMissing||record.newRecord||
+      !Number.isFinite(Number(record.savedAt))||Number(record.savedAt)<=Number(lastSavedState_?.updatedAt||0))){
+      ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;ctx.choicePaused=false;return true;
     }
-    if(loading)return;
-    const current=collect(),baseline=editorContentBaseline_;
-    if(ctx.serverMissing&&!record.newRecord){alert('원본 작지가 없어 복원할 수 없습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
-    if(record.newRecord&&baseline){alert('같은 품번의 작지가 이미 저장되어 있습니다. 초안을 내보낸 뒤 새 작지에 옮겨 주세요.');return;}
-    const keys=record.changed.filter(key=>Object.hasOwn(current,key)&&!draftIgnored_.has(key));
-    // Recovery safety must not depend on the CSS viewport. Mobile Safari's
-    // desktop-site mode and wide screens need the same row/cell comparison.
-    const plan=!record.newRecord?mobileDraftMerge_(record,current):null;
-    const conflicts=plan?plan.conflicts:record.newRecord?[]:keys.filter(key=>!sameValue_(current[key]??null,record.base[key]??null)&&!sameValue_(current[key],record.values[key]));
-    const apply=choices=>{
-      if(!currentDraft_(ctx)||loading)return;
-      const now=collect();if(!sameValue_(current,now)){alert('작지 내용이 바뀌었습니다. 초안 복원을 다시 확인해 주세요.');return;}
-      const merged=plan?plan.resolve(choices):{...now};if(!plan)for(const key of keys)if(!conflicts.includes(key)||choices[key]==='draft')merged[key]=record.values[key];
-      const previous=editorContentBaseline_,savedServer=lastSavedState_;
+    if(ctx.serverMissing)return false;
+    const current=collect(),plan=mobileDraftMerge_(record,current);
+    const merged=plan.resolve(Object.fromEntries(plan.conflicts.map(conflict=>[conflict.id,'server'])));
+    const previous=editorContentBaseline_,savedServer=lastSavedState_;
+    ctx.reconciling=true;
+    try{
+      ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;ctx.choicePaused=false;
+      ctx.base=previous;ctx.data=null;ctx.dirty=false;
+      ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),record.id,...(record.sourceIds||[])])];
       applyState(merged);lastSavedState_=savedServer;editorContentBaseline_=previous;
-      ctx.base=previous;ctx.data=null;ctx.dirty=false;ctx.restoredIds=[...new Set([...(ctx.restoredIds||[]),record.id,...(record.sourceIds||[])])];ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;
-      captureDraft_();renderDraft_(ctx);saveSoon();
-    };
-    if(!conflicts.length){apply({});return;}
-    const dialog=document.createElement('dialog');dialog.className='draft-conflict-dialog noprint';
-    const title=document.createElement('p');title.textContent=plan?'같은 칸에 서로 다른 수정이 있습니다. 사용할 값을 선택해 주세요.':'저장된 내용과 초안이 다릅니다. 사용할 내용을 선택해 주세요.';dialog.append(title);
-    const labels={costSizeNote:'원가 사이즈 메모',costVariantsData:'사이즈별 원가계산서',designer:'디자이너',phone:'디자이너 연락처',factory:'공장',factoryPhone:'공장 연락처',modifiedDate:'작업지시서 수정일',pumMyeong:'품명',p1:'도식화',p1Thumb:'도식화 미리보기',lines:'원가 항목',meetingNotes:'수정사항',sizeSpec:'사이즈',selectedColors:'컬러',blend:'혼용률',materials:'원부자재'};
-    const selectors={};conflicts.forEach((conflict,i)=>{
-      const key=plan?conflict.id:conflict;
-      const section=document.createElement('div'),label=document.createElement('label'),select=document.createElement('select');
-      label.textContent=plan?conflict.label:labels[key]||'변경 항목 '+(i+1);section.append(label);
-      for(const [value,text] of [['server','저장된 내용'],['draft','기기 초안']]){const option=document.createElement('option');option.value=value;option.textContent=text;select.append(option);}
-      for(const [label,value] of [['저장된 내용',plan?conflict.server:current[key]],['기기 초안',plan?conflict.draft:record.values[key]]]){const p=document.createElement('p');p.textContent=label+': '+draftBusinessText_(value,plan?conflict.cost:false);section.append(p);}
-      label.append(select);selectors[key]=select;dialog.append(section);
-    });
-    const use=document.createElement('button');use.type='button';use.textContent='선택한 내용 복원';use.onclick=()=>{const choices=Object.fromEntries(Object.entries(selectors).map(([key,select])=>[key,select.value]));dialog.close();dialog.remove();apply(choices);};
-    const cancel=document.createElement('button');cancel.type='button';cancel.textContent='취소';cancel.onclick=()=>{pauseDraftChoice_(ctx);dialog.close();dialog.remove();};dialog.append(use,cancel);dialog.addEventListener('cancel',()=>{pauseDraftChoice_(ctx);dialog.remove();},{once:true});document.body.append(dialog);dialog.showModal();
+      const latest=captureDraft_();
+      if(schedule&&latest?.dirty)saveSoon();
+    }finally{ctx.reconciling=false;}
+    return true;
   }
   function pauseDraftChoice_(ctx){
     if(!currentDraft_(ctx))return;
@@ -7747,6 +7723,22 @@
     if(sent.id===state.latest)lastSavedState_=st;
     return true;
   }
+  let lastEditorSaveStatusSig_=null;
+  function paintEditorSaveStatus_(phase,label,title=''){
+    let host=document.getElementById('editorSaveStatus');
+    if(!host){
+      const row=document.querySelector('.manual-modified-date-row');if(!row)return;
+      host=document.createElement('span');host.id='editorSaveStatus';host.className='noprint';
+      const note=document.createElement('span');note.className='save-status-text';note.setAttribute('role','status');note.setAttribute('aria-live','polite');
+      const retry=document.createElement('button');retry.type='button';retry.textContent='재시도';retry.hidden=true;
+      retry.addEventListener('click',async()=>{if(await waitForEditorComposition_())await save();});
+      host.append(note,retry);row.prepend(host);
+    }
+    const sig=JSON.stringify([phase,label,title]);if(sig===lastEditorSaveStatusSig_)return;lastEditorSaveStatusSig_=sig;
+    host.dataset.state=phase;host.title=title;
+    const note=host.querySelector('.save-status-text');if(note.textContent!==label)note.textContent=label;
+    host.querySelector('button').hidden=phase!=='error';
+  }
   function renderEditorSaveState_(state,allowLoading=false){
     if(!isCurrentSaveState_(state) || (loading&&!allowLoading))return;
     const button=$("#saveBtn");if(!button || codeConflictNow_())return;
@@ -7757,6 +7749,7 @@
     else if(state.confirmed){phase=state.sheetError?"sheet-error":"saved";label=state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
     button.dataset.saveState=phase;button.textContent=label;button.disabled=state.manual;
     button.style.opacity="1";
+    paintEditorSaveStatus_(phase,phase==="saved"||phase==="sheet-error"?"저장 완료":phase==="saving"?"저장 중":phase==="error"?"저장 실패":phase==="waiting"?"연결 대기":"",state.blockReason||"");
     renderDraft_();
     button.title=state.blockReason|| (state.sheetError?"앱 저장 완료 · 구글시트 전송 실패. 눌러 다시 전송합니다.":phase==="error"?"작업지시서 저장에 실패했습니다. 눌러 다시 저장합니다.":"");
   }
@@ -7783,8 +7776,8 @@
     if(typeof isEditorComposing_==="function" && isEditorComposing_()){saveSoon();return false;}
     if(justDeletedCode_ && currentCode===justDeletedCode_)return false;
     if(codeConflictNow_()){updateCodeConflictUI_();return false;}
+    if(draftContext?.candidate&&!draftContext.liveConflict)restoreDraft_(draftContext,false);
     if(draftContext?.remotePending){
-      if(document.querySelector('.draft-conflict-dialog'))return false;
       // Keep writing/IME intact. Reconcile after leaving the input, or through
       // the explicit Save handler which already settles composition and blur.
       if(isTypingNow()){const state=editorSaveState_();state.queued=true;renderEditorSaveState_(state);return false;}
@@ -7801,7 +7794,7 @@
         }
       }
       draftContext.remotePending=null;draftContext.candidate=candidate;draftContext.candidates=[candidate,...draftContext.candidates.filter(r=>r.id!==candidate.id)];draftContext.liveConflict=true;draftContext.dirty=false;draftContext.data=null;applyState(remote);renderDraft_(draftContext);
-      rejectEditorSave_('동시 변경된 내용을 확인해 주세요.');if(mobileDraftMode_())restoreDraft_(draftContext);return false;
+      if(!restoreDraft_(draftContext,false))return rejectEditorSave_('최신 저장 내용을 확인 중입니다.');
     }
     if(draftBlocksSave_(draftContext)||draftContext?.awaitingServer||(draftContext?.serverMissing&&!newOrderMode_)){
       const result=rejectEditorSave_(draftContext?.awaitingServer?'서버 연결 확인 후 다시 저장해 주세요.':draftContext?.serverMissing?'원본 작업지시서를 확인해 주세요.':'변경된 내용을 먼저 확인해 주세요.');
@@ -8743,7 +8736,7 @@
       if(woRef!==subscribedRef||currentCode!==code)return;
       // Keep the unloaded form locked; a failed read must never save its defaults.
       clearTimeout(openWatchdog_);
-      const saveButton=$("#saveBtn");if(saveButton)saveButton.textContent="읽기 실패";
+      const saveButton=$("#saveBtn");if(saveButton)saveButton.textContent="읽기 실패";paintEditorSaveStatus_("error","불러오기 실패");
       window.AiselWorkorderMeetingPhotos?.failed(code,error);draftReadFailed_(error);
     };
     const subscribe=()=>{if(woRef===subscribedRef&&currentCode===code)subscribedRef.on("value",woListener,onReadError);};
@@ -12760,7 +12753,10 @@
   document.querySelector('#sheet > .detail2').before(mobileRecords);
   const workorderUsp=document.createElement('section');workorderUsp.id='workorderUsp';workorderUsp.className='noprint';
   workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP</span><button type="button" id="workorderUspRefresh" hidden>디자인회의에서 가져오기</button></div><div id="workorderUspKeywords"></div><p id="workorderUspLegacy" hidden></p><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
-  mobileRecords.before(workorderUsp);
+  const uspPanel=document.createElement('div');uspPanel.id='workorderUspPanel';uspPanel.className='noprint';uspPanel.hidden=true;
+  document.querySelector('#editorView .toolbar').after(uspPanel);uspPanel.append(workorderUsp);
+  const uspToggle=document.createElement('button');uspToggle.type='button';uspToggle.id='uspToggleBtn';uspToggle.className='btn ghost nav-btn';uspToggle.textContent='USP';uspToggle.setAttribute('aria-expanded','false');uspToggle.setAttribute('aria-controls','workorderUspPanel');document.getElementById('saveBtn').after(uspToggle);
+  uspToggle.addEventListener('click',()=>{uspPanel.hidden=!uspPanel.hidden;uspToggle.setAttribute('aria-expanded',String(!uspPanel.hidden));});
   workorderUspPanel_=window.AiselWorkorderUsp.mount(workorderUsp,{
     context:()=>({code:currentCode,ref:woRef,planning:workorderPlanning_,name:pumInput.value,output:document.getElementById('output')?.value,
       editable:!loading&&!codeConflictNow_()&&!!window.AiselAccess?.allowed?.('editor')}),
@@ -12771,8 +12767,8 @@
   const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
   const finalTitle=finalSpec.closest('.cell.mat').querySelector('.sec-title'),desktopFinalTitle=finalTitle.textContent;
   const mobileStatus=document.createElement('div');mobileStatus.id='mobileSampleStatus';mobileStatus.className='noprint';
-  const sampleLabel=document.createElement('span');sampleLabel.textContent='샘플';mobileStatus.append(sampleLabel);
-  const sampleName=document.getElementById('sampleNoteTitle');sampleName.type='text';sampleName.placeholder='샘플명';sampleName.setAttribute('aria-label','샘플명');mobileStatus.append(sampleName);
+  const sampleLabel=document.createElement('span');sampleLabel.textContent='원샘플';sampleLabel.title='참고 원샘플';mobileStatus.append(sampleLabel);
+  const sampleName=document.getElementById('sampleNoteTitle');sampleName.type='text';sampleName.placeholder='원샘플 이름';sampleName.setAttribute('aria-label','참고 원샘플 이름');sampleName.title='참고한 원샘플 이름 · 우리 제품명은 위 품명에 입력';mobileStatus.append(sampleName);
   const sampleDate=document.createElement('span');sampleDate.id='mobileSampleRecoveryDate';mobileStatus.append(sampleDate);
   document.getElementById('sampleRecoverySection').prepend(mobileStatus);
   // v134: the original date/state controls move together; no duplicate save path.
@@ -12848,7 +12844,7 @@
     const remove=document.createElement('button');remove.type='button';remove.className='ref-icon-btn danger mobile-change-delete';remove.title='삭제';
     remove.innerHTML=document.getElementById('refLinkDelBtn').innerHTML;heading.append(remove);
     const add=document.createElement('button');add.type='button';add.className='mobile-change-add';add.textContent='+';add.setAttribute('aria-label','수정사항 입력칸 추가');heading.append(add);card.append(heading);
-    const textarea=document.createElement('textarea');textarea.rows=7;textarea.className='mobile-change-text';textarea.setAttribute('aria-label','수정사항');textarea.placeholder='수정사항';textarea.value=record.raw??record.changes??'';card.append(textarea);
+    const textarea=document.createElement('textarea');textarea.rows=7;textarea.className='mobile-change-text';textarea.setAttribute('aria-label','수정사항');textarea.placeholder='수정할 내용 · 변경 기록';textarea.value=record.raw??record.changes??'';card.append(textarea);
     const showDate=()=>{dateLabel.textContent=date.value?date.value.replace(/-/g,'.'):'날짜 선택';};showDate();
     const commit=()=>{
       if(loading)return;
@@ -12966,11 +12962,10 @@
     if(screen){
       const fabric=document.getElementById('fabricSupplierField').closest('.cell');
       if(colorSection.parentElement!==fabric)fabric.append(colorSection);
-      if(mobile)document.querySelector('#sheet > .meta').after(workorderUsp);
-      else desktopPanel.insertBefore(workorderUsp,desktopPhotoActions);
-    }else{colorHome.after(colorSection);mobileRecords.before(workorderUsp);}
-    finalSpec.placeholder=mobile?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
-    finalTitle.textContent=mobile?desktopFinalTitle+' (최종)':desktopFinalTitle;
+      if(workorderUsp.parentElement!==uspPanel)uspPanel.append(workorderUsp);
+    }else{colorHome.after(colorSection);}
+    finalSpec.placeholder=screen?'공장에 전달할 확정 제작 내용':desktopSpecHint;
+    finalTitle.textContent=screen?'최종 제작사항':desktopFinalTitle;
     if(!mobile)finishHeaderNameEdits_();
     if(screen===mobileRecordsActive){renderHeaderNames_();renderMobileSampleDate_();return;}
     const active=document.activeElement;
@@ -17680,7 +17675,7 @@ window.AiselDesignMeetingAdapter={
 <link rel="stylesheet" href="aisel-designers.css?v=230">
 <script src="aisel-catalog-order.js?v=229"></script>
 <script src="aisel-designers.js?v=280"></script>
-<script src="aisel-editor-enhancements.js?v=252"></script>
+<script src="aisel-editor-enhancements.js?v=294"></script>
 <link rel="stylesheet" href="aisel-date-filter.css?v=233">
 <script src="aisel-date-filter.js?v=233"></script>
 <script src="design-meeting-core.js?v=223"></script>
@@ -17720,17 +17715,17 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=287"></script>
+<script src="reference-collection.js?v=294"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
 <script src="aisel-moodboards.js?v=287"></script>
-<script src="unified-app.js?v=288"></script>
+<script src="unified-app.js?v=294"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=293" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=294" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=288-dictation1">
-<link rel="stylesheet" href="aisel-list-controls.css?v=286" media="screen">
+<link rel="stylesheet" href="aisel-list-controls.css?v=294" media="screen">
 
 <style id="aisel-v198-sales-column-balance">
 @media screen {

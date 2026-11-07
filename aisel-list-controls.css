@@ -239,3 +239,15 @@
  }
  html:root body :is(.aisel-search-field,.rc-search) > svg {pointer-events:none}
 }
+
+/* v294: selection uses the existing fill, without a separate bottom accent. */
+@media screen {
+ html:root body #editorView :is(#statusBar .status-btn.active,#sampleRecoverySeg button.active){border-bottom-color:var(--aisel-line,#E3E5E7)!important;box-shadow:none}
+ html:root body :is(#galleryView,#salesView) :is(#galleryTabs,#salesTabs,#salesGroupTabs) .gtab.active,
+ html:root body #referenceCollectionView .rc-filters button[aria-pressed="true"],
+ html:root body #designMeetingView .dm-filters button:is(.active,[aria-pressed="true"]){border-bottom-color:var(--aisel-line,#E3E5E7)!important;box-shadow:none}
+ html:root body .aisel-status :is(.workflow-tabs,.tabs){display:flex;gap:4px;border:0;margin-bottom:8px}
+ html:root body .aisel-status :is(.workflow-tab,.tab){box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex:1 1 0;min-width:0;height:28px;min-height:28px;padding:0 2px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C;font-size:12px;line-height:18px;font-weight:400;box-shadow:none;gap:2px;white-space:nowrap;flex-wrap:nowrap}
+ html:root body .aisel-status :is(.workflow-tab.on,.tab.on){border-color:#E3E5E7!important;background:#F6F7F8;color:#34383C;font-weight:600;box-shadow:none}
+ html:root body .aisel-status :is(.workflow-tab,.tab)::after{display:none}
+}

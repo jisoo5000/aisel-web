@@ -53,5 +53,5 @@
    button.getAttribute('aria-expanded')!==String(!folded)||!button.querySelector('.changes-toggle-icon')||
    button.querySelector('.changes-toggle-label')?.textContent!==(index?'추가 수정사항':'수정사항')))paint();
  }).observe(records,{childList:true,subtree:true});
- root.AiselEditorEnhancements={refresh,syncDesigner,paintChanges:paint};const current=adapter.state();refresh(current.record,current.code,{loaded:true});paint();root.addEventListener('aisel-session-change',syncDesigner);
+ root.AiselEditorEnhancements={refresh,syncDesigner,paintChanges:paint,collapseChanges:()=>{folded=true;pendingFold=false;paint();}};const current=adapter.state();refresh(current.record,current.code,{loaded:true});paint();root.addEventListener('aisel-session-change',syncDesigner);
 })(window);

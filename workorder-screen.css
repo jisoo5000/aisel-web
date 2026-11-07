@@ -522,3 +522,26 @@
  html:root body #editorView #sheet{--aisel-editor-section-inset:0px;--aisel-photo-cost-gap:4px}
  html:root body #editorView #sheet>.photos{padding-right:0}
 }
+
+/* v294: quiet autosave, reference sample naming, inline USP and compact notes. */
+@media screen {
+ html:root body #editorView #saveBtn,html:root body #editorView #localDraftStatus{display:none!important}
+ html:root body #editorView .editor-mobile-head .editor-mobile-title :is(#mobileProductName,#pumMyeong.mobile-title-input){background:#E9ECF2!important}
+ html:root body #editorView #uspToggleBtn[aria-expanded="true"]{background:var(--aisel-soft,#F6F7F8);border-color:var(--aisel-line,#E3E5E7)}
+ html:root body #editorView #workorderUspPanel{box-sizing:border-box;display:block;width:100%;margin:0;padding:8px 12px;border-inline:1px solid var(--aisel-line,#E3E5E7);background:#fff}
+ html:root body #editorView #workorderUspPanel[hidden]{display:none!important}
+ html:root body #editorView #workorderUspPanel #workorderUsp{display:block;margin:0;padding:0;border:0;width:100%;box-sizing:border-box}
+ html:root body #editorView #workorderUspPanel .aisel-usp-heading{margin:0 0 8px}
+ html:root body #editorView #editorSaveStatus{display:inline-flex;flex:none;align-items:center;gap:3px;margin-right:4px;color:var(--aisel-muted,#6C727C);font-size:10px;font-weight:400;line-height:18px;white-space:nowrap}
+ html:root body #editorView #editorSaveStatus:has(.save-status-text:empty){display:none}
+ html:root body #editorView #editorSaveStatus[data-state="saving"]{color:var(--aisel-ink,#34383C)}
+ html:root body #editorView #editorSaveStatus[data-state="error"]{color:#8D3946}
+ html:root body #editorView #editorSaveStatus button{border:0;border-radius:0;background:transparent;padding:0;min-height:24px;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+ html:root body #editorView #editorSaveStatus button[hidden]{display:none!important}
+ html:root body #editorView #sheet .manual-modified-date-row{flex-wrap:wrap;row-gap:0}
+ html:root body #editorView #mobileMeetingSummary #mobileSampleStatus>span:first-child{flex:0 0 auto;white-space:nowrap}
+ html:root body #editorView #mobileMeetingSummary #sampleNoteTitle{flex:1 1 100px;width:100px;max-width:none;min-width:0}
+ html:root body #editorView #mobileMeetingSummary #mobileSampleRecoveryDate{flex:0 0 62px}
+ html:root body #editorView #mobileSampleRecords .mobile-change-text,
+ html:root body #editorView #sheet #materials{box-sizing:border-box;height:220px!important;min-height:220px!important;max-height:none;overflow-y:auto;resize:vertical}
+}
