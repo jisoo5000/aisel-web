@@ -784,3 +784,16 @@
  html:root body #editorView #sheet .fabric-variant-color :is(.fabric-variant-remove,.fabric-variant-add):focus-visible,
  html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.mobile-change-delete,.mobile-change-add):focus-visible{outline:2px solid var(--aisel-field-focus);outline-offset:2px}
 }
+
+/* 2026-11-08: visible header-date lines share the 6px section rhythm. */
+@media screen {
+ html:root body #editorView #sheet>.title-row{padding-block:var(--aisel-editor-gap);row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet>.title-row :is(.date-box,.title-spacer,.manual-created-date-row,.manual-modified-date-row){line-height:18px}
+ html:root body #editorView #sheet>.title-row .date-box::before{line-height:18px}
+ html:root body #editorView #sheet>.title-row .header-date-control{height:18px;min-height:18px;line-height:18px}
+ html:root body #editorView #sheet>.title-row .header-date-value{line-height:18px}
+ /* Keep a 30px calendar target centered over the compact 18px visible line. */
+ html:root body #editorView #sheet>.title-row .header-date-control input[type="date"]{
+  top:50%;bottom:auto;height:30px;min-height:30px;transform:translateY(-50%);
+ }
+}
