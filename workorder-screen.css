@@ -440,3 +440,13 @@
  html:root body #editorView .editor-mobile-head #nameReviewPanel:not(.name-review-required){display:none!important}
  html:root body #editorView #sheet #costCell>.size-cost-heading>span:first-child{line-height:24px;min-height:28px;display:flex;align-items:center}
 }
+
+/* Match summary boxes to the 36px labor input (screen only). */
+@media screen {
+ html:root body #editorView #sheet #costCell :is(.total-row,.owner-retail-row) {
+  box-sizing:border-box;height:36px;min-height:36px;padding:0 8px;align-items:center;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow #targetThreshold {
+  height:34px;min-height:34px;padding-block:0;
+ }
+}
