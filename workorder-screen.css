@@ -129,7 +129,7 @@
  html:root body #editorView #sheet #costCell .cost-pair input.nego-price-empty {background:var(--aisel-factory-bg);color:var(--aisel-factory-ink);}
  html:root body #editorView #sheet #costCell .cost-table .amt {box-sizing:border-box;max-width:100%;padding:5px 2px;font-size:14px;font-weight:400;line-height:24px;text-align:center;white-space:nowrap;overflow-wrap:normal;}
  html:root body #editorView #sheet #costCell :is(.total-row,.owner-retail-row) {border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);}
- html:root body #editorView #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {font-size:22px!important;font-weight:700;line-height:28px;text-align:right;}
+ html:root body #editorView #sheet #costCell :is(.total-row .v,.owner-retail-row #targetThreshold,.mobile-retail-unit) {font-size:16px!important;font-weight:400;line-height:24px;text-align:right;}
  html:root body #editorView #sheet #costCell #targetThreshold {min-height:36px;height:36px;}
  html:root body #editorView #sheet #costCell #addLine,
  html:root body #editorView #sheet .sizespec .ss-addrow .add {box-sizing:border-box;height:var(--aisel-control-height);min-height:var(--aisel-control-height);padding:0 6px;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);font-size:13px;font-weight:600;line-height:20px;white-space:nowrap;}
@@ -449,4 +449,42 @@
  html:root body #editorView #sheet #costCell #ownerRetailRow #targetThreshold {
   height:34px;min-height:34px;padding-block:0;
  }
+}
+
+/* v292: align cost totals and retail inputs with the existing labor rows. Screen only. */
+@media screen {
+ html:root body #editorView #sheet #costCell{--aisel-cost-summary-width:176px}
+ html:root body #editorView #sheet #costCell .total-row,
+ html:root body #editorView #sheet #costCell #ownerRetailRow{
+  display:grid;box-sizing:border-box;width:100%;min-width:0;min-height:40px;height:auto;
+  padding:2px 0;margin-top:0;border:0;border-radius:0;background:transparent;
+  grid-template-columns:minmax(0,1fr) minmax(0,var(--aisel-cost-summary-width));gap:0;align-items:center;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow{
+  grid-template-columns:minmax(0,1fr) minmax(0,calc(var(--aisel-cost-summary-width) - 24px)) 24px;margin-top:2px;
+ }
+ html:root body #editorView #sheet #costCell .total-row>.k,
+ html:root body #editorView #sheet #costCell #ownerRetailRow>label{
+  grid-column:1;grid-row:1;margin:0;padding:0 4px 0 0;font-size:14px!important;font-weight:600;line-height:20px;text-align:left;
+ }
+ html:root body #editorView #sheet #costCell .total-row>.v,
+ html:root body #editorView #sheet #costCell #ownerRetailRow #targetThreshold,
+ html:root body #editorView #sheet #costCell #ownerRetailRow>.mobile-retail-unit{
+  box-sizing:border-box;min-width:0;height:36px;min-height:36px;max-height:36px;margin:0;
+  font-family:var(--aisel-font);font-size:16px!important;font-weight:400!important;line-height:24px!important;
+  color:var(--aisel-ink);background:var(--aisel-bg);border:1px solid var(--aisel-line)!important;
+ }
+ html:root body #editorView #sheet #costCell .total-row>.v{
+  grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:flex-end;padding:5px 8px;border-radius:3px;white-space:nowrap;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow #targetThreshold{
+  grid-column:2;grid-row:1;width:100%;padding:5px 0 5px 8px;text-align:right;border-right:0!important;border-radius:3px 0 0 3px;
+ }
+ html:root body #editorView #sheet #costCell #ownerRetailRow>.mobile-retail-unit{
+  grid-column:3;grid-row:1;display:flex;align-items:center;justify-content:flex-end;width:24px;padding:5px 8px 5px 0;
+  border-left:0!important;border-radius:0 3px 3px 0;pointer-events:none;
+ }
+}
+@media screen and (max-width:359px){
+ html:root body #editorView #sheet #costCell{--aisel-cost-summary-width:164px}
 }
