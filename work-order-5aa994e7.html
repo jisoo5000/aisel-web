@@ -7953,10 +7953,15 @@
         try{window.AiselDesignWorkflow?.observeSaved(targetCode);}catch(_){}
         try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
       }
-      if(isCurrentSaveState_(state)&&state.latest===id){state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);window.AiselEditorEnhancements?.refresh(st,targetCode,{saved:true});}
+      if(isCurrentSaveState_(state)&&state.latest===id){
+        state.result=true;state.confirmed=true;acknowledgeDraft_(draftContext,st);
+        // Rendering is not a storage write. Its exception must not turn an acknowledged save into a failed save.
+        try{window.AiselEditorEnhancements?.refresh(st,targetCode,{saved:true});}
+        catch(error){console.error('AISEL saved view refresh failed',error);}
+      }
       return true;
     }).catch(error=>{
-      if(namePatch&&state.latest===id)state.blockReason=error.message||'이름 저장을 확인하지 못했습니다.';
+      if(state.latest===id)state.blockReason=error.message||'저장을 확인하지 못했습니다.';
       if(originalWritten && state.latest===id)state.indexFailed=true;
       for(const key of keys)if((state.fieldSuccess.get(key)||0)<id)state.failedKeys.set(key,Math.max(id,state.failedKeys.get(key)||0));
       if(state.latest===id)state.result=false;
@@ -11040,6 +11045,7 @@
     if(!draft){draft={preset:null,defaultQty:20,quantities:Object.create(null)};orderQuantityDrafts_.set(currentCode,draft);}
     return draft;
   }
+  function initialOrderLocked_(){return !!currentInitialOrder_||currentOrderCompleted_===true;}
   function orderQuantityKey_(color,size){return JSON.stringify([color,size]);}
   function orderQuantityValue_(value){
     const text=String(value).trim(),number=Number(text);
@@ -11061,12 +11067,12 @@
       if(!draft.preset){total.textContent="사이즈를 선택해주세요.";confirm.disabled=true;return;}
       const quantities=orderQuantitySnapshot_(draft.preset,orderColors_());
       total.textContent="총 "+Object.values(quantities).reduce((a,b)=>a+b,0)+"장";
-      confirm.disabled=statusChanging_||!!currentInitialOrder_;
+      confirm.disabled=statusChanging_||initialOrderLocked_();
     }catch(_){total.textContent="수량을 확인해주세요.";confirm.disabled=true;}
   }
   function renderOrderQuantityEditor_(){
     const editor=document.getElementById("orderQuantityEditor"),draft=orderQuantityDraft_(),preset=ORDER_SIZE_PRESETS_[draft.preset],colors=orderColors_();
-    editor.hidden=!!currentInitialOrder_||!colors.length;
+    editor.hidden=initialOrderLocked_()||!colors.length;
     document.querySelectorAll("[data-order-preset]").forEach(b=>b.setAttribute("aria-pressed",String((currentInitialOrder_?.preset||draft.preset)===b.dataset.orderPreset)));
     if(editor.hidden)return;
     document.getElementById("orderQuantityDefault").value=String(draft.defaultQty);
@@ -11089,7 +11095,7 @@
     updateOrderQuantityTotal_();
   }
   function selectOrderPreset_(presetKey){
-    if(statusChanging_||currentInitialOrder_||!ORDER_SIZE_PRESETS_[presetKey]||!orderColors_().length)return;
+    if(statusChanging_||initialOrderLocked_()||!ORDER_SIZE_PRESETS_[presetKey]||!orderColors_().length)return;
     orderQuantityDraft_().preset=presetKey;
     setOrderSizeMessage_("");renderOrderQuantityEditor_();
   }
@@ -11174,11 +11180,11 @@
     const colors=orderColors_(),order=currentInitialOrder_;
     renderOrderContext_(order);
     panel.querySelectorAll("[data-order-preset]").forEach(b=>{
-      b.disabled=!!order || !colors.length;
+      b.disabled=initialOrderLocked_() || !colors.length;
       b.setAttribute("aria-pressed",String(order?.preset===b.dataset.orderPreset));
     });
-    setOrderSizeMessage_(order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":"",false,!!order);
-    document.getElementById("orderSizeOptions").hidden=!!order;
+    setOrderSizeMessage_(order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":initialOrderLocked_()?"이미 초두발주가 등록된 작지입니다. 발주 시트에서 기존 수량을 확인해주세요.":!colors.length?"작지의 컬러를 먼저 선택해주세요.":"",!initialOrderLocked_()&&!colors.length,!!order);
+    document.getElementById("orderSizeOptions").hidden=initialOrderLocked_();
     renderOrderQuantityEditor_();
     panel.hidden=false;button.setAttribute("aria-expanded","true");
   }
@@ -11194,7 +11200,7 @@
     openOrderSizePanel_();
   });
   async function confirmOrderSize_(presetKey){
-    if(statusChanging_ || currentInitialOrder_ || !ORDER_SIZE_PRESETS_[presetKey])return;
+    if(statusChanging_ || initialOrderLocked_() || !ORDER_SIZE_PRESETS_[presetKey])return;
     if(loading || !woRef || !currentCode || codeConflictNow_())return;
     const colors=orderColors_();
     if(!colors.length){setOrderSizeMessage_("작지의 컬러를 먼저 선택해주세요.",true);return;}
@@ -11225,15 +11231,17 @@
       try{
         await orderRef.once("value");
         if(!same())return;
-        result=await orderRef.transaction(current=>current ? undefined : order,undefined,false);
+        // Claim against the entire latest record so a legacy completion flag also blocks a duplicate.
+        result=await ref.transaction(current=>current&&!current.initialOrder&&!current.orderCompleted?{...current,initialOrder:order}:undefined,undefined,false);
       }finally{orderRef.off("value",keep);}
       if(!result.committed){
         if(same()){
-          currentInitialOrder_=result.snapshot.val()||null;
-          currentOrderCompleted_=currentInitialOrder_?.transport==="confirmed";
+          const existing=result.snapshot.val()||{};
+          currentInitialOrder_=existing.initialOrder||null;
+          currentOrderCompleted_=existing.orderCompleted===true||currentInitialOrder_?.transport==="confirmed";
           if(lastSavedState_)lastSavedState_.initialOrder=currentInitialOrder_;
           if(editorContentBaseline_)editorContentBaseline_.initialOrder=currentInitialOrder_;
-          renderOrderCompletedButton_();closeOrderSizePanel_();
+          renderOrderCompletedButton_();closeOrderSizePanel_();openOrderSizePanel_();
         }
         return;
       }
@@ -11295,8 +11303,8 @@
       statusChanging_=false;button.disabled=false;
       document.querySelectorAll(".status-btn").forEach(b=>b.disabled=false);
       if(same()){
-        document.querySelectorAll("[data-order-preset]").forEach(b=>b.disabled=!!currentInitialOrder_);
-        document.querySelectorAll("#orderQuantityEditor input,#orderQuantityEditor button").forEach(el=>el.disabled=!!currentInitialOrder_);
+        document.querySelectorAll("[data-order-preset]").forEach(b=>b.disabled=initialOrderLocked_());
+        document.querySelectorAll("#orderQuantityEditor input,#orderQuantityEditor button").forEach(el=>el.disabled=initialOrderLocked_());
         if(!currentInitialOrder_)updateOrderQuantityTotal_();
       }
     }
@@ -11305,7 +11313,7 @@
     button.addEventListener("click",()=>selectOrderPreset_(button.dataset.orderPreset));
   });
   function applyOrderDefaultQuantity_(){
-    if(statusChanging_||currentInitialOrder_)return;
+    if(statusChanging_||initialOrderLocked_())return;
     try{
       const draft=orderQuantityDraft_(),qty=orderQuantityValue_(document.getElementById("orderQuantityDefault").value);
       draft.defaultQty=qty;
