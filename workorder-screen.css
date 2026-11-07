@@ -627,3 +627,60 @@
 }
 
 @media screen and (max-width:359px){html:root body #editorView #sheet :is(#productColors,.fabric-title-colors) #selectedColors .copygen-color-chip{width:calc((100vw - 34px) / 5)}}
+
+/* v298: quiet field focus and a 6px vertical rhythm throughout the work-order editor. */
+@media screen {
+ html:root body #editorView{
+  --aisel-field-focus:#8A96A5;--aisel-workorder-row-gap:var(--aisel-editor-gap);
+  --aisel-workorder-section-padding:var(--aisel-editor-gap);
+ }
+ html:root body #editorView :is(input,textarea,select){--aisel-focus:var(--aisel-field-focus)}
+ html:root body #editorView .editor-mobile-head{padding-block:var(--aisel-editor-gap);row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #refLinksList{row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet>.title-row{row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #workorderUspPanel{padding-block:var(--aisel-editor-gap)}
+ html:root body #editorView #workorderUspPanel .aisel-usp-heading{margin-bottom:var(--aisel-editor-gap)}
+ html:root body #editorView #workorderUspPanel :is(.aisel-usp-row,.aisel-usp-edit){row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet #ph1>.tag{margin-bottom:var(--aisel-editor-gap)!important}
+ html:root body #editorView #sheet #ph1>.photo-src{margin-top:var(--aisel-editor-gap);row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet #costCell>.size-cost-heading{margin-bottom:var(--aisel-editor-gap)!important}
+ html:root body #editorView #sheet #costCell .cost-table{margin-bottom:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet #costCell #addLine{display:block;margin-block:0}
+ /* Preserve 40px rows and 36px fields: 2px row margin + 4px inner space = 6px visible gap. */
+ html:root body #editorView #sheet #costCell .cost-fixed>:is(.fixed-row,.total-row,.owner-retail-row){margin-top:calc(var(--aisel-editor-gap) - 4px)}
+ html:root body #editorView #sheet #costCell .cost-fixed>.fixed-row:first-child{margin-top:0}
+ html:root body #editorView #sheet #productColors>.copygen-card{display:flex;flex-direction:column;row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet #productColors .color-heading{margin-block:0;row-gap:var(--aisel-editor-gap);min-height:0}
+ html:root body #editorView #sheet #productColors #colorSwatches{margin-block:0;padding-block:0}
+ html:root body #editorView #sheet #productColors #colorPicker{margin-block:0;padding-block:0}
+ html:root body #editorView #sheet #productColors #colorPicker:not(:has(#addColorRow.copygen-open)):not(:has(#variantPanel:not(:empty))){display:none}
+ html:root body #editorView #sheet #productColors :is(#addColorRow,#variantPanel,.copygen-variant-panel){margin-block:0;padding-block:0}
+ html:root body #editorView #sheet #productColors .copygen-variant-panel>.copygen-label{margin-block:0 var(--aisel-editor-gap)}
+ html:root body #editorView #sheet #productColors #variantPanel:not(:empty)+#addColorRow.copygen-open{margin-top:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet #productColors .copygen-chip-group{row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .fabric-title-colors #selectedColors{row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .fabric-variant-list{row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .fabric-variant-row{padding-block:0}
+ html:root body #editorView #mobileSampleRecords,
+ html:root body #editorView #sheet>.detail2>:is(.cell.mat,.sizespec){padding-block:var(--aisel-editor-gap)}
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading{margin-bottom:var(--aisel-editor-gap)}
+ html:root body #editorView #mobileSampleRecords .mobile-change-card+.mobile-change-card{margin-top:var(--aisel-editor-gap);padding-top:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .cell.mat>.sec-title{margin-bottom:var(--aisel-editor-gap)!important}
+ html:root body #editorView #sheet .cell.mat>.tip{margin-block:var(--aisel-editor-gap) 0}
+ html:root body #editorView #sheet .sizespec{row-gap:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .sizespec>.ss-addrow{margin-block:0}
+ html:root body #editorView #sheet .size-cost-card{padding-block:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .size-cost-card>.size-cost-heading{margin-bottom:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .size-cost-add-line{display:block;margin-block:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .size-cost-fixed{margin-block:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet .size-cost-sum{margin-top:var(--aisel-editor-gap);padding-block:var(--aisel-editor-gap)}
+}
+
+@media screen {
+ html:root body #editorView .editor-mobile-head:not(:has(#nameReviewPanel.name-review-required)) :is(.editor-mobile-caption,#refPanel){grid-row:2}
+ html:root body #editorView #sheet>#ph1,html:root body #editorView #sheet>.photos>#ph1{row-gap:0}
+ html:root body #editorView #sheet #costCell .fixed-loss-row{box-sizing:border-box;height:40px;padding-block:2px}
+}
+@media screen and (max-width:359px){
+ html:root body #editorView .editor-mobile-head:not(:has(#nameReviewPanel.name-review-required)) #refPanel{grid-row:3}
+}
