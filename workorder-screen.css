@@ -717,3 +717,11 @@
 @media screen and (max-width:359px){
  html:root body #editorView #sheet .fabric-variant-base :is(.designer,.fabric-variant-fields) :is(#fabricSupplierField,#fabricNameField,#blend,input){font-size:11px!important;line-height:16px!important}
 }
+
+/* 2026-11-08: quieter modification dates; keep the native date hit target. */
+@media screen {
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading .sample-date-field .sample-date-label {
+  font-family:var(--aisel-font);font-size:14px;font-weight:400;line-height:20px;letter-spacing:0;
+  color:var(--aisel-muted,#6C727C);-webkit-text-fill-color:var(--aisel-muted,#6C727C);
+ }
+}
