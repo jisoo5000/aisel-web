@@ -10,7 +10,14 @@ function state(doc={}) {
   history:clone(stored.history||{})};
 }
 function final(doc){const r=state(doc);return !!r.currentName&&r.confirmedName===r.currentName;}
-function sameVersion(a,b){return clean(a?.pumMyeong)===clean(b?.pumMyeong)&&JSON.stringify(a?.nameReview||null)===JSON.stringify(b?.nameReview||null);}
+// Firebase snapshots can reorder object keys; compare values without weakening conflict checks.
+function sameReviewValue(a,b){
+ if(a===b)return true;
+ if(!a||!b||typeof a!=='object'||typeof b!=='object'||Array.isArray(a)!==Array.isArray(b))return false;
+ const keys=Object.keys(a);
+ return keys.length===Object.keys(b).length&&keys.every(key=>Object.prototype.hasOwnProperty.call(b,key)&&sameReviewValue(a[key],b[key]));
+}
+function sameVersion(a,b){return clean(a?.pumMyeong)===clean(b?.pumMyeong)&&sameReviewValue(a?.nameReview||null,b?.nameReview||null);}
 function change(doc,action,value,actor,at=Date.now()){
  if(!actor?.uid)throw Error('로그인 후 이름을 변경해주세요.');
  const r=state(doc),before=r.currentName,name=clean(value),owner=actor.isOwner===true;
