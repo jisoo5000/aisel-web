@@ -1,3 +1,4 @@
+<!-- v296: six-pixel annotated vertical spacing; order label shortened at user request. -->
 <!-- v295: centered date/category/designer filters in one row; remove sales exclusion. -->
 <!-- v293: align heading baselines, add a thin column divider and move the size note inline. -->
 <!-- v292: cost and retail rows match labor input typography, height, and alignment. -->
@@ -247,7 +248,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=295-harness">
 <link rel="preload" as="script" href="design-meeting.js?v=287">
 <link rel="preload" as="script" href="reference-collection.js?v=294">
-<link rel="preload" as="style" href="workorder-screen.css?v=295-harness">
+<link rel="preload" as="style" href="workorder-screen.css?v=296-spacing">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=294">
 <script id="aisel-ipad-layout-mode">
@@ -3378,7 +3379,7 @@
     <button type="button" class="gtab" data-status="all">전체</button>
     <button type="button" class="gtab" data-status="planned">📅 예정</button>
     <button type="button" class="gtab" data-status="sampling">🧵 샘플중</button>
-    <button type="button" class="gtab" data-status="order">🏭 발주생산</button>
+    <button type="button" class="gtab" data-status="order">🏭 발주</button>
     <button type="button" class="gtab" data-status="pdp">🖼️ PDP</button>
     <button type="button" class="gtab" data-status="sale">🛍️ 판매</button>
     <button type="button" class="gtab" data-status="drop">⏸️ 드롭</button>
@@ -3431,7 +3432,7 @@
   <div class="gallery-tabs-row">
     <div class="gallery-tabs" id="galleryTabs">
       <button type="button" class="gtab active" data-status="sampling">샘플중</button>
-      <button type="button" class="gtab" data-status="order">발주생산</button>
+      <button type="button" class="gtab" data-status="order">발주</button>
       <button type="button" class="gtab" data-status="pdp">PDP</button>
       <button type="button" class="gtab" data-status="sale">판매</button>
       <button type="button" class="gtab" data-status="drop">드롭</button>
@@ -3702,7 +3703,7 @@
 
   <div class="statusbar noprint" id="statusBar">
     <button type="button" class="status-btn" data-status="sampling">샘플중</button>
-    <button type="button" class="status-btn" data-status="order">발주생산</button>
+    <button type="button" class="status-btn" data-status="order">발주</button>
     <button type="button" class="status-btn" data-status="pdp">PDP</button>
     <button type="button" class="status-btn" data-status="sale">판매</button>
     <button type="button" class="status-btn" data-status="drop">드롭</button>
@@ -6872,7 +6873,7 @@
   const STATUS_LIST = [
     { key:"sampling",    emoji:"🧵", label:"샘플중" },
     { key:"resampling", emoji:"🧵", label:"재샘플" },
-    { key:"order",       emoji:"🏭", label:"발주생산" },
+    { key:"order",       emoji:"🏭", label:"발주" },
     { key:"pdp",         emoji:"🖼️", label:"PDP" },
     { key:"sale",        emoji:"🛍️", label:"판매" },
     { key:"drop",        emoji:"⏸️", label:"드롭" },
@@ -6883,7 +6884,7 @@
   let currentInitialOrder_ = null;
   const STATUS_LABEL_MAP = {
     planned: "🧵 샘플중", sampling: "🧵 샘플중", samplemgmt: "🧵 샘플중", resampling: "🧵 재샘플",
-    order: "🏭 발주생산", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
+    order: "🏭 발주", pdp: "🖼️ PDP", sale: "🛍️ 판매", drop: "⏸️ 드롭"
   };
   // 2026-08-13 수정: 예전에는 "샘플중"일 때만 필수칸이 핑크색으로 표시됐음. 이제 "발주생산"일 때도 같이 표시됨.
   // 지연사유 3개는 이 목록에서 빼고 아래에서 따로 처리함 (지연이 없으면 비어 있는 게 정상이라
@@ -11237,7 +11238,7 @@
       const status = galleryStatus_(st);
       counts[status] = (counts[status] || 0) + 1;
     });
-    const labels = [["sampling", "샘플중"], ["order", "발주생산"], ["pdp", "PDP"],
+    const labels = [["sampling", "샘플중"], ["order", "발주"], ["pdp", "PDP"],
       ["sale", "판매"], ["drop", "드롭"], ["all", "전체"]];
     const compact = box.id === "galleryCounts";
     if(compact){
@@ -17726,7 +17727,7 @@ window.AiselUnifiedAdapter={
 <script src="unified-app.js?v=295-harness"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=295-harness" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=296-spacing" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
 <link rel="stylesheet" href="aisel-list-controls.css?v=294" media="screen">
 

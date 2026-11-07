@@ -595,3 +595,23 @@
  html:root body #editorView #uspToggleBtn[aria-expanded="true"]{background:#E9ECF2;border-color:var(--aisel-line)}
  html:root body #editorView #sheet #costCell .fixed-loss-value{box-sizing:border-box;display:flex;align-items:center;justify-content:flex-end;height:36px;min-width:0;padding:5px 8px;border:1px solid transparent;font-size:16px;font-weight:400;line-height:24px;white-space:nowrap}
 }
+
+/* v296: user-marked vertical gaps 8px -> 6px. Preserve type, controls, horizontal insets and print. */
+@media screen {
+ html:root body #editorView{--aisel-editor-gap:6px;--aisel-editor-half-gap:3px;padding-top:0}
+ html:root body #editorView .editor-mobile-head{margin-top:0}
+ html:root body #editorView .toolbar{padding-top:var(--aisel-editor-gap);padding-bottom:var(--aisel-editor-half-gap)}
+ html:root body #editorView #statusBar{padding-block:var(--aisel-editor-half-gap)}
+ html:root body #editorView #mobileMeetingSummary{padding-top:var(--aisel-editor-half-gap);padding-bottom:var(--aisel-editor-gap);margin-bottom:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet>.title-row{padding-block:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet>.photos{padding-block:var(--aisel-editor-gap)}
+ html:root body #editorView #sheet>.photos>.photos-right::before{top:calc(-1 * var(--aisel-editor-gap));bottom:calc(-1 * var(--aisel-editor-gap))}
+ html:root body #editorView #sheet #costCell .cost-fixed>.fixed-row:first-child{margin-top:0}
+ /* 40px summary rows have 2px inside the row: keep the visible control gap exactly 6px. */
+ html:root body #editorView #sheet #costCell .cost-fixed{margin-top:calc(var(--aisel-editor-gap) - 2px)}
+ html:root body #editorView #sheet>.photos{padding-bottom:calc(var(--aisel-editor-gap) - 2px)}
+ html:root body.aisel-erp-shell:has(#editorView[style*="display: block"]){padding-top:62px}
+}
+@media screen and (min-width:1024px){
+ html:root body.aisel-erp-shell:has(#editorView[style*="display: block"]){padding-top:70px}
+}
