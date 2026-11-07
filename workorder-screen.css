@@ -730,3 +730,34 @@
 @media screen {
  html:root body #editorView #uspToggleBtn{width:100%}
 }
+
+/* 2026-11-08: identical fabric/revision delete and add controls, with real 4px gaps. */
+@media screen {
+ html:root body #editorView{--aisel-row-action-size:28px;--aisel-row-action-gap:4px;--aisel-row-action-icon:16px}
+ html:root body #editorView #sheet .fabric-variant-color{
+  grid-template-columns:minmax(0,1fr) auto minmax(0,104px) repeat(2,var(--aisel-row-action-size));column-gap:var(--aisel-row-action-gap)
+ }
+ html:root body #editorView #sheet .fabric-variant-color.fabric-single{grid-template-columns:minmax(0,1fr) repeat(2,var(--aisel-row-action-size))}
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading{
+  grid-template-columns:minmax(0,1fr) 108px repeat(2,var(--aisel-row-action-size));column-gap:var(--aisel-row-action-gap);align-items:center
+ }
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading .sample-date-field{
+  box-sizing:border-box;width:108px;height:var(--aisel-row-action-size);min-height:var(--aisel-row-action-size);margin:0
+ }
+ html:root body #editorView #sheet .fabric-variant-color :is(.fabric-variant-remove,.fabric-variant-add),
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.mobile-change-delete,.mobile-change-add){
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;justify-self:stretch;align-self:start;
+  width:var(--aisel-row-action-size);min-width:var(--aisel-row-action-size);height:var(--aisel-row-action-size);min-height:var(--aisel-row-action-size);
+  padding:0;margin:0;border:1px solid var(--aisel-line);border-radius:var(--aisel-radius);background:var(--aisel-bg);color:var(--aisel-ink);
+  font-family:var(--aisel-font);font-size:22px;font-weight:600;line-height:1;box-shadow:none;cursor:pointer
+ }
+ html:root body #editorView #sheet .fabric-variant-remove .ref-action-icon,
+ html:root body #editorView #mobileSampleRecords .mobile-change-delete .ref-action-icon{
+  width:var(--aisel-row-action-icon);height:var(--aisel-row-action-icon);flex:0 0 var(--aisel-row-action-icon);
+  fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round
+ }
+ html:root body #editorView #sheet .fabric-variant-color :is(.fabric-variant-remove,.fabric-variant-add):hover,
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.mobile-change-delete,.mobile-change-add):hover{background:var(--aisel-soft)}
+ html:root body #editorView #sheet .fabric-variant-color :is(.fabric-variant-remove,.fabric-variant-add):focus-visible,
+ html:root body #editorView #mobileSampleRecords .mobile-change-heading :is(.mobile-change-delete,.mobile-change-add):focus-visible{outline:2px solid var(--aisel-field-focus);outline-offset:2px}
+}
