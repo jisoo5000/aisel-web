@@ -49,5 +49,29 @@
    }
    return durable(thumb)?thumb:'';
  }
- root.AiselPhoto={prepare,preparePair,dataURL,profiles,savedSource};
+
+ // Enlarge the loaded work-order photo without changing its stored source.
+ function mountPreview(box){
+   if(!box||box.dataset.previewMounted)return;box.dataset.previewMounted='1';
+   const img=box.querySelector('img');if(!img)return;let dialog;
+   function open(){
+     if(!box.classList.contains('filled')||!img.getAttribute('src'))return;
+     if(!dialog){
+       dialog=document.createElement('dialog');dialog.className='aisel-photo-preview noprint';dialog.setAttribute('aria-label','도식화 사진 확대');
+       const close=document.createElement('button');close.type='button';close.textContent='닫기';close.setAttribute('aria-label','사진 확대 닫기');
+       const full=document.createElement('img');full.alt='도식화 확대 사진';dialog.append(close,full);document.body.append(dialog);
+       close.addEventListener('click',()=>dialog.close());
+       dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();}});
+       dialog.addEventListener('close',()=>{full.removeAttribute('src');if(img.isConnected&&img.tabIndex===0)img.focus({preventScroll:true});});
+     }
+     dialog.querySelector('img').src=img.currentSrc||img.src;dialog.showModal();
+   }
+   box.addEventListener('click',e=>{if(e.target===img&&box.classList.contains('filled')){e.preventDefault();e.stopImmediatePropagation();open();}},true);
+   img.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();open();}});
+   const sync=()=>{const filled=box.classList.contains('filled');img.tabIndex=filled?0:-1;img.setAttribute('role','button');img.setAttribute('aria-label','도식화 사진 확대');img.title='눌러서 확대';if(dialog?.open)dialog.close();};
+   new MutationObserver(sync).observe(box,{attributes:true,attributeFilter:['class','data-photo-source']});sync();
+   root.addEventListener('beforeprint',()=>{if(dialog?.open)dialog.close();});
+ }
+
+ root.AiselPhoto={prepare,preparePair,dataURL,profiles,savedSource,mountPreview};
 })(globalThis);

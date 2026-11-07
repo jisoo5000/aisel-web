@@ -65,8 +65,7 @@ function mount({document,container,getDoc,getActor,act}){
   container.replaceChildren();container.hidden=!doc.pumMyeong;
   if(container.hidden)return;
   const row=el('div',undefined,'name-review-row');
-  row.append(el('span',locked?'최종 확정':'미확정','name-review-state'));
-  if(!locked&&r.revision)row.append(el('span','이름 변경됨','name-review-muted'));
+  if(!actor.isOwner)row.append(el('span',locked?'이름 확정':'이름 미확정','name-review-state'));
   if(actor.isOwner){
    const label=el('label',undefined,'name-final-label'),check=el('input');
    check.type='checkbox';check.checked=locked;check.disabled=busy;check.setAttribute('aria-label','최종 이름 확정');
@@ -74,18 +73,17 @@ function mount({document,container,getDoc,getActor,act}){
    label.append(check,document.createTextNode('최종 이름 확정'));row.append(label);
   }
   container.append(row);
-  const help=locked?'이름을 바꾸면 대표님이 다시 확인합니다.':'대표님이 최종 확정하기 전까지 미확정입니다.';
-  container.append(el('p',help,'name-review-muted'));
   if(r.requestedName){
    const box=el('div',undefined,'name-request');
    box.append(el('strong','이름 변경 요청'),el('div',r.currentName+' → '+r.requestedName));
    if(actor.isOwner){for(const [action,title]of [['accept','이 이름으로 확정'],['keep','기존 이름 유지']]){const b=el('button',title);b.type='button';b.disabled=busy;b.addEventListener('click',()=>run(action));box.append(b);}}
-   else box.append(el('p','대표님 확인 전까지 확정된 이름을 유지합니다.'));
+
    container.append(box);
   }
   const history=Object.values(r.history).sort((a,b)=>(b.at||0)-(a.at||0));
-  if(history.length){
-   const details=el('details');details.open=detailsOpen;details.append(el('summary','이름 변경 이력'));
+  const changed=history.some(entry=>entry.kind==='request'?clean(entry.proposed)&&clean(entry.proposed)!==clean(entry.from):['edit','restore','accept'].includes(entry.kind)&&clean(entry.from)!==clean(entry.name));
+  if(changed){
+   const details=el('details');details.open=detailsOpen;const summary=el('summary','이력');summary.setAttribute('aria-label','이름 변경 이력');details.append(summary);
    const labels={initial:'기존 이름',edit:'이름 변경',restore:'이전 이름으로',confirm:'최종 확정',unconfirm:'확정 해제',request:'변경 요청',accept:'요청 이름 확정',keep:'기존 이름 유지','cancel-request':'요청 취소'};
    for(const entry of history){
     const item=el('div',undefined,'name-history-item'),text=entry.kind==='request'?entry.from+' → '+entry.proposed:entry.name;
@@ -104,3 +102,4 @@ const api={state,final,sameVersion,change,aliases,canOrder,mount};
 if(typeof module==='object'&&module.exports)module.exports=api;
 root.AiselNames=api;
 })(typeof window==='object'?window:globalThis);
+

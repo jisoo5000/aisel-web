@@ -18,3 +18,18 @@
 .name-list-state{font-size:11px;line-height:16px;color:#6C727C}
 }
 @media print{#nameReviewPanel{display:none!important}}
+
+
+/* v290: compact confirmation directly below the product name. */
+@media screen {
+ #nameReviewPanel{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 12px;margin:0;padding:0;border:0;border-radius:0;font-size:11px;line-height:16px;color:#6C727C}
+ #nameReviewPanel .name-review-row{gap:4px;min-height:24px;align-items:center}
+ #nameReviewPanel .name-review-state{font-weight:400;color:#6C727C}
+ #nameReviewPanel .name-final-label{margin:0;min-height:24px;font-size:11px;line-height:16px;color:#6C727C}
+ #nameReviewPanel input[type=checkbox]{width:14px;height:14px}
+ #nameReviewPanel summary{min-height:24px;margin:0;font-size:11px;line-height:16px;color:#6C727C}
+ #nameReviewPanel details[open]{flex-basis:100%;min-width:0}
+ #nameReviewPanel .name-request,#nameReviewPanel .name-review-message{flex-basis:100%;min-width:0}
+ #nameReviewPanel .name-request{margin-top:0;padding-top:4px}
+ #nameReviewPanel .name-history-item{padding-top:4px;margin-top:4px;font-size:12px;line-height:18px}
+}

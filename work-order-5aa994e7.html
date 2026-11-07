@@ -1,3 +1,4 @@
+<!-- v290: compact name confirmation; thumbnail and one-line costs side by side; sales controls hidden in editor. -->
 <!-- v289: visible-first thumbnails; bounded same-day media reuse; one daily failed-thumbnail recovery. -->
 <!-- v288: separate sales availability, preserve production stages and printed sheet. -->
 <!-- v284: provisional product names, owner confirmation and reversible history. -->
@@ -311,8 +312,8 @@
 <script src="aisel-workorder-images.js?v=289"></script>
 <script src="aisel-access-core.js?v=247"></script>
 <script src="aisel-sales-availability.js?v=288"></script>
-<script src="aisel-name-review.js?v=284"></script>
-<link rel="stylesheet" href="aisel-name-review.css?v=284">
+<script src="aisel-name-review.js?v=290"></script>
+<link rel="stylesheet" href="aisel-name-review.css?v=290">
 <meta name="google" content="notranslate">
 <!-- AISEL 작업지시서 v114 (2026-10-08)
      [v114] 운영 시트 작성일순·드롭 제외·개별 원본 바로가기·로그인 없는 시트 갱신.
@@ -3635,6 +3636,7 @@
   <div class="code-pending-hint" id="codePendingHint"></div>
   <div class="editor-mobile-head noprint">
     <div class="editor-mobile-title"><span class="editor-identity-label">품명</span><strong id="mobileProductName" role="button" tabindex="0" aria-label="품명 수정">작업지시서</strong></div>
+  <section id="nameReviewPanel" class="noprint" aria-label="상품명 확정과 변경 이력" hidden></section>
     <div class="editor-mobile-caption"><span class="editor-identity-label">품번</span><span id="mobileProductCode" role="button" tabindex="0" aria-label="카테고리 수정"></span></div>
   </div>
   <section id="workorderSalesAvailability" class="noprint" aria-label="판매 여부">
@@ -3642,7 +3644,6 @@
     <label id="salesUnavailableReasonField" hidden>사유<select id="salesUnavailableReason" aria-label="판매 안 함 사유"><option value="">미확인</option><option value="prelaunch">출시 전</option><option value="paused">일시 중지</option><option value="ended">판매 종료</option></select></label>
     <span class="availability-help">작지 분류용 · 쇼핑몰 판매 설정은 변경하지 않아요.</span>
   </section>
-  <section id="nameReviewPanel" class="noprint" aria-label="상품명 확정과 변경 이력" hidden></section>
   <input type="hidden" id="supplierQualityData" value="">
   <!-- TOOLBAR (화면 전용) -->
   <div class="toolbar">
@@ -5448,7 +5449,7 @@
 </script>
 
 <script src="workorder-draft-storage.js?v=189"></script>
-<script src="aisel-photo.js?v=275"></script>
+<script src="aisel-photo.js?v=290"></script>
 <link rel="stylesheet" href="aisel-usp.css?v=254">
 <script src="aisel-usp.js?v=262"></script>
 <script src="aisel-workorder-usp.js?v=287"></script>
@@ -17207,6 +17208,7 @@ AiselSheetSalesView.start();
  window.addEventListener('afterprint',()=>{beforePrint=false;sync();});
  new MutationObserver(sync).observe(photo,{attributes:true,attributeFilter:['class']});
  sync();
+ if(window.AiselPhoto?.mountPreview)AiselPhoto.mountPreview(photo);
 })();
 </script>
 
@@ -17714,7 +17716,7 @@ window.AiselUnifiedAdapter={
 <script src="unified-app.js?v=288"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=248" media="screen">
 <script src="aisel-access-ui.js?v=248"></script>
-<link rel="stylesheet" href="workorder-screen.css?v=260" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=290" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=288-dictation1">
 <link rel="stylesheet" href="aisel-list-controls.css?v=286" media="screen">
 
