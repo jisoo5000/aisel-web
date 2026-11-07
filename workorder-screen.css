@@ -684,3 +684,36 @@
 @media screen and (max-width:359px){
  html:root body #editorView .editor-mobile-head:not(:has(#nameReviewPanel.name-review-required)) #refPanel{grid-row:3}
 }
+
+
+/* v299: supplier, fabric name and wider composition in one row; screen only. */
+@media screen {
+ html:root body #editorView #sheet>.meta>.fabric-variant-base{
+  display:grid!important;grid-template-columns:minmax(0,17fr) minmax(0,21fr) minmax(0,62fr);
+  column-gap:6px;row-gap:6px;align-items:start;
+ }
+ html:root body #editorView #sheet>.meta>.fabric-variant-base>.designer{display:contents!important}
+ html:root body #editorView #sheet>.meta>.fabric-variant-base>.designer>.k{display:none!important}
+ html:root body #editorView #sheet>.meta>.fabric-variant-base>:is(.fabric-variant-color,#productColors,.fabric-variant-list){grid-column:1/-1}
+ html:root body #editorView #sheet .fabric-variant-base>.designer #fabricSupplierField{grid-column:1!important}
+ html:root body #editorView #sheet .fabric-variant-base>.designer #fabricNameField{grid-column:2!important}
+ html:root body #editorView #sheet .fabric-variant-base>.designer #blend{grid-column:3!important}
+ html:root body #editorView #sheet .fabric-variant-fields{display:grid;grid-template-columns:minmax(0,17fr) minmax(0,21fr) minmax(0,62fr);gap:6px}
+ html:root body #editorView #sheet .fabric-variant-base :is(.designer,.fabric-variant-fields) :is(#fabricSupplierField,#fabricNameField,#blend,input){
+  grid-row:auto!important;box-sizing:border-box;width:100%!important;min-width:0!important;max-width:100%!important;
+  height:36px!important;min-height:36px!important;padding:5px 4px!important;
+  font-family:var(--aisel-font);font-size:12px!important;font-weight:400!important;line-height:18px!important;
+ }
+ html:root body #editorView #sheet .fabric-variant-fields input{grid-column:auto!important}
+ html:root body #editorView .toolbar>#orderSizePanel{background:var(--aisel-bg,#fff);padding:6px;border-color:var(--aisel-line,#E3E5E7);margin-top:6px}
+ html:root body #editorView #newBtn[aria-expanded="true"]{background:#E9ECF2;border-color:var(--aisel-line)}
+ html:root body #editorView #orderSizeOptions{margin-top:6px}
+ html:root body #editorView #orderSizeMessage:not(:empty){margin-top:6px}
+ html:root body #editorView .workorder-action-notice{box-sizing:border-box;min-width:0;padding:6px 0;font-size:12px;line-height:18px;overflow-wrap:anywhere;color:#6C727C}
+ html:root body #editorView .workorder-action-notice[data-ok="false"]{color:#9B382A}
+ html:root body #editorView #workorderActionNotice{padding:6px 12px}
+ html:root body #editorView .workorder-action-notice button{margin-top:6px}
+}
+@media screen and (max-width:359px){
+ html:root body #editorView #sheet .fabric-variant-base :is(.designer,.fabric-variant-fields) :is(#fabricSupplierField,#fabricNameField,#blend,input){font-size:11px!important;line-height:16px!important}
+}
