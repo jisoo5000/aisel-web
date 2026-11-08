@@ -323,3 +323,9 @@
  }
  html:root body #referenceCollectionView #rcLifeFilter option {font:inherit;color:inherit;background:#fff}
 }
+
+@media screen {
+ #referenceCollectionView .rc-card-info strong {display:block;margin-bottom:2px;font-size:12px;font-weight:550;line-height:18px;white-space:normal;overflow-wrap:anywhere;}
+ #referenceCollectionView .rc-card-info time {color:#6C727C;font-size:12px;font-weight:400;line-height:18px;white-space:nowrap;}
+ #referenceCollectionView .rc-card-info a {color:inherit;text-decoration:underline;text-underline-offset:3px;}
+}

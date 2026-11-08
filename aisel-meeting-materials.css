@@ -148,3 +148,13 @@
  html:root body #aiselMeetingMaterialsView .amm-directory[hidden]{display:none!important}
 }
 
+
+/* 2026-11-08: the access-controlled Google sheet owns meeting records. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView.amm-records-mode {max-width:1280px;}
+ html:root body #aiselMeetingMaterialsView .amm-record-tools {display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;}
+ html:root body #aiselMeetingMaterialsView .amm-resource-link {display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 4px;border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px;background:var(--aisel-bg,#fff);color:var(--aisel-ink,#34383C);font:inherit;text-decoration:none;}
+ html:root body #aiselMeetingMaterialsView .amm-record-note {margin:0 0 6px;color:var(--aisel-muted,#6C727C);}
+ html:root body #aiselMeetingMaterialsView .amm-record-frame {display:block;width:100%;height:max(480px,calc(100dvh - 230px));border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px;background:#fff;}
+ html:root body #aiselMeetingMaterialsView .amm-title a {color:inherit;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere;}
+}

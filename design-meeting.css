@@ -365,3 +365,9 @@
  html:root body #designMeetingView #dmLinks :is(.dm-materials-action,.dm-presentation-action,.dm-link-open){flex:0 0 auto;width:auto;height:28px;min-height:28px;min-width:0;padding:0 6px;font:400 12px/18px var(--aisel-font,sans-serif);color:#34383C;background:#fff;border:1px solid #E3E5E7;border-radius:3px;white-space:nowrap}
  html:root body #designMeetingView #dmLinks .dm-link-open{padding:0 4px;color:#6C727C}
 }
+
+@media screen {
+ html:root body #designMeetingView .dm-meeting-records {flex:none;height:28px;min-height:28px;padding:0 4px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C;font:400 12px/18px var(--aisel-font,sans-serif);}
+ #designMeetingView .dm-card-info strong {white-space:normal;overflow-wrap:anywhere;}
+ #designMeetingView .dm-card-info a {color:inherit;text-decoration:underline;text-underline-offset:3px;}
+}

@@ -297,6 +297,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  // The existing role check still owns its action and collection dialog.
  const searchRow=document.createElement('div');searchRow.className='dm-search-row';
  const searchField=$dm('.dm-search');searchField.before(searchRow);searchRow.append(searchField);
+ const meetingRecords=document.createElement('button');meetingRecords.type='button';meetingRecords.className='dm-meeting-records';meetingRecords.textContent='회의 기록';meetingRecords.onclick=()=>window.AiselUnified?.show('meetingmaterials',{id:'#meeting-materials?sheet=1'});searchRow.append(meetingRecords);
  const addMeeting=document.createElement('button');addMeeting.id='dmAddMeeting';addMeeting.type='button';addMeeting.className='dm-add-card';addMeeting.textContent='＋ 추가';addMeeting.setAttribute('aria-label','디자인회의 추가');addMeeting.onclick=openNewDraft;$dm('#dmGrid').prepend(addMeeting);
  const filterRow=document.createElement('div');filterRow.className='dm-organize-filters';filterRow.innerHTML='<div class="dm-filter-date"></div><select id="dmNoteCategoryFilter" aria-label="카테고리 필터"><option value="">카테고리</option></select><select id="dmDesignerFilter" aria-label="담당자 필터"><option value="">담당자</option><option value="__missing__">미지정</option></select><span id="dmCoverageState" role="status" aria-live="polite"></span>';searchRow.after(filterRow);
  const filterManager=document.createElement('div');filterManager.id='dmFilterManager';filterRow.after(filterManager);
@@ -624,12 +625,12 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    const filterCoverageComplete=(summaryActive&&galleryIndex.snapshot('meetings').complete)||(!hasOlder&&all.length>0);
    emptyFilterMessage.hidden=!!shown.length||!designerFilter||galleryDenied||galleryHold||!filterCoverageComplete;
    if(!emptyFilterMessage.hidden)emptyFilterMessage.textContent=designerFilter!=='__missing__'&&!all.some(c=>c.designer===designerFilter)?`${designerFilter} 담당으로 지정된 자료가 없습니다. 자료를 열어 담당자를 지정해주세요.`:'선택한 조건에 맞는 자료가 없습니다. 날짜·카테고리·예정/드롭 조건을 확인해주세요.';
-   $dm('#dmCount').textContent=`불러온 ${all.length}개 · 표시 ${Math.min(limit,shown.length)}개`;
-   $dm('#dmMore').hidden=shown.length<=limit&&!hasOlder;$dm('#dmMore').textContent=shown.length>limit?'더 보기':'이전 후보 더 보기';
-   const sig=JSON.stringify([shown.slice(0,limit),results,filter,dateFilter,designerFilter,noteCategoryFilter,q,role]);if(sig===lastSig){measureListPaint(shown);return;}lastSig=sig;
+   $dm('#dmCount').textContent=`불러온 ${all.length}개 · 표시 ${shown.length}개`;
+   $dm('#dmMore').hidden=true;$dm('#dmMore').textContent='연결 다시 확인';
+   const sig=JSON.stringify([shown,results,filter,dateFilter,designerFilter,noteCategoryFilter,q,role]);if(sig===lastSig){measureListPaint(shown);return;}lastSig=sig;
    const grid=$dm('#dmGrid');dateHeading.hidden=!shown.length;dateHeading.textContent=shown.length?compactDate(meetingDate(shown[0])):'';grid.querySelectorAll('.dm-date-group').forEach(el=>el.remove());let previousDate=shown.length?meetingDate(shown[0]):null;
-   const keep=new Set(shown.slice(0,limit).map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();if(grid.firstElementChild!==addMeeting)grid.prepend(addMeeting);let previous=addMeeting;
-   for(const [position,c] of shown.slice(0,limit).entries()){
+   const keep=new Set(shown.map(c=>c.id));for(const node of grid.querySelectorAll('.dm-card'))if(!keep.has(node.dataset.id))node.remove();if(grid.firstElementChild!==addMeeting)grid.prepend(addMeeting);let previous=addMeeting;
+   for(const [position,c] of shown.entries()){
      const result=c._summary?null:confirmedResult(c),photo=c._summary?{thumb:c.thumbnail}:C.photos(c)[0];let card=[...grid.children].find(n=>n.dataset.id===c.id);if(!card){card=document.createElement('article');card.className='dm-card';card.dataset.id=c.id;
      card.innerHTML=`<button class="dm-open" type="button">${photo?.thumb?`<img loading="lazy" decoding="async" alt="후보 사진">`:'<span class="dm-no-photo">사진 없음</span>'}<div class="dm-card-info"><strong>${esc(c.title||'사진 후보')}</strong><div class="dm-colors"></div><span class="dm-card-designer"></span><time>${esc(C.dateLabel(c.createdAt))}</time></div></button>`;
      }
@@ -637,7 +638,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
      if(src){if(oldImg){if(oldImg._aiselPhotoBinding?.source!==(galleryIndex?.imageSource?.('meetings',c.id,src)||src))bindUploadedPreview(oldImg,src,c.id);}else{opener.querySelector('.dm-no-photo')?.remove();const img=document.createElement('img');img.loading='lazy';img.decoding='async';img.alt='후보 사진';bindUploadedPreview(img,src,c.id);opener.prepend(img);}}
      else if(oldImg){const empty=document.createElement('span');empty.className='dm-no-photo';empty.textContent='사진 없음';oldImg.replaceWith(empty);}
      const preview=opener.querySelector('img');if(preview){if(preview._aiselPhotoBinding?.source!==(galleryIndex?.imageSource?.('meetings',c.id,src)||src))bindUploadedPreview(preview,src,c.id);preview.loading=position<3?'eager':'lazy';preview.fetchPriority=position===0?'high':'auto';}
-     card.querySelector('strong').textContent=c.title||'사진 후보';card.querySelector('time').textContent=compactDate(meetingDate(c));card.querySelector('.dm-card-designer').textContent=c.designer||'미지정';
+     const info=card.querySelector('.dm-card-info');if(info.parentNode===opener)opener.after(info);const title=info.querySelector('strong');title.replaceChildren();const source=C.httpUrl(c.link||c.sourceUrl);if(source){const a=document.createElement('a');a.href=source;a.target='_blank';a.rel='noopener noreferrer';a.textContent=c.title||'사진 후보';title.append(a);}else title.textContent=c.title||'사진 후보';card.querySelector('time').textContent=compactDate(meetingDate(c));card.querySelector('.dm-card-designer').textContent=c.designer||'미지정';
      const colors=card.querySelector('.dm-colors');colors.replaceChildren();renderColors(colors,c,result);
      card.querySelector('.dm-open').onclick=()=>open(c.id);
      if(meetingDate(c)!==previousDate){const heading=document.createElement('h3');heading.className='dm-date-group';heading.textContent=compactDate(meetingDate(c));previous.after(heading);previous=heading;previousDate=meetingDate(c);}
@@ -1094,11 +1095,11 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    })().finally(()=>{loadingOlder=false;olderFlight=null;});return olderFlight;
  }
  async function ensureCoverage(){
-   if(summaryActive&&galleryIndex?.snapshot('meetings').paged&&(dateFilter||designerFilter||noteCategoryFilter||filter!=='planned'||$dm('#dmSearch').value.trim()))return galleryIndex.warm('meetings',{all:true,preferCache:true});
+   if(summaryActive&&galleryIndex?.snapshot('meetings').paged&&!pane.hidden)return galleryIndex.warm('meetings',{all:true,preferCache:true}).catch(error=>{message(error.message,true);$dm('#dmMore').hidden=false;});
    if(summaryActive||galleryDenied||galleryHold||coverageFlight||pane.hidden||document.hidden||!hasOlder)return coverageFlight;
    const epoch=coverageEpoch,state=$dm('#dmCoverageState');state.textContent=noteCategoryFilter?'참고 분류 확인 중…':'날짜·담당자 확인 중…';
    coverageFlight=(async()=>{try{while(hasOlder&&epoch===coverageEpoch&&!pane.hidden&&!document.hidden){if(!await loadOlderPage())break;}if(epoch===coverageEpoch)state.textContent='';}
-     catch(e){if(epoch===coverageEpoch&&e.code!=='auth_changed')state.textContent='이전 자료 확인 실패 · 더 보기로 다시 시도해주세요.';}
+     catch(e){if(epoch===coverageEpoch&&e.code!=='auth_changed'){state.textContent='이전 자료 연결을 확인해주세요.';$dm('#dmMore').hidden=false;}}
    })().finally(()=>{coverageFlight=null;if(epoch!==coverageEpoch&&hasOlder&&!pane.hidden&&!document.hidden)queueMicrotask(ensureCoverage);});return coverageFlight;
  }
  function readyGallery(value=galleryIndex?.snapshot('meetings')){return value?.available===true&&value.authorized===true&&(value.complete===true||value.paged===true)&&value.uid===memberUser()?.uid;}
@@ -1238,3 +1239,4 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  applyEditingState();
  window.AiselDesignMeeting={show,open,back,canLeave,snapshot,preloadGallery,openTools:()=>$dm('#dmTools').showModal(),login:signIn,verifyAccess:access,resetAuth,getRole:()=>role,mutate,receive,convertOne,openReferenceWorkorder,refresh,bridge,core:C};
 })();
+

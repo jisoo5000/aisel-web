@@ -250,9 +250,9 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=meeting-20261108">
-<link rel="preload" as="script" href="design-meeting.js?v=287">
-<link rel="preload" as="script" href="reference-collection.js?v=294">
+<link rel="preload" as="script" href="unified-app.js?v=meeting-records-20261108">
+<link rel="preload" as="script" href="design-meeting.js?v=meeting-records-20261108">
+<link rel="preload" as="script" href="reference-collection.js?v=meeting-records-20261108">
 <link rel="preload" as="style" href="workorder-screen.css?v=20261108-order-state">
 <link rel="preload" as="style" href="unified-app.css?v=295-harness">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=center-20261108">
@@ -12420,6 +12420,7 @@
   const woTrashIndexRoot_ = workorderDatabase_.ref("workorderTrashIndex");
   let trashBusy_ = false, trashOpen_ = false, trashListening_ = false;
   let trashEntries_ = {}, trashReadError_ = "", trashUndoId_ = null;
+  let lastTrashSig_ = "", lastTrashList_ = null;
   function trashClone_(v){ return v == null ? null : JSON.parse(JSON.stringify(v)); }
   function trashFirebaseValue_(v){
     // RTDB omits null/undefined children and empty containers. An array may return
@@ -12453,8 +12454,11 @@
   }
   function renderTrash_(){
     const list=$("#workOrderTrashList"); if(!list) return;
-    list.replaceChildren();
     const entries=Object.entries(trashEntries_).filter(([,v])=>v&&v.phase!=="restored").sort((a,b)=>(b[1].deletedAt||0)-(a[1].deletedAt||0));
+    const sig=JSON.stringify([trashOpen_,trashBusy_,trashReadError_,entries.map(([id,e])=>[id,e.name,e.code,e.deletedAt,e.phase])]);
+    if(sig===lastTrashSig_ && list===lastTrashList_) return;
+    lastTrashSig_=sig;lastTrashList_=list;
+    list.replaceChildren();
     $("#galleryTrashBtn").textContent=trashOpen_ ? "작지 목록" : "삭제 복원"+(entries.length?" ("+entries.length+")":"");
     const status=$("#workOrderTrashStatus");
     status.textContent=trashReadError_ || (entries.length ? "삭제한 작지는 자동으로 영구 삭제되지 않습니다." : "휴지통이 비어 있습니다.");
@@ -17860,7 +17864,7 @@ AiselSheetSalesView.start();
 }
 </style>
 
-<link rel="stylesheet" href="design-meeting.css?v=287">
+<link rel="stylesheet" href="design-meeting.css?v=meeting-records-20261108">
 <script>
 window.AISEL_DESIGN_MEETING_BRIDGE = "https://script.google.com/macros/s/AKfycbzBMKhjocNTHB2_Oov_NYANTAQZ5vuIcz3WBbTpzpgmobYeiLf8HXug7poDY_a8EgPiDA/exec";
 window.AiselDesignMeetingAdapter={
@@ -17900,7 +17904,7 @@ window.AiselDesignMeetingAdapter={
 <script src="aisel-note-categories.js?v=228"></script>
 <script src="aisel-reference-categories.js?v=233"></script>
 <script src="aisel-look-categories.js?v=233"></script>
-<script src="design-meeting.js?v=287"></script>
+<script src="design-meeting.js?v=meeting-records-20261108"></script>
 <script>
 window.AiselNoteCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites?.enabled?window.AiselCollectionWrites.categoryRequest(action,payload):window.AiselDesignMeeting.bridge(action,[],payload)});
 window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:()=>window.AiselAuth?.currentUser?.(),getGeneration:()=>window.AiselAuth?.generation,request:(action,payload)=>window.AiselCollectionWrites.referenceCategoryRequest(action,payload)});
@@ -17917,7 +17921,7 @@ window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:(
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=285">
+<link rel="stylesheet" href="reference-collection.css?v=meeting-records-20261108">
 <script>
 window.AiselUnifiedAdapter={
  async leave(){if(!await settleEditorSave_())return false;return true;},
@@ -17931,7 +17935,7 @@ window.AiselUnifiedAdapter={
 </script>
 <script src="reference-analysis-core.js?v=181"></script>
 <script src="reference-save-core.js?v=212"></script>
-<script src="reference-collection.js?v=294"></script>
+<script src="reference-collection.js?v=meeting-records-20261108"></script>
 <link rel="stylesheet" href="workorder-meeting-photos.css?v=201">
 <script src="workorder-meeting-photos.js?v=201-load-feedback-20261108"></script>
 <link rel="stylesheet" href="aisel-moodboards.css?v=233" media="screen">
@@ -17940,7 +17944,7 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=20261108-1"></script>
-<script src="unified-app.js?v=meeting-20261108"></script>
+<script src="unified-app.js?v=meeting-records-20261108"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-20261108" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261108-order-state" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
@@ -18001,3 +18005,4 @@ window.AiselUnifiedAdapter={
 <!-- ERP navigation: existing router and permissions remain authoritative. -->
 <link rel="stylesheet" href="aisel-erp-shell.css?v=compact-nav-20261108" media="screen">
 <script src="aisel-erp-shell.js?v=operations-20261108-1"></script>
+

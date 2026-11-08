@@ -545,7 +545,7 @@
     const action=options.id?'refGet':'refList';
     const prefetch=window.AiselCollectionWrites?.enabled!==true&&!sharedDetailEnabled()&&!preloadFlight&&!authorizedStamp&&!localOnly&&(options.id||gallery&&!galleryEnabled())?{action,promise:timed(action==='refGet'?'detailMs':'listMs',()=>call(action,options.id?{id:options.id}:{limit:20})).then(data=>({data}),error=>({error}))}:null;
     const hydrate=async()=>{try{
-      if(gallery&&galleryEnabled()){await window.AiselGalleryIndex.warm('references',{preferCache:!options.forceRefresh,paged:true});if(!stillVisible())return;if(galleryReady())return;if(galleryState?.authorized===false){message('레퍼런스 열람 권한을 다시 확인해주세요.',true);return;}}
+      if(gallery&&galleryEnabled()){await window.AiselGalleryIndex.warm('references',{preferCache:!options.forceRefresh,all:true});if(!stillVisible())return;if(galleryReady())return;if(galleryState?.authorized===false){message('레퍼런스 열람 권한을 다시 확인해주세요.',true);return;}}
       if(options.id){await open(options.id,{history:options.history!==false,prefetch});return;}
       await access();if(!stillVisible())return;
       if(gallery){if(options.forceRefresh||!initialized||performance.now()-listReadAt>LIST_TTL)await refresh(false,prefetch);return;}
@@ -586,7 +586,7 @@
   const lifecycle=window.AiselReferenceLifecycle;let lifeFilter='active',listLimit=20,listFilterKey='',restoredLimit=null,lifeUndoTimer;
   function summary(record){const {id,version,title,date,designer,category,contentType,creator,createdAt,updatedAt,archivedAt,permissions:recordPermissions,analysis,analysisSignature,analysisState,analysisReceipt,reviewedAt,categoryMode}=record;return {id,version,title,date,designer,category,contentType,creator,createdAt,updatedAt,archivedAt,analysis,analysisSignature,analysisState,analysisReceipt,reviewedAt,categoryMode,permissions:recordPermissions,...noteCategorySummary(record),thumbnail:record.thumbnail||record.photos?.[0]?.thumb||''};}
   async function refresh(more=false,prefetch=null,options={}){
-    ensure();categoryCoverageErrors.clear();if(galleryReady()){await window.AiselGalleryIndex.warm('references',{preferCache:true,paged:true});await acceptGalleryState(galleryState);return;}if(listFlight)return listFlight;const epoch=authEpoch;loading=true;$('#rcMore').disabled=true;
+    ensure();categoryCoverageErrors.clear();if(galleryReady()){await window.AiselGalleryIndex.warm('references',{preferCache:true,all:true});await acceptGalleryState(galleryState);return;}if(listFlight)return listFlight;const epoch=authEpoch;loading=true;$('#rcMore').disabled=true;
     const task=(async()=>{try{
       if(!account)await access();const payload={limit:20};if(more&&cursor)payload.cursor=cursor;else if(initialized&&checkedAt)payload.updatedSince=checkedAt;
       const data=await (options.repair===false?readResult('refList',payload,prefetch):readWithRepair('refList',payload,prefetch));
@@ -595,7 +595,7 @@
       // Show the first available page before draining a large delta. Only advance
       // checkedAt after the full delta succeeds, so a retry cannot skip changes.
       const delta=initialized&&!more;galleryOwned=false;initialized=true;renderList();if($('#rcDetail').hidden&&!dirty)message('');
-      if(delta&&data.nextCursor){let next=data.nextCursor;while(next){const page=await referenceRequest('refList',{...payload,cursor:next});for(const item of page.items||[])rememberRecord(item);renderList();next=page.nextCursor||null;}}
+      if(data.nextCursor){let next=data.nextCursor;while(next){const page=await referenceRequest('refList',{...payload,cursor:next});if(epoch!==authEpoch)return;for(const item of page.items||[])rememberRecord(item);renderList();next=page.nextCursor||null;if(!delta)cursor=next;}}
       checkedAt=data.checkedAt||checkedAt;listReadAt=performance.now();
     }catch(e){if(epoch===authEpoch)message(errorText(e),true);}finally{if(epoch===authEpoch){loading=false;$('#rcMore').disabled=false;}}})();
     listFlight=task;try{return await task;}finally{if(listFlight===task)listFlight=null;}
@@ -610,7 +610,7 @@
     const candidates=available.filter(r=>(!search||[r.title,r.sourceUrl,lifecycle?.get(r.id).note,lifecycle?.get(r.id).resultUrl].filter(Boolean).join(' ').toLocaleLowerCase().includes(search))&&(!dateFilter||(dateFilter==='__undated__'?!referenceDateKey(r):referenceDateKey(r)===dateFilter))&&(!designerFilter||(designerFilter==='__unassigned__'?!r.designer:r.designer===designerFilter)));
     const unknown=noteCategory?candidates.filter(r=>!noteCategorySummary(r).noteCategoryCoverage):[];
     const list=candidates.filter(r=>!noteCategory||!noteCategorySummary(r).noteCategoryCoverage||noteCategorySummary(r).noteCategoryIds.includes(noteCategory)).sort((a,b)=>referenceDateKey(b).localeCompare(referenceDateKey(a))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))||b.id.localeCompare(a.id));
-    const shown=list.slice(0,listLimit);const sig=JSON.stringify([shown.map(r=>[r,lifecycle?.get(r.id),lifecycle?.isPending(r.id)]),lifeFilter,listLimit,lifecycle?.ready,noteCategory,dateFilter,designerFilter,permissions.canCreate,!!authorizedStamp]);
+    const shown=list;const sig=JSON.stringify([shown.map(r=>[r,lifecycle?.get(r.id),lifecycle?.isPending(r.id)]),lifeFilter,listLimit,lifecycle?.ready,noteCategory,dateFilter,designerFilter,permissions.canCreate,!!authorizedStamp]);
     if(sig!==gallerySignature){
       gallerySignature=sig;const frag=document.createDocumentFragment(),add=$('#rcCreate');
       add.hidden=false;add.disabled=createFlight||!!authorizedStamp&&permissions.canCreate!==true;
@@ -623,11 +623,11 @@
         if(src){const img=document.createElement('img');bindUploadedPreview(img,src,r.id);img.alt='';img.width=185;img.height=160;img.loading=index<3?'eager':'lazy';img.fetchPriority=index===0?'high':'auto';img.decoding='async';button.append(img);}
         else{const space=document.createElement('span');space.className='rc-no-photo';space.textContent=r._draft?'작성 중':'';button.append(space);}
         const info=document.createElement('span');info.className='rc-card-info';
-        const title=document.createElement('strong');title.textContent=AI.title(r);
+        const title=document.createElement('strong'),source=http(r.sourceUrl||r.sourceLinks?.[0]);if(source){const a=document.createElement('a');a.href=source;a.target='_blank';a.rel='noopener noreferrer';a.textContent=AI.title(r);title.append(a);}else title.textContent=AI.title(r);
         const meta=document.createElement('span');meta.className='rc-card-meta';
         const tag=document.createElement('span');tag.className='rc-category';tag.textContent=r._draft?'작성 중':categoryLabel(r);
         const date=document.createElement('time');date.dateTime=r.date||'';date.textContent=shortDate(r.date);
-        const designer=document.createElement('span');designer.className='rc-card-designer';designer.textContent=r.designer||'미지정';meta.append(date,tag);info.append(title,designer,meta);button.append(info);const card=document.createElement('article');card.className='rc-lifecycle-card';card.dataset.id=r.id;card.append(button);if(!r._draft)renderLifeActions(card,r);frag.append(card);
+        const designer=document.createElement('span');designer.className='rc-card-designer';designer.textContent=r.designer||'미지정';meta.append(date,tag);info.append(title,designer,meta);button.append(info);const card=document.createElement('article');card.className='rc-lifecycle-card';card.dataset.id=r.id;card.append(button,info);if(!r._draft)renderLifeActions(card,r);frag.append(card);
       }
       $('#rcGrid').replaceChildren(frag);
     }
@@ -638,8 +638,8 @@
     const preview=previewRecord&&[...$('#rcGrid').children].find(node=>node.dataset.id===previewRecord.id)?.querySelector('img');
     if(preview){const started=viewStartedAt;if(preview.complete&&preview.naturalWidth)measureListPhase('first-preview',started);else if(preview.dataset.timed!==String(started)){preview.dataset.timed=String(started);preview.addEventListener('load',()=>measureListPhase('first-preview',started),{once:true});}}
     $('#rcEmpty').hidden=!!list.length;$('#rcEmpty').textContent=lifeFilter==='active'?'사용 전 자료가 없습니다.':'선택한 기록이 없습니다.';
-    $('#rcMore').hidden=list.length<=listLimit&&!cursor&&!galleryState?.hasMore;$('#rcMore').textContent='더 보기 · '+Math.min(20,Math.max(list.length-listLimit,cursor||galleryState?.hasMore?20:0))+'개';let count=$('#rcListCount');if(!count){count=document.createElement('p');count.id='rcListCount';count.className='rc-filter-status';$('#rcMore').before(count);}count.textContent='표시 '+Math.min(listLimit,list.length)+' / '+list.length+'개'+(cursor||galleryState?.hasMore?' · 이전 자료 더 보기':'');
-    const coverage=$('#rcCategoryCoverage');coverage.hidden=!noteCategory||!unknown.length&&!cursor;coverage.textContent=unknown.length?(unknown.some(r=>categoryCoverageErrors.has(r.id))?'일부 자료의 분류를 확인하지 못했습니다. 다시 연결하면 이어서 확인합니다.':'참고 분류 확인 중…'):cursor?'현재 불러온 자료에서 찾고 있습니다. 더 보기로 나머지 자료를 확인하세요.':'';
+    $('#rcMore').hidden=!cursor&&!galleryState?.hasMore;$('#rcMore').textContent='연결 다시 확인';let count=$('#rcListCount');if(!count){count=document.createElement('p');count.id='rcListCount';count.className='rc-filter-status';$('#rcMore').before(count);}count.textContent=list.length+'개'+(cursor||galleryState?.hasMore?' · 이전 자료 확인 중':'');
+    const coverage=$('#rcCategoryCoverage');coverage.hidden=!noteCategory||!unknown.length&&!cursor;coverage.textContent=unknown.length?(unknown.some(r=>categoryCoverageErrors.has(r.id))?'일부 자료의 분류를 확인하지 못했습니다. 다시 연결하면 이어서 확인합니다.':'참고 분류 확인 중…'):cursor?'나머지 자료를 확인하고 있습니다.':'';
     if(noteCategory&&unknown.some(r=>!categoryCoverageErrors.has(r.id)))void hydrateCategoryCoverage(unknown);
   }
 
@@ -1122,3 +1122,4 @@
   window.addEventListener('aisel-session-change',async()=>{if(!await resetAuth())return;if(visible&&window.AiselAuth?.currentUser()?.uid){const match=location.hash.match(/^#reference=(.+)$/);await show({id:match?decodeURIComponent(match[1]):undefined,history:false});}});
   window.AiselReferenceCollection={configure(options){config={...config,...options};ensure();return this;},show,open,leave,canLeave,back,refresh,preloadGallery,save,receive,verifyAccess:access,resetAuth,get active(){return active?.id||null;},get visible(){return visible;},get timings(){return {...timings};}};
 })();
+
