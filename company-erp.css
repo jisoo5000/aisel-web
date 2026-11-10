@@ -1,5 +1,33 @@
 /* All selectors are scoped to the additive workspace/entry. No legacy view rules. */
 @media screen {
+ #aiselCompanyWorkspace .cg-workspace>.ce-section-heading{flex-wrap:wrap;}
+ #aiselCompanyWorkspace .cg-workspace>textarea{width:100%;max-width:100%;font:inherit;margin:10px 0;}
+ #aiselCompanyWorkspace .cg-import-preview{max-height:300px;overflow:auto;margin:12px 0;}
+ #aiselCompanyWorkspace .cg-workspace .ce-actions{column-gap:12px;}
+ #aiselCompanyWorkspace .cg-brief{padding:0 0 16px;border-bottom:1px solid #E3E5E7;margin-bottom:16px;white-space:pre-wrap;}
+ #aiselCompanyWorkspace .cg-tabs{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 12px;}
+ #aiselCompanyWorkspace .cg-tabs [aria-pressed="true"]{background:#E9ECF2;color:#34383C;}
+ #aiselCompanyWorkspace .cg-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px 12px;margin-top:12px;}
+ #aiselCompanyWorkspace .cg-card{min-width:0;border:1px solid #E3E5E7;border-radius:3px;overflow:hidden;}
+ #aiselCompanyWorkspace .cg-card-body{padding:10px;}
+ #aiselCompanyWorkspace .cg-photo{position:relative;background:#F6F6F6;min-height:60px;}
+ #aiselCompanyWorkspace .cg-photo img{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:contain;}
+ #aiselCompanyWorkspace .cg-photo img[hidden]{display:none;}
+ #aiselCompanyWorkspace .cg-photo-open{display:block;width:100%;text-align:center;background:#fff;font-size:11px;}
+ #aiselCompanyWorkspace .cg-image-error{padding:18px 10px;text-align:center;}
+ #aiselCompanyWorkspace .cg-decision{font-size:11px;color:#6C727C;}
+ #aiselCompanyWorkspace .cg-excerpt{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line;}
+ #aiselCompanyWorkspace .cg-detail{display:grid;grid-template-columns:minmax(180px,38%) minmax(0,1fr);gap:20px;margin-top:16px;}
+ #aiselCompanyWorkspace .cg-detail .cg-photo{position:sticky;top:12px;}
+ #aiselCompanyWorkspace .cg-field{margin:0 0 14px;}
+ #aiselCompanyWorkspace .cg-field p{white-space:pre-wrap;}
+ #aiselCompanyWorkspace .cg-lightbox{max-width:min(92vw,900px);max-height:94vh;border:1px solid #E3E5E7;padding:12px;background:#fff;color:#34383C;overflow:auto;}
+ #aiselCompanyWorkspace .cg-lightbox::backdrop{background:rgba(0,0,0,.65);}
+ #aiselCompanyWorkspace .cg-lightbox .cg-photo img{max-height:78vh;width:auto;max-width:100%;margin:auto;aspect-ratio:auto;}
+ @media(max-width:800px){#aiselCompanyWorkspace .cg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+ @media(max-width:560px){#aiselCompanyWorkspace .cg-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px;}#aiselCompanyWorkspace .cg-detail{grid-template-columns:minmax(0,1fr);}#aiselCompanyWorkspace .cg-detail .cg-photo{position:static;}#aiselCompanyWorkspace .cg-card-body{padding:8px;}}
+}
+@media screen {
  #aiselCompanyWorkspace{box-sizing:border-box;width:100%;max-width:1040px;margin:0 auto;padding:0;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif;}
  #aiselCompanyWorkspace[hidden]{display:none!important;}
  #aiselCompanyWorkspace *{box-sizing:border-box;}
@@ -97,6 +125,7 @@
 @media print{#aiselManagementLogin{display:none!important}}
 
 #aiselCompanyWorkspace .cw-card p{white-space:pre-wrap;overflow-wrap:anywhere;}
+
 
 @media screen{
  #aiselCompanyWorkspace .ce-list-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;}

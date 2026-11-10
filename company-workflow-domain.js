@@ -1,7 +1,7 @@
 /* Workflow definitions only. Business records remain on the authorized server. */
 (function(root,f){const a=f();if(typeof module==='object'&&module.exports)module.exports=a;else root.AiselWorkflowDomain=a;})(typeof window==='object'?window:globalThis,function(){
 const config={
-  "version": "1.4.0",
+  "version": "1.4.1",
   "statusOptions": [
     "대기",
     "진행 중",
@@ -10,6 +10,165 @@ const config={
     "보류"
   ],
   "specs": {
+    "glowny": {
+      "label": "글로니 Like",
+      "group": "상품·제작",
+      "sheet": "글로니 Like",
+      "sheetId": 2026111110,
+      "fields": [
+        {
+          "key": "title",
+          "label": "자료·상품명",
+          "type": "text"
+        },
+        {
+          "key": "collection",
+          "label": "자료 구분",
+          "type": "select",
+          "options": [
+            "overview",
+            "candidate",
+            "market",
+            "eunyeong",
+            "brand",
+            "performance",
+            "validation"
+          ]
+        },
+        {
+          "key": "order",
+          "label": "표시 순서",
+          "type": "number"
+        },
+        {
+          "key": "planningId",
+          "label": "후보·자료 ID",
+          "type": "text"
+        },
+        {
+          "key": "referenceBrand",
+          "label": "참고 브랜드",
+          "type": "text"
+        },
+        {
+          "key": "rankLabel",
+          "label": "판매순 관찰",
+          "type": "text"
+        },
+        {
+          "key": "observedAt",
+          "label": "확인 시각·기간",
+          "type": "text"
+        },
+        {
+          "key": "priceText",
+          "label": "확인 가격",
+          "type": "text"
+        },
+        {
+          "key": "imageUrl",
+          "label": "사진",
+          "type": "url"
+        },
+        {
+          "key": "originalImageUrl",
+          "label": "원본 사진",
+          "type": "url"
+        },
+        {
+          "key": "sourceUrl",
+          "label": "원상품·근거",
+          "type": "url"
+        },
+        {
+          "key": "sheetUrl",
+          "label": "구글 시트",
+          "type": "url"
+        },
+        {
+          "key": "slidesUrl",
+          "label": "구글 프레젠테이션",
+          "type": "url"
+        },
+        {
+          "key": "reference",
+          "label": "관찰한 특징·기존 자산",
+          "type": "textarea"
+        },
+        {
+          "key": "mechanism",
+          "label": "작동 원리·살 이유",
+          "type": "textarea"
+        },
+        {
+          "key": "application",
+          "label": "에이슬 적용안",
+          "type": "textarea"
+        },
+        {
+          "key": "counterEvidence",
+          "label": "반대 근거·반품 위험",
+          "type": "textarea"
+        },
+        {
+          "key": "evidence",
+          "label": "판매·반품·출처 근거",
+          "type": "textarea"
+        },
+        {
+          "key": "relatedProduct",
+          "label": "기존 상품·코디 연결",
+          "type": "text"
+        },
+        {
+          "key": "productCode",
+          "label": "확인된 자사 품번",
+          "type": "text"
+        },
+        {
+          "key": "nextAction",
+          "label": "다음 검증",
+          "type": "textarea"
+        },
+        {
+          "key": "decision",
+          "label": "검토 판단",
+          "type": "select",
+          "options": [
+            "시장 관찰",
+            "검토 제안",
+            "기존 결정",
+            "보류",
+            "수정 검토",
+            "검토 완료"
+          ]
+        },
+        {
+          "key": "reviewNote",
+          "label": "검토 메모",
+          "type": "textarea"
+        },
+        {
+          "key": "assigneeName",
+          "label": "검토 담당",
+          "type": "text"
+        },
+        {
+          "key": "dueDate",
+          "label": "다음 확인일",
+          "type": "date"
+        }
+      ],
+      "workflow": [
+        "판매순·자사 성과 확인",
+        "사진·기존 상품 비교",
+        "에이슬 적용안 검토",
+        "샘플·착용 검증",
+        "판매·반품 결과 확인"
+      ],
+      "note": "시장 관찰과 개발 제안을 구분합니다. 검토 상태는 생산 승인이나 기존 작업지시서의 진행 상태를 바꾸지 않습니다.",
+      "source": null
+    },
     "meeting": {
       "label": "디자인회의 준비·정리",
       "group": "상품·제작",
@@ -1113,3 +1272,4 @@ function metrics(type,v){if(type==='reaction')return {판매율:ratio(v.soldUnit
 function columns(type){return ['기록ID','상태',...config.specs[type].fields.map(x=>x.label),'버전','수정일','보관'];}
 function sheetRow(r){return [r.id,r.status,...config.specs[r.type].fields.map(x=>r.values[x.key]??''),r.version,new Date(r.updatedAt).toISOString(),r.archived?'예':'아니오'];}
 return Object.freeze({...config,metrics,columns,sheetRow});});
+
