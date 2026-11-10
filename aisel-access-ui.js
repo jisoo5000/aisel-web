@@ -148,3 +148,62 @@
  window.AiselStaffDirectory={show:showManager,hide:hideManager};
  mountAccount();
 })();
+
+/* Owner-only, read-only policy audit. No financial values or credentials. */
+(function(root){
+ 'use strict';
+ const access=root.AiselAccess;if(!access)return;
+ const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
+ const pane=el('section',undefined,'permission-audit noprint');pane.id='aiselPermissionAudit';pane.hidden=true;pane.setAttribute('aria-label','권한 점검');
+ const toolbar=el('div',undefined,'permission-audit-toolbar'),refresh=el('button','다시 확인'),status=el('p',''),body=el('div');
+ refresh.type='button';status.setAttribute('role','status');status.setAttribute('aria-live','polite');toolbar.append(el('h2','직원별 접근 범위'),refresh);pane.append(toolbar,status,body);document.body.append(pane);
+ const roles={owner:'대표',designer:'디자이너',md:'MD',logistics:'물류'};
+ const columns=[['이름·아이디',null],['계정 상태',null],['레퍼런스','references'],['디자인회의','designmeeting'],['판매성과','sales'],['작업지시서','orders'],['판매표·매출·광고·수익','finance']];
+ let epoch=0,identity='';
+ const key=()=>[access.session?.uid,access.session?.role,access.session?.credentialVersion,root.AiselAuth?.generation].join(':');
+ const permitted=()=>access.isOwner===true&&root.AiselManagement?.unlocked===true;
+ function clear(){epoch++;body.replaceChildren();status.textContent='';refresh.disabled=false;}
+ function hide(){pane.hidden=true;clear();}
+ function render(data){
+  const summary=el('div',undefined,'permission-audit-summary');
+  summary.append(el('p',data.protectionActive?'계정별 접근 제한 적용 중':'접근 제한 설정 확인 필요',data.protectionActive?'':'permission-audit-warning'));
+  summary.append(el('p',data.designerCollectionsReady?'디자이너: 레퍼런스 · 디자인회의 · 판매성과 · 작업지시서':'디자이너 레퍼런스·디자인회의 연결 준비 중'));
+  summary.append(el('p','판매성과는 본인 담당 신상품의 반응만 표시합니다. 회사 매출·광고비·수익 금액은 대표 전용입니다.'));
+  const scroll=el('div',undefined,'permission-audit-scroll'),table=el('table'),head=el('thead'),tr=el('tr');table.setAttribute('aria-label','사람별 열람 권한');
+  columns.forEach(([label])=>{const th=el('th',label);th.scope='col';tr.append(th);});head.append(tr);table.append(head);const tbody=el('tbody');
+  for(const person of data.staff){
+   const row=el('tr'),views=person.loginReady?person.permissions?.views||[]:[];
+   const name=el('th');name.scope='row';name.append(el('strong',person.displayName||'이름 미등록'),el('span',[person.loginId||person.email,roles[person.role]||'확인 필요'].filter(Boolean).join(' · ')));
+   row.append(name,el('td',!person.active?'중지':person.loginReady?'사용 중':'로그인 준비 필요'));
+   for(const [,view]of columns.slice(2)){
+    let text=view==='finance'?(person.loginReady&&person.permissions?.companyFinance?'대표 전용':'차단'):views.includes(view)?'열람 가능':'차단';
+    if(view==='orders'&&views.includes(view)&&person.role==='designer')text='본인 '+person.assignedCount+'건'+(person.sharedCount?' · 공동 '+person.sharedCount+'건':'');
+    if(view==='sales'&&views.includes(view)&&person.role==='designer')text='본인 신상품';
+    row.append(el('td',text));
+   }
+   tbody.append(row);
+  }
+  if(!data.staff.length){const row=el('tr'),cell=el('td','등록된 계정이 없습니다. 직원·권한 관리에서 확인해주세요.');cell.colSpan=columns.length;row.append(cell);tbody.append(row);}
+  for(const row of tbody.children)Array.from(row.children).forEach((cell,index)=>cell.setAttribute('data-label',columns[index]?.[0]||''));
+  table.append(tbody);scroll.append(table);scroll.tabIndex=0;scroll.setAttribute('aria-label','사람별 권한 표');body.append(summary,scroll);
+  const notes=el('div',undefined,'permission-audit-notes');
+  notes.append(el('p','담당자 미지정 작업지시서 '+data.unassignedCount+'건 · 담당자 지정 전에는 대표만 확인할 수 있습니다.'));
+  if(data.unlinkedNames?.length)notes.append(el('p','이름만 등록되어 있고 로그인 계정과 연결되지 않은 항목: '+data.unlinkedNames.join(', ')));
+  notes.append(el('p','이 표는 현재 앱 권한입니다. 과거 열람 기록이나 별도로 공유한 구글 문서의 권한을 뜻하지 않습니다. 출고·샘플 공통 공유 화면의 기존 정책은 별도로 유지됩니다.'));
+  body.append(notes);
+ }
+ async function load(){
+  if(!permitted()){hide();return false;}
+  const run=++epoch,account=key();body.replaceChildren();refresh.disabled=true;status.textContent='현재 계정과 접근 범위를 확인하고 있습니다.';
+  try{const data=await access.request('permissionAudit');if(run!==epoch||pane.hidden||account!==key()||!permitted())return false;
+   if(!Array.isArray(data.staff)||!Number.isFinite(data.checkedAt)||typeof data.protectionActive!=='boolean')throw Error('권한 확인 결과를 다시 불러와주세요.');
+   render(data);status.textContent='확인 시각 '+new Date(data.checkedAt).toLocaleString('ko-KR');return true;
+  }catch(error){if(run===epoch&&!pane.hidden){body.replaceChildren();status.textContent=error.message||'권한을 확인하지 못했습니다. 다시 확인해주세요.';}return false;}
+  finally{if(run===epoch)refresh.disabled=false;}
+ }
+ refresh.addEventListener('click',load);
+ access.subscribe(()=>{const next=key();if(identity!==next||!access.isOwner){identity=next;hide();}});
+ root.addEventListener('aisel-management-locked',hide);
+ setInterval(()=>{if(!pane.hidden&&!permitted()){clear();status.textContent='관리 로그인 시간이 끝났습니다. 메뉴를 다시 열어 로그인해주세요.';}},1000);
+ root.AiselPermissionAudit=Object.freeze({show(){if(!permitted())return false;pane.hidden=false;load();return true;},hide,get visible(){return !pane.hidden;}});
+})(window);

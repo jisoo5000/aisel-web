@@ -35,7 +35,7 @@
  }
  const navigation=[['product','상품·제작','제작기획 현황'],['content','상품·제작','콘텐츠·광고'],['salesTable','판매','판매표'],['finance','판매','매출·광고·수익'],['replenishment','판매','판매·재고'],['overview','업무','전체 업무흐름'],['catalog','업무','전체 업무목록'],['operation','업무','운영 업무'],['hiring','관리','채용·인력'],['attendance','관리','출퇴근'],['leave','관리','휴가 관리'],['automation','관리','자동화·연결']];
  for(const [key,spec]of Object.entries(root.AiselWorkflowDomain?.specs||{})){tabs[key]=spec.label;navigation.push([key,spec.group,spec.label]);}tabs.apiUsage='Google API 사용 내역';navigation.push(['apiUsage','관리','Google API 사용 내역']);
- const canView=key=>allowed()&&(owner()||['attendance','leave'].includes(key));
+ const canView=key=>allowed()&&session()?.role!=='designer'&&(owner()||['attendance','leave'].includes(key));
  function canLeave(){if(dirty||writing){message(writing?'저장 결과를 확인하고 있습니다.':'작성 중인 내용을 저장하거나 취소한 뒤 이동해 주세요.',true);return false;}return true;}
  function hide(){panel.hidden=true;}
  function close(){return root.AiselUnified?.show('orders');}

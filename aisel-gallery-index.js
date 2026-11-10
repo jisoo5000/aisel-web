@@ -38,7 +38,7 @@
   }
   function hasAuthority(kind, archived = false) {
     const user = canonical();
-    return !!(accessProved && online() && user?.uid === uid && user.emailVerified &&
+    return !!(accessProved && online() && user?.uid === uid && (window.AiselAccess?.collectionIdentity?.(user)??user.emailVerified) &&
       String(user.email || '').toLowerCase() === email && window.AiselAuth?.generation === sessionGeneration &&
       access?.active === true && (native && access.mode === 'firebase217' || number(access.expiresAt) > now()) && roles[kind].includes(access.role) && (!archived || access.role === 'owner'));
   }
@@ -98,7 +98,7 @@
   }
   function assertSession(stamp) {
     const user = canonical();
-    if (stamp !== epoch || user?.uid !== uid || !user?.emailVerified ||
+    if (stamp !== epoch || user?.uid !== uid || !(window.AiselAccess?.collectionIdentity?.(user)??user?.emailVerified) ||
       String(user.email || '').toLowerCase() !== email || window.AiselAuth?.generation !== sessionGeneration) throw error('auth_changed');
     if (!online()) throw error('offline');
   }
@@ -605,7 +605,7 @@
     else KINDS.forEach(item => bucket(item));
     bindSession();
     const user = canonical();
-    if (!user?.uid || !user.emailVerified) { invalidate('permission_denied', true, true); return null; }
+    if (!user?.uid || !(window.AiselAccess?.collectionIdentity?.(user)??user.emailVerified)) { invalidate('permission_denied', true, true); return null; }
     if (!online()) { invalidate('offline'); return null; }
     if (user.uid !== uid || window.AiselAuth?.generation !== sessionGeneration || String(user.email || '').toLowerCase() !== email) {
       invalidate('auth_changed', false, true); uid = user.uid; email = String(user.email || '').toLowerCase();
@@ -665,7 +665,7 @@
     // record request/write still passes Firebase's current membership rules.
     // No persistent cache, initial SDK event, or enrollment receipt grants access.
     const user = canonical(), generation = window.AiselAuth?.generation;
-    if (!user?.uid || !user.emailVerified) throw error('permission_denied');
+    if (!user?.uid || !(window.AiselAccess?.collectionIdentity?.(user)??user.emailVerified)) throw error('permission_denied');
     if (!online()) throw error('offline');
     const age = now() - accessProvedAt;
     if (native && age >= 0 && age < RECHECK_MS && hasAuthority(kind) && !accessNeedsRefresh &&

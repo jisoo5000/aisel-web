@@ -9,7 +9,7 @@
  const fail=message=>Object.assign(Error(message),{code:'lifecycle_conflict'});
  async function context(){
   const stamp=identity(),person=user();
-  if(!person?.uid||!person.emailVerified)throw fail('로그인 후 자료를 정리해주세요.');
+  if(!person?.uid||!(window.AiselAccess?.collectionIdentity?.(person)??person.emailVerified))throw fail('로그인 후 자료를 정리해주세요.');
   const grant=await root.AiselGalleryIndex.authorize('references');
   if(identity()!==stamp||grant.uid!==person.uid)throw fail('로그인 계정이 변경되었습니다.');
   const app=(root.firebase?.apps||[]).find(a=>a.name!=='[DEFAULT]'&&a.options.projectId==='aisel-workorder'&&a.auth().currentUser?.uid===person.uid);

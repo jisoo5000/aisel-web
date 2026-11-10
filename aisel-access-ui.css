@@ -62,3 +62,15 @@
  .staff-table tbody button {justify-self:start;}
  .staff-table tbody td[colspan] {display:block;}
 }
+
+@media screen {
+ html:root body .permission-audit{box-sizing:border-box;width:100%;max-width:1200px;margin:0 auto;padding:16px;color:#2B3036;font:400 12px/18px "AISEL Screen",sans-serif}
+ .permission-audit[hidden]{display:none!important}.permission-audit-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+ html:root body .permission-audit h2{font:600 16px/24px "AISEL Screen",sans-serif;margin:0}
+ html:root body .permission-audit button{height:32px;min-height:32px;padding:0 8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:inherit;cursor:pointer;font:inherit}
+ .permission-audit button:focus-visible,.permission-audit-scroll:focus-visible{outline:2px solid #8A96A5;outline-offset:2px}.permission-audit button:disabled{opacity:.55;cursor:wait}
+ .permission-audit-summary{padding:8px;border:1px solid #E3E5E7;border-radius:3px;background:#F4F5F6;margin:12px 0}.permission-audit p{margin:6px 0}.permission-audit-warning{color:#884B3B;font-weight:600}
+ .permission-audit-scroll{overflow:auto;width:100%;border:1px solid #E3E5E7;border-radius:3px}.permission-audit table{width:100%;min-width:790px;border-collapse:collapse;font:inherit}
+ .permission-audit th,.permission-audit td{padding:6px;text-align:left;border-bottom:1px solid #E3E5E7;white-space:nowrap;font:inherit}.permission-audit thead th{background:#F4F5F6;font-weight:600}.permission-audit tbody th span{display:block;font-size:12px;font-weight:400;color:#6C727C;margin-top:4px}.permission-audit-notes{color:#6C727C;margin-top:12px}
+}
+@media screen and (max-width:639px){html:root body .permission-audit{padding:12px}.permission-audit button{white-space:nowrap}.permission-audit table{min-width:0}.permission-audit thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.permission-audit tbody{display:block}.permission-audit tbody tr{display:block;border-bottom:1px solid #E3E5E7;padding:6px}.permission-audit tbody :is(th,td){display:grid;grid-template-columns:120px minmax(0,1fr);gap:6px;padding:3px 0;border:0;white-space:normal;overflow-wrap:anywhere}.permission-audit tbody :is(th,td)::before{content:attr(data-label);color:#6C727C}.permission-audit tbody th strong,.permission-audit tbody th span{grid-column:2}.permission-audit tbody th strong{grid-row:1}.permission-audit tbody td[colspan]{display:block}}

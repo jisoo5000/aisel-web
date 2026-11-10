@@ -7,7 +7,7 @@
   const images=new Map(),states=new Map(),queue=[];
   const LIMIT=18,CONCURRENCY=2,PER_KIND=3;
   let owner='',generation=null,epoch=0,running=0;
-  function current(){const u=window.AiselAuth?.currentUser?.();return u?.emailVerified?u:null;}
+  function current(){const u=window.AiselAuth?.currentUser?.();return (window.AiselAccess?.collectionIdentity?.(u)??u?.emailVerified)?u:null;}
   function validUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='firebasestorage.googleapis.com'&&u.pathname.startsWith('/v0/b/aisel-workorder.firebasestorage.app/o/moodboardRefPhotos%2F')?u.href:'';}catch(_){return '';}}
   function clear(){epoch++;for(const item of images.values())item.cancel();images.clear();queue.length=0;running=0;}
   function session(){const u=current(),g=window.AiselAuth?.generation;if(!u||u.uid!==owner||g!==generation){clear();owner=u?.uid||'';generation=g;}return !!u&&window.navigator?.onLine!==false;}

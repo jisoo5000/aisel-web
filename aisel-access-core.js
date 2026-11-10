@@ -76,6 +76,15 @@
   }));
  }
  // The authenticated account supplies only the default for a NEW workorder.
+ // UI readiness only. The server and database rules independently authenticate
+ // managed staff; never mutate Firebase's emailVerified claim.
+ function collectionIdentity(account){
+  if(!account?.uid||account.isAnonymous)return false;
+  if(account.emailVerified===true)return true;
+  return account.uid===user()?.uid&&account.uid===session?.uid&&session.active===true&&session.role==='designer'&&
+   session.credentialMode==='owner_managed'&&session.credentialState==='ready'&&!session.passwordChangeRequired&&
+   allowed('references')&&allowed('designmeeting');
+ }
  function defaultDesigner(){
   if(!session?.uid||session.uid!==user()?.uid||session.active!==true||!['designer','md','logistics'].includes(session.role)||session.passwordChangeRequired)return '';
   const name=String(session.displayName||'').trim();
@@ -87,7 +96,7 @@
   timer=setInterval(()=>{if(!document.hidden)refresh().catch(()=>{});},60000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh().catch(()=>{});});
  }
- root.AiselAccess={request,refresh,subscribe,allowed,watchLegacy,projectWorkorders,defaultDesigner,start,get session(){return session;},get legacy(){return session?.legacy===true;},get generation(){return epoch;},get ownOnly(){return !!session?.permissions?.ownOnly;},get isOwner(){return session?.role==='owner'&&session.active===true;}};
+ root.AiselAccess={request,refresh,subscribe,allowed,collectionIdentity,watchLegacy,projectWorkorders,defaultDesigner,start,get session(){return session;},get legacy(){return session?.legacy===true;},get generation(){return epoch;},get ownOnly(){return !!session?.permissions?.ownOnly;},get isOwner(){return session?.role==='owner'&&session.active===true;}};
  root.addEventListener('aisel-session-ready',start);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })(window);

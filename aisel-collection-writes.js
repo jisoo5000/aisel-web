@@ -28,14 +28,14 @@
   }
   function assert(ctx) {
     const user=current();
-    if(!user?.emailVerified||user.uid!==ctx.uid||String(user.email||'').toLowerCase()!==ctx.email||window.AiselAuth?.generation!==ctx.generation)throw fail('auth_changed');
+    if(!(window.AiselAccess?.collectionIdentity?.(user)??user?.emailVerified)||user.uid!==ctx.uid||String(user.email||'').toLowerCase()!==ctx.email||window.AiselAuth?.generation!==ctx.generation)throw fail('auth_changed');
     if(window.navigator?.onLine===false)throw fail('offline');
   }
   async function context(kind) {
     if(!enabled)throw fail('connection_pending');
     if(!['references','meetings'].includes(kind))throw fail('invalid');
     const user=current(),generation=window.AiselAuth?.generation;
-    if(!user?.uid||!user.emailVerified)throw fail('permission_denied');
+    if(!user?.uid||!(window.AiselAccess?.collectionIdentity?.(user)??user.emailVerified))throw fail('permission_denied');
     if(window.navigator?.onLine===false)throw fail('offline');
     const grant=await window.AiselGalleryIndex.authorize(kind);
     const app=(window.firebase?.apps||[]).find(candidate=>{

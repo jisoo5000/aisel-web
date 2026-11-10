@@ -855,7 +855,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    }catch(e){if(sameAuth(ownerStamp)){if(e.code==='detail_conflict')detailConflicts.add(id);detailMessage(id,e.message,true);if(active===id)$dm('#dmSaveDetail').hidden=false;}return false;}
  }
  async function memberToken(){
-   const user=memberUser();if(!user?.emailVerified)throw Error('디자인회의 로그인 후 사용해주세요.');return user.getIdToken();
+   const user=memberUser();if(!(window.AiselAccess?.collectionIdentity?.(user)??user?.emailVerified))throw Error('디자인회의 로그인 후 사용해주세요.');return user.getIdToken();
  }
  async function bridge(action,ids,extra={}){
    if(action==='enqueue'||action==='results')return {ok:true,saved:[],results:[],manualPlanning:true};
@@ -1115,7 +1115,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  pane.addEventListener('change',event=>{if(active||pane.hidden||!galleryIndex?.snapshot('meetings').paged)return;if(dateFilter||designerFilter||noteCategoryFilter)galleryIndex.warm('meetings',{all:true,preferCache:true}).catch(e=>message(e.message,true));});
 
  async function preloadGallery(){
-   if(preloadFlight)return preloadFlight;if(!pane.hidden||listening)return false;const user=memberUser();if(!user?.uid||!user.emailVerified||location.hash.startsWith('#design-meeting='))return false;const stamp=authStamp(),key=stamp.uid+':'+stamp.generation+':'+stamp.epoch;if(preloadOwner===key)return true;if(preloadFlight)return preloadFlight;
+   if(preloadFlight)return preloadFlight;if(!pane.hidden||listening)return false;const user=memberUser();if(!user?.uid||!(window.AiselAccess?.collectionIdentity?.(user)??user.emailVerified)||location.hash.startsWith('#design-meeting='))return false;const stamp=authStamp(),key=stamp.uid+':'+stamp.generation+':'+stamp.epoch;if(preloadOwner===key)return true;if(preloadFlight)return preloadFlight;
    preloadFlight=(async()=>{if(galleryIndex?.enabled){await galleryIndex.warm('meetings',{preferCache:true,paged:true});assertAuth(stamp);const index=galleryIndex.snapshot('meetings');if(index.authorized===false)return false;if(readyGallery(index)){preloadOwner=key;return true;}}
      if(galleryIndex?.enabled){const grant=await galleryIndex.authorize('meetings');acceptDetailGrant(grant,stamp);}else await access();assertAuth(stamp);if(!pane.hidden||listening||!['owner','designer'].includes(role))return false;const snap=await ROOT.orderByChild('createdAt').limitToLast(PAGE).once('value');assertAuth(stamp);const values=entries(snap);accept(values);if(!listening){latestIds=new Set(values.map(c=>c.id));olderCursor=values[0]?{value:values[0].createdAt??null,id:values[0].id}:null;hasOlder=values.length===PAGE;}preloadOwner=key;return true;
    })().catch(()=>false).finally(()=>preloadFlight=null);return preloadFlight;
