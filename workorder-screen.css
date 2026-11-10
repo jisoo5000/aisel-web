@@ -869,3 +869,10 @@
   background:var(--aisel-soft,#F6F6F6);border-color:var(--aisel-line,#DEDEDE);color:var(--aisel-ink,#34383C)
  }
 }
+
+/* Keep fabric color-family panels on the white editor surface in both device themes. */
+@media screen{
+ html:root body #editorView #sheet #productColors .copygen-variant-panel{
+  background:#FFFFFF;
+ }
+}
