@@ -110,7 +110,7 @@
  }
  function field(form,name,labelText,value='',options={}){const label=el('label','ce-field',labelText),input=el(options.options?'select':options.multiline?'textarea':'input');input.name=name;if(options.options){for(const [key,name]of options.options){const o=el('option','',name);o.value=key;input.append(o);}}else if(!options.multiline)input.type=options.type||'text';input.value=value||'';input.required=!!options.required;input.maxLength=options.maxLength||3000;input.autocomplete='off';label.append(input);form.append(label);return input;}
  function editProject(project,seed={}){
-  dirty=false;content.replaceChildren();content.append(groupTitle(project?'업무 정보 수정':'새 '+D.templates[section].label+' 업무'));
+  dirty=false;content.replaceChildren();content.append(groupTitle(project?'업무 정보 수정':'새 '+D.templates[section].label+(section==='operation'?'':' 업무')));
   const form=el('form','ce-form');const input={};input.title=field(form,'title','업무 이름',project?.title||seed.title,{required:true,maxLength:160});
   input.assigneeUid=field(form,'assigneeUid','담당자',project?.assigneeUid,{options:[['','미배정'],...staff.map(p=>[p.uid,p.displayName||p.uid]),...(project?.assigneeUid&&!staff.some(s=>s.uid===project.assigneeUid)?[[project.assigneeUid,(project.assigneeName||'기존 담당')+' · 계정 확인 필요']]:[])]});
   input.dueDate=field(form,'dueDate','기한',project?.dueDate,{type:'date',maxLength:10});input.productCode=field(form,'productCode','연결할 품번',project?.productCode,{maxLength:100});
