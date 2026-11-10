@@ -114,7 +114,7 @@
   const settings=el('div',null,{class:'access-actions'});settings.append(button('판매성과 연결',openSalesMappings),button('적용 준비 확인',openPreflight));more.append(settings);body.append(more);renderStaff();
  }
  function showManager(){
-  if(!access.isOwner)return false;
+  if(!access.isOwner||!window.AiselManagement?.unlocked)return false;
   if(!manager){
    const panel=el('section',null,{id:'aiselStaffDirectoryView',class:'aisel-staff-directory noprint','aria-label':'직원·권한 관리'}),heading=el('h2','직원·권한 관리'),body=el('div',null,{class:'access-content'}),status=el('p','',{role:'status','aria-live':'polite'});
    panel.append(heading,body,status);document.body.append(panel);manager={dialog:panel,body,status,query:''};

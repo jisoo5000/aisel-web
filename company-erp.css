@@ -1,9 +1,7 @@
 /* All selectors are scoped to the additive workspace/entry. No legacy view rules. */
 @media screen {
- #aiselCompanyEntry{display:block;box-sizing:border-box;width:calc(100% - 16px);margin:12px 8px 8px;padding:6px 8px;min-height:28px;border:1px solid #DEDEDE;border-radius:3px;background:#fff;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif;text-align:left;cursor:pointer;}
- #aiselCompanyEntry[hidden]{display:none!important;}
- #aiselCompanyWorkspace{box-sizing:border-box;width:min(1200px,calc(100vw - 32px));height:min(880px,calc(100dvh - 32px));max-width:none;max-height:none;padding:0;margin:auto;border:1px solid #DEDEDE;border-radius:3px;background:#fff;color:#34383C;overflow:hidden;font:400 12px/18px 'AISEL Screen',sans-serif;}
- #aiselCompanyWorkspace::backdrop{background:rgba(25,30,38,.32);}
+ #aiselCompanyWorkspace{box-sizing:border-box;width:100%;max-width:1040px;margin:0 auto;padding:0;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif;}
+ #aiselCompanyWorkspace[hidden]{display:none!important;}
  #aiselCompanyWorkspace *{box-sizing:border-box;}
  #aiselCompanyWorkspace .ce-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #DEDEDE;height:78px;background:#fff;}
  #aiselCompanyWorkspace h1{margin:2px 0 0;font:600 16px/24px 'AISEL Screen',sans-serif;}
@@ -16,7 +14,7 @@
  #aiselCompanyWorkspace .ce-nav-button{display:block;width:100%;border:0;background:#fff;color:#6C727C;border-radius:3px;padding:8px;text-align:left;font:inherit;cursor:pointer;margin-bottom:4px;}
  #aiselCompanyWorkspace .ce-nav-button[aria-current]{color:#34383C;background:#E9ECF2;}
  #aiselCompanyWorkspace .ce-nav>p{padding:12px 8px;}
- #aiselCompanyWorkspace .ce-main{min-width:0;overflow:auto;padding:12px 20px 24px;overscroll-behavior:contain;}
+ #aiselCompanyWorkspace .ce-main{min-width:0;padding:12px 20px 24px;overscroll-behavior:contain;}
  #aiselCompanyWorkspace .ce-notice{font-size:11px;line-height:18px;color:#6C727C;min-height:18px;margin:0 0 12px;}
  #aiselCompanyWorkspace .ce-muted{color:#6C727C;}
  #aiselCompanyWorkspace .ce-error{color:#9A483B;}
@@ -68,7 +66,7 @@
  #aiselCompanyWorkspace .ce-table :is(th,td){padding:6px 8px;border-bottom:1px solid #E3E5E7;text-align:left;max-width:320px;white-space:normal;min-width:90px;overflow-wrap:anywhere;}
  #aiselCompanyWorkspace .ce-table-heading{margin-top:24px;}
  @media(max-width:700px){
-  #aiselCompanyWorkspace{width:100vw;height:100dvh;border:0;border-radius:0;}
+  #aiselCompanyWorkspace{width:100%;border:0;border-radius:0;}
   #aiselCompanyWorkspace .ce-header{padding:10px 12px;height:68px;}
   #aiselCompanyWorkspace .ce-layout{display:flex;flex-direction:column;height:calc(100% - 68px);}
   #aiselCompanyWorkspace .ce-nav{display:flex;gap:4px;overflow-x:auto;flex-shrink:0;border:0;border-bottom:1px solid #DEDEDE;padding:6px 8px;}
@@ -84,3 +82,16 @@
 @media print{#aiselCompanyWorkspace,#aiselCompanyEntry{display:none!important;}}
 
 #aiselCompanyWorkspace .ce-catalog-title{cursor:pointer;font:inherit;font-weight:600;line-height:20px;overflow-wrap:anywhere;}
+
+@media screen{
+ #aiselManagementLogin{box-sizing:border-box;width:min(360px,calc(100vw - 32px));padding:20px;border:1px solid #E3E5E7;border-radius:3px;color:#34383C;background:#fff;font:400 12px/18px 'AISEL Screen',sans-serif;}
+ #aiselManagementLogin::backdrop{background:rgba(52,56,60,.3)}
+ #aiselManagementLogin h2{font:600 16px/24px 'AISEL Screen',sans-serif;margin:0 0 12px}
+ #aiselManagementLogin p{margin:8px 0;overflow-wrap:anywhere}
+ #aiselManagementLogin label{display:grid;gap:6px}
+ #aiselManagementLogin input{box-sizing:border-box;width:100%;height:32px;border:1px solid #E3E5E7;border-radius:3px;padding:4px 6px;font:inherit}
+ #aiselManagementLogin button{min-height:28px;padding:4px 8px;margin:8px 4px 0 0;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;font:inherit;cursor:pointer}
+ #aiselManagementLogin [hidden]{display:none!important}
+ #aiselManagementLogin button:disabled{opacity:.5}
+}
+@media print{#aiselManagementLogin{display:none!important}}

@@ -34,6 +34,7 @@
       :role==='md'?[['판매',['sales']],['상품',['references','orders','designmeeting','meetingmaterials']],['물류',['products','samples']]]
       :[['상품·제작',['references','designmeeting','meetingmaterials','orders']],['판매',['sales']],['물류',['products','samples']]];
     groups.push(['업무',['operations']],['관리',['staff']]);
+    for(const item of window.AiselCompanyERP?.navigation()||[]){let group=groups.find(g=>g[0]===item.group);if(!group){group=[item.group,[]];groups.push(group);}group[1].push(item.view);}
     groups.forEach(([label,views])=>{
       const caption=document.createElement('div');caption.className='erp-nav-group';caption.textContent=label;main.append(caption);
       const buttons=views.map(view=>main.querySelector('[data-main="'+view+'"]')).filter(Boolean);
@@ -98,6 +99,7 @@
   window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
   media.addEventListener('change', () => { desktopCollapsed = false; setDrawer(false, false); });
   body.classList.add('aisel-erp-shell'); sync(); render();
+  window.AiselErpShell=Object.freeze({refresh:()=>{menuRole=null;sync();}});
   // A short, optional performance cue on the workorder list. Data comes only
   // from the existing assigned-sales service and stays in this account's memory.
   const gallery=document.getElementById('galleryView');

@@ -2,24 +2,20 @@
 (function(root){
  'use strict';
  const D=root.AiselCompanyDomain,nav=document.getElementById('aiselErpNavigation');
- if(!D||!nav||document.getElementById('aiselCompanyEntry'))return;
+ if(!D||!nav||document.getElementById('aiselCompanyWorkspace'))return;
  const access=()=>root.AiselAccess,session=()=>access()?.session;
  const allowed=()=>session()?.active===true&&['owner','designer','md','logistics'].includes(session()?.role)&&!!session()?.uid&&!session()?.legacy&&!session()?.passwordChangeRequired;
  const owner=()=>session()?.role==='owner';
  const endpoint='https://asia-southeast1-aisel-workorder.cloudfunctions.net/companyErpV1';
  const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;};
  const button=(txt,fn,cls='ce-button')=>{const b=el('button',cls,txt);b.type='button';b.addEventListener('click',fn);return b;};
- const entry=button('회사 ERP',open,'');entry.id='aiselCompanyEntry';entry.setAttribute('aria-haspopup','dialog');entry.setAttribute('aria-controls','aiselCompanyWorkspace');entry.hidden=!allowed();nav.append(entry);
- const dialog=el('dialog');dialog.id='aiselCompanyWorkspace';dialog.className='noprint';dialog.setAttribute('aria-labelledby','aiselCompanyTitle');
- const header=el('header','ce-header'),heading=el('div'),title=el('h1','','회사 ERP');title.id='aiselCompanyTitle';
- heading.append(el('span','ce-eyebrow','AISEL'),title);const closeButton=button('닫기',close);closeButton.setAttribute('aria-label','회사 ERP 닫고 이전 화면으로');header.append(heading,closeButton);
- const layout=el('div','ce-layout'),side=el('nav','ce-nav');side.setAttribute('aria-label','회사 ERP 업무');const main=el('main','ce-main');
- const notice=el('p','ce-notice');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');
- const content=el('div','ce-content');main.append(notice,content);layout.append(side,main);dialog.append(header,layout);document.body.append(dialog);
+ const panel=el('section','noprint');panel.id='aiselCompanyWorkspace';panel.hidden=true;panel.setAttribute('aria-label','업무 화면');
+ const main=el('div','ce-main'),notice=el('p','ce-notice');notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');
+ const content=el('div','ce-content');main.append(notice,content);panel.append(main);document.body.append(panel);
  let section='overview',projects=[],staff=[],loaded=false,loading=false,writing=false,epoch=0,loadedAt=0,uid='',dirty=false,selectedId='',filter='',archive=false;
  let workflowCatalog=null,catalogFlight=null,catalogFilter='',catalogGroup='all';
  const controllers=new Set(),tabs={overview:'전체 업무흐름',catalog:'전체 업무목록',operation:'운영 업무',product:'상품·제작',content:'콘텐츠·광고',replenishment:'판매·재고',salesTable:'판매표',finance:'매출·광고·수익',hiring:'채용·인력',attendance:'출퇴근',leave:'휴가 관리',automation:'자동화·연결'};
- const notices={sheets_not_enabled:'시트 연결 설정을 확인해야 합니다.',service_unavailable:'저장 서버 연결을 확인해야 합니다.',sync_cooldown:'방금 연결을 확인했습니다. 15분 뒤 다시 갱신할 수 있습니다.',sheets_access_required:'시트 접근 권한을 확인해야 합니다.',permission_denied:'이 계정에서 회사 ERP를 이용할 권한이 없습니다.',unauthenticated:'로그인 상태를 다시 확인해 주세요.',version_conflict:'다른 곳에서 먼저 수정했습니다. 최신 기록을 다시 불러온 뒤 변경해 주세요.',completion_evidence_required:'완료 결과나 확인 근거를 입력해 주세요.',prior_step_incomplete:'이 업무에 먼저 필요한 결과를 확인해 주세요.',invalid_assignee:'담당자 계정이 변경되었습니다. 직원 목록을 새로 확인해 주세요.',completed_step_immutable:'이미 완료한 단계입니다. 후속 수정은 메모와 다음 업무에 기록해 주세요.'};
+ const notices={management_login_required:'관리 영역에 다시 로그인해주세요.',sheets_not_enabled:'시트 연결 설정을 확인해야 합니다.',service_unavailable:'저장 서버 연결을 확인해야 합니다.',sync_cooldown:'방금 연결을 확인했습니다. 15분 뒤 다시 갱신할 수 있습니다.',sheets_access_required:'시트 접근 권한을 확인해야 합니다.',permission_denied:'이 계정에서 회사 ERP를 이용할 권한이 없습니다.',unauthenticated:'로그인 상태를 다시 확인해 주세요.',version_conflict:'다른 곳에서 먼저 수정했습니다. 최신 기록을 다시 불러온 뒤 변경해 주세요.',completion_evidence_required:'완료 결과나 확인 근거를 입력해 주세요.',prior_step_incomplete:'이 업무에 먼저 필요한 결과를 확인해 주세요.',invalid_assignee:'담당자 계정이 변경되었습니다. 직원 목록을 새로 확인해 주세요.',completed_step_immutable:'이미 완료한 단계입니다. 후속 수정은 메모와 다음 업무에 기록해 주세요.'};
  function message(text,error=false){notice.textContent=text;notice.classList.toggle('ce-error',error);}
  function friendly(error){return notices[error?.message]||error?.message||'연결을 확인하지 못했습니다.';}
  function valid(run,account){return run===epoch&&allowed()&&session().uid===account;}
@@ -29,7 +25,7 @@
   const controller=new AbortController();controllers.add(controller);const timer=setTimeout(()=>controller.abort(),25000);
   try{
    const token=await user.getIdToken();if(!valid(run,account))throw Error('unauthenticated');
-   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},credentials:'omit',cache:'no-store',signal:controller.signal,body:JSON.stringify({...payload,action})});
+   const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},credentials:'omit',cache:'no-store',signal:controller.signal,body:JSON.stringify({...payload,action,...(root.AiselManagement?.proof()?{managementSession:root.AiselManagement.proof()}:{})})});
    let data;try{data=await response.json();}catch(_){throw Error('회사 ERP 저장 서버의 연결을 확인해야 합니다. 기존 메뉴는 계속 이용할 수 있습니다.');}
    if(!valid(run,account))throw Error('unauthenticated');
    if(!response.ok||data?.ok!==true)throw Error(data?.error||data?.code||'회사 ERP 저장 서버의 연결을 확인해야 합니다.');
@@ -37,14 +33,16 @@
   }catch(error){if(error?.name==='AbortError')throw Error('연결 시간이 길어지고 있습니다. 다시 확인해 주세요.');throw error;}
   finally{clearTimeout(timer);controllers.delete(controller);}
  }
- function close(){dialog.close();entry.focus();}
- function open(){
-  if(!allowed())return;if(!owner())section='attendance';
-  const drawerClose=nav.querySelector('.erp-nav-close');if(document.body.classList.contains('erp-drawer-open'))drawerClose?.click();
-  dialog.showModal();if(!dirty){render();load();}
- }
- function navigate(next){if(dirty){message('작성 중인 내용을 저장하거나 취소한 뒤 이동해 주세요.',true);return;}section=next;selectedId='';notice.textContent='';render();main.scrollTop=0;}
- function buildNav(){side.replaceChildren();for(const [key,label]of Object.entries(tabs)){if(!owner()&&!['attendance','leave'].includes(key))continue;const b=button(label,()=>navigate(key),'ce-nav-button');if(section===key)b.setAttribute('aria-current','page');side.append(b);}side.append(el('p','ce-muted','담당자가 바뀌어도 업무 기록은 이어집니다.'));}
+ const navigation=[['product','상품·제작','제작기획 현황'],['content','상품·제작','콘텐츠·광고'],['salesTable','판매','판매표'],['finance','판매','매출·광고·수익'],['replenishment','판매','판매·재고'],['overview','업무','전체 업무흐름'],['catalog','업무','전체 업무목록'],['operation','업무','운영 업무'],['hiring','관리','채용·인력'],['attendance','관리','출퇴근'],['leave','관리','휴가 관리'],['automation','관리','자동화·연결']];
+ const canView=key=>allowed()&&(owner()||['attendance','leave'].includes(key));
+ function canLeave(){if(dirty||writing){message(writing?'저장 결과를 확인하고 있습니다.':'작성 중인 내용을 저장하거나 취소한 뒤 이동해 주세요.',true);return false;}return true;}
+ function hide(){panel.hidden=true;}
+ function close(){return root.AiselUnified?.show('orders');}
+ function open(next=owner()?'overview':'attendance'){return root.AiselUnified?.show('company-'+next);}
+ function show(next){if(!canView(next))return false;section=next;selectedId='';notice.textContent='';panel.hidden=false;panel.setAttribute('aria-label',tabs[next]);render();load();return true;}
+ function navigate(next){return open(next);}
+ function buildNav(){}
+ for(const [key,,label]of navigation){const entry=el('button','maintab',label);entry.type='button';entry.dataset.main='company-'+key;entry.hidden=!canView(key);entry.setAttribute('aria-controls',panel.id);document.getElementById('mainBar').append(entry);}
  async function load(force=false){
   if(!allowed()||!owner()||loading||writing||dirty)return;if(loaded&&!force&&Date.now()-loadedAt<300000){message('마지막 확인 '+new Date(loadedAt).toLocaleString('ko-KR'));return;}
   const run=epoch,account=session().uid;loading=true;message('회사 업무를 확인하고 있습니다.');
@@ -56,7 +54,7 @@
   finally{if(valid(run,account))loading=false;}
  }
  function groupTitle(titleText,subtitle){const row=el('div','ce-section-heading'),text=el('div');text.append(el('h2','',titleText));if(subtitle)text.append(el('p','ce-muted',subtitle));row.append(text);return row;}
- function route(label,view,code){return button(label,async()=>{if(dirty){message('작성 중인 내용을 먼저 저장하거나 취소해 주세요.',true);return;}close();await root.AiselUnified?.show(code?'editor':view,code?{code}:{});},'ce-link');}
+ function route(label,view,code){return button(label,async()=>{if(dirty){message('작성 중인 내용을 먼저 저장하거나 취소해 주세요.',true);return;}await root.AiselUnified?.show(code?'editor':view,code?{code}:{});},'ce-link');}
  function shortcuts(){const row=el('div','ce-shortcuts');row.append(el('span','ce-muted','기존 업무 바로가기'));for(const [name,view]of [['작업지시서','orders'],['레퍼런스','references'],['출고현황','products'],['판매성과','sales'],['직원·권한 관리','staff']])row.append(route(name,view));return row;}
  function overview(){
   const top=groupTitle('전체 업무흐름','상품부터 판매 결과까지, 지금 필요한 일을 한곳에서 확인합니다.');const refresh=button('새로고침',()=>load(true));refresh.disabled=loading;top.append(refresh);content.append(top);
@@ -144,7 +142,11 @@
   const sheetCard=el('section','ce-connection');sheetCard.append(el('h3','','구글 운영대장'),el('p','ce-muted','앱 기록을 하루 한 번 모아서 반영합니다. 표를 열 때는 저장된 요약을 사용합니다.'));const stateText=el('p','ce-muted','연결 상태 확인 중');sheetCard.append(stateText);const sync=button('지금 시트에 반영',async()=>{sync.disabled=true;try{await request('companySync');stateText.textContent='시트 저장과 다시 읽기를 확인했습니다.';}catch(e){message(friendly(e),true);}finally{sync.disabled=false;}});sync.disabled=true;sheetCard.append(sync);content.append(sheetCard);request('companyConnectionStatus').then(s=>{if(!sheetCard.isConnected)return;stateText.textContent=s.lastSuccessAt?'마지막 반영 '+new Date(s.lastSuccessAt).toLocaleString('ko-KR')+(s.status==='needs_attention'?' · 연결 확인 필요':''):'아직 시트 반영을 확인하지 않았습니다.';sync.disabled=!s.enabled;if(s.workbookUrl&&D.safeUrl(s.workbookUrl)){const link=el('a','ce-link','운영대장 열기');link.href=D.safeUrl(s.workbookUrl);link.target='_blank';link.rel='noopener noreferrer';sheetCard.append(link);}}).catch(e=>{if(sheetCard.isConnected)stateText.textContent=friendly(e);});
  }
  function render(){if(dirty)return;buildNav();content.replaceChildren();if(selectedId){const p=projects.find(p=>p.id===selectedId);if(p){projectDetail(p);return;}selectedId='';}if(['attendance','leave'].includes(section)&&root.AiselCompanyPeople){root.AiselCompanyPeople.render(section,{host:content,el,button,owner,staff:()=>staff,request,message,redraw:render,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},isWriting:()=>writing});return;}if(section==='finance'&&root.AiselCompanySources){root.AiselCompanySources.finance({host:content,el,button,request,message});return;}if(section==='salesTable'&&root.AiselCompanySales){root.AiselCompanySales.render({host:content,el,button,request,message});return;}if(section==='overview')overview();else if(section==='catalog')catalogView();else if(section==='automation')connections();else projectList();}
- function identityChanged(){const next=[session()?.uid,session()?.role,session()?.credentialVersion||0].join(':'),ok=allowed();entry.hidden=!ok;if(uid!==next||!ok){uid=next;epoch++;for(const c of controllers)c.abort();controllers.clear();projects=[];staff=[];workflowCatalog=null;catalogFlight=null;catalogFilter='';catalogGroup='all';loaded=false;loadedAt=0;loading=false;writing=false;dirty=false;selectedId='';root.AiselCompanyPeople?.reset();root.AiselCompanySources?.reset();section=owner()?'overview':'attendance';content.replaceChildren();notice.textContent='';if(dialog.open)dialog.close();}}
- root.addEventListener('aisel-access-change',identityChanged);root.addEventListener('beforeunload',event=>{if(dirty||writing){event.preventDefault();event.returnValue='';}});dialog.addEventListener('cancel',event=>{if(writing){event.preventDefault();message('저장 결과를 확인하고 있습니다.');}});identityChanged();
- root.AiselCompanyERP=Object.freeze({open,close,get visible(){return dialog.open;}});
+ function identityChanged(){const next=[session()?.uid,session()?.role,session()?.credentialVersion||0].join(':'),ok=allowed();for(const [key]of navigation){const entry=nav.querySelector('[data-main="company-'+key+'"]');if(entry)entry.hidden=!canView(key);}if(uid!==next||!ok){uid=next;epoch++;for(const c of controllers)c.abort();controllers.clear();projects=[];staff=[];workflowCatalog=null;catalogFlight=null;catalogFilter='';catalogGroup='all';loaded=false;loadedAt=0;loading=false;writing=false;dirty=false;selectedId='';root.AiselCompanyPeople?.reset();root.AiselCompanySources?.reset();section=owner()?'overview':'attendance';content.replaceChildren();notice.textContent='';hide();}}
+ root.addEventListener('aisel-management-unlocked',()=>{loaded=false;loadedAt=0;});
+ root.addEventListener('aisel-management-locked',()=>{projects=projects.filter(p=>p.kind!=='hiring');root.AiselCompanyPeople?.reset();root.AiselCompanySources?.reset();if(['hiring','attendance','leave','automation'].includes(section))hide();});
+ root.addEventListener('aisel-access-change',identityChanged);root.addEventListener('beforeunload',event=>{if(dirty||writing){event.preventDefault();event.returnValue='';}});
+ root.AiselCompanyERP=Object.freeze({open,close,hide,canLeave,navigation:()=>navigation.map(([key,group,label])=>({view:'company-'+key,group,label})),route:view=>{const key=String(view).replace(/^company-/, '');return String(view).startsWith('company-')&&Object.hasOwn(tabs,key)?{label:navigation.find(n=>n[0]===key)?.[2]||tabs[key],allowed:()=>canView(key),show:()=>show(key)}:null;},get visible(){return !panel.hidden;}});
+ identityChanged();root.AiselErpShell?.refresh();
+
 })(window);
