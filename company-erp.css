@@ -1,0 +1,86 @@
+/* All selectors are scoped to the additive workspace/entry. No legacy view rules. */
+@media screen {
+ #aiselCompanyEntry{display:block;box-sizing:border-box;width:calc(100% - 16px);margin:12px 8px 8px;padding:6px 8px;min-height:28px;border:1px solid #DEDEDE;border-radius:3px;background:#fff;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif;text-align:left;cursor:pointer;}
+ #aiselCompanyEntry[hidden]{display:none!important;}
+ #aiselCompanyWorkspace{box-sizing:border-box;width:min(1200px,calc(100vw - 32px));height:min(880px,calc(100dvh - 32px));max-width:none;max-height:none;padding:0;margin:auto;border:1px solid #DEDEDE;border-radius:3px;background:#fff;color:#34383C;overflow:hidden;font:400 12px/18px 'AISEL Screen',sans-serif;}
+ #aiselCompanyWorkspace::backdrop{background:rgba(25,30,38,.32);}
+ #aiselCompanyWorkspace *{box-sizing:border-box;}
+ #aiselCompanyWorkspace .ce-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid #DEDEDE;height:78px;background:#fff;}
+ #aiselCompanyWorkspace h1{margin:2px 0 0;font:600 16px/24px 'AISEL Screen',sans-serif;}
+ #aiselCompanyWorkspace h2{margin:0;font-size:16px;line-height:24px;font-weight:600;}
+ #aiselCompanyWorkspace h3{margin:0;font-size:12px;line-height:18px;font-weight:600;}
+ #aiselCompanyWorkspace p{margin:4px 0 0;overflow-wrap:anywhere;}
+ #aiselCompanyWorkspace .ce-eyebrow{font-size:10px;letter-spacing:2px;color:#6C727C;}
+ #aiselCompanyWorkspace .ce-layout{display:grid;grid-template-columns:156px minmax(0,1fr);height:calc(100% - 78px);}
+ #aiselCompanyWorkspace .ce-nav{padding:12px 8px;border-right:1px solid #DEDEDE;overflow:auto;}
+ #aiselCompanyWorkspace .ce-nav-button{display:block;width:100%;border:0;background:#fff;color:#6C727C;border-radius:3px;padding:8px;text-align:left;font:inherit;cursor:pointer;margin-bottom:4px;}
+ #aiselCompanyWorkspace .ce-nav-button[aria-current]{color:#34383C;background:#E9ECF2;}
+ #aiselCompanyWorkspace .ce-nav>p{padding:12px 8px;}
+ #aiselCompanyWorkspace .ce-main{min-width:0;overflow:auto;padding:12px 20px 24px;overscroll-behavior:contain;}
+ #aiselCompanyWorkspace .ce-notice{font-size:11px;line-height:18px;color:#6C727C;min-height:18px;margin:0 0 12px;}
+ #aiselCompanyWorkspace .ce-muted{color:#6C727C;}
+ #aiselCompanyWorkspace .ce-error{color:#9A483B;}
+ #aiselCompanyWorkspace .ce-section-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:0 0 16px;}
+ #aiselCompanyWorkspace .ce-button{min-height:28px;padding:4px 10px;border:1px solid #DEDEDE;border-radius:3px;background:#fff;color:#34383C;font:inherit;cursor:pointer;white-space:normal;}
+ #aiselCompanyWorkspace button:disabled{opacity:.45;cursor:default;}
+ #aiselCompanyWorkspace :is(button,a,input,select,textarea):focus-visible{outline:2px solid #a5b5cc;outline-offset:2px;}
+ #aiselCompanyWorkspace .ce-link{display:inline-block;border:0;background:none;padding:4px 0;color:#465873;text-decoration:underline;text-underline-offset:3px;font:inherit;cursor:pointer;}
+ #aiselCompanyWorkspace .ce-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:20px;}
+ #aiselCompanyWorkspace .ce-stat{padding:12px;border:1px solid #DEDEDE;border-radius:3px;}
+ #aiselCompanyWorkspace .ce-stat strong{display:block;font-size:22px;line-height:30px;font-weight:500;margin-top:5px;}
+ #aiselCompanyWorkspace .ce-flows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:24px;}
+ #aiselCompanyWorkspace .ce-flow{border:1px solid #DEDEDE;border-radius:3px;padding:14px;}
+ #aiselCompanyWorkspace .ce-flow-head{display:flex;justify-content:space-between;gap:8px;align-items:center;}
+ #aiselCompanyWorkspace .ce-flow-title{padding:0;border:0;background:none;font:600 14px/22px 'AISEL Screen',sans-serif;color:#34383C;cursor:pointer;}
+ #aiselCompanyWorkspace .ce-flow-steps{margin:12px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px;}
+ #aiselCompanyWorkspace .ce-flow-steps li{padding:4px 7px;background:#F6F6F6;border-radius:3px;}
+ #aiselCompanyWorkspace .ce-project{padding:12px;border:1px solid #DEDEDE;border-radius:3px;margin-bottom:8px;}
+ #aiselCompanyWorkspace .ce-project-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+ #aiselCompanyWorkspace .ce-project-open{padding:0;border:0;background:none;color:#34383C;font:600 12px/18px 'AISEL Screen',sans-serif;cursor:pointer;text-align:left;overflow-wrap:anywhere;}
+ #aiselCompanyWorkspace .ce-badge{display:inline-block;font-size:11px;line-height:18px;padding:2px 6px;background:#F6F6F6;border-radius:3px;flex-shrink:0;}
+ #aiselCompanyWorkspace .ce-shortcuts{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center;border-top:1px solid #DEDEDE;padding-top:14px;margin-top:22px;}
+ #aiselCompanyWorkspace .ce-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+ #aiselCompanyWorkspace .ce-search{position:relative;flex:1;min-width:110px;}
+ #aiselCompanyWorkspace .ce-search:before{content:'';position:absolute;width:14px;height:14px;top:7px;left:6px;background:center/14px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236C727C' stroke-width='1.5'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m16 16 5 5'/%3E%3C/svg%3E");}
+ #aiselCompanyWorkspace input,#aiselCompanyWorkspace select,#aiselCompanyWorkspace textarea{width:100%;min-width:0;min-height:28px;padding:4px 6px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;font:inherit;}
+ #aiselCompanyWorkspace .ce-search input{padding-left:26px;}
+ #aiselCompanyWorkspace .ce-filters>select{width:auto;max-width:140px;}
+ #aiselCompanyWorkspace .ce-empty{padding:24px 0;color:#6C727C;}
+ #aiselCompanyWorkspace .ce-detail{padding:12px;border:1px solid #DEDEDE;border-radius:3px;margin-bottom:20px;}
+ #aiselCompanyWorkspace .ce-detail-line{display:grid;grid-template-columns:120px minmax(0,1fr);gap:12px;padding:6px 0;}
+ #aiselCompanyWorkspace .ce-detail-line strong{font-weight:500;color:#6C727C;}
+ #aiselCompanyWorkspace .ce-detail-line span{white-space:pre-wrap;}
+ #aiselCompanyWorkspace .ce-timeline{padding:0;margin:0;list-style:none;}
+ #aiselCompanyWorkspace .ce-step{padding:12px 0 12px 14px;border-left:2px solid #DEDEDE;margin-left:4px;}
+ #aiselCompanyWorkspace .ce-complete{border-left-color:#82988A;}
+ #aiselCompanyWorkspace .ce-step-heading{display:flex;gap:8px;justify-content:space-between;}
+ #aiselCompanyWorkspace .ce-actions{display:flex;flex-wrap:wrap;gap:6px 4px;margin-top:12px;}
+ #aiselCompanyWorkspace .ce-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+ #aiselCompanyWorkspace .ce-field{display:flex;flex-direction:column;gap:4px;color:#6C727C;}
+ #aiselCompanyWorkspace .ce-field:has(textarea){grid-column:1/-1;}
+ #aiselCompanyWorkspace textarea{min-height:80px;resize:vertical;}
+ #aiselCompanyWorkspace .ce-form>.ce-actions{grid-column:1/-1;}
+ #aiselCompanyWorkspace .ce-connection{padding:14px 0;border-bottom:1px solid #DEDEDE;}
+ #aiselCompanyWorkspace .ce-connection h3{margin-bottom:6px;}
+ #aiselCompanyWorkspace .ce-table-scroll{max-width:100%;overflow:auto;border:1px solid #E3E5E7;border-radius:3px;margin:12px 0;}
+ #aiselCompanyWorkspace .ce-table{border-collapse:collapse;font:400 12px/18px 'AISEL Screen',sans-serif;min-width:100%;white-space:nowrap;}
+ #aiselCompanyWorkspace .ce-table th{font-weight:600;background:#F6F6F6;position:sticky;top:0;}
+ #aiselCompanyWorkspace .ce-table :is(th,td){padding:6px 8px;border-bottom:1px solid #E3E5E7;text-align:left;max-width:320px;white-space:normal;min-width:90px;overflow-wrap:anywhere;}
+ #aiselCompanyWorkspace .ce-table-heading{margin-top:24px;}
+ @media(max-width:700px){
+  #aiselCompanyWorkspace{width:100vw;height:100dvh;border:0;border-radius:0;}
+  #aiselCompanyWorkspace .ce-header{padding:10px 12px;height:68px;}
+  #aiselCompanyWorkspace .ce-layout{display:flex;flex-direction:column;height:calc(100% - 68px);}
+  #aiselCompanyWorkspace .ce-nav{display:flex;gap:4px;overflow-x:auto;flex-shrink:0;border:0;border-bottom:1px solid #DEDEDE;padding:6px 8px;}
+  #aiselCompanyWorkspace .ce-nav-button{width:auto;white-space:nowrap;margin:0;padding:6px 8px;}
+  #aiselCompanyWorkspace .ce-nav>p{display:none;}
+  #aiselCompanyWorkspace .ce-main{padding:10px 12px 20px;flex:1;}
+  #aiselCompanyWorkspace .ce-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #aiselCompanyWorkspace .ce-flows{grid-template-columns:1fr;}
+  #aiselCompanyWorkspace .ce-detail-line{grid-template-columns:1fr;gap:2px;}
+  #aiselCompanyWorkspace .ce-form{grid-template-columns:1fr;}
+ }
+}
+@media print{#aiselCompanyWorkspace,#aiselCompanyEntry{display:none!important;}}
+
+#aiselCompanyWorkspace .ce-catalog-title{cursor:pointer;font:inherit;font-weight:600;line-height:20px;overflow-wrap:anywhere;}
