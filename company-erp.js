@@ -43,7 +43,7 @@
   const drawerClose=nav.querySelector('.erp-nav-close');if(document.body.classList.contains('erp-drawer-open'))drawerClose?.click();
   dialog.showModal();if(!dirty){render();load();}
  }
- function navigate(next){if(dirty){message('작성 중인 내용을 저장하거나 취소한 뒤 이동해 주세요.',true);return;}section=next;selectedId='';render();}
+ function navigate(next){if(dirty){message('작성 중인 내용을 저장하거나 취소한 뒤 이동해 주세요.',true);return;}section=next;selectedId='';notice.textContent='';render();main.scrollTop=0;}
  function buildNav(){side.replaceChildren();for(const [key,label]of Object.entries(tabs)){if(!owner()&&!['attendance','leave'].includes(key))continue;const b=button(label,()=>navigate(key),'ce-nav-button');if(section===key)b.setAttribute('aria-current','page');side.append(b);}side.append(el('p','ce-muted','담당자가 바뀌어도 업무 기록은 이어집니다.'));}
  async function load(force=false){
   if(!allowed()||!owner()||loading||writing||dirty)return;if(loaded&&!force&&Date.now()-loadedAt<300000){message('마지막 확인 '+new Date(loadedAt).toLocaleString('ko-KR'));return;}
