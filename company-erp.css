@@ -97,3 +97,9 @@
 @media print{#aiselManagementLogin{display:none!important}}
 
 #aiselCompanyWorkspace .cw-card p{white-space:pre-wrap;overflow-wrap:anywhere;}
+
+@media screen{
+ #aiselCompanyWorkspace .ce-list-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;}
+ #aiselCompanyWorkspace .ce-list-tools>label:not(.ce-search){display:inline-flex;align-items:center;gap:4px;min-height:28px;white-space:nowrap;}
+ #aiselCompanyWorkspace .ce-list-tools input[type=checkbox]{width:14px;height:14px;min-height:14px;padding:0;accent-color:#6C727C;}
+}
