@@ -99,7 +99,7 @@
   window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
   media.addEventListener('change', () => { desktopCollapsed = false; setDrawer(false, false); });
   body.classList.add('aisel-erp-shell'); sync(); render();
-  window.AiselErpShell=Object.freeze({refresh:()=>{menuRole=null;sync();}});
+  window.AiselErpShell=Object.freeze({closeMenu:()=>setDrawer(false,false),refresh:()=>{menuRole=null;sync();}});
   // A short, optional performance cue on the workorder list. Data comes only
   // from the existing assigned-sales service and stays in this account's memory.
   const gallery=document.getElementById('galleryView');
