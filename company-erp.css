@@ -95,3 +95,5 @@
  #aiselManagementLogin button:disabled{opacity:.5}
 }
 @media print{#aiselManagementLogin{display:none!important}}
+
+#aiselCompanyWorkspace .cw-card p{white-space:pre-wrap;overflow-wrap:anywhere;}

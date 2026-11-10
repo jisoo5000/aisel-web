@@ -274,7 +274,7 @@
   busy=true;let completed=false,openingEditor=false;
   try{
    if(!await guard(view,intent)||intent!==navigationRevision)return false;
-   if((view==='staff'||['company-hiring','company-attendance','company-leave','company-automation'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
+   if((view==='staff'||['company-hiring','company-attendance','company-leave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
    if(intent!==navigationRevision||!allowedView(view))return false;info();if(view!=='editor')returnToProducts=false;
    if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:!!id,...(id?{id}:{})})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
@@ -612,6 +612,7 @@
   renderAccount();
  }
 })();
+
 
 
 
