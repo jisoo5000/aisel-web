@@ -7810,13 +7810,17 @@
       host=document.createElement('span');host.id='editorSaveStatus';host.className='noprint';
       const note=document.createElement('span');note.className='save-status-text';note.setAttribute('role','status');note.setAttribute('aria-live','polite');
       const retry=document.createElement('button');retry.type='button';retry.textContent='재시도';retry.hidden=true;
-      retry.addEventListener('click',async()=>{if(await waitForEditorComposition_())await save();});
-      host.append(note,retry);row.prepend(host);
+      retry.addEventListener('click',async()=>{try{if(await waitForEditorComposition_())await save();}catch(error){rejectEditorSave_(error.message||'저장을 확인하지 못했습니다. 다시 시도해주세요.');}});
+      const detail=document.createElement('span');detail.className='save-status-detail';detail.hidden=true;
+      host.append(note,retry,detail);row.prepend(host);
     }
     const sig=JSON.stringify([phase,label,title]);if(sig===lastEditorSaveStatusSig_)return;lastEditorSaveStatusSig_=sig;
     host.dataset.state=phase;host.title=title;
     const note=host.querySelector('.save-status-text');if(note.textContent!==label)note.textContent=label;
-    host.querySelector('button').hidden=phase!=='error';
+    host.querySelector('button').hidden=phase!=='error'&&phase!=='index-error';
+    const detail=host.querySelector('.save-status-detail');
+    detail.hidden=phase!=='error';
+    detail.textContent=phase==='error'?( /permission.?denied/i.test(title)?'저장 권한을 확인하지 못했습니다. 입력 내용은 유지됩니다. 계정 연결을 확인한 뒤 재시도해주세요.':title||'입력 내용은 유지됩니다. 연결을 확인한 뒤 재시도해주세요.' ):'';
   }
   function renderEditorSaveState_(state,allowLoading=false){
     if(!isCurrentSaveState_(state) || (loading&&!allowLoading))return;
@@ -7825,10 +7829,10 @@
     if(state.waiting && state.pending.size){phase="waiting";label="서버 확인 중";}
     else if(state.queued || state.result==="pending" || (state.result!==false && (state.pending.size || state.manual))){phase="saving";label="저장 중…";}
     else if(state.result===false){phase="error";label=state.blockReason?"저장 안됨":"저장 실패 · 재시도";}
-    else if(state.confirmed){phase=state.sheetError?"sheet-error":"saved";label=state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
+    else if(state.confirmed){phase=state.indexFailed?"index-error":state.sheetError?"sheet-error":"saved";label=state.indexFailed?"저장됨 · 목록 재시도":state.sheetError?"저장됨 · 시트 재시도":"저장됨 ✓";}
     button.dataset.saveState=phase;button.textContent=label;button.disabled=state.manual;
     button.style.opacity="1";
-    paintEditorSaveStatus_(phase,phase==="saved"||phase==="sheet-error"?"저장 완료":phase==="saving"?"저장 중":phase==="error"?"저장 실패":phase==="waiting"?"연결 대기":"",state.blockReason||"");
+    paintEditorSaveStatus_(phase,phase==="index-error"?"저장 완료 · 목록 반영 대기":phase==="saved"||phase==="sheet-error"?"저장 완료":phase==="saving"?"저장 중":phase==="error"?"저장 실패":phase==="waiting"?"연결 대기":"",state.blockReason||"");
     renderDraft_();
     button.title=state.blockReason|| (state.sheetError?"앱 저장 완료 · 구글시트 전송 실패. 눌러 다시 전송합니다.":phase==="error"?"작업지시서 저장에 실패했습니다. 눌러 다시 저장합니다.":"");
   }
@@ -7947,8 +7951,10 @@
         for(const key of ["myy","mmm","mdd"])document.getElementById(key).value=st[key] || "";
         refreshModifiedDateInput_();}
       if(isCurrentSaveState_(state)&&state.latest===id){
-        if(await writeIndexIfChanged_(targetCode,st)===false)throw new Error("목록 색인 저장 실패");
-        state.indexFailed=false;
+        // The canonical record is already acknowledged. A failed list projection
+        // must remain retryable without misreporting a lost save or locking navigation.
+        const indexFailed=await writeIndexIfChanged_(targetCode,st)===false;
+        if(isCurrentSaveState_(state)&&state.latest===id)state.indexFailed=indexFailed;
         window.dispatchEvent(new CustomEvent("aisel-access-workorders-changed"));
         try{window.AiselDesignWorkflow?.observeSaved(targetCode);}catch(_){}
         try{if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(targetCode,st.updatedAt)).catch(()=>{});}catch(e){}
@@ -18038,8 +18044,8 @@ window.AiselUnifiedAdapter={
 </style>
 
 <!-- ERP navigation: existing router and permissions remain authoritative. -->
-<link rel="stylesheet" href="aisel-erp-shell.css?v=mobile-recovery-20261111" media="screen">
-<script src="aisel-erp-shell.js?v=mobile-recovery-20261111"></script>
+<link rel="stylesheet" href="aisel-erp-shell.css?v=mobile-first-20261112" media="screen">
+<script src="aisel-erp-shell.js?v=mobile-first-20261112"></script>
 
 <!-- Company ERP: additive workspace; legacy menus and editor remain unchanged. -->
 <link rel="stylesheet" href="company-erp.css?v=20261112-attendance-1" media="screen">

@@ -4,7 +4,7 @@
   const main = document.getElementById('mainBar');
   const header = document.getElementById('appBrandHeader');
   if (!main || !header || !window.AiselUnified || document.getElementById('aiselErpNavigation')) return;
-  // Desktop navigation stays pinned even in a narrow window or at browser zoom.
+  // Use the available width, including split windows and browser zoom.
   // iPadOS can report a Mac UA; touch distinguishes it from a desktop Mac.
   const userAgent = navigator.userAgent || '';
   const touchApple = /Macintosh|MacIntel/.test(userAgent + ' ' + navigator.platform) && navigator.maxTouchPoints > 0;
@@ -12,7 +12,9 @@
   const desktopDevice = !mobileDevice && /Windows NT|Macintosh|X11|CrOS|Linux x86_64/.test(userAgent);
   const media = window.matchMedia('(min-width: 1024px) and (orientation: landscape)');
   const pointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-  const pinnedMenu = () => desktopDevice || (!mobileDevice && pointer.matches) || media.matches;
+  const wide = window.matchMedia('(min-width: 1024px)');
+  const compact = window.matchMedia('(max-width: 767px)');
+  const pinnedMenu = () => wide.matches && (desktopDevice || (!mobileDevice && pointer.matches) || media.matches);
   const body = document.body;
   const aside = document.createElement('aside');
   aside.id = 'aiselErpNavigation'; aside.className = 'noprint';
@@ -94,6 +96,7 @@
     if (drawerOpen && !editorBackground.inert) editorBackground.inert = true;
   }).observe(editorBackground, {attributes:true, attributeFilter:['inert','aria-busy']});
   function render() {
+    body.classList.toggle('erp-mobile', compact.matches);
     const pinned = pinnedMenu() && !pinnedCollapsed;
     const visible = pinned || drawerOpen;
     aside.hidden = !visible; backdrop.hidden = !drawerOpen;
@@ -131,6 +134,11 @@
   });
   close.addEventListener('click', () => setDrawer(false));
   backdrop.addEventListener('click', () => setDrawer(false));
+  // Release only the menu's modal lock when a destination is tapped. If the
+  // save guard refuses navigation, the original editor and its retry stay usable.
+  main.addEventListener('click', event => {
+    if (drawerOpen && event.target.closest('.maintab:not([disabled])')) setDrawer(false, false);
+  });
   aside.addEventListener('keydown', event => {
     if (!drawerOpen) return;
     if (event.key === 'Escape') { event.preventDefault(); setDrawer(false); return; }
@@ -153,6 +161,8 @@
     else if (!aside.hidden && pinnedMenu() && focused === close) toggle.focus();
   };
   media.addEventListener('change', syncLayout);
+  wide.addEventListener('change', syncLayout);
+  compact.addEventListener('change', syncLayout);
   pointer.addEventListener('change', syncLayout);
   body.classList.add('aisel-erp-shell'); sync(); render();
   window.AiselErpShell=Object.freeze({closeMenu:()=>setDrawer(false,false),refresh:()=>{menuRole=null;sync();}});
@@ -271,3 +281,28 @@
  refresh();measure();
  root.AiselWorkspaceUI=Object.freeze({refresh,sourceFor:()=>selection()?.item||null});
 })(window);
+
+
+/* Mobile list cards reuse the table's real headings and the same live controls. */
+(function(){
+ 'use strict';
+ let queued=false;
+ function labelTables(){
+  queued=false;
+  document.querySelectorAll('#aiselCompanyWorkspace .ce-table:not(.cg-guide-table),#erpOperationsView table,#aiselStaffDirectory table,#aiselPermissionAudit table').forEach(table=>{
+   const headings=[...table.querySelectorAll('thead tr:last-child th')];
+   if(!headings.length||headings.some(th=>th.colSpan>1||th.rowSpan>1)){table.classList.remove('erp-mobile-list');return;}
+   const rows=[...table.querySelectorAll('tbody tr')];
+   if(rows.some(row=>row.cells.length!==headings.length||[...row.cells].some(cell=>cell.colSpan>1||cell.rowSpan>1))){table.classList.remove('erp-mobile-list');return;}
+   table.classList.add('erp-mobile-list');
+   for(const row of rows)for(let i=0;i<row.cells.length;i++){
+    const label=headings[i].textContent.trim();
+    if(row.cells[i].dataset.mobileLabel!==label)row.cells[i].dataset.mobileLabel=label;
+   }
+  });
+ }
+ const schedule=()=>{if(!queued){queued=true;requestAnimationFrame(labelTables);}};
+ new MutationObserver(records=>{if(records.some(r=>r.target.nodeType===1&&r.target.closest?.('#aiselCompanyWorkspace,#erpOperationsView,#aiselStaffDirectory,#aiselPermissionAudit')))schedule();})
+  .observe(document.body,{childList:true,subtree:true});
+ window.addEventListener('aisel-workspace-route',schedule);labelTables();
+})();
