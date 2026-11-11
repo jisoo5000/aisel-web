@@ -44,7 +44,7 @@
   const note=options.note===undefined?get(id).note:String(options.note).trim();
   const resultUrl=options.resultUrl===undefined?get(id).resultUrl:String(options.resultUrl).trim();
   if(note.length>2000||resultUrl.length>2048||resultUrl&&!/^https?:\/\/\S+$/i.test(resultUrl))throw fail('결과물 링크는 http 또는 https 주소로 입력해주세요.');
-  if(options.rating!==undefined&&(!Number.isInteger(options.rating)||options.rating<0||options.rating>5))throw fail('별점은 0~5 사이에서 선택해주세요.');
+  if(options.rating!==undefined&&(typeof options.rating!=='number'||!Number.isInteger(options.rating*2)||options.rating<0||options.rating>5))throw fail('별점은 반 개 단위로 선택해주세요.');
   if(options.usp!==undefined&&(typeof options.usp!=='string'||options.usp.length>500))throw fail('USP는 500자 이내로 입력해주세요.');
   const request=Symbol(id);pending.set(id,request);onChange();
   try{
@@ -561,6 +561,7 @@
   async function canLeave(options={}){
     if(options.isCurrent&&!options.isCurrent())return false;
     if(isComposing()){await persistDraft();return false;}
+    if(active&&ratingFlights.has(active.id)&&!await ratingFlights.get(active.id))return false;
     if(!await flushNotePickers()||options.isCurrent&&!options.isCurrent())return false;
     const linkReady=linkEditor?.id!==active?.id||finishLinkEditor();
     if(active&&uspDraft(active.id)&&!await save())return false;
@@ -626,7 +627,7 @@
         const src=http(r.thumbnail)||(r._draft&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(r.thumbnail||'')?r.thumbnail:'');
         if(src){const img=document.createElement('img');bindUploadedPreview(img,src,r.id);img.alt='';img.width=185;img.height=160;img.loading=index<3?'eager':'lazy';img.fetchPriority=index===0?'high':'auto';img.decoding='async';button.append(img);}
         else{const space=document.createElement('span');space.className='rc-no-photo';space.textContent=r._draft?'작성 중':'';button.append(space);}
-        const stars=document.createElement('span');stars.className='rc-card-rating';stars.setAttribute('aria-label','레퍼런스 평점 '+ratingValue(r.id)+'점 / 5점');stars.innerHTML=ratingStars(ratingValue(r.id));
+        const stars=document.createElement('span');stars.className='rc-card-rating';stars.setAttribute('aria-label','레퍼런스 평점 '+(ratingValue(r.id)*2)+'점 / 10점');stars.innerHTML=ratingStars(ratingValue(r.id));
         const info=document.createElement('span');info.className='rc-card-info';
         const title=document.createElement('strong'),source=http(r.sourceUrl||r.sourceLinks?.[0]);if(source){const a=document.createElement('a');a.href=source;a.target='_blank';a.rel='noopener noreferrer';a.textContent=AI.title(r);title.append(a);}else title.textContent=AI.title(r);
         const meta=document.createElement('span');meta.className='rc-card-meta';
@@ -681,13 +682,20 @@
 
   // Human reference ratings share the existing per-reference metadata and ACL.
   // The content record, source sheet, notes and usage status remain independent.
-  function ratingValue(id){const value=lifecycle?.get(id)?.rating;return Number.isInteger(value)&&value>=0&&value<=5?value:0;}
-  function ratingStar(filled){return '<svg viewBox="0 0 24 24" aria-hidden="true" class="rc-rating-star'+(filled?' is-filled':'')+'"><path d="m12 2.8 2.85 5.78 6.38.93-4.62 4.5 1.09 6.35L12 17.36l-5.7 3 1.09-6.35-4.62-4.5 6.38-.93Z"/></svg>';}
-  function ratingStars(value){return [1,2,3,4,5].map(n=>ratingStar(n<=value)).join('');}
-  const ratingBusy=new Set();
+  function ratingValue(id){const value=lifecycle?.get(id)?.rating;return Number.isInteger(value*2)&&typeof value==='number'&&value>=0&&value<=5?value:0;}
+  let ratingStarSerial=0;
+  function ratingStar(fill){
+    const path='m12 2.8 2.85 5.78 6.38.93-4.62 4.5 1.09 6.35L12 17.36l-5.7 3 1.09-6.35-4.62-4.5 6.38-.93Z';
+    const half=fill===0.5,clip='rcHalf'+(++ratingStarSerial);
+    return '<svg viewBox="0 0 24 24" aria-hidden="true" class="rc-rating-star'+(fill===1?' is-filled':half?' is-half':'')+'">'+(half?'<defs><clipPath id="'+clip+'"><rect width="12" height="24"/></clipPath></defs><path class="rc-rating-half-fill" clip-path="url(#'+clip+')" d="'+path+'"/>':'')+'<path d="'+path+'"/></svg>';
+  }
+  function ratingStars(value){return [1,2,3,4,5].map(n=>ratingStar(Math.max(0,Math.min(1,value-n+1)))).join('');}
+  const ratingBusy=new Set(),ratingDesired=new Map(),ratingFlights=new Map();
+  function displayedRating(id){return ratingDesired.has(id)?ratingDesired.get(id):ratingValue(id);}
+  function nextRating(value,star){return value===star-0.5?star:value===star?0:star-0.5;}
   function renderRating(){
     const box=$('#rcRating');if(!box||!active)return;
-    const id=active.id,value=ratingValue(id),busy=ratingBusy.has(id)||lifecycle?.isPending(id),disabled=!canEdit()||!lifecycle?.ready||busy;
+    const id=active.id,value=displayedRating(id),busy=ratingBusy.has(id)||lifecycle?.isPending(id),disabled=!canEdit()||!lifecycle?.ready||lifecycle?.isPending(id)&&!ratingBusy.has(id);
     if(box.dataset.recordId!==id||box.children.length!==2){
       box.replaceChildren();box.dataset.recordId=id;
       const input=document.createElement('input');input.type='text';input.className='rc-usp-input';input.placeholder='USP';input.maxLength=500;input.setAttribute('aria-label','USP');input.autocomplete='off';
@@ -703,28 +711,40 @@
     const input=box.querySelector('.rc-usp-input'),draft=uspDraft(id);const valueText=draft?draft.value:String(lifecycle.get(id).usp||'');
     if(!input._composing&&input.value!==valueText)input.value=valueText;input.disabled=!canEdit()||!lifecycle?.ready;
     box.querySelectorAll('button').forEach(button=>{
-      const score=Number(button.dataset.rating),filled=score<=value;
-      button.innerHTML=ratingStar(filled);button.disabled=!!disabled;
-      button.setAttribute('aria-pressed',String(score===value));
-      button.setAttribute('aria-label',score+'점'+(score===value?' 선택됨 · 다시 누르면 해제':' 선택'));
-      button.title=score===value?'다시 누르면 별점 해제':score+'점';
+      const score=Number(button.dataset.rating),fill=Math.max(0,Math.min(1,value-score+1)),next=nextRating(value,score);
+      button.innerHTML=ratingStar(fill);button.disabled=!!disabled;
+      button.setAttribute('aria-pressed',String(fill>0));
+      button.setAttribute('aria-label','현재 '+(value*2)+'점 / 10점 · '+(next?next*2+'점 선택':'별점 해제'));
+      button.title=next?next*2+'점 선택':'별점 해제';
     });
   }
   async function setRating(id,score){
-    if(active?.id!==id||!canEdit()||!lifecycle?.ready||lifecycle.isPending(id)||ratingBusy.has(id))return;
-    const stamp=authStamp(),next=ratingValue(id)===score?0:score;
-    ratingBusy.add(id);renderRating();
-    try{
-      if(!await save())return;assertAuth(stamp);
-      if(active?.id!==id)return;
-      if(!active.version){message('사진이나 참고 내용을 먼저 추가해주세요.',true);return;}
-      const before=lifecycle.get(id);
-      message('별점 저장 중…');
-      await lifecycle.change(id,before.status||'active',{expectedVersion:before.version,rating:next});
-      assertAuth(stamp);gallerySignature='';renderList();
-      if(active?.id===id)message(next?'별점 저장됨':'별점 해제됨');
-    }catch(error){try{assertAuth(stamp);if(active?.id===id)message(errorText(error),true);}catch(_){/* Ignore the previous account's result. */}}
-    finally{ratingBusy.delete(id);if(active?.id===id)renderRating();}
+    if(active?.id!==id||!canEdit()||!lifecycle?.ready||!Number.isInteger(score)||score<1||score>5||lifecycle.isPending(id)&&!ratingBusy.has(id))return false;
+    ratingDesired.set(id,nextRating(displayedRating(id),score));renderRating();
+    if(ratingFlights.has(id))return ratingFlights.get(id);
+    const stamp=authStamp();ratingBusy.add(id);
+    const flight=(async()=>{
+      try{
+        if(!await save())return false;assertAuth(stamp);
+        if(active?.id!==id)return false;
+        if(!active.version){message('사진이나 참고 내용을 먼저 추가해주세요.',true);return false;}
+        while(ratingDesired.has(id)){
+          assertAuth(stamp);
+          if(active?.id!==id||!canEdit()||!lifecycle.ready)throw Error('자료와 로그인 상태를 다시 확인해주세요.');
+          const next=ratingDesired.get(id),before=lifecycle.get(id);
+          message('별점 저장 중…');
+          await lifecycle.change(id,before.status||'active',{expectedVersion:before.version,rating:next});
+          assertAuth(stamp);
+          if(ratingValue(id)!==next)throw Error('다른 곳에서 별점이 바뀌었습니다. 최신 별점을 확인해주세요.');
+          if(ratingDesired.get(id)===next)ratingDesired.delete(id);
+        }
+        gallerySignature='';renderList();
+        if(active?.id===id)message(ratingValue(id)?'별점 저장됨':'별점 해제됨');
+        return true;
+      }catch(error){try{assertAuth(stamp);if(active?.id===id)message(errorText(error),true);}catch(_){}return false;}
+      finally{ratingBusy.delete(id);ratingDesired.delete(id);ratingFlights.delete(id);if(active?.id===id)renderRating();}
+    })();
+    ratingFlights.set(id,flight);renderRating();return flight;
   }
 
   const uspDrafts=new Map();let uspFlight=null;

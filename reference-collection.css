@@ -379,3 +379,6 @@
  html:root body #referenceCollectionView .rc-notes {margin-top:6px}
  html:root body #referenceCollectionView .rc-note-entry textarea {height:72px;min-height:72px;line-height:18px;padding:6px;resize:vertical}
 }
+
+/* Half-star fill shares the same color; the full outline remains one pixel. */
+#referenceCollectionView .rc-rating-half-fill{fill:currentColor;stroke:none}
