@@ -66,7 +66,12 @@
   }
   let drawerOpen = false, pinnedCollapsed = false, savedInert = [];
   function restoreBackground() {
-    savedInert.forEach(([element, wasInert]) => { element.inert = wasInert; }); savedInert = [];
+    // Loading and the drawer are independent locks. A completed load must not be
+    // re-locked by an older drawer snapshot, and an active load must stay locked.
+    savedInert.forEach(([element, wasInert, wasLoading]) => {
+      const loading = element.id === 'editorView' && element.getAttribute('aria-busy') === 'true';
+      element.inert = loading || (wasInert && !wasLoading);
+    }); savedInert = [];
   }
   function setDrawer(open, returnFocus = true) {
     drawerOpen = !!open && !pinnedMenu();
@@ -74,7 +79,7 @@
     if (drawerOpen) {
       for (const element of body.children) {
         if (element === aside || element === backdrop || /^(SCRIPT|STYLE|LINK)$/.test(element.tagName)) continue;
-        savedInert.push([element, element.inert]); element.inert = true;
+        savedInert.push([element, element.inert, element.id === 'editorView' && element.getAttribute('aria-busy') === 'true']); element.inert = true;
       }
       aside.setAttribute('role', 'dialog'); aside.setAttribute('aria-modal', 'true');
     } else { aside.removeAttribute('role'); aside.removeAttribute('aria-modal'); }
@@ -82,6 +87,12 @@
     if (drawerOpen) close.focus();
     else if (returnFocus && !pinnedMenu()) toggle.focus();
   }
+  // The workorder loader can release its lock while the mobile drawer is open.
+  // Keep the drawer's lock until closing, without treating it as a loading lock.
+  const editorBackground = document.getElementById('editorView');
+  if (editorBackground) new MutationObserver(() => {
+    if (drawerOpen && !editorBackground.inert) editorBackground.inert = true;
+  }).observe(editorBackground, {attributes:true, attributeFilter:['inert','aria-busy']});
   function render() {
     const pinned = pinnedMenu() && !pinnedCollapsed;
     const visible = pinned || drawerOpen;

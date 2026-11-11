@@ -145,9 +145,9 @@
  html:root body.aisel-erp-shell #appBrandHeader{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto 44px;align-items:center;gap:6px;padding:6px 12px;min-height:44px;}
  html:root body.aisel-erp-shell #aiselErpMenuToggle{grid-column:1;grid-row:1;width:28px;height:28px;min-height:28px;padding:5px;flex-basis:28px;border:0;background:transparent;}
  html:root body.aisel-erp-shell #aiselErpMenuToggle svg{width:18px;height:18px;}
- html:root body.aisel-erp-shell #appBrandHeader h1{grid-column:2;grid-row:1;display:flex;gap:6px;min-width:0;margin:0;align-items:center;font-size:12px;line-height:18px;}
- html:root body.aisel-erp-shell #appBrandHeader .app-brand{font-size:12px;font-weight:600;line-height:18px;white-space:nowrap;}
- html:root body.aisel-erp-shell #appBrandHeader #appPageTitle{font-size:12px;font-weight:600;line-height:18px;white-space:normal;overflow-wrap:anywhere;padding-left:6px;}
+ html:root body.aisel-erp-shell #appBrandHeader h1{grid-column:2;grid-row:1;display:flex;gap:6px;min-width:0;margin:0;align-items:center;font-size:14px;line-height:20px;}
+ html:root body.aisel-erp-shell #appBrandHeader .app-brand{font-size:14px;font-weight:600;line-height:20px;white-space:nowrap;}
+ html:root body.aisel-erp-shell #appBrandHeader #appPageTitle{font-size:14px;font-weight:600;line-height:20px;white-space:normal;overflow-wrap:anywhere;padding-left:6px;}
  html:root body.aisel-erp-shell #aiselSessionButton{grid-column:4;grid-row:1;width:44px;min-width:0;min-height:28px;height:28px;padding:0;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);border:0;background:transparent;color:#6C727C;}
  html:root body.aisel-erp-shell #aiselWorkspaceSheet{grid-column:3;grid-row:1;display:inline-flex;align-items:center;justify-content:flex-end;min-height:28px;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:#6C727C;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);white-space:nowrap;text-decoration:none;}
  html:root body.aisel-erp-shell #aiselWorkspaceSheet:hover{color:#34383C;text-decoration:underline;text-underline-offset:3px;}
