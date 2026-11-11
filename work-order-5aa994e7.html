@@ -4500,8 +4500,8 @@
 
 
 <div class="scroll-fab-wrap noprint" id="scrollFabWrap">
-  <button type="button" class="scroll-fab" id="scrollTopBtn" title="한 화면 위로" aria-label="한 화면 위로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
-  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="한 화면 아래로" aria-label="한 화면 아래로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+  <button type="button" class="scroll-fab" id="scrollTopBtn" title="최상단으로" aria-label="최상단으로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+  <button type="button" class="scroll-fab" id="scrollBottomBtn" title="최하단으로" aria-label="최하단으로 이동"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
 </div>
 
 <script id="aisel-product-performance">
@@ -15658,6 +15658,7 @@ $("fabricSaveBtn").addEventListener("click", async () => {
   const topBtn = document.getElementById("scrollTopBtn");
   const bottomBtn = document.getElementById("scrollBottomBtn");
   if(!topBtn || !bottomBtn) return;
+  const wrap=document.getElementById('scrollFabWrap');
   const boundFrames=new WeakSet(),boundWindows=new WeakSet();
   const rootFor=doc=>doc.scrollingElement || doc.documentElement;
   const visible=element=>!!element?.getClientRects().length;
@@ -15695,7 +15696,20 @@ $("fabricSaveBtn").addEventListener("click", async () => {
     return target===rootFor(doc)?doc.defaultView.innerHeight:target.clientHeight;
   }
   function maxScroll(target){return Math.max(0,target.scrollHeight-viewport(target));}
+  function positionFab(){
+    if(!wrap)return;
+    // Align to the visible workspace, including the sidebar offset and iframe.
+    const anchor=[...document.querySelectorAll('#productProgressFrame,#editorView,#galleryView,#salesView,#designMeetingView,#referenceCollectionView,#aiselMoodboardsView,#meetingMaterialsView,#aiselStaffDirectory,#aiselPermissionAudit,#aiselOperationsView,#companyErpView')].find(visible);
+    if(!anchor)return;
+    const edge=anchor.getBoundingClientRect().right;
+    const width=wrap.getBoundingClientRect().width||28;
+    const right=Math.max(4,Math.min(innerWidth-width-4,innerWidth-edge+6));
+    const value='max('+right+'px, env(safe-area-inset-right, 0px))';
+    if(wrap.style.right!==value)wrap.style.right=value;
+    if(wrap.style.left!=='auto')wrap.style.left='auto';
+  }
   function updateFabState(){
+    positionFab();
     const root=scrolling(),y=root.scrollTop,maxY=maxScroll(root);
     topBtn.disabled=y<=4;bottomBtn.disabled=maxY-y<=4;
   }
@@ -15705,6 +15719,11 @@ $("fabricSaveBtn").addEventListener("click", async () => {
     root.scrollTo({top,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
     schedule();
   }
+  function jumpToEdge(bottom){
+    const root=scrolling();
+    root.scrollTo({top:bottom?maxScroll(root):0,behavior:'instant'});
+    schedule();
+  }
   function pageKey(event){
     if(!['PageUp','PageDown'].includes(event.key)||event.defaultPrevented||event.isComposing||event.altKey||event.ctrlKey||event.metaKey)return;
     if(event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])'))return;
@@ -15712,11 +15731,13 @@ $("fabricSaveBtn").addEventListener("click", async () => {
     const root=scrolling();if(maxScroll(root)<=0)return;
     event.preventDefault();move(event.key==='PageDown'?1:-1);
   }
-  topBtn.addEventListener('click',()=>move(-1));
-  bottomBtn.addEventListener('click',()=>move(1));
+  topBtn.addEventListener('click',()=>jumpToEdge(false));
+  bottomBtn.addEventListener('click',()=>jumpToEdge(true));
   document.addEventListener('keydown',pageKey);
   window.addEventListener('scroll',schedule,{passive:true,capture:true});
   window.addEventListener('resize',schedule);
+  window.addEventListener('aisel-workspace-route',schedule);
+  window.visualViewport?.addEventListener('resize',schedule);
   if(typeof ResizeObserver!=='undefined')new ResizeObserver(schedule).observe(document.body);
   new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['open','style','hidden','class']});
   updateFabState();
