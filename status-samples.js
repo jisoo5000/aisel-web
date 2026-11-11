@@ -44,12 +44,10 @@ function render(){
  el.sampleColumns.hidden=true;el.sampleReset.hidden=!sampleFilters.query;
  var stamp=state.source&&state.source.syncedAt;
  el.sampleUpdated.replaceChildren();
- el.sampleUpdated.append(node("span","",stamp?"시트 확인 "+new Date(stamp).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})+" · 장부 기준":"시트 연결 확인 중"));
- var refresh=node("button","sample-refresh","새로고침");refresh.type="button";refresh.disabled=busy;refresh.onclick=function(){if(provider)provider.load(true).catch(function(){});};el.sampleUpdated.append(refresh);
- var stale=stamp&&Date.now()-Date.parse(stamp)>36*3600000;
- el.sampleSyncWarning.hidden=!stale&&!state.publicSyncWarning;
- el.sampleSyncWarning.textContent=stale?"최근 동기화가 지연되어 마지막 확인 목록을 표시합니다. 이후 이동·반납은 아직 반영되지 않았을 수 있습니다.":text(state.publicSyncWarning);
- if(stale||error){var connect=node("button","sample-refresh","최신 시트 연결");connect.type="button";connect.disabled=busy;connect.onclick=function(){provider.connect().catch(function(){});};el.sampleUpdated.append(connect);}
+ var stale=!!stamp&&Date.now()-Date.parse(stamp)>36*3600000;
+ el.sampleSyncWarning.hidden=true;el.sampleSyncWarning.textContent="";
+ if(stale||error){var connect=node("button","sample-refresh","구글시트 연결");connect.type="button";connect.disabled=busy;connect.onclick=function(){provider.connect().catch(function(){});};el.sampleUpdated.append(connect);}
+ el.sampleUpdated.hidden=!stale&&!error;
  var defs=[["office","사무실 보유"],["transit","물류 확인"],["history","반납 이력"]];
  el.sampleViews.replaceChildren();
  defs.forEach(function(d){var n=records.filter(function(x){return x.kind===d[0];}).length,b=node("button",view===d[0]?"on":"",d[1]+" "+n);b.type="button";b.setAttribute("aria-pressed",String(view===d[0]));b.onclick=function(){view=d[0];expanded.clear();render();};el.sampleViews.append(b);});

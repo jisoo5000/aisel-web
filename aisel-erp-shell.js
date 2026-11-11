@@ -57,8 +57,10 @@
       caption.setAttribute('aria-controls',buttons.map(button=>button.id).join(' '));
       const group={caption,buttons,label};labels.push(group);
       caption.addEventListener('click',()=>{
-        if(expandedGroups.has(label))expandedGroups.delete(label);else expandedGroups.add(label);
-        syncGroup(group);
+        const opening=!expandedGroups.has(label);
+        expandedGroups.clear();
+        if(opening)expandedGroups.add(label);
+        labels.forEach(syncGroup);
       });
     });
   }

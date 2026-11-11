@@ -6,7 +6,7 @@
   html:root body.aisel-erp-shell #aiselErpMenuToggle svg {width:20px;height:20px;}
   html:root body.aisel-erp-shell #appBrandHeader h1 {gap:6px;}
   html:root body.aisel-erp-shell #appPageTitle {font-size:14px;padding-left:6px;white-space:nowrap;}
-  html:root body.aisel-erp-shell #aiselErpNavigation {box-sizing:border-box;position:fixed;inset:0 auto 0 0;z-index:1001;width:min(224px,calc(100vw - 44px));height:100dvh;padding:20px 0;overflow-y:auto;overscroll-behavior:contain;background:#FFF;border-right:1px solid #E3E5E7;color:#34383C;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+  html:root body.aisel-erp-shell #aiselErpNavigation {box-sizing:border-box;position:fixed;inset:0 auto 0 0;z-index:1001;width:min(224px,calc(100vw - 44px));height:100dvh;padding:12px 0;overflow-y:auto;overscroll-behavior:contain;background:#FFF;border-right:1px solid #E3E5E7;color:#34383C;font-family:var(--aisel-screen-font,'AISEL Screen',sans-serif);}
   html:root body.aisel-erp-shell #aiselErpNavigation[hidden],html:root body.aisel-erp-shell #aiselErpBackdrop[hidden] {display:none!important;}
   html:root body.aisel-erp-shell .erp-nav-heading {margin:0 16px;display:flex;align-items:center;justify-content:space-between;height:32px;}
   html:root body.aisel-erp-shell .erp-brand {font-size:22px;font-weight:700;letter-spacing:1px;}
@@ -55,7 +55,7 @@
 /* v299: shared navigation, restrained selection, consistent vertical spacing. */
 @media screen {
  html:root body.aisel-erp-shell #mainBar{gap:0}
- html:root body.aisel-erp-shell #mainBar>.maintab{min-height:44px;height:44px}
+ html:root body.aisel-erp-shell #mainBar>.maintab{min-height:36px;height:36px}
  html:root body.aisel-erp-shell .erp-nav-subtitle{margin:6px 16px}
  html:root body.aisel-erp-shell .erp-nav-group{margin:12px 28px 6px}
  html:root body.aisel-erp-shell #mainBar>.maintab.active{background:#EEF0F3;color:#2F3B52;border-color:transparent;font-weight:600}
@@ -74,15 +74,15 @@
 
 /* 2026-11-11: one horizontal rule per menu item; no stacked card outlines. */
 @media screen {
- html:root body.aisel-erp-shell #mainBar>.maintab[data-main]{border:0;border-bottom:1px solid #E3E5E7;border-radius:0;box-shadow:none;background:#fff}
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main]{font-size:12px;font-weight:400;line-height:18px;padding-left:28px;border:0;border-bottom:1px solid #E3E5E7;border-radius:0;box-shadow:none;background:#fff}
  html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active{background:#E9ECF2;color:#34383C;border-color:#E3E5E7}
  html:root body.aisel-erp-shell #mainBar>.maintab[data-main]:not(.active):not(:disabled):hover{background:#F6F6F6;border-color:#E3E5E7}
 }
 
 /* Group disclosure is independent of role-owned hidden flags and sidebar toggle. */
 @media screen {
- html:root body.aisel-erp-shell #mainBar>button.erp-nav-group{display:flex;align-items:center;justify-content:space-between;gap:6px;flex:none;box-sizing:border-box;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px 0 28px;border:0;border-bottom:1px solid #E3E5E7;border-radius:0;box-shadow:none;background:#F1F3F6;color:#626A76;font-family:inherit;font-size:11px;font-weight:600;line-height:18px;text-align:left;cursor:pointer}
- html:root body.aisel-erp-shell #mainBar>button.erp-nav-group:hover{background:#E9ECF2}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group{display:flex;align-items:center;justify-content:space-between;gap:6px;flex:none;box-sizing:border-box;width:100%;min-height:36px;height:36px;margin:0;padding:0 16px;border:0;border-bottom:1px solid #E3E5E7;border-radius:0;box-shadow:none;background:#FFF;color:#626A76;font-family:inherit;font-size:12px;font-weight:500;line-height:18px;text-align:left;cursor:pointer}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group:hover{background:#FFF;color:#34383C}
  html:root body.aisel-erp-shell #mainBar>button.erp-nav-group:focus-visible{outline:2px solid #8A96A5;outline-offset:-2px}
  html:root body.aisel-erp-shell #mainBar>button.erp-nav-group[hidden],html:root body.aisel-erp-shell #mainBar>.maintab[data-erp-group-collapsed="true"]{display:none!important}
  html:root body.aisel-erp-shell .erp-nav-chevron{display:inline-flex;flex:0 0 16px;width:16px;height:16px}
@@ -101,7 +101,7 @@
  html:root body.aisel-erp-shell #appBrandHeader #appPageTitle {font-size:14px;line-height:20px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
  html:root body.aisel-erp-shell #mainBar>.maintab[data-main],
  html:root body.aisel-erp-shell #mainBar>button.erp-nav-group {white-space:nowrap;min-width:0;}
- html:root body.aisel-erp-shell #mainBar>button.erp-nav-group {background:var(--aisel-menu-surface);}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group {background:#FFF;}
  html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active {background:var(--aisel-menu-selected);}
  html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView) {font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:var(--aisel-menu-ink);}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-main {padding:6px 6px 18px;}
