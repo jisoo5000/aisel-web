@@ -26,13 +26,15 @@
   html:root body.aisel-erp-shell #productProgressFrame {height:calc(100dvh - 64px);}
   html:root body.aisel-erp-shell :is(#aiselErpMenuToggle,.erp-nav-close):focus-visible {outline:2px solid #34383C;outline-offset:2px;}
 }
+/* The shell follows native viewport state. The workorder's legacy mobile
+   composition rewrites width media queries, so navigation uses its own class. */
+@media screen {
+  html:root body.aisel-erp-shell.erp-nav-pinned {padding-left:calc(var(--erp-sidebar) + 16px);padding-right:16px;}
+  html:root body.aisel-erp-shell.erp-nav-pinned #aiselErpNavigation {z-index:50;width:var(--erp-sidebar);}
+  html:root body.aisel-erp-shell.erp-nav-pinned #appBrandHeader {left:var(--erp-sidebar);width:calc(100% - var(--erp-sidebar));}
+  html:root body.aisel-erp-shell.erp-nav-pinned :is(#aiselErpMenuToggle,.erp-nav-close) {display:none!important;}
+}
 @media screen and (min-width:1024px) and (orientation:landscape), screen and (min-width:1024px) and (hover:hover) and (pointer:fine) {
-  html:root body.aisel-erp-shell :is(#aiselErpMenuToggle,.erp-nav-close) {display:none!important;}
-  html:root body.aisel-erp-shell {padding:88px 32px 32px calc(var(--erp-sidebar) + 32px);background:#F6F7F8!important;}
-  html:root body.aisel-erp-shell #aiselErpNavigation {z-index:50;width:var(--erp-sidebar);padding:24px 16px;}
-  html:root body.aisel-erp-shell #appBrandHeader {left:var(--erp-sidebar);width:calc(100% - var(--erp-sidebar));padding:14px 24px;min-height:64px;}
-  html:root body.aisel-erp-shell #appBrandHeader .app-brand {display:none;}
-  html:root body.aisel-erp-shell #appPageTitle {font-size:18px;border:0;padding:0;}
   html:root body.aisel-erp-shell #galleryView {max-width:1040px;padding:20px;background:#FFF;border:1px solid #E3E5E7;border-radius:3px;}
   html:root body.aisel-erp-shell #galleryView .gallery-grid {grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
   html:root body.aisel-erp-shell #galleryView .gcard-thumb {height:200px;}

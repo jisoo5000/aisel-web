@@ -64,6 +64,7 @@
     aside.hidden = !visible; backdrop.hidden = !drawerOpen;
     body.classList.toggle('erp-drawer-open', drawerOpen);
     toggle.hidden = media.matches;
+    body.classList.toggle('erp-nav-pinned', media.matches);
     toggle.setAttribute('aria-expanded', String(visible));
     toggle.setAttribute('aria-label', visible ? '업무 메뉴 접기' : '업무 메뉴 열기');
     close.hidden = media.matches;
