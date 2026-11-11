@@ -230,7 +230,7 @@
   const records=()=>ctx.projects().map(read).filter(Boolean),visible=()=>records().filter(r=>r.month===month&&!!r.project.archived===archived);
   const wrap=el('div','gp-workspace');host.append(wrap);
   const bar=el('div','gp-toolbar'),monthInput=el('input');monthInput.type='month';monthInput.value=month;monthInput.setAttribute('aria-label','매출·순익 기준월');
-  const refresh=button('다시 확인',()=>{if(root.AiselCompanySources?.financeSnapshot){refresh.disabled=true;root.AiselCompanySources.financeSnapshot({host:wrap,request:ctx.request,message:(text,error)=>{refresh.disabled=false;ctx.message(text,error);}},data=>{if(run!==revision||account!==identity())return;finance=data;ctx.redraw();},true);}});
+  const refresh=button('다시 확인',()=>{if(root.AiselCompanySources?.financeSnapshot){refresh.disabled=true;root.AiselCompanySources.financeSnapshot({host,request:ctx.request,message:(text,error)=>{refresh.disabled=false;ctx.message(text,error);}},data=>{if(run!==revision||account!==identity())return;finance=data;if(host.querySelector('.gp-workspace')&&!ctx.dirty())ctx.redraw();},true);}});
   bar.append(monthInput,refresh);wrap.append(bar);
   const nav=el('div','gp-tabs');nav.setAttribute('role','tablist');nav.setAttribute('aria-label','매출·순익 보기');
   for(const [key,label]of Object.entries(tabs)){const b=button(label,()=>{tab=key;ctx.redraw();});b.setAttribute('role','tab');b.setAttribute('aria-selected',String(key===tab));nav.append(b);}wrap.append(nav);
@@ -331,7 +331,7 @@
   else if(tab==='traffic'){const p=period(),t=totals(finance?.snapshot,p);stats([['광고비',amount(t.spend)],['주문수',finite(t.orders)?t.orders.toLocaleString('ko-KR')+'건':'미확인']]);body.append(note('방문·클릭이 연결되지 않은 전환율과 CPC는 과제에 같은 범위의 실측값을 입력해 확인합니다. 광고 증액은 자동 실행하지 않습니다.'),jump('기존 광고·마케팅 기록','campaign'));drawList(['traffic']);}
   else if(tab==='customer'){body.append(note('객단가는 이번 주문, 재구매는 이후 주문입니다. 관찰기간이 지난 고객끼리 비교하세요.'),jump('기존 코디 기록','styling'));drawList(['basket','repeat']);}
   else {body.append(note('가설·변경·결과·다음 판단을 기록합니다. 상품 계획과 다른 탭의 과제도 함께 볼 수 있습니다.'));drawList(['experiment','product','traffic','basket','repeat']);}
-  if(!loadedFinance&&root.AiselCompanySources?.financeSnapshot){loadedFinance=true;root.AiselCompanySources.financeSnapshot({host:wrap,request:ctx.request,message:ctx.message},data=>{if(run!==revision||account!==identity())return;finance=data;if(wrap.isConnected&&!ctx.dirty())ctx.redraw();});}
+  if(!loadedFinance&&root.AiselCompanySources?.financeSnapshot){loadedFinance=true;root.AiselCompanySources.financeSnapshot({host,request:ctx.request,message:ctx.message},data=>{if(run!==revision||account!==identity())return;finance=data;if(host.querySelector('.gp-workspace')&&!ctx.dirty())ctx.redraw();});}
  }
  root.AiselGrowthProfit=Object.freeze({render,reset,read,profit,period,totals,metric,schema});
 })(window);
