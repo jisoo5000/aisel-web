@@ -16366,6 +16366,19 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
 /* v281: reuse verified account/group snapshots; keep rows visible during refresh. */
 (function(root){
  'use strict';
+ function periodStatus(snapshot,now=new Date()){
+  const label=String(snapshot?.periodLabel||'').trim();
+  const match=label.match(/^(\d{4})\.(\d{2})\.(\d{2})\s*[–—~-]\s*(?:(\d{4})\.)?(\d{2})\.(\d{2})$/);
+  if(!match)return '집계기간 확인 필요';
+  const start=match[1]+'-'+match[2]+'-'+match[3];
+  let year=Number(match[4]||match[1]);
+  if(!match[4]&&Number(match[5])<Number(match[2]))year++;
+  const end=year+'-'+match[5]+'-'+match[6];
+  const endDate=new Date(end+'T00:00:00Z');
+  if(!Number.isFinite(endDate.getTime())||endDate.toISOString().slice(0,10)!==end||start>end)return '집계기간 확인 필요';
+  const yesterday=new Date(now.getTime()+9*3600000-86400000).toISOString().slice(0,10);
+  return (end<yesterday?'갱신 지연 · ':end>yesterday?'집계기간 확인 필요 · ':'집계 ')+label;
+ }
  function performance(item){
   const valid=value=>Number.isFinite(value)&&value>=0&&value<=100;
   const shareKnown=valid(item.share),returnsKnown=valid(item.returns);
@@ -16490,12 +16503,13 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
    refresh.disabled=!!state.inFlight;
    readState.textContent=state.retrying?'연결이 지연되어 한 번 더 확인 중':snapshot&&state.error?'연결 실패 · 이전 자료 표시 중':snapshot&&state.inFlight?'최신 자료 확인 중':'';
    readState.hidden=!readState.textContent;
+   period.textContent=snapshot?periodStatus(snapshot):'';period.hidden=!snapshot;
    if(!snapshot){updated.textContent=root.AiselAccess?.allowed('sales')?(state.error?'연결 확인 필요':'확인 중'):'로그인 후 확인';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
    const valid=Number.isFinite(checked.getTime());
    const oldDate=valid&&checked.toLocaleDateString('ko-KR',zone)!==now.toLocaleDateString('ko-KR',zone);
    const stamp=valid?checked.toLocaleString('ko-KR',{...zone,...(oldDate?{month:'2-digit',day:'2-digit'}:{}),hour:'2-digit',minute:'2-digit'}):'시간 확인 필요';
-   updated.textContent='확인 '+stamp;
+   updated.textContent='화면 조회 '+stamp;
   }
   function contentKey(value){
    return JSON.stringify([value.periodLabel,returnMetric(value).key,value.items.map(x=>[x.rank,x.name,x.designer,x.factory,x.share,x.returns])]);
@@ -16599,7 +16613,7 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   document.addEventListener('visibilitychange',refreshIfStale);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshIfStale,{once:true});else queueMicrotask(refreshIfStale);
  }
- root.AiselSheetSalesView={read,render,start,performance};
+ root.AiselSheetSalesView={read,render,start,performance,periodStatus};
 })(globalThis);
 
 AiselSheetSalesView.start();

@@ -1,6 +1,19 @@
 /* v281: reuse verified account/group snapshots; keep rows visible during refresh. */
 (function(root){
  'use strict';
+ function periodStatus(snapshot,now=new Date()){
+  const label=String(snapshot?.periodLabel||'').trim();
+  const match=label.match(/^(\d{4})\.(\d{2})\.(\d{2})\s*[–—~-]\s*(?:(\d{4})\.)?(\d{2})\.(\d{2})$/);
+  if(!match)return '집계기간 확인 필요';
+  const start=match[1]+'-'+match[2]+'-'+match[3];
+  let year=Number(match[4]||match[1]);
+  if(!match[4]&&Number(match[5])<Number(match[2]))year++;
+  const end=year+'-'+match[5]+'-'+match[6];
+  const endDate=new Date(end+'T00:00:00Z');
+  if(!Number.isFinite(endDate.getTime())||endDate.toISOString().slice(0,10)!==end||start>end)return '집계기간 확인 필요';
+  const yesterday=new Date(now.getTime()+9*3600000-86400000).toISOString().slice(0,10);
+  return (end<yesterday?'갱신 지연 · ':end>yesterday?'집계기간 확인 필요 · ':'집계 ')+label;
+ }
  function performance(item){
   const valid=value=>Number.isFinite(value)&&value>=0&&value<=100;
   const shareKnown=valid(item.share),returnsKnown=valid(item.returns);
@@ -21,18 +34,20 @@
   };
   throw Error('시트 반품 지표를 확인해 주세요.');
  }
- function render(host,snapshot,search){
+ function render(host,snapshot,search,pageScope=""){
   if(!snapshot||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');
   const metric=returnMetric(snapshot);
   host.replaceChildren();
   const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
   for(const label of ['상품명 (판매순)','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
   const query=String(search||'').trim().toLocaleLowerCase('ko');
-  for(const item of snapshot.items.filter(x=>{
+  const matching=snapshot.items.filter(x=>{
    const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
    const needle=normalize(query);
    return normalize(x.name).includes(needle) || normalize(root.AiselWorkorderCodeForName?.(x.name)).includes(needle);
-  })){
+  });
+  const displayed=root.AiselListPagination.take("sales",matching,{host,filter:JSON.stringify([pageScope,query]),onMore:()=>{if(root.AiselAccess?.allowed('sales'))render(host,snapshot,search,pageScope);}});
+  for(const item of displayed){
    const row=document.createElement('div');row.className='sheet-sales-grid';
    const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
    values.forEach((value,i)=>{
@@ -123,12 +138,13 @@
    refresh.disabled=!!state.inFlight;
    readState.textContent=state.retrying?'연결이 지연되어 한 번 더 확인 중':snapshot&&state.error?'연결 실패 · 이전 자료 표시 중':snapshot&&state.inFlight?'최신 자료 확인 중':'';
    readState.hidden=!readState.textContent;
+   period.textContent=snapshot?periodStatus(snapshot):'';period.hidden=!snapshot;
    if(!snapshot){updated.textContent=root.AiselAccess?.allowed('sales')?(state.error?'연결 확인 필요':'확인 중'):'로그인 후 확인';return;}
    const checked=new Date(snapshot.readAt),now=new Date(),zone={timeZone:'Asia/Seoul'};
    const valid=Number.isFinite(checked.getTime());
    const oldDate=valid&&checked.toLocaleDateString('ko-KR',zone)!==now.toLocaleDateString('ko-KR',zone);
    const stamp=valid?checked.toLocaleString('ko-KR',{...zone,...(oldDate?{month:'2-digit',day:'2-digit'}:{}),hour:'2-digit',minute:'2-digit'}):'시간 확인 필요';
-   updated.textContent='확인 '+stamp;
+   updated.textContent='화면 조회 '+stamp;
   }
   function contentKey(value){
    return JSON.stringify([value.periodLabel,returnMetric(value).key,value.items.map(x=>[x.rank,x.name,x.designer,x.factory,x.share,x.returns])]);
@@ -139,10 +155,11 @@
     const signature=JSON.stringify([group,search.value,contentKey(snapshot),search.value?snapshot.items.map(row=>root.AiselWorkorderCodeForName?.(row.name)||''):[]]);
     if(signature!==lastPaint){
      lastPaint=signature;
-     if(snapshot.items.length)render(host,snapshot,search.value);
+     if(snapshot.items.length)render(host,snapshot,search.value,group);
      else host.textContent=root.AiselAccess.ownOnly?'배정된 신상성과가 없습니다. 담당 자료 연결을 확인해주세요.':group==='core'?'핵심 SKU로 지정된 상품이 없습니다.':'표시할 신상성과가 없습니다.';
     }
    }else{
+    root.AiselListPagination.clear('sales');
     const message=!root.AiselAccess?.allowed('sales')?'로그인 후 판매성과를 확인해주세요.':state.error?'시트 자료를 가져오지 못했습니다. 새로고침해 주세요.':'시트 자료를 불러오는 중입니다.';
     if(host.textContent!==message)host.textContent=message;lastPaint='';
    }
@@ -231,6 +248,5 @@
   document.addEventListener('visibilitychange',refreshIfStale);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshIfStale,{once:true});else queueMicrotask(refreshIfStale);
  }
- root.AiselSheetSalesView={read,render,start,performance};
+ root.AiselSheetSalesView={read,render,start,performance,periodStatus};
 })(globalThis);
-
