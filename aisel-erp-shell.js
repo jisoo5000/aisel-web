@@ -4,7 +4,15 @@
   const main = document.getElementById('mainBar');
   const header = document.getElementById('appBrandHeader');
   if (!main || !header || !window.AiselUnified || document.getElementById('aiselErpNavigation')) return;
-  const media = window.matchMedia('(min-width: 1024px) and (orientation: landscape), (min-width: 1024px) and (hover: hover) and (pointer: fine)');
+  // Desktop navigation stays pinned even in a narrow window or at browser zoom.
+  // iPadOS can report a Mac UA; touch distinguishes it from a desktop Mac.
+  const userAgent = navigator.userAgent || '';
+  const touchApple = /Macintosh|MacIntel/.test(userAgent + ' ' + navigator.platform) && navigator.maxTouchPoints > 0;
+  const mobileDevice = /Android|iPhone|iPad|iPod/.test(userAgent) || touchApple;
+  const desktopDevice = !mobileDevice && /Windows NT|Macintosh|X11|CrOS|Linux x86_64/.test(userAgent);
+  const media = window.matchMedia('(min-width: 1024px) and (orientation: landscape)');
+  const pointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+  const pinnedMenu = () => desktopDevice || (!mobileDevice && pointer.matches) || media.matches;
   const body = document.body;
   const aside = document.createElement('aside');
   aside.id = 'aiselErpNavigation'; aside.className = 'noprint';
@@ -46,7 +54,7 @@
     savedInert.forEach(([element, wasInert]) => { element.inert = wasInert; }); savedInert = [];
   }
   function setDrawer(open, returnFocus = true) {
-    drawerOpen = !!open && !media.matches;
+    drawerOpen = !!open && !pinnedMenu();
     restoreBackground();
     if (drawerOpen) {
       for (const element of body.children) {
@@ -57,17 +65,17 @@
     } else { aside.removeAttribute('role'); aside.removeAttribute('aria-modal'); }
     render();
     if (drawerOpen) close.focus();
-    else if (returnFocus && !media.matches) toggle.focus();
+    else if (returnFocus && !pinnedMenu()) toggle.focus();
   }
   function render() {
-    const visible = media.matches || drawerOpen;
+    const visible = pinnedMenu() || drawerOpen;
     aside.hidden = !visible; backdrop.hidden = !drawerOpen;
     body.classList.toggle('erp-drawer-open', drawerOpen);
-    toggle.hidden = media.matches;
-    body.classList.toggle('erp-nav-pinned', media.matches);
+    toggle.hidden = pinnedMenu();
+    body.classList.toggle('erp-nav-pinned', pinnedMenu());
     toggle.setAttribute('aria-expanded', String(visible));
     toggle.setAttribute('aria-label', visible ? '업무 메뉴 접기' : '업무 메뉴 열기');
-    close.hidden = media.matches;
+    close.hidden = pinnedMenu();
   }
   function sync() {
     arrange();
@@ -78,7 +86,7 @@
     }
   }
   toggle.addEventListener('click', () => {
-    if (!media.matches) setDrawer(!drawerOpen);
+    if (!pinnedMenu()) setDrawer(!drawerOpen);
   });
   close.addEventListener('click', () => setDrawer(false));
   backdrop.addEventListener('click', () => setDrawer(false));
@@ -97,12 +105,14 @@
     if (drawerOpen && records.some(record => record.attributeName === 'aria-pressed')) setDrawer(false);
   }).observe(main, { subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'class', 'aria-pressed'] });
   window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
-  media.addEventListener('change', () => {
+  const syncLayout = () => {
     const focused = document.activeElement;
     setDrawer(false, false);
-    if (!media.matches && aside.contains(focused)) toggle.focus();
-    else if (media.matches && (focused === toggle || focused === close)) main.querySelector('.maintab.active:not([hidden]),.maintab:not([hidden])')?.focus();
-  });
+    if (!pinnedMenu() && aside.contains(focused)) toggle.focus();
+    else if (pinnedMenu() && (focused === toggle || focused === close)) main.querySelector('.maintab.active:not([hidden]),.maintab:not([hidden])')?.focus();
+  };
+  media.addEventListener('change', syncLayout);
+  pointer.addEventListener('change', syncLayout);
   body.classList.add('aisel-erp-shell'); sync(); render();
   window.AiselErpShell=Object.freeze({closeMenu:()=>setDrawer(false,false),refresh:()=>{menuRole=null;sync();}});
   // A short, optional performance cue on the workorder list. Data comes only
