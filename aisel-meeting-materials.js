@@ -85,8 +85,8 @@
   const top=el('div',undefined,'amm-top'),title=el('div');title.append(el('h2','회의자료'),el('p','회의 기록 · 사진 자료'));
   const legacy=button('기존 무드보드',()=>root.AiselUnified?.show('moodboards'));legacy.className='amm-legacy noprint';top.append(title,legacy);
   const controls=el('div',undefined,'amm-controls noprint');
-  const dateLabel=el('label','회의일 '),date=el('input');date.type='date';date.className='amm-date';dateLabel.append(date);
-  const personLabel=el('label','디자이너 '),person=el('select');person.className='amm-designer';personLabel.append(person);
+  const dateLabel=el('label'),date=el('input');date.type='date';date.className='amm-date';date.setAttribute('aria-label','회의일');dateLabel.append(el('span','회의일','amm-control-label'),date);
+  const personLabel=el('label'),person=el('select');person.className='amm-designer';person.setAttribute('aria-label','디자이너');personLabel.append(el('span','디자이너','amm-control-label'),person);
   const open=button('회의 열기',()=>loadSelection()),print=button('인쇄 / PDF 저장',()=>printAll()),share=button('링크 복사',()=>shareLink());print.className='amm-print';share.className='amm-share';
   controls.append(dateLabel,personLabel,open,print,share);
   const status=el('p','', 'amm-message');status.setAttribute('role','status');
