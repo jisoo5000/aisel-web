@@ -624,13 +624,13 @@
         const src=http(r.thumbnail)||(r._draft&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(r.thumbnail||'')?r.thumbnail:'');
         if(src){const img=document.createElement('img');bindUploadedPreview(img,src,r.id);img.alt='';img.width=185;img.height=160;img.loading=index<3?'eager':'lazy';img.fetchPriority=index===0?'high':'auto';img.decoding='async';button.append(img);}
         else{const space=document.createElement('span');space.className='rc-no-photo';space.textContent=r._draft?'작성 중':'';button.append(space);}
-        const stars=document.createElement('span');stars.className='rc-card-rating';stars.setAttribute('aria-label','레퍼런스 평점 '+ratingValue(r.id)+'점 / 5점');stars.innerHTML=ratingStars(ratingValue(r.id));button.append(stars);
+        const stars=document.createElement('span');stars.className='rc-card-rating';stars.setAttribute('aria-label','레퍼런스 평점 '+ratingValue(r.id)+'점 / 5점');stars.innerHTML=ratingStars(ratingValue(r.id));
         const info=document.createElement('span');info.className='rc-card-info';
         const title=document.createElement('strong'),source=http(r.sourceUrl||r.sourceLinks?.[0]);if(source){const a=document.createElement('a');a.href=source;a.target='_blank';a.rel='noopener noreferrer';a.textContent=AI.title(r);title.append(a);}else title.textContent=AI.title(r);
         const meta=document.createElement('span');meta.className='rc-card-meta';
         const tag=r._draft?document.createElement('span'):null;if(tag){tag.className='rc-draft-tag';tag.textContent='작성 중';}
         const date=document.createElement('time');date.dateTime=r.date||'';date.textContent=shortDate(r.date);
-        const designer=document.createElement('span');designer.className='rc-card-designer';designer.textContent=r.designer||'미지정';meta.append(date);if(tag)meta.append(tag);info.append(title,designer,meta);title.title=AI.title(r);const card=document.createElement('article');card.className='rc-lifecycle-card';card.dataset.id=r.id;card.append(button,info);if(!r._draft)renderLifeActions(card,r);frag.append(card);
+        const designer=document.createElement('span');designer.className='rc-card-designer';designer.textContent=r.designer||'미지정';designer.title=designer.textContent;meta.append(date);if(tag)meta.append(tag);meta.append(designer);info.append(title,stars,meta);title.title=AI.title(r);const card=document.createElement('article');card.className='rc-lifecycle-card';card.dataset.id=r.id;card.append(button,info);if(!r._draft)renderLifeActions(card,r);frag.append(card);
       }
       $('#rcGrid').replaceChildren(frag);
     }

@@ -330,31 +330,35 @@
  #referenceCollectionView .rc-card-info a {color:inherit;text-decoration:underline;text-underline-offset:3px;}
 }
 
-/* 2026-11-11: manual reference rating, warm yellow on the existing AISEL frame. */
+/* 2026-11-11: one vivid yellow for the fine star outline and selected fill. */
 @media screen {
+ #referenceCollectionView{--rc-star-color:#FFCC00}
  #referenceCollectionView .rc-rating-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:6px 0;padding:0;min-height:28px}
  #referenceCollectionView .rc-rating-label{font-size:12px;line-height:18px;font-weight:400;color:var(--aisel-muted,#6C727C)}
  #referenceCollectionView .rc-rating-buttons{display:inline-flex;align-items:center;gap:2px}
  #referenceCollectionView .rc-rating-buttons button{width:28px;min-width:28px;height:28px;padding:3px;border:0;background:transparent;border-radius:3px}
  #referenceCollectionView .rc-rating-buttons button:not(:disabled):hover{background:#FFF8E7}
  #referenceCollectionView .rc-rating-buttons button:disabled{opacity:.55}
- #referenceCollectionView .rc-rating-star{display:block;width:22px;height:22px;fill:none;stroke:#C99B24;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
- #referenceCollectionView .rc-rating-star.is-filled{fill:#F3C54B;stroke:#D1A12C}
+ #referenceCollectionView .rc-rating-star{display:block;width:22px;height:22px;color:var(--rc-star-color);fill:none;stroke:currentColor;stroke-width:1;stroke-linecap:round;stroke-linejoin:round}
+ #referenceCollectionView .rc-rating-star.is-filled{fill:currentColor}
  #referenceCollectionView .rc-card{position:relative}
- #referenceCollectionView .rc-card-rating{position:absolute;right:6px;bottom:6px;display:inline-flex;align-items:center;gap:2px;padding:3px 5px;border-radius:3px;background:rgba(255,255,255,.94);pointer-events:none}
- #referenceCollectionView .rc-card-rating .rc-rating-star{width:13px;height:13px;stroke-width:1.7}
+ #referenceCollectionView .rc-card-rating{display:flex;align-items:center;gap:2px;width:max-content;max-width:100%;height:18px;margin:0 0 2px;padding:0;background:transparent;pointer-events:none}
+ #referenceCollectionView .rc-card-rating .rc-rating-star{width:13px;height:13px}
+ #referenceCollectionView .rc-card-info .rc-card-meta{flex-wrap:nowrap}
+ #referenceCollectionView .rc-card-info time{flex:0 0 auto}
+ #referenceCollectionView .rc-card-meta .rc-card-designer{min-width:0;margin:0 0 0 auto;text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
 
-/* Reference title: pale AISEL ivory cell, screenshot marker is positional only. */
+/* Reference title: pale grey with a subtle blue tint; markers indicate placement. */
 @media screen {
- #referenceCollectionView #rcDetail .rc-title-row input{background:#F7F5EF;border:1px solid #EBE7DD;border-radius:3px;padding:0 6px;color:#34383C;box-sizing:border-box}
+ #referenceCollectionView #rcDetail .rc-title-row input{background:#F1F3F6;border:1px solid #E2E6EC;border-radius:3px;padding:0 6px;color:#34383C;box-sizing:border-box}
 }
 
 /* 2026-11-11 follow-up: one-line titles and single dividers on category tabs. */
 @media screen {
  #referenceCollectionView .rc-card-info strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
- #referenceCollectionView .rc-filters{display:flex!important;flex-wrap:nowrap!important;gap:0!important;border:1px solid #E3E5E7!important;border-radius:3px;box-sizing:border-box;height:28px;min-height:28px;overflow-x:auto}
- #referenceCollectionView .rc-filters button{flex:1 0 68px!important;width:auto!important;min-width:68px;height:26px!important;min-height:26px!important;border:0!important;border-radius:0!important;margin:0!important;white-space:nowrap;font-size:12px;line-height:18px;padding:0 6px!important}
- #referenceCollectionView .rc-filters button+button{border-left:1px solid #E3E5E7!important}
- #referenceCollectionView .rc-filters button[aria-pressed=true]{background:#E9ECF2!important;color:#34383C}
+ html:root body #referenceCollectionView .rc-filters{display:flex!important;flex-wrap:nowrap!important;gap:0!important;border:1px solid #E3E5E7!important;border-radius:3px;box-sizing:border-box;height:28px;min-height:28px;overflow-x:auto}
+ html:root body #referenceCollectionView .rc-filters button[aria-pressed]{flex:1 0 68px!important;width:auto!important;min-width:68px;height:26px!important;min-height:26px!important;border:0!important;border-radius:0!important;margin:0!important;white-space:nowrap;font-size:12px;line-height:18px;padding:0 6px!important}
+ html:root body #referenceCollectionView .rc-filters button[aria-pressed]+button[aria-pressed]{border-left:1px solid #E3E5E7!important}
+ html:root body #referenceCollectionView .rc-filters button[aria-pressed][aria-pressed=true]{background:#E9ECF2!important;color:#34383C}
 }
