@@ -201,3 +201,48 @@
  #aiselCompanyWorkspace .cg-guide-table td:last-child{border-bottom:0}
  #aiselCompanyWorkspace .cg-guide-table td>button{justify-self:start}
 }
+
+/* Attendance dashboard: record-based totals; no absence or lateness inference. */
+@media screen {
+ #aiselCompanyWorkspace .ca-workspace{display:grid;gap:6px;min-width:0;}
+ #aiselCompanyWorkspace .ca-host h2{font-size:14px;line-height:20px;font-weight:600;}
+ #aiselCompanyWorkspace .ca-host>.ce-section-heading,#aiselCompanyWorkspace .ca-host>.ce-filters{margin-bottom:6px;gap:6px;}
+ #aiselCompanyWorkspace .ca-workspace h3{font-size:12px;line-height:18px;font-weight:600;}
+ #aiselCompanyWorkspace .ca-workspace .ce-button{white-space:nowrap;min-height:28px;padding:4px 8px;}
+ #aiselCompanyWorkspace .ca-actions{margin:0;align-items:center;gap:6px;flex-wrap:wrap;}
+ #aiselCompanyWorkspace .ca-actions>.ce-muted{margin-left:auto;}
+ #aiselCompanyWorkspace .ca-tabs{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0;border-bottom:1px solid #e3e5e7;}
+ #aiselCompanyWorkspace .ca-tabs [aria-pressed=true]{background:#e9ecf2;border-color:#cbd1d9;color:#34383c;}
+ #aiselCompanyWorkspace .ca-panel{display:grid;gap:6px;min-width:0;}
+ #aiselCompanyWorkspace .ca-headline{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+ #aiselCompanyWorkspace .ca-headline input{width:160px;max-width:100%;}
+ #aiselCompanyWorkspace .ca-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+ #aiselCompanyWorkspace .ca-stat{padding:8px;border:1px solid #e3e5e7;border-radius:3px;min-width:0;}
+ #aiselCompanyWorkspace .ca-stat strong{display:block;font-size:16px;line-height:24px;font-weight:500;overflow-wrap:anywhere;}
+ #aiselCompanyWorkspace .ca-note{margin:6px 0;font-size:11px;line-height:17px;}
+ #aiselCompanyWorkspace .ca-export{display:flex;justify-content:flex-end;margin:6px 0;}
+ #aiselCompanyWorkspace .ca-table{width:100%;border-collapse:collapse;table-layout:fixed;font:inherit;}
+ #aiselCompanyWorkspace .ca-table th,#aiselCompanyWorkspace .ca-table td{padding:6px;border:1px solid #e3e5e7;text-align:center;vertical-align:middle;overflow-wrap:anywhere;}
+ #aiselCompanyWorkspace .ca-table th{font-weight:500;background:#f5f6f7;}
+ #aiselCompanyWorkspace .ca-table th:last-child{width:106px;}
+ #aiselCompanyWorkspace .ca-table .ce-button{padding-left:6px;padding-right:6px;}
+ #aiselCompanyWorkspace .ca-card{padding:10px;border:1px solid #e3e5e7;border-radius:3px;margin:6px 0 0;min-width:0;}
+ #aiselCompanyWorkspace .ca-card>.ce-button,#aiselCompanyWorkspace .ca-card>.ce-actions,#aiselCompanyWorkspace .ca-card>.ca-table{margin-top:6px;}
+ #aiselCompanyWorkspace .ca-templates{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+ #aiselCompanyWorkspace .ca-templates>.ca-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0;}
+ #aiselCompanyWorkspace .ca-templates>.ca-card p{margin:0;flex:1;}
+ #aiselCompanyWorkspace .ca-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+ @media(max-width:700px){
+  #aiselCompanyWorkspace .ca-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #aiselCompanyWorkspace .ca-table,#aiselCompanyWorkspace .ca-table tbody{display:block;width:100%;}
+  #aiselCompanyWorkspace .ca-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+  #aiselCompanyWorkspace .ca-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #e3e5e7;margin:6px 0;}
+  #aiselCompanyWorkspace .ca-table td{display:flex;flex-direction:column;align-items:flex-start;gap:3px;border:0;border-bottom:1px solid #e3e5e7;text-align:left;min-width:0;}
+  #aiselCompanyWorkspace .ca-table td:before{content:attr(data-label);color:#6c727c;font-size:11px;}
+  #aiselCompanyWorkspace .ca-table td:last-child{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;border-bottom:0;}
+  #aiselCompanyWorkspace .ca-actions>.ce-muted{width:100%;margin-left:0;}
+  #aiselCompanyWorkspace .ca-headline input{width:100%;}
+  #aiselCompanyWorkspace .ca-templates{grid-template-columns:minmax(0,1fr);}
+  #aiselCompanyWorkspace .ca-card .ce-detail-line{grid-template-columns:72px minmax(0,1fr);gap:6px;}
+ }
+}
