@@ -230,9 +230,8 @@
   const records=()=>ctx.projects().map(read).filter(Boolean),visible=()=>records().filter(r=>r.month===month&&!!r.project.archived===archived);
   const wrap=el('div','gp-workspace');host.append(wrap);
   const bar=el('div','gp-toolbar'),monthInput=el('input');monthInput.type='month';monthInput.value=month;monthInput.setAttribute('aria-label','매출·순익 기준월');
-  const sheet=el('a','ce-link','구글시트');sheet.href='https://docs.google.com/spreadsheets/d/1zkd_VXxnqw27LArmZ7lNfOhwQnTDjDGqnYrJrvRs-Xg/edit';sheet.target='_blank';sheet.rel='noopener noreferrer';
   const refresh=button('다시 확인',()=>{if(root.AiselCompanySources?.financeSnapshot){refresh.disabled=true;root.AiselCompanySources.financeSnapshot({host:wrap,request:ctx.request,message:(text,error)=>{refresh.disabled=false;ctx.message(text,error);}},data=>{if(run!==revision||account!==identity())return;finance=data;ctx.redraw();},true);}});
-  bar.append(monthInput,sheet,refresh);wrap.append(bar);
+  bar.append(monthInput,refresh);wrap.append(bar);
   const nav=el('div','gp-tabs');nav.setAttribute('role','tablist');nav.setAttribute('aria-label','매출·순익 보기');
   for(const [key,label]of Object.entries(tabs)){const b=button(label,()=>{tab=key;ctx.redraw();});b.setAttribute('role','tab');b.setAttribute('aria-selected',String(key===tab));nav.append(b);}wrap.append(nav);
   monthInput.addEventListener('change',()=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(monthInput.value)){month=monthInput.value;ctx.redraw();}});

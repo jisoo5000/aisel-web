@@ -208,7 +208,7 @@
   'company-apiUsage':source(book,2026111121,'ERP 운영대장 / Google API 사용 내역'),
   'company-replenishment':source('1Nj3gn7oJ1q0mtTdMzE8ScPlITY9FoTweB8aTVguxoO8',2026111110,'제작발주 / 판매·재고')
  };
- for(const key of ['overview','operation','product','content'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
+ for(const key of ['overview','operation','product','content','growth'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
  const management=new Set(['company-hiring','company-attendance','company-leave','company-automation','company-apiUsage','company-evaluation']);
  const link=document.createElement('a');link.id='aiselWorkspaceSheet';link.textContent='구글시트';link.className='noprint';
  link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;header.append(link);
