@@ -43,5 +43,6 @@
    }
   }
  }
- root.AiselCompanySources={finance,hr,reset};
+ root.AiselCompanySources={finance,hr,reset,financeSnapshot:(ctx,draw,force=false)=>load(ctx,'finance',draw,force)};
 })(window);
+

@@ -137,3 +137,28 @@
  #aiselCompanyWorkspace .ce-replenishment-frame{display:block;box-sizing:border-box;width:100%;height:calc(100dvh - 230px);min-height:560px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;margin-top:6px;}
  #aiselCompanyWorkspace [aria-label="판매·재고 보기"] [aria-pressed="true"]{background:#E9ECF2;}
 }
+
+
+/* Growth-profit: scoped to the existing company workspace. */
+#aiselCompanyWorkspace .gp-workspace{min-width:0;display:grid;gap:6px}
+#aiselCompanyWorkspace .gp-toolbar,#aiselCompanyWorkspace .gp-tabs,#aiselCompanyWorkspace .gp-card-head{display:flex;align-items:center;gap:6px;min-width:0}
+#aiselCompanyWorkspace .gp-toolbar{flex-wrap:wrap}
+#aiselCompanyWorkspace .gp-tabs{overflow-x:auto;white-space:nowrap;padding-bottom:2px}
+#aiselCompanyWorkspace .gp-tabs button{flex:0 0 auto;white-space:nowrap}
+#aiselCompanyWorkspace .gp-tabs button[aria-selected="true"]{background:#e9ecf2;border-color:#c9cfd6;color:#37414c}
+#aiselCompanyWorkspace .gp-body,#aiselCompanyWorkspace .gp-list{display:grid;gap:6px;min-width:0}
+#aiselCompanyWorkspace .gp-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:6px 0}
+#aiselCompanyWorkspace .gp-stat{display:grid;gap:6px;border:1px solid #e3e5e7;padding:6px;background:#fafbfc;min-width:0}
+#aiselCompanyWorkspace .gp-stat strong{font-size:14px;line-height:20px;font-weight:500;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .gp-heading{font-size:13px;line-height:20px;font-weight:500;margin:6px 0}
+#aiselCompanyWorkspace .gp-panel,#aiselCompanyWorkspace .gp-card{border:1px solid #e3e5e7;padding:6px;min-width:0;background:#fff}
+#aiselCompanyWorkspace .gp-card-head{justify-content:space-between}
+#aiselCompanyWorkspace .gp-card-head .ce-project-open{min-width:0;white-space:normal;text-align:left;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .gp-line{display:grid;grid-template-columns:92px minmax(0,1fr);gap:6px;margin:6px 0;overflow-wrap:anywhere;white-space:pre-wrap}
+#aiselCompanyWorkspace .gp-line strong{font-weight:400;color:#6c727c}
+#aiselCompanyWorkspace .gp-form input,#aiselCompanyWorkspace .gp-form select,#aiselCompanyWorkspace .gp-form textarea{min-width:0;max-width:100%;box-sizing:border-box}
+#aiselCompanyWorkspace .gp-form textarea{min-height:72px;resize:vertical}
+#aiselCompanyWorkspace .gp-form .gp-checklist,#aiselCompanyWorkspace .gp-form>.ce-muted,#aiselCompanyWorkspace .gp-form>.ce-error{grid-column:1/-1}
+#aiselCompanyWorkspace .gp-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+#aiselCompanyWorkspace .gp-details summary,#aiselCompanyWorkspace .gp-checklist summary{cursor:pointer;font-size:12px;line-height:18px;color:#6c727c}
+@media(max-width:600px){#aiselCompanyWorkspace .gp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#aiselCompanyWorkspace .gp-line{grid-template-columns:82px minmax(0,1fr)}#aiselCompanyWorkspace .gp-check-grid{grid-template-columns:minmax(0,1fr)}}
