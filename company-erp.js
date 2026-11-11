@@ -90,8 +90,8 @@
 
  function replenishmentBoard(){
   const source='https://docs.google.com/spreadsheets/d/1Nj3gn7oJ1q0mtTdMzE8ScPlITY9FoTweB8aTVguxoO8/edit';
-  const views={summary:{label:'판매 TOP20 · 신상10',gid:'2026111103',range:'A1:L45'},orders:{label:'통합 발주 상세',gid:'870159575',range:'A1:Y40'}};
-  if(replenishmentView!=='tasks')content.append(groupTitle('판매·재고','주간 판매 TOP20과 신상 10개의 반응을 같은 발주 시트에서 확인합니다.'));
+  const views={summary:{label:'판매 TOP20 · 신상10',gid:'2026111110',range:'A1:D40'},orders:{label:'통합 발주 상세',gid:'870159575',range:'A1:Y40'}};
+  if(replenishmentView!=='tasks')content.append(groupTitle('판매·재고','판매수량순 TOP20과 신상 10개를 봅니다. 표 오른쪽 위에서 최근 3·7·30일을 선택합니다.'));
   const bar=el('div','ce-filters');bar.setAttribute('aria-label','판매·재고 보기');
   for(const [key,label]of [['summary',views.summary.label],['orders',views.orders.label],['tasks','진행 업무']]){
    const b=button(label,()=>{replenishmentView=key;selectedId='';render();if(key==='tasks')load();});

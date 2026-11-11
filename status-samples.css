@@ -183,3 +183,26 @@
  html:root body .aisel-status #productsPanel .thumb[data-photo-state='failed'] {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:12px;line-height:18px;}
  html:root body .aisel-status .photo-retry {height:28px;padding:0 8px;border:1px solid var(--aisel-line);border-radius:3px;background:#FFF;color:var(--aisel-ink);font:inherit;cursor:pointer;}
 }
+
+/* 2026-11-11: group office options, clear custody stages, one-line controls. */
+html:root body .aisel-status #samplesPanel .sample-updated{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:6px 0;color:#6C727C;font-size:11px;line-height:18px}
+html:root body .aisel-status #samplesPanel .sample-refresh{font:inherit;border:1px solid #E3E5E7;background:#FFF;border-radius:3px;height:28px;white-space:nowrap;padding:0 6px}
+html:root body .aisel-status #samplesPanel .sample-views{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid #E3E5E7;border-radius:3px;overflow:hidden;margin:6px 0}
+html:root body .aisel-status #samplesPanel .sample-views button{font:inherit;font-size:12px;line-height:18px;height:28px;min-width:0;white-space:nowrap;border:0;border-radius:0;padding:0 4px;background:white}
+html:root body .aisel-status #samplesPanel .sample-views button+button{border-left:1px solid #E3E5E7}
+html:root body .aisel-status #samplesPanel .sample-views .on{background:#F6F7F8;font-weight:600}
+html:root body .aisel-status #samplesPanel .sample-list-heading h3{display:flex;flex-wrap:wrap;gap:3px 6px;margin:6px 0;font-size:14px;line-height:20px}
+html:root body .aisel-status #samplesPanel .sample-result-count{font-size:11px;line-height:18px;margin:0}
+html:root body .aisel-status #samplesPanel .sample-product-group{border-bottom:1px solid #E3E5E7;margin:0;padding:0}
+html:root body .aisel-status #samplesPanel .sample-group-summary{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 0;cursor:pointer;list-style:none}
+html:root body .aisel-status #samplesPanel .sample-group-summary::-webkit-details-marker{display:none}
+html:root body .aisel-status #samplesPanel .sample-group-summary::after{content:"⌄";flex:0 0 auto;font-size:14px}
+html:root body .aisel-status #samplesPanel details[open]>.sample-group-summary::after{content:"⌃"}
+html:root body .aisel-status #samplesPanel .sample-group-identity{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+html:root body .aisel-status #samplesPanel .sample-group-identity strong{font-size:12px;line-height:18px;font-weight:600;overflow-wrap:anywhere}
+html:root body .aisel-status #samplesPanel .sample-group-options{color:#6C727C;font-size:11px;line-height:16px}
+html:root body .aisel-status #samplesPanel .sample-group-metrics{font-size:11px;line-height:16px;text-align:right;flex:0 1 95px}
+html:root body .aisel-status #samplesPanel .sample-overdue{color:#925641;background:#FAF3EE;padding:2px 4px;border-radius:3px}
+html:root body .aisel-status #samplesPanel .sample-option-row{padding:6px;background:#F8F9FA;border-top:1px solid #EEF0F2;font-size:11px;line-height:18px}
+html:root body .aisel-status #samplesPanel .sample-option-title{display:flex;gap:6px;flex-wrap:wrap}
+html:root body .aisel-status #samplesPanel .sample-option-detail{color:#6C727C}

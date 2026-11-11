@@ -117,7 +117,7 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media(max-width:400px){.wrap{padding:14px 12px 40px}.page-header{gap:6px;align-items:flex-start}.connection{margin-top:5px;font-size:9px;gap:4px}.brand{font-size:19px}h1{font-size:16px;gap:9px}.page-title{padding-left:9px}.tab{gap:4px;min-height:44px;font-size:14px;padding:7px 2px}.grid{gap:10px}.body{padding:10px 9px}.arrive-btn{font-size:11px}.meta-label{margin-right:5px}}
 </style>
 <link rel="stylesheet" href="aisel-ui.css?v=178" />
-<link rel="stylesheet" href="status-samples.css?v=37" />
+<link rel="stylesheet" href="status-samples.css?v=20261111-office" />
 <link rel="stylesheet" href="aisel-list-controls.css?v=294" media="screen" />
 
 <style id="aisel-status-embedded-style">
@@ -148,6 +148,19 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
  root.AiselListPagination=Object.freeze({take,clear,reset,size:SIZE});
 })(window);
 </script>
+
+<style id="aisel-status-compact-20261111">
+html:root body .aisel-status #productsPanel .tabs{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:0!important;border:1px solid #E3E5E7!important;border-radius:3px;overflow:hidden}
+html:root body .aisel-status #productsPanel .tab{display:flex!important;flex-wrap:nowrap!important;justify-content:center;align-items:center;gap:3px!important;white-space:nowrap!important;min-width:0!important;min-height:28px!important;height:28px!important;padding:0 3px!important;border:0!important;border-radius:0!important;font-size:12px!important;line-height:18px!important}
+html:root body .aisel-status #productsPanel .tab>*{white-space:nowrap!important;flex-shrink:0}
+html:root body .aisel-status #productsPanel .tab+.tab{border-left:1px solid #E3E5E7!important}
+html:root body .aisel-status #productsPanel .body{padding:6px!important;gap:3px!important}
+html:root body .aisel-status #productsPanel .body .code,html:root body .aisel-status #productsPanel .body .factory,html:root body .aisel-status #productsPanel .body .blend,html:root body .aisel-status #productsPanel .body .colors{margin:0!important;padding:0!important;line-height:18px!important;border:0!important;min-height:0!important}
+html:root body .aisel-status #productsPanel .card-actions{margin-top:3px!important;padding-top:0!important;gap:6px!important}
+html:root body .aisel-status #productsPanel .arrive-row{margin:0!important;padding-top:0!important}
+@media(max-width:360px){html:root body .aisel-status #productsPanel .tab{font-size:11px!important;gap:2px!important}}
+</style>
+
 </head>
 <body>
 
@@ -190,8 +203,9 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
     </div>
     <p id="sampleError" class="sample-error" role="alert" hidden></p>
     <p id="sampleSyncWarning" class="sample-sync-warning" role="status" hidden></p>
+    <p id="sampleUpdated" class="sample-updated" role="status"></p><div id="sampleViews" class="sample-views" aria-label="샘플 보기"></div>
     <div class="sample-list-heading">
-      <h3>사무실 보유 샘플<span id="sampleResultCount" class="sample-result-count" aria-live="polite"></span></h3>
+      <h3><span id="sampleHeading">사무실 보유 샘플</span><span id="sampleResultCount" class="sample-result-count" aria-live="polite"></span></h3>
     </div>
     <button type="button" id="sampleReset" class="sample-reset" hidden>검색 초기화</button>
     <div id="sampleColumns" class="sample-columns" aria-hidden="true" hidden><span>품명</span><span>컬러 / 사이즈 · 수량</span><span>샘플 위치</span><span>담당자</span><span>출고일</span><span>반납 예정일</span></div>
@@ -630,11 +644,6 @@ function render(){
       }
       actions.appendChild(button);cardActions.appendChild(actions);
     }
-    if(window.AiselStatusEmbed && window.AiselStatusEmbed.canOpenWorkorder()){
-      var workorderButton = document.createElement('button');workorderButton.type = 'button';workorderButton.className = 'workorder-open';workorderButton.textContent = '작업지시서';
-      workorderButton.setAttribute('aria-label',(entry.pumMyeong || row.code) + ' 작업지시서 열기');
-      workorderButton.addEventListener('click',function(){window.AiselStatusEmbed.openWorkorder(row.code);});cardActions.appendChild(workorderButton);
-    }
     if(cardActions.children.length)body.appendChild(cardActions);
     card.appendChild(body);gridEl.appendChild(card);
     if(photoObserver) photoObserver.observe(thumb);
@@ -821,8 +830,8 @@ window.addEventListener('pagehide',function(){clearInterval(publicStatusTimer_);
 window.addEventListener('pageshow',function(event){if(event.persisted){clearInterval(publicStatusTimer_);publicStatusTimer_=setInterval(refreshVisibleStatus_,60000);refreshVisibleStatus_();}});
 </script>
 <script src="status-samples-flow.js?v=samples-office-20261004-v16-4"></script>
-<script src="status-samples-data.js?v=status-public-v35"></script>
-<script src="status-samples.js?v=283"></script>
+<script src="status-samples-data.js?v=20261111-office"></script>
+<script src="status-samples.js?v=20261111-office"></script>
 
 <script id="aisel-status-embed-bridge">
 (function(){

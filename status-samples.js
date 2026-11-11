@@ -1,124 +1,89 @@
-/* 사무실 보유 샘플 조회. 위치·수량 변경은 원본 시트에서 처리합니다. */
+/* Office custody board. Read-only; source dates and quantities are never inferred. */
 (function(){
-  "use strict";
-  var fields = ["name","color","size","quantity","operation","location","owner","receivedDate","returnedDate","returnDueDate","flowState","flowTotal","officeSent","officeReceived","returnSent","warehouseReceived","cafe24Reflected","sellmateReflected","flowUpdatedAt","flowUpdatedBy"];
-  var records = [], state = {status:"disconnected",records:[]};
-  var provider = null, started = false, settled = false, localError = "", el = {};
-  ["sampleSearch","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns"].forEach(function(id){el[id] = document.getElementById(id);});
-  function text(value){return value == null ? "" : String(value).trim();}
-  function missing(value){return !text(value) || /^[—–-]+$/.test(text(value));}
-  function display(value){return missing(value) ? "미입력" : text(value);}
-  function normalized(value){return text(value).toLowerCase().replace(/\s+/g,"");}
-  function node(tag,className,value){var result = document.createElement(tag);if(className) result.className = className;if(value !== undefined) result.textContent = value;return result;}
-  function responsiveValue(value,compact){
-    var result = node("span","sample-responsive-value");result.title = value;
-    result.appendChild(node("span","sample-full-value",value));
-    var shortValue = node("span","sample-compact-value",compact);shortValue.setAttribute("aria-hidden","true");result.appendChild(shortValue);return result;
-  }
-  function shortDate(value){
-    var date = provider && typeof provider.normalizeDate === "function" ? provider.normalizeDate(value) : "";
-    var year = new Intl.DateTimeFormat("en",{timeZone:"Asia/Seoul",year:"numeric"}).format(new Date());
-    return date ? (date.slice(0,4) === year ? date.slice(5) : date).replace(/-/g,"/") : missing(value) ? "—" : text(value);
-  }
-  function returnInfo(row){return provider && typeof provider.getReturnInfo === "function" ? provider.getReturnInfo(row) : {dueDate:"",completed:row.returnCompleted === true};}
-  function recordedReturn(row){return row.returnCompleted === true || !missing(row.returnedDate) || ["샘플반납","반납","반납완료"].indexOf(text(row.operation).replace(/\s+/g,"")) >= 0 || returnInfo(row).completed;}
-  function positiveQuantity(value){
-    var raw = text(value);
-    if(/^\d{1,3}(,\d{3})+$/.test(raw)) raw = raw.replace(/,/g,"");
-    if(!/^\d+$/.test(raw)) return null;
-    var quantity = Number(raw);return Number.isSafeInteger(quantity) && quantity > 0 ? quantity : null;
-  }
-  function officeRecord(row){
-    var info = window.AiselSampleFlow && typeof window.AiselSampleFlow.inspect === "function" ? window.AiselSampleFlow.inspect(row) : {valid:false,error:"진행 정보를 확인해 주세요."};
-    if(!info.valid){
-      if(row.location !== "사무실" || recordedReturn(row)) return null;
-      return {row:row,quantity:null,review:true,notice:info.error || "진행 기록을 확인해 주세요."};
-    }
-    if(info.state === "unverified"){
-      if(row.location !== "사무실" || recordedReturn(row)) return null;
-      return {row:row,quantity:positiveQuantity(row.quantity),review:false,notice:""};
-    }
-    var balance = info.counts.officeReceived - info.counts.returnSent;
-    return balance > 0 ? {row:row,quantity:balance,review:false,notice:""} : null;
-  }
-  function currentRows(){
-    var needle = normalized(sampleFilters.query);
-    return records.filter(function(item){
-      if(!needle || normalized(item.row.name).indexOf(needle) !== -1) return true;
-      // Reuse the verified product catalog. Never infer a code from a partial
-      // or duplicate name, publish new sample fields, or fetch full orders.
-      var name = normalized(item.row.name);
-      var codes = Object.keys(all).filter(function(code){return name && normalized(all[code].pumMyeong) === name;});
-      return codes.length === 1 && normalized(codes[0]).indexOf(needle) !== -1;
-    });
-  }
-  function cell(label,value,className){var result = node("span","sample-cell " + (className || ""));result.appendChild(node("span","sample-mobile-label",label));result.appendChild(node("span","",value));return result;}
-  function recordElement(item){
-    var row = item.row, record = node("article","sample-record" + (item.review ? " sample-office-review" : ""));record.dataset.recordId = row.id;
-    var line = node("div","sample-row"), primary = node("div","sample-primary-line"), secondary = node("div","sample-secondary-line");
-    var product = node("span","sample-product");product.appendChild(node("span","sample-product-name",row.name));primary.appendChild(product);
-    var quantity = item.quantity === null ? "미확인" : String(item.quantity), compactOptions = "사이즈 " + display(row.size) + " · 수량 " + quantity;
-    var fullOptions = "사이즈 " + display(row.size) + " · 사무실 보유 수량 " + quantity;
-    if(!missing(row.quantity) && text(row.quantity) !== quantity) fullOptions += " · 원본 수량 " + row.quantity;
-    var options = node("span","sample-options");options.appendChild(node("span","sample-option-main",display(row.color)));
-    var optionSub = node("span","sample-option-sub");optionSub.appendChild(responsiveValue(fullOptions,compactOptions));options.appendChild(optionSub);primary.appendChild(options);line.appendChild(primary);
-    var location = node("span","sample-cell sample-location-cell");location.appendChild(node("span","sample-mobile-label","샘플 위치"));location.appendChild(node("span","sample-location-badge office","사무실"));secondary.appendChild(location);
-    secondary.appendChild(cell("담당자","최연경","sample-owner"));
-    var operation = text(row.operation).replace(/\s+/g,""), dateLabel = ["샘플출고","출고"].indexOf(operation) >= 0 ? "출고" : "기록일";
-    var date = node("span","sample-cell sample-date");date.appendChild(node("span","sample-date-label",dateLabel + " "));date.appendChild(responsiveValue(display(row.receivedDate),shortDate(row.receivedDate)));secondary.appendChild(date);
-    var info = returnInfo(row), due = node("span","sample-cell sample-return"), dueDate = node("span","sample-return-date");
-    var dueLabel = node("span","sample-compact-value sample-due-label","반납 ");dueLabel.setAttribute("aria-hidden","true");dueDate.appendChild(dueLabel);dueDate.appendChild(responsiveValue("반납 예정일 " + (info.dueDate || "확인 필요"),info.dueDate ? shortDate(info.dueDate) : "확인 필요"));due.appendChild(dueDate);secondary.appendChild(due);
-    line.appendChild(secondary);record.appendChild(line);
-    if(item.review){var review = node("p","sample-office-review-note","진행 수량 확인 필요 · " + item.notice);record.appendChild(review);}
-    return record;
-  }
-  function render(){
-    if(document.activeElement !== el.sampleSearch) el.sampleSearch.value = sampleFilters.query;
-    el.sampleSearch.placeholder = "검색";
-    var busy = state.status === "loading", message = localError || (state.status === "error" ? text(state.message) : "");
-    el.sampleError.hidden = !message;el.sampleError.textContent = message;el.sampleList.setAttribute("aria-busy",String(busy));
-    el.sampleSyncWarning.hidden = !state.publicSyncWarning;el.sampleSyncWarning.textContent = typeof state.publicSyncWarning === "string" ? state.publicSyncWarning : state.publicSyncWarning ? "목록 반영이 지연되고 있습니다. 잠시 후 다시 확인해 주세요." : "";
-    var rows = currentRows(), known = 0n, unknown = 0, reviews = 0;
-    rows.forEach(function(item){if(item.quantity === null) unknown++;else known += BigInt(item.quantity);if(item.review) reviews++;});
-    var count = known.toLocaleString("ko-KR") + "개";
-    if(unknown) count = (known > 0n ? count + " · " : "") + "수량 미확인 " + unknown + "건";
-    el.sampleResultCount.textContent = !rows.length && (message || busy) ? "" : rows.length || settled ? count : "";el.sampleResultCount.title = "전체 검색 결과 " + rows.length + "건의 사무실 보유 수량";
-    el.sampleReset.hidden = !sampleFilters.query && sampleFilters.field === "name";
-    el.sampleList.textContent = "";var fragment = document.createDocumentFragment();
-    var displayed=window.AiselListPagination.take("samples",rows.filter(function(item){return !item.review;}).concat(rows.filter(function(item){return item.review;})),{host:el.sampleList,filter:JSON.stringify(sampleFilters),onMore:render});
-    displayed.filter(function(item){return !item.review;}).forEach(function(item){fragment.appendChild(recordElement(item));});
-    if(displayed.some(function(item){return item.review;})){var reviewSection = node("section","sample-office-review-group");reviewSection.appendChild(node("h4","sample-office-review-heading","진행 기록 확인 필요"));displayed.filter(function(item){return item.review;}).forEach(function(item){reviewSection.appendChild(recordElement(item));});fragment.appendChild(reviewSection);}
-    el.sampleList.appendChild(fragment);el.sampleEmpty.hidden = rows.length > 0;el.sampleColumns.hidden = rows.length === 0;
-    el.sampleEmpty.textContent = (busy || !settled) && !rows.length ? "사무실 샘플을 불러오고 있습니다." : message && !rows.length ? "샘플 기록을 불러오지 못했습니다. 위 안내를 확인해 주세요." : sampleFilters.query ? "사무실 보유 샘플 중 검색 결과가 없습니다." : "사무실에 보유 중인 샘플이 없습니다.";
-    if(typeof applyPendingScroll_ === "function") applyPendingScroll_();
-  }
-  function receive(next){
-    if(!next || typeof next !== "object"){localError = "샘플 기록을 확인하지 못했습니다. 잠시 후 다시 열어 주세요.";settled = true;render();return;}
-    var nextRows = [];
-    if(Array.isArray(next.records)) next.records.forEach(function(value,index){
-      if(!value || typeof value !== "object" || missing(value.name)) return;
-      var row = {};fields.forEach(function(field){row[field] = text(value[field]);});row.id = text(value.id) || "unavailable-" + index;row.returnCompleted = value.returnCompleted === true;row.canEdit = false;
-      var item = officeRecord(row);if(item) nextRows.push(item);
-    });
-    records = nextRows;state = next;settled = next.status !== "loading" || nextRows.length > 0;localError = "";render();
-  }
-  function start(){
-    if(started){render();return;}
-    started = true;provider = window.AiselSampleData || null;if(!provider){localError = "샘플 기록을 불러오지 못했습니다. 페이지를 다시 열어 주세요.";settled = true;render();return;}
-    try{
-      if(typeof provider.subscribe === "function") provider.subscribe(receive);else if(typeof provider.getState === "function") receive(provider.getState());
-      if(typeof provider.load === "function") Promise.resolve(provider.load()).then(function(next){if(next) receive(next);}).catch(function(error){localError = error && error.message || "샘플 기록을 불러오지 못했습니다. 잠시 후 다시 열어 주세요.";settled = true;render();});
-    }catch(error){localError = error && error.message || "샘플 기록을 불러오지 못했습니다.";settled = true;render();}
-  }
-  function change(key,value,replace){var next = {query:sampleFilters.query,field:sampleFilters.field};next[key] = value;navigateSamples_(next,!!replace);}
-  el.sampleSearch.addEventListener("input",function(event){var next = text(event.target.value);if(next !== sampleFilters.query) change("query",next,!!sampleFilters.query && !!next);});
-  el.sampleReset.addEventListener("click",function(){navigateSamples_({query:"",field:"name"},false);});
-  function onProductsChanged(){
-    if(!sampleFilters.query) return;
-    var shown = Array.prototype.map.call(el.sampleList.querySelectorAll(".sample-record"),function(row){return row.dataset.recordId;});
-    var next = currentRows().map(function(item){return String(item.row.id);});
-    if(JSON.stringify(shown) !== JSON.stringify(next)) render();
-  }
-  window.AiselSamples = {render:render,onProductsChanged:onProductsChanged,onShow:start,isReady:function(){return settled;}};
-  render();restoreView_(window.history.state);
+"use strict";
+var el={},records=[],state={},provider=null,started=false,view="office",expanded=new Set();
+["sampleSearch","sampleReset","sampleList","sampleEmpty","sampleResultCount","sampleError","sampleSyncWarning","sampleColumns","sampleUpdated","sampleViews","sampleHeading"].forEach(function(id){el[id]=document.getElementById(id);});
+function text(v){return v==null?"":String(v).trim();}
+function node(tag,cls,value){var e=document.createElement(tag);if(cls)e.className=cls;if(value!==undefined)e.textContent=value;return e;}
+function norm(v){return text(v).toLowerCase().replace(/\s/g,"");}
+function present(v){return !!text(v)&&!/^[-—–]+$/.test(text(v));}
+function qty(v){var s=text(v).replace(/,/g,"");return /^\d+$/.test(s)&&Number.isSafeInteger(+s)&&+s>0?+s:null;}
+function today(){return new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Seoul"}).format(new Date());}
+function date(v){return provider&&provider.normalizeDate(v)||"";}
+function short(v){return date(v)?date(v).slice(5).replace("-","/"):"미입력";}
+function done(r){return r.returnCompleted===true||present(r.returnedDate)||["반납","반납완료","샘플반납"].includes(norm(r.operation));}
+function classify(r){
+ var complete=done(r),info=window.AiselSampleFlow.inspect(r),quantity=qty(r.quantity),kind="",review="";
+ if(complete){kind="history";if(r.location==="사무실")review="반납 기록 있음 · 위치 정정 필요";}
+ else if(!info.valid){kind=r.location==="사무실"?"office":"";review="진행 수량 확인 필요";quantity=null;}
+ else if(info.state!=="unverified"){
+  var balance=info.counts.officeReceived-info.counts.returnSent;
+  if(balance>0){kind="office";quantity=balance;}else if(info.pending.warehouseReceipt>0){kind="transit";quantity=info.pending.warehouseReceipt;}
+ }else if(norm(r.operation)==="반납발송"||r.location==="이동중"){kind="transit";}
+ else if(r.location==="사무실"){kind="office";}
+ if(!kind)return null;
+ var due=date(r.returnDueDate),overdue=kind==="office"&&due&&due<today()?Math.round((Date.parse(today())-Date.parse(due))/86400000):0;
+ if(kind==="office"&&!date(r.receivedDate))review=review||"사무실 수령일 확인 필요";
+ if(quantity===null)review=review||"수량 확인 필요";
+ return {row:r,kind:kind,quantity:quantity,due:due,overdue:overdue,review:review};
+}
+function sum(items){var n=0,unknown=0;items.forEach(function(x){if(x.quantity===null)unknown++;else n+=x.quantity;});return (n?n.toLocaleString("ko-KR")+"장":"")+(unknown?(n?" · ":"")+"수량 미확인 "+unknown+"건":"")||"0장";}
+function filtered(){
+ var q=norm(sampleFilters.query);
+ return records.filter(function(x){
+  if(x.kind!==view)return false;if(!q)return true;
+  if(norm([x.row.name,x.row.color,x.row.size,x.row.owner].join(" ")).includes(q))return true;
+  var codes=Object.keys(all).filter(function(c){return norm(all[c].pumMyeong)===norm(x.row.name);});
+  return codes.length===1&&norm(codes[0]).includes(q);
+ }).sort(function(a,b){return (b.overdue||0)-(a.overdue||0)||(a.due||"9999").localeCompare(b.due||"9999")||a.row.name.localeCompare(b.row.name,"ko");});
+}
+function render(){
+ if(document.activeElement!==el.sampleSearch)el.sampleSearch.value=sampleFilters.query;
+ var busy=state.status==="loading",error=state.status==="error"?text(state.message):"";
+ el.sampleError.hidden=!error;el.sampleError.textContent=error;el.sampleList.setAttribute("aria-busy",String(busy));
+ el.sampleColumns.hidden=true;el.sampleReset.hidden=!sampleFilters.query;
+ var stamp=state.source&&state.source.syncedAt;
+ el.sampleUpdated.replaceChildren();
+ el.sampleUpdated.append(node("span","",stamp?"시트 확인 "+new Date(stamp).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false})+" · 장부 기준":"시트 연결 확인 중"));
+ var refresh=node("button","sample-refresh","새로고침");refresh.type="button";refresh.disabled=busy;refresh.onclick=function(){if(provider)provider.load(true).catch(function(){});};el.sampleUpdated.append(refresh);
+ var stale=stamp&&Date.now()-Date.parse(stamp)>36*3600000;
+ el.sampleSyncWarning.hidden=!stale&&!state.publicSyncWarning;
+ el.sampleSyncWarning.textContent=stale?"최신 반영이 지연되었습니다. 표시 시각 이후 이동·반납은 원본 시트를 확인해 주세요.":text(state.publicSyncWarning);
+ if(stale||error){var connect=node("button","sample-refresh","최신 시트 연결");connect.type="button";connect.onclick=function(){provider.connect().catch(function(){});};el.sampleUpdated.append(connect);}
+ var defs=[["office","사무실 보유"],["transit","물류 확인"],["history","반납 이력"]];
+ el.sampleViews.replaceChildren();
+ defs.forEach(function(d){var n=records.filter(function(x){return x.kind===d[0];}).length,b=node("button",view===d[0]?"on":"",d[1]+(stale?"":" "+n));b.type="button";b.setAttribute("aria-pressed",String(view===d[0]));b.onclick=function(){view=d[0];expanded.clear();render();};el.sampleViews.append(b);});
+ var items=stale ? [] : filtered(),groups=new Map();
+ items.forEach(function(x){var key=x.row.name;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(x);});
+ el.sampleHeading.textContent=view==="office"?"사무실 보유 샘플":view==="transit"?"반납 보냄 · 물류 수령 대기":"반납 기록";
+ var late=items.filter(function(x){return x.overdue>0;}).length;
+ el.sampleResultCount.textContent=stale?"최신 연결 필요":groups.size+"품목 · "+sum(items)+(late?" · 기한 경과 "+late+"건":"");
+ el.sampleList.replaceChildren();
+ groups.forEach(function(list,name){
+  var box=node("details","sample-product-group");box.open=expanded.has(view+name);
+  box.ontoggle=function(){if(box.open)expanded.add(view+name);else expanded.delete(view+name);};
+  var summary=node("summary","sample-group-summary"),identity=node("span","sample-group-identity"),metrics=node("span","sample-group-metrics");
+  identity.append(node("strong","",name),node("span","sample-group-options",list.length+"옵션 · "+sum(list)));
+  var worst=Math.max.apply(null,list.map(function(x){return x.overdue;})),due=list.find(function(x){return x.due;});
+  metrics.append(node("span",worst?"sample-overdue":"",view==="history"?"반납 기록 있음":view==="transit"?"물류 수령 대기":worst?"예정일 "+worst+"일 경과":due?"반납 예정 "+short(due.due):"반납 예정일 미입력"));
+  summary.append(identity,metrics);box.append(summary);
+  list.forEach(function(x){
+   var line=node("div","sample-option-row"),main=node("div","sample-option-title");
+   main.append(node("span","",text(x.row.color)||"컬러 미입력"),node("span","",text(x.row.size)?"사이즈 "+x.row.size:"사이즈 미입력"),node("strong","",x.quantity===null?"수량 미확인":x.quantity+"장"));line.append(main);
+   var detail=[text(x.row.owner)||"담당 미입력"];
+   if(view==="office"){detail.push("수령 "+short(x.row.receivedDate));detail.push("반납 예정 "+short(x.row.returnDueDate));}
+   if(x.review)detail.push(x.review);
+   line.append(node("div","sample-option-detail",detail.join(" · ")));box.append(line);
+  });
+  el.sampleList.append(box);
+ });
+ el.sampleEmpty.hidden=items.length>0;el.sampleEmpty.textContent=stale?"오래된 자료는 보유 목록에서 숨겼습니다. 최신 시트를 연결해 확인해 주세요.":busy?"샘플 기록을 확인하고 있습니다.":error?"최신 자료를 확인하지 못했습니다.":sampleFilters.query?"검색 결과가 없습니다.":view==="office"?"장부상 사무실 보유 샘플이 없습니다.":view==="transit"?"물류 수령을 기다리는 반납 기록이 없습니다.":"반납 기록이 없습니다.";
+ if(typeof applyPendingScroll_==="function")applyPendingScroll_();
+}
+function receive(next){state=next||{};records=(state.records||[]).map(classify).filter(Boolean);render();}
+function start(){if(started){render();return;}started=true;provider=window.AiselSampleData;provider.subscribe(receive);provider.load().catch(function(){});}
+el.sampleSearch.addEventListener("input",function(e){navigateSamples_({query:text(e.target.value),field:"name"},true);});
+el.sampleReset.addEventListener("click",function(){navigateSamples_({query:"",field:"name"},false);});
+window.AiselSamples={render:render,onProductsChanged:render,onShow:start,isReady:function(){return state.status==="ready"||state.status==="error";}};
+render();restoreView_(window.history.state);
 })();

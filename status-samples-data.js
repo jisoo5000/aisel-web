@@ -46,7 +46,7 @@
       var record = {id:"public-" + (index + 1),order:index};
       PUBLIC_FIELDS.forEach(function(key){var value = text(row[key]);if(value.length > 2000) throw error("PUBLIC_SOURCE_INVALID","공개 목록의 표시 항목을 확인해 주세요.");record[key] = value;});
       FLOW_PUBLIC_FIELDS.forEach(function(key){if(!safeFlowValue(key,row[key])) throw error("PUBLIC_SOURCE_INVALID","진행 단계와 수량을 확인해 주세요. 공개 목록을 갱신하지 않았습니다.");record[key] = text(row[key]);});
-      record.returnCompleted = getReturnInfo(row).completed;
+      record.returnCompleted = row.returnCompleted === true || filled(row.returnedDate) || ["반납","반납완료","샘플반납"].indexOf(text(row.operation).replace(/\s/g,"")) >= 0 || getReturnInfo(row).completed;
       return record;
     })};
   }
@@ -238,6 +238,19 @@
   }
   function rangeName(title){return "'" + title.replace(/'/g,"''") + "'";}
   function parseRows(values, meta, target){
+    var currentHeaders=["물류입고일","사무실입고일","관리번호","공급처명","상품명","컬러","사이즈","수량","작업구분","샘플위치","반납예정일","반납일자","담당자","연장사유"];
+    if(Array.isArray(values) && values[3] && currentHeaders.every(function(h,i){return text(values[3][i])===h;})){
+      var map={receivedDate:1,managementNumber:2,supplier:3,name:4,color:5,size:6,quantity:7,operation:8,location:9,returnDueDate:10,returnedDate:11,owner:12,extensionReason:13,flowState:14,flowTotal:15,officeSent:16,officeReceived:17,returnSent:18,warehouseReceived:19,cafe24Reflected:20,sellmateReflected:21,flowUpdatedAt:22,flowUpdatedBy:23};
+      var currentRows=values.slice(4).filter(function(r){return filled(r[4]);}).map(function(raw,index){
+        var record={id:"sample:"+encodeURIComponent(text(raw[2])||String(index+5)),canEdit:false,flowConfigured:false};
+        Object.keys(map).forEach(function(key){record[key]=text(raw[map[key]]);});
+        record.returnCompleted=filled(raw[11])||["반납","반납완료","샘플반납"].indexOf(text(raw[8]).replace(/\s/g,""))>=0;
+        if(!record.returnCompleted && /^(true|1)$/i.test(text(raw[25]))){record.operation="반납발송";record.location="이동중";}
+        return record;
+      });
+      return {records:currentRows,owners:[],source:{spreadsheetId:FILE_ID,sheetId:SHEET_ID,sheetName:target.title,syncedAt:now().toISOString(),currentLayout:true,flowConfigured:false},metadata:meta};
+    }
+
     if(!Array.isArray(values) || !values.length || HEADERS.some(function(h,i){return text(values[0][i]) !== h;})) throw error("HEADER_CHANGED","원본 시트의 항목이 변경되었습니다. 항목 구성을 확인해 주세요.");
     var flowConfigured = FLOW_HEADERS.every(function(h,i){return text(values[0][13 + i]) === h;});
     if(!flowConfigured && (FLOW_HEADERS.some(function(_,i){return text(values[0][13 + i]) !== "";}) || values.slice(1).some(function(row){return FLOW_FIELDS.some(function(_,i){return text(row[13 + i]) !== "";});}))) throw error("FLOW_HEADER_CHANGED","샘플 진행 항목의 구성을 확인해 주세요. 기존 자료를 덮어쓰지 않았습니다.");
@@ -266,12 +279,12 @@
     if(!sheet) throw error("TAB_NOT_FOUND","촬영 샘플 탭을 찾을 수 없습니다. 원본 시트를 확인해 주세요.");
     var rows = Number(sheet.properties.gridProperties && sheet.properties.gridProperties.rowCount);
     if(!Number.isInteger(rows) || rows < 2 || rows > 20000) throw error("SHEET_SIZE","원본 시트의 행 범위를 확인해야 합니다. 관리자에게 문의해 주세요.");
-    var range = rangeName(sheet.properties.title) + "!A1:W" + rows;
+    var range = rangeName(sheet.properties.title) + "!A1:AA" + rows;
     var result = await request("/values/" + encodeURIComponent(range) + "?valueRenderOption=FORMATTED_VALUE");
     var parsed = parseRows(result.values,meta,sheet.properties);parsed.source.syncedAt = sourceReadAt;return parsed;
   }
   function accept(result){
-    var accepted = emit({status:"ready",connected:true,canEdit:true,records:result.records,owners:result.owners,source:result.source,message:""});
+    var accepted = emit({status:"ready",connected:true,canEdit:!result.source.currentLayout,records:result.records,owners:result.owners,source:result.source,message:""});
     publishPublic(result,generation);return accepted;
   }
   function report(e){
@@ -279,7 +292,8 @@
     if(state.connected) emit({status:"error",message:issue.message});
     return issue;
   }
-  async function load(){
+  async function load(force){
+    if(!force && state.status === "ready") return clone(state);
     if(disposed) return clone(state);
     if(!accessToken) return state.status === "connecting" ? clone(state) : loadPublic();
     if(saving) return clone(state);
@@ -436,9 +450,9 @@
     }finally{saving = false;}
   }
   function refreshVisible(){if(!disposed && !saving && state.status !== "connecting" && (!deps.document || deps.document.visibilityState !== "hidden")) load().catch(function(){});}
-  if(deps.window && deps.window.setInterval) timer = deps.window.setInterval(refreshVisible,60000);
-  if(deps.document && deps.document.addEventListener) deps.document.addEventListener("visibilitychange",refreshVisible);
-  if(deps.window && deps.window.addEventListener) deps.window.addEventListener("focus",refreshVisible);
+  // No interval polling: load once on entry and refresh only on explicit request.
+
+
   // Prepare persistence before a user gesture; never open a login popup automatically.
   ensureAuth().catch(function(){});
   return {
