@@ -27,8 +27,13 @@ function render(type,ctx){
 }
 function glowny(ctx){
  const {host:parentHost,el,button,request,message,setDirty,setWriting}=ctx,run=epoch,type='glowny',host=el('div','cg-workspace');parentHost.append(host);
- const groups=[['candidate','개발 후보'],['market','판매순'],['eunyeong','은영님 사진'],['brand','브랜드'],['performance','판매·반품'],['validation','검증 계획']];
- let current='candidate',query='',selected=null;
+ const groups=[['guide','개발 기준'],['candidate','개발 후보'],['market','판매순'],['eunyeong','은영님 사진'],['brand','브랜드'],['performance','판매·반품'],['validation','검증 계획']];
+ let current='guide',query='',selected=null;
+ const isGuide=r=>String(r.values.planningId||'').startsWith('GUIDE-');
+ const stageIds=['GUIDE-ACQUIRE','GUIDE-EXPERIENCE','GUIDE-REPEAT'];
+ const isPrice=r=>String(r.values.planningId||'').startsWith('GUIDE-PRICE-');
+ const numeric=value=>{const text=String(value??'').replace(/,/g,'').trim();return text!==''&&/^\d+(\.\d+)?$/.test(text)?Number(text):NaN;};
+ const money=value=>Number.isFinite(value)?Math.floor(value).toLocaleString('ko-KR')+'원':'확인 필요';
  const safe=value=>{try{const u=new URL(value);return u.protocol==='https:'?u.href:null;}catch(_){return null;}};
  const link=(label,value)=>{const url=safe(value);if(!url)return null;const a=el('a','ce-link',label);a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a;};
  const appendLink=(box,label,value)=>{const a=link(label,value);if(a)box.append(a);};
@@ -51,7 +56,7 @@ function glowny(ctx){
   const head=el('div','ce-section-heading');head.append(el('div','',undefined));head.firstChild.append(el('h2','','글로니 Like'),el('p','ce-muted','사진과 판매 근거를 함께 보고, 에이슬 적용안과 다음 검증을 정리합니다.'));
   const refresh=button('새로고침',()=>fetchRows(true));refresh.disabled=!!flights[type];const headActions=el('div','ce-actions');headActions.style.marginTop='0';headActions.append(refresh,button('자료 가져오기',()=>importer()));head.append(headActions);host.append(head);
   const overview=rows().find(r=>r.values.collection==='overview');
-  if(overview){const v=overview.values,brief=el('div','cg-brief');if(v.application)brief.append(el('p','',v.application));if(v.observedAt)brief.append(el('p','ce-muted',v.observedAt));const actions=el('div','ce-actions');appendLink(actions,'구글 시트',v.sheetUrl);appendLink(actions,'구글 프레젠테이션',v.slidesUrl);if(actions.childNodes.length)brief.append(actions);host.append(brief);}
+  if(overview&&current!=='guide'){const v=overview.values,brief=el('div','cg-brief');if(v.application)brief.append(el('p','',v.application));if(v.observedAt)brief.append(el('p','ce-muted',v.observedAt));const actions=el('div','ce-actions');appendLink(actions,'구글시트',v.sheetUrl);appendLink(actions,'구글 프레젠테이션',v.slidesUrl);if(actions.childNodes.length)brief.append(actions);host.append(brief);}
  }
  function importer(){
   setDirty(true);host.replaceChildren();host.append(el('h2','','글로니 자료 가져오기'),el('p','ce-muted','준비된 자료와 사진을 이 작업공간에 추가합니다. 같은 ID의 기존 자료는 유지합니다.'));
@@ -106,19 +111,39 @@ function glowny(ctx){
   const layout=el('div','cg-detail'),media=el('div'),body=el('div');media.append(photo(record));layout.append(media,body);host.append(layout);
   field(body,'자료',[[...groups,['overview','전체 방향']].find(([key])=>key===v.collection)?.[1],v.planningId,v.referenceBrand].filter(Boolean).join(' · '));
   for(const [key,label]of [['rankLabel','판매순 관찰'],['observedAt','확인 시각·기간'],['priceText','확인 가격'],['decision','검토 판단'],['reference','관찰한 특징·기존 자산'],['mechanism','작동 원리·살 이유'],['application','에이슬 적용안'],['counterEvidence','반대 근거·반품 위험'],['evidence','판매·반품·출처 근거'],['relatedProduct','기존 상품·코디 연결'],['nextAction','다음 검증'],['reviewNote','검토 메모'],['assigneeName','검토 담당'],['dueDate','다음 확인일']])field(body,label,v[key]);
-  const links=el('div','ce-actions');appendLink(links,'원상품·근거',v.sourceUrl);appendLink(links,'구글 시트',v.sheetUrl);appendLink(links,'구글 프레젠테이션',v.slidesUrl);body.append(links);
+  const links=el('div','ce-actions');appendLink(links,'원상품·근거',v.sourceUrl);appendLink(links,'구글시트',v.sheetUrl);appendLink(links,'구글 프레젠테이션',v.slidesUrl);body.append(links);
   if(v.productCode&&/^AS-[A-Za-z0-9-]{1,100}$/.test(v.productCode))body.append(button('연결 작업지시서',()=>root.AiselUnified?.show('editor',{code:v.productCode}),'ce-link'));
   body.append(el('p','ce-muted','검토 상태 '+record.status+' · 수정 '+new Date(record.updatedAt).toLocaleString('ko-KR')),button('검토 메모·상태 수정',()=>edit(record)));
  }
+
+ function guide(){
+  const list=rows().filter(isGuide),section=el('section','cg-guide');section.setAttribute('aria-label','상품 개발 기준');host.append(section);
+  const actions=el('div','ce-actions cg-guide-actions'),add=button('기준 추가',()=>edit(null));add.disabled=!cache[type];actions.append(add);
+  const source=list.find(r=>r.values.sourceUrl),sheet=list.find(r=>r.values.sheetUrl);if(source)appendLink(actions,'개발 가이드',source.values.sourceUrl);if(sheet)appendLink(actions,'구글시트',sheet.values.sheetUrl);section.append(actions);
+  if(!list.length){section.append(el('p','ce-empty',cache[type]?'등록된 개발 기준이 없습니다. 기준을 추가하거나 자료를 가져오세요.':'저장된 개발 기준을 확인하고 있습니다.'));return;}
+  const stages=el('div','cg-guide-stages');
+  for(const key of stageIds){const r=list.find(x=>x.values.planningId===key);if(!r)continue;const v=r.values,card=el('article','cg-guide-stage');card.append(el('span','ce-muted',v.rankLabel||''),el('h3','',v.title),el('p','cg-guide-lead',v.mechanism||''),el('p','',v.application||''));const b=button('수정',()=>edit(r));b.setAttribute('aria-label',v.title+' 수정');card.append(b);stages.append(card);}if(stages.childNodes.length)section.append(stages);
+  function makeTable(title,headers,items,render){
+   if(!items.length)return;const box=el('section','cg-guide-section');box.append(el('h3','',title));const table=el('table','ce-table cg-guide-table'),thead=el('thead'),head=el('tr');for(const name of headers)head.append(el('th','',name));thead.append(head);table.append(thead);const body=el('tbody');
+   for(const r of items){const tr=el('tr'),cells=render(r);cells.forEach((value,i)=>{const td=el('td');td.dataset.label=headers[i];if(value?.nodeType)td.append(value);else td.textContent=String(value??'');tr.append(td);});const td=el('td');td.dataset.label='수정';const b=button('수정',()=>edit(r));b.setAttribute('aria-label',r.values.title+' 수정');td.append(b);tr.append(td);body.append(tr);}table.append(body);box.append(table);section.append(box);
+  }
+  const policy=list.find(r=>r.values.planningId==='GUIDE-COST'),factor=numeric(policy?.values.reference),shipping=numeric(policy?.values.mechanism),valid=Number.isFinite(factor)&&factor>0&&Number.isFinite(shipping)&&Number.isInteger(shipping)&&shipping>=0;
+  if(policy){const p=el('div','cg-guide-policy'),v=policy.values;p.append(el('strong','',v.title),el('p','',valid?'판매가 = 총제작원가 × '+factor+' + '+money(shipping)+' · 원가 한도 = (판매가 − '+money(shipping)+') ÷ '+factor:'배수와 택배비를 확인해 주세요.'),el('p','',v.application||''));if(v.counterEvidence)p.append(el('p','ce-muted',v.counterEvidence));const b=button('계산 기준 수정',()=>edit(policy));p.append(b);section.append(p);}
+  makeTable('가격별 제작원가 한도',['구분','판매가','원가 한도','적용 기준','수정'],list.filter(isPrice),r=>{const price=numeric(r.values.priceText);return[r.values.title,money(price),valid&&Number.isInteger(price)&&price>shipping?money((price-shipping)/factor):'계산 기준 확인',r.values.application||''];});
+  makeTable('상품 개발·판매 판단',['항목','핵심 기준','적용·확인','수정'],list.filter(r=>!stageIds.includes(r.values.planningId)&&!isPrice(r)&&r!==policy),r=>{const box=el('div');if(r.values.application)box.append(el('p','',r.values.application));if(r.values.counterEvidence)box.append(el('p','ce-muted','점검 · '+r.values.counterEvidence));if(r.values.nextAction)box.append(el('p','ce-muted','다음 · '+r.values.nextAction));return[r.values.title,r.values.mechanism||'',box];});
+  section.append(el('p','ce-muted','항목별 수정 후 저장하면 다음 접속에도 유지됩니다. 구글시트에는 다음 일일 연결 때 반영됩니다.'));
+ }
+
  function draw(){
   if(run!==epoch||!host.isConnected)return;host.replaceChildren();header();if(selected){const record=rows().find(r=>r.id===selected);if(record){detail(record);return;}selected=null;}
   const listRows=rows(),tabs=el('div','cg-tabs');tabs.setAttribute('role','group');tabs.setAttribute('aria-label','글로니 자료 보기');
-  for(const [key,label]of groups){const count=listRows.filter(r=>r.values.collection===key).length,b=button(label+(cache[type]?' '+count:''),()=>{current=key;query='';draw();});b.setAttribute('aria-pressed',String(current===key));tabs.append(b);}host.append(tabs);
+  for(const [key,label]of groups){const count=listRows.filter(r=>key==='guide'?isGuide(r):r.values.collection===key&&!isGuide(r)).length,b=button(label+(cache[type]?' '+count:''),()=>{current=key;query='';draw();});b.setAttribute('aria-pressed',String(current===key));tabs.append(b);}host.append(tabs);
+  if(current==='guide'){guide();return;}
   const tools=el('div','ce-filters'),searchWrap=el('label','ce-search'),search=el('input');search.type='search';search.placeholder='검색';search.setAttribute('aria-label','글로니 자료 검색');search.value=query;searchWrap.append(search);tools.append(searchWrap);host.append(tools);
   if(current==='market')host.append(el('p','ce-muted','조회 당시 판매순 관찰입니다. 실제 판매수량·순이익이나 에이슬 제작 승인을 뜻하지 않습니다.'));
   const count=el('p','ce-muted'),grid=el('div','cg-grid');host.append(count,grid);
   function fill(){
-   grid.replaceChildren();const found=listRows.filter(r=>r.values.collection===current&&[r.values.title,r.values.referenceBrand,r.values.planningId,r.values.reference,r.values.application,r.values.relatedProduct].join(' ').toLowerCase().includes(query.toLowerCase()));count.textContent=cache[type]?found.length+'개 자료':'';
+   grid.replaceChildren();const found=listRows.filter(r=>!isGuide(r)&&r.values.collection===current&&[r.values.title,r.values.referenceBrand,r.values.planningId,r.values.reference,r.values.application,r.values.relatedProduct].join(' ').toLowerCase().includes(query.toLowerCase()));count.textContent=cache[type]?found.length+'개 자료':'';
    if(!found.length)grid.append(el('p','ce-empty',cache[type]?'이 보기에 해당하는 자료가 없습니다.':'저장된 자료를 확인하고 있습니다.'));
    for(const record of found){const v=record.values,card=el('article','cg-card');if(v.imageUrl)card.append(photo(record));const content=el('div','cg-card-body'),title=button(v.title,()=>{selected=record.id;draw();},'ce-project-open');content.append(title);if(v.rankLabel||v.referenceBrand)content.append(el('p','ce-muted',[v.rankLabel,v.referenceBrand].filter(Boolean).join(' · ')));if(v.priceText)content.append(el('p','ce-muted',v.priceText));if(v.decision)content.append(el('p','cg-decision',v.decision));for(const key of ['application','reference','nextAction'])if(v[key]){content.append(el('p','cg-excerpt',v[key]));break;}content.append(button('근거·적용안 보기',()=>{selected=record.id;draw();},'ce-link'));card.append(content);grid.append(card);}
   }
@@ -129,16 +154,26 @@ function glowny(ctx){
   if(!flights[type]){const pending=(async()=>{const all=[],seen=new Set();let cursor;do{const data=await request('workflowList',{type,limit:100,...(cursor?{cursor}:{})});if(!Array.isArray(data.items))throw Error('자료 목록을 확인해야 합니다.');all.push(...data.items);cursor=data.nextCursor;if(cursor&&seen.has(cursor))throw Error('다음 자료 연결을 확인해야 합니다.');if(cursor)seen.add(cursor);}while(cursor);if(run===epoch)cache[type]=[...new Map(all.map(r=>[r.id,r])).values()];})().finally(()=>{if(run===epoch&&flights[type]===pending)delete flights[type];});flights[type]=pending;}
   try{await flights[type];if(run===epoch&&host.isConnected)draw();}catch(e){if(run===epoch&&host.isConnected){message(e.message,true);host.replaceChildren(el('h2','','글로니 Like'),el('p','ce-error','자료를 불러오지 못했습니다. 확인되지 않은 내용을 0건으로 표시하지 않습니다.'),button('다시 확인',()=>fetchRows(true)));}}
  }
- function edit(record){
-  setDirty(true);host.replaceChildren();host.append(el('h2','',record.values.title),el('p','ce-muted','이 자료의 검토 기록을 수정합니다. 생산 승인·기존 작업지시서 상태는 변경하지 않습니다.'));
-  const form=el('form','ce-form'),inputs={},keys=['decision','reviewNote','nextAction','evidence','assigneeName','dueDate'];
-  for(const f of [{key:'status',label:'자료 검토 상태',type:'select',options:D.statusOptions},...D.specs.glowny.fields.filter(f=>keys.includes(f.key))]){const label=el('label','ce-field'),input=el(f.type==='textarea'?'textarea':f.type==='select'?'select':'input');label.append(el('span','',f.label));input.name=f.key;if(f.options)for(const option of f.options){const n=el('option','',option);n.value=option;input.append(n);}else if(f.type!=='textarea')input.type=f.type==='date'?'date':'text';input.value=f.key==='status'?record.status:record.values[f.key]||'';if(f.type==='textarea')input.maxLength=4000;label.append(input);form.append(label);inputs[f.key]=input;}
-  const actions=el('div','ce-actions'),save=el('button','ce-button','저장'),cancel=button('취소',()=>{setDirty(false);draw();});save.type='submit';actions.append(save,cancel);form.append(actions);host.append(form);let saving=false;const requestId='req-'+root.crypto.randomUUID();
-  form.addEventListener('submit',async e=>{e.preventDefault();if(saving||!form.reportValidity())return;saving=true;save.disabled=cancel.disabled=true;setWriting(true);const values={...record.values};for(const key of keys)values[key]=inputs[key].value.trim();
-   try{const saved=await request('workflowSave',{type,id:record.id,expectedVersion:record.version,requestId,status:inputs.status.value,values}),checked=await request('workflowGet',{type,id:record.id});if(run!==epoch)return;if(!saved.item||!checked.item||checked.item.version<saved.item.version)throw Error('저장된 최신 기록을 확인해야 합니다.');cache[type]=(cache[type]||[]).map(r=>r.id===record.id?checked.item:r);setDirty(false);setWriting(false);draw();message('검토 기록을 저장하고 다시 확인했습니다.');}
-   catch(e){if(run===epoch){message(e.message,true);save.disabled=cancel.disabled=false;}}finally{if(run===epoch){saving=false;setWriting(false);}}
+
+ function edit(existing){
+  const record=existing||{id:'glowny-guide-'+root.crypto.randomUUID(),version:0,status:'대기',values:{title:'',collection:'brand',planningId:'GUIDE-CUSTOM-'+root.crypto.randomUUID(),order:100,decision:'검토 제안'}},guideRecord=isGuide(record),cost=record.values.planningId==='GUIDE-COST',price=isPrice(record);
+  setDirty(true);host.replaceChildren();host.append(el('h2','',existing?record.values.title:'새 개발 기준'),el('p','ce-muted',guideRecord?'개발 기준을 수정한 뒤 저장해 주세요.':'상품의 살 이유·적용안과 검토 내용을 수정합니다.'));
+  const keys=cost?['title','reference','mechanism','application','counterEvidence']:price?['title','priceText','application']:['title','mechanism','application','counterEvidence','reference','relatedProduct','decision','reviewNote','nextAction','evidence','assigneeName','dueDate'];
+  const labels={title:guideRecord?'항목명':'자료명',mechanism:guideRecord?'핵심 기준':'USP · 이 옷을 살 이유',application:'적용·확인',counterEvidence:'반대 근거·위험',reference:'참고 근거',priceText:'판매가'};if(cost){labels.reference='원가 배수';labels.mechanism='택배비';}
+  const form=el('form','ce-form cg-guide-form'),inputs={};
+  const fields=[...keys.map(key=>D.specs.glowny.fields.find(f=>f.key===key)),...(!cost&&!price?[{key:'status',label:'자료 검토 상태',type:'select',options:D.statusOptions}]:[])];
+  for(const f of fields){const label=el('label','ce-field'),number=price&&f.key==='priceText'||cost&&['reference','mechanism'].includes(f.key),input=el(number?'input':f.type==='textarea'?'textarea':f.type==='select'?'select':'input');label.append(el('span','',labels[f.key]||f.label));input.name=f.key;if(f.options)for(const option of f.options){const n=el('option','',option);n.value=option;input.append(n);}else if(number){input.type='number';input.step=cost&&f.key==='reference'?'any':'1';input.min=cost&&f.key==='mechanism'?'0':price?'1':'0.000001';input.required=true;}else if(f.type!=='textarea')input.type=f.type==='date'?'date':'text';input.value=f.key==='status'?record.status:record.values[f.key]??'';if(f.key==='title')input.required=true;input.maxLength=f.type==='textarea'?4000:2048;label.append(input);form.append(label);inputs[f.key]=input;}
+  const note=el('p','ce-muted cg-guide-calc');note.setAttribute('aria-live','polite');if(price){const recalc=()=>{const p=rows().find(r=>r.values.planningId==='GUIDE-COST'),factor=numeric(p?.values.reference),shipping=numeric(p?.values.mechanism),retail=numeric(inputs.priceText.value);note.textContent=factor>0&&Number.isInteger(shipping)&&shipping>=0&&Number.isInteger(retail)&&retail>shipping?'제작원가 한도 · '+money((retail-shipping)/factor):'판매가와 계산 기준을 확인해 주세요.';};inputs.priceText.addEventListener('input',recalc);recalc();form.append(note);}
+  const error=el('p','ce-error');error.setAttribute('role','alert');form.append(error);const actions=el('div','ce-actions'),save=el('button','ce-button','저장'),cancel=button('취소',()=>{setDirty(false);draw();});save.type='submit';actions.append(save,cancel);form.append(actions);host.append(form);let saving=false,lastFingerprint='',requestId='';
+  form.addEventListener('submit',async e=>{e.preventDefault();if(saving||run!==epoch||!host.isConnected||!form.reportValidity())return;const values={...record.values};for(const key of keys)values[key]=inputs[key].value.trim();if(!values.title){error.textContent='항목명을 입력해 주세요.';return;}
+   if(cost&&(!(numeric(values.reference)>0)||!Number.isInteger(numeric(values.mechanism))||numeric(values.mechanism)<0)||price&&(!Number.isInteger(numeric(values.priceText))||numeric(values.priceText)<=0)){error.textContent='배수·택배비·판매가를 올바른 숫자로 입력해 주세요.';return;}
+   const status=inputs.status?.value||record.status;if(status==='완료'&&!values.evidence){error.textContent='완료로 저장하려면 근거를 입력해 주세요.';return;}
+   const fingerprint=JSON.stringify({values,status});if(fingerprint!==lastFingerprint){requestId='req-'+root.crypto.randomUUID();lastFingerprint=fingerprint;}saving=true;save.disabled=cancel.disabled=true;error.textContent='';setWriting(true);
+   try{const saved=await request('workflowSave',{type,id:record.id,expectedVersion:record.version,requestId,status,values}),checked=await request('workflowGet',{type,id:record.id});if(run!==epoch||!host.isConnected)return;if(!saved.item||!checked.item||checked.item.version<saved.item.version)throw Error('저장된 최신 기록을 확인해야 합니다.');cache[type]=[...(cache[type]||[]).filter(r=>r.id!==record.id),checked.item];setDirty(false);setWriting(false);draw();message('내용을 저장하고 다시 확인했습니다.');}
+   catch(e){if(run===epoch&&host.isConnected){const text=String(e.code||'')+' '+e.message;error.textContent=text.includes('version_conflict')?'다른 곳에서 먼저 수정했습니다. 입력 내용은 유지했습니다. 내용을 복사한 뒤 취소·새로고침하여 최신 내용과 합쳐 주세요.':e.message;message(error.textContent,true);save.disabled=cancel.disabled=false;}}finally{if(run===epoch){saving=false;setWriting(false);}}
   });
  }
+
  draw();if(!cache[type])fetchRows();
 }
 function table(host,rows,el){const wrap=el('div','ce-table-scroll'),table=el('table','ce-table');for(const [i,values]of rows.entries()){const tr=el('tr');for(const v of values)tr.append(el(i===0?'th':'td','',String(v??'')));table.append(tr);}wrap.append(table);host.append(wrap);}

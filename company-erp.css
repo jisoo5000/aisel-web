@@ -170,3 +170,34 @@
 @media(max-width:600px){#aiselCompanyWorkspace .ce-recruitment-frame{height:calc(100dvh - 180px);min-height:360px;}}
 
 #aiselCompanyWorkspace .ce-recruitment-tabs [aria-pressed="true"]{background:#E9ECF2;color:#34383C;}
+
+/* Glowny editable guide. Content and pricing inputs remain in protected records. */
+#aiselCompanyWorkspace .cg-guide{display:grid;gap:6px;min-width:0}
+#aiselCompanyWorkspace .cg-guide-actions{margin-top:0}
+#aiselCompanyWorkspace .cg-guide-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+#aiselCompanyWorkspace .cg-guide-stage,#aiselCompanyWorkspace .cg-guide-policy{padding:6px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;min-width:0}
+#aiselCompanyWorkspace .cg-guide-stage h3,#aiselCompanyWorkspace .cg-guide-section h3{font-size:12px;line-height:18px;font-weight:600;margin:0 0 6px}
+#aiselCompanyWorkspace .cg-guide-stage p,#aiselCompanyWorkspace .cg-guide-policy p,#aiselCompanyWorkspace .cg-guide-table p{margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .cg-guide-stage .cg-guide-lead{font-weight:600}
+#aiselCompanyWorkspace .cg-guide-stage>span{display:block;margin-bottom:6px}
+#aiselCompanyWorkspace .cg-guide-policy{background:#F1F3F6}
+#aiselCompanyWorkspace .cg-guide-table{table-layout:fixed;width:100%;min-width:0;margin:0}
+#aiselCompanyWorkspace .cg-guide-table th,#aiselCompanyWorkspace .cg-guide-table td{padding:6px;border:1px solid #E3E5E7;vertical-align:top;min-width:0;max-width:none;white-space:pre-wrap;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .cg-guide-table th{background:#F1F3F6;font-size:12px;font-weight:600}
+#aiselCompanyWorkspace .cg-guide-table th:first-child{width:18%}
+#aiselCompanyWorkspace .cg-guide-table th:last-child{width:64px}
+#aiselCompanyWorkspace .cg-guide-form{max-width:900px;gap:6px}
+#aiselCompanyWorkspace .cg-guide-form textarea{min-height:90px;resize:vertical}
+#aiselCompanyWorkspace .cg-guide-form .ce-field:has(textarea){grid-column:1/-1}
+#aiselCompanyWorkspace .cg-guide-form>.ce-error,#aiselCompanyWorkspace .cg-guide-form>.cg-guide-calc{grid-column:1/-1;margin:0;overflow-wrap:anywhere}
+@media(max-width:640px){
+ #aiselCompanyWorkspace .cg-guide-stages{grid-template-columns:1fr}
+ #aiselCompanyWorkspace .cg-guide-table,#aiselCompanyWorkspace .cg-guide-table tbody,#aiselCompanyWorkspace .cg-guide-table tr,#aiselCompanyWorkspace .cg-guide-table td{display:block;width:100%;box-sizing:border-box}
+ #aiselCompanyWorkspace .cg-guide-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ #aiselCompanyWorkspace .cg-guide-table tr{border:1px solid #E3E5E7;border-radius:3px;margin-bottom:6px}
+ #aiselCompanyWorkspace .cg-guide-table td{display:grid;grid-template-columns:74px minmax(0,1fr);gap:6px;border:0;border-bottom:1px solid #E3E5E7}
+ #aiselCompanyWorkspace .cg-guide-table td::before{content:attr(data-label);color:#666;font-weight:500}
+ #aiselCompanyWorkspace .cg-guide-table td:first-child{background:#F1F3F6;font-weight:600}
+ #aiselCompanyWorkspace .cg-guide-table td:last-child{border-bottom:0}
+ #aiselCompanyWorkspace .cg-guide-table td>button{justify-self:start}
+}
