@@ -45,6 +45,7 @@
   const resultUrl=options.resultUrl===undefined?get(id).resultUrl:String(options.resultUrl).trim();
   if(note.length>2000||resultUrl.length>2048||resultUrl&&!/^https?:\/\/\S+$/i.test(resultUrl))throw fail('결과물 링크는 http 또는 https 주소로 입력해주세요.');
   if(options.rating!==undefined&&(!Number.isInteger(options.rating)||options.rating<0||options.rating>5))throw fail('별점은 0~5 사이에서 선택해주세요.');
+  if(options.usp!==undefined&&(typeof options.usp!=='string'||options.usp.length>500))throw fail('USP는 500자 이내로 입력해주세요.');
   const request=Symbol(id);pending.set(id,request);onChange();
   try{
    const ctx=await context();if(ctx.stamp!==scope)throw fail('로그인 계정이 변경되었습니다.');
@@ -53,11 +54,11 @@
    const version=expected+1,from=get(id).status||'active',target=ctx.app.database().ref(PATH+'/'+id);
    // Atomic leaf update: existing history is never sent back or overwritten.
    // Parent validation rejects stale versions, including concurrent devices.
-   await target.update({...(options.rating===undefined?{}:{rating:options.rating}),version,status:next,updatedAt:now,updatedBy:ctx.person.uid,updatedByEmail:ctx.person.email,note:note||'',resultUrl:resultUrl||'',['history/e'+version]:{from,to:next,at:now,uid:ctx.person.uid,email:ctx.person.email}});
+   await target.update({...(options.usp===undefined?{}:{usp:options.usp}),...(options.rating===undefined?{}:{rating:options.rating}),version,status:next,updatedAt:now,updatedBy:ctx.person.uid,updatedByEmail:ctx.person.email,note:note||'',resultUrl:resultUrl||'',['history/e'+version]:{from,to:next,at:now,uid:ctx.person.uid,email:ctx.person.email}});
    if(ctx.stamp!==identity())throw fail('로그인 계정이 변경되었습니다.');
    const saved=(await target.once('value')).val();
    if(ctx.stamp!==identity())throw fail('로그인 계정이 변경되었습니다.');
-   if(!saved||saved.version<version)throw fail('저장된 기록을 다시 확인해주세요.');
+   if(!saved||saved.version<version||saved.version===version&&(options.usp!==undefined&&saved.usp!==options.usp||options.rating!==undefined&&saved.rating!==options.rating))throw fail('저장된 기록을 다시 확인해주세요.');
    rows[id]=saved;onChange();return clone(saved);
   }catch(e){if(e.code==='lifecycle_conflict')throw e;throw Error('기록 저장을 확인하지 못했습니다. 자료를 그대로 두었습니다. 다시 시도해주세요.');}
   finally{if(pending.get(id)===request)pending.delete(id);onChange();}
@@ -562,6 +563,7 @@
     if(isComposing()){await persistDraft();return false;}
     if(!await flushNotePickers()||options.isCurrent&&!options.isCurrent())return false;
     const linkReady=linkEditor?.id!==active?.id||finishLinkEditor();
+    if(active&&uspDraft(active.id)&&!await save())return false;
     if(options.allowLocal){
       // Menu navigation needs durable local input, not a slow remote receipt.
       // Keep this record as the owner of any running upload/save until it ends.
@@ -688,15 +690,18 @@
     const id=active.id,value=ratingValue(id),busy=ratingBusy.has(id)||lifecycle?.isPending(id),disabled=!canEdit()||!lifecycle?.ready||busy;
     if(box.dataset.recordId!==id||box.children.length!==2){
       box.replaceChildren();box.dataset.recordId=id;
-      const label=document.createElement('span');label.className='rc-rating-label';label.textContent='레퍼런스 평점';
+      const input=document.createElement('input');input.type='text';input.className='rc-usp-input';input.placeholder='USP';input.maxLength=500;input.setAttribute('aria-label','USP');input.autocomplete='off';
+      input.oninput=()=>captureUsp(id,input.value);input.onblur=()=>{if(!input._composing)void save();};input.oncompositionstart=()=>{input._composing=true;};input.oncompositionend=()=>{input._composing=false;captureUsp(id,input.value);};input.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&!input._composing){e.preventDefault();void save();}};
       const stars=document.createElement('span');stars.className='rc-rating-buttons';
       for(let score=1;score<=5;score++){
         const button=document.createElement('button');button.type='button';button.dataset.rating=score;
         button.onclick=()=>setRating(id,score);stars.append(button);
       }
-      box.append(label,stars);
+      box.append(stars,input);
     }
     box.setAttribute('aria-busy',String(!!busy));
+    const input=box.querySelector('.rc-usp-input'),draft=uspDraft(id);const valueText=draft?draft.value:String(lifecycle.get(id).usp||'');
+    if(!input._composing&&input.value!==valueText)input.value=valueText;input.disabled=!canEdit()||!lifecycle?.ready;
     box.querySelectorAll('button').forEach(button=>{
       const score=Number(button.dataset.rating),filled=score<=value;
       button.innerHTML=ratingStar(filled);button.disabled=!!disabled;
@@ -722,6 +727,38 @@
     finally{ratingBusy.delete(id);if(active?.id===id)renderRating();}
   }
 
+  const uspDrafts=new Map();let uspFlight=null;
+  function uspKey(id){return 'aisel:reference-usp:'+String(window.AiselAuth?.currentUser?.()?.uid||'guest')+':'+id;}
+  function uspDraft(id){
+    const key=uspKey(id);if(uspDrafts.has(key))return uspDrafts.get(key);
+    try{const raw=JSON.parse(window.localStorage.getItem(key)||'null');if(raw&&typeof raw.value==='string'&&typeof raw.base==='string'){raw.durable=true;uspDrafts.set(key,raw);return raw;}}catch(_){}
+    return null;
+  }
+  function captureUsp(id,value){
+    if(active?.id!==id||!canEdit())return;const key=uspKey(id),prior=uspDraft(id);
+    const draft={value:String(value).slice(0,500),base:prior?prior.base:String(lifecycle.get(id).usp||''),durable:false};
+    try{window.localStorage.setItem(key,JSON.stringify(draft));draft.durable=true;}catch(_){}
+    uspDrafts.set(key,draft);
+  }
+  async function flushUsp(){
+    if(uspFlight)return uspFlight;const id=active?.id;if(!id)return true;
+    const draft=uspDraft(id);if(!draft)return true;
+    const input=$('#rcRating .rc-usp-input');if(input?._composing)return false;
+    const stamp=authStamp(),key=uspKey(id),value=draft.value.trim();
+    if(!canEdit()||!lifecycle?.ready||!active.version){message('제목이나 사진을 저장한 후 USP를 저장해주세요.',true);return false;}
+    const task=async()=>{
+      try{
+        const before=lifecycle.get(id),current=String(before.usp||'');
+        if(current!==draft.base&&current!==value)throw Error('다른 곳에서 USP가 바뀌었습니다. 입력은 보관했어요. 최신 USP: '+current);
+        if(current!==value){await lifecycle.change(id,before.status||'active',{expectedVersion:before.version,usp:value});assertAuth(stamp);}
+        if(uspDrafts.get(key)===draft){uspDrafts.delete(key);try{window.localStorage.removeItem(key);}catch(_){}}
+        else{const queued=uspDrafts.get(key);if(queued&&queued.base===draft.base){queued.base=value;try{window.localStorage.setItem(key,JSON.stringify(queued));queued.durable=true;}catch(_){queued.durable=false;}}}
+        if(active?.id===id){renderRating();message(uspDraft(id)?'입력 중':'저장됨');}
+        return !uspDraft(id);
+      }catch(error){try{assertAuth(stamp);if(active?.id===id)message(errorText(error),true);}catch(_){}return false;}
+    };
+    uspFlight=task();try{return await uspFlight;}finally{uspFlight=null;}
+  }
   function shortDate(value){const date=String(value||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(date)?date.slice(2).replaceAll('-','. '):date;}
   function categoryLabel(record){const entry=window.AiselReferenceCategories?.get(window.AiselReferenceCategories.valueForRecord(record));return entry?.name||(record?.category==='product'?'제품':record?.category==='content'?(record?.contentType==='video'?'콘텐츠 (영상)':record?.contentType==='image'?'콘텐츠 (이미지)':'콘텐츠'):categories[record?.category]||'기존 카테고리');}
   function normalizeDetail(record){record.photos||=[];record.sourceLinks=Array.isArray(record.sourceLinks)&&record.sourceLinks.length?[...record.sourceLinks]:record.sourceUrl?[record.sourceUrl]:[];record.noteEntries=Array.isArray(record.noteEntries)&&record.noteEntries.length?record.noteEntries:[{id:'note_legacy',date:record.date||String(record.createdAt||'').slice(0,10)||today(),text:record.notes||''}];record.contentType||='';return record;}
@@ -1079,7 +1116,8 @@
       }
     }
   }
-  async function save(){
+  async function save(){if(!await saveContent())return false;return flushUsp();}
+  async function saveContent(){
     clearTimeout(autoSaveTimer);
     if(isComposing()){await persistDraft();return false;}
     if(!await flushNotePickers())return false;
