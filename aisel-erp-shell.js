@@ -201,6 +201,7 @@
   sales:source(sales,2026100512,'AISEL 운영DB / 신상 성과'),
   'company-salesTable':source(sales,2026100512,'AISEL 운영DB / 신상 성과'),
   'company-finance':source('1N341S2gmxCWkpIiTy9A2Jj05C3ayWKFC-tNTS9IRX9Y',0,'광고성과 기록 / 광고성과'),
+  'company-recruitmentReferences':source('1zho3CXpJtXJH_qirPo4dcImDcFf2IK0qtI4dg-FgRqM',1112,'에이슬 채용·인력 현황 / 채용 레퍼런스'),
   'company-hiring':source('1zho3CXpJtXJH_qirPo4dcImDcFf2IK0qtI4dg-FgRqM',1102,'에이슬 채용·인력 현황 / 채용 현황'),
   'company-attendance':source(book,394706886,'ERP 운영대장 / 출퇴근'),
   'company-leave':source(book,1504605267,'ERP 운영대장 / 휴가신청'),
@@ -209,7 +210,7 @@
   'company-replenishment':source('1Nj3gn7oJ1q0mtTdMzE8ScPlITY9FoTweB8aTVguxoO8',2026111110,'제작발주 / 판매·재고')
  };
  for(const key of ['overview','operation','product','content','growth'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
- const management=new Set(['company-hiring','company-attendance','company-leave','company-automation','company-apiUsage','company-evaluation']);
+ const management=new Set(['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-apiUsage','company-evaluation']);
  const link=document.createElement('a');link.id='aiselWorkspaceSheet';link.textContent='구글시트';link.className='noprint';
  link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;header.append(link);
  function safeUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='docs.google.com'&&!u.username&&!u.password&&!u.port&&/^\/spreadsheets\/d\/[A-Za-z0-9_-]+\/edit\/?$/.test(u.pathname)?u.href:'';}catch(_){return '';}}
@@ -226,6 +227,9 @@
    const chosen=shared[category]||shared[label];
    if(category==='product')item=source(product,2026101316,'AISEL 제품·작업지시서 / 레퍼런스 수집');
    else if(chosen)item=source('1aFz93S83fvuzW24LMX7s7BA9d7x3orKnY3219Nx55Kk',chosen[0],'에이슬 레퍼런스 / '+chosen[1]);
+  }
+  if(view==='company-recruitmentReferences'){
+   const frame=document.querySelector('#aiselCompanyWorkspace .ce-recruitment-frame'),url=safeUrl(frame?.src);if(url)item={url,title:frame.title};
   }
   if(view==='company-replenishment'){
    const frame=document.querySelector('#aiselCompanyWorkspace .ce-replenishment-frame');

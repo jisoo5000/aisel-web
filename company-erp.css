@@ -162,3 +162,11 @@
 #aiselCompanyWorkspace .gp-check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
 #aiselCompanyWorkspace .gp-details summary,#aiselCompanyWorkspace .gp-checklist summary{cursor:pointer;font-size:12px;line-height:18px;color:#6c727c}
 @media(max-width:600px){#aiselCompanyWorkspace .gp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#aiselCompanyWorkspace .gp-line{grid-template-columns:82px minmax(0,1fr)}#aiselCompanyWorkspace .gp-check-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Recruitment references use the authenticated source document, without a copied data store. */
+#aiselCompanyWorkspace .ce-recruitment-frame{display:block;box-sizing:border-box;width:100%;height:calc(100dvh - 160px);min-height:420px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;}
+#aiselCompanyWorkspace .ce-recruitment-tabs{gap:6px;margin:0 0 6px;}
+#aiselCompanyWorkspace .ce-recruitment-help{margin:6px 0 0;}
+@media(max-width:600px){#aiselCompanyWorkspace .ce-recruitment-frame{height:calc(100dvh - 180px);min-height:360px;}}
+
+#aiselCompanyWorkspace .ce-recruitment-tabs [aria-pressed="true"]{background:#E9ECF2;color:#34383C;}
