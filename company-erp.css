@@ -132,3 +132,8 @@
  #aiselCompanyWorkspace .ce-list-tools>label:not(.ce-search){display:inline-flex;align-items:center;gap:4px;min-height:28px;white-space:nowrap;}
  #aiselCompanyWorkspace .ce-list-tools input[type=checkbox]{width:14px;height:14px;min-height:14px;padding:0;accent-color:#6C727C;}
 }
+
+@media screen{
+ #aiselCompanyWorkspace .ce-replenishment-frame{display:block;box-sizing:border-box;width:100%;height:calc(100dvh - 230px);min-height:560px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;margin-top:6px;}
+ #aiselCompanyWorkspace [aria-label="판매·재고 보기"] [aria-pressed="true"]{background:#E9ECF2;}
+}
