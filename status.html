@@ -124,6 +124,8 @@ h1{display:flex;align-items:center;gap:16px;margin:0;font-size:20px;font-weight:
 @media screen {
   html.aisel-status-embedded .aisel-status.wrap{padding-top:0}
   html.aisel-status-embedded .page-header{display:none}
+  /* The ERP sidebar owns navigation; keep these tabs only on the standalone page. */
+  html.aisel-status-embedded .workflow-tabs{display:none!important}
 }
 </style>
 <script>/* Render 24 records at a time; search and aggregates keep their full input. */
@@ -154,8 +156,10 @@ html:root body .aisel-status #productsPanel .tabs{display:grid!important;grid-te
 html:root body .aisel-status #productsPanel .tab{display:flex!important;flex-wrap:nowrap!important;justify-content:center;align-items:center;gap:3px!important;white-space:nowrap!important;min-width:0!important;min-height:28px!important;height:28px!important;padding:0 3px!important;border:0!important;border-radius:0!important;font-size:12px!important;line-height:18px!important}
 html:root body .aisel-status #productsPanel .tab>*{white-space:nowrap!important;flex-shrink:0}
 html:root body .aisel-status #productsPanel .tab+.tab{border-left:1px solid #E3E5E7!important}
+/* Compact text leading keeps the visible text gaps around 6px; actions use 3px gap + 3px margin. */
 html:root body .aisel-status #productsPanel .body{padding:6px!important;gap:3px!important}
-html:root body .aisel-status #productsPanel .body .code,html:root body .aisel-status #productsPanel .body .factory,html:root body .aisel-status #productsPanel .body .blend,html:root body .aisel-status #productsPanel .body .colors{margin:0!important;padding:0!important;line-height:18px!important;border:0!important;min-height:0!important}
+html:root body .aisel-status #productsPanel .body :is(.name,.code,.factory,.blend,.arrived-at){line-height:16px!important}
+html:root body .aisel-status #productsPanel .body .code,html:root body .aisel-status #productsPanel .body .factory,html:root body .aisel-status #productsPanel .body .blend,html:root body .aisel-status #productsPanel .body .colors{margin:0!important;padding:0!important;line-height:16px!important;border:0!important;min-height:0!important}
 html:root body .aisel-status #productsPanel .card-actions{margin-top:3px!important;padding-top:0!important;gap:6px!important}
 html:root body .aisel-status #productsPanel .arrive-row{margin:0!important;padding-top:0!important}
 @media(max-width:360px){html:root body .aisel-status #productsPanel .tab{font-size:11px!important;gap:2px!important}}
