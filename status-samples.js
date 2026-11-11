@@ -39,7 +39,7 @@ function filtered(){
 }
 function render(){
  if(document.activeElement!==el.sampleSearch)el.sampleSearch.value=sampleFilters.query;
- var busy=state.status==="loading",error=state.status==="error"?text(state.message):"";
+ var busy=state.status==="loading"||state.status==="connecting",error=state.status==="error"||(!state.connected&&state.message)?text(state.message):"";
  el.sampleError.hidden=!error;el.sampleError.textContent=error;el.sampleList.setAttribute("aria-busy",String(busy));
  el.sampleColumns.hidden=true;el.sampleReset.hidden=!sampleFilters.query;
  var stamp=state.source&&state.source.syncedAt;
@@ -48,16 +48,16 @@ function render(){
  var refresh=node("button","sample-refresh","새로고침");refresh.type="button";refresh.disabled=busy;refresh.onclick=function(){if(provider)provider.load(true).catch(function(){});};el.sampleUpdated.append(refresh);
  var stale=stamp&&Date.now()-Date.parse(stamp)>36*3600000;
  el.sampleSyncWarning.hidden=!stale&&!state.publicSyncWarning;
- el.sampleSyncWarning.textContent=stale?"최신 반영이 지연되었습니다. 표시 시각 이후 이동·반납은 원본 시트를 확인해 주세요.":text(state.publicSyncWarning);
- if(stale||error){var connect=node("button","sample-refresh","최신 시트 연결");connect.type="button";connect.onclick=function(){provider.connect().catch(function(){});};el.sampleUpdated.append(connect);}
+ el.sampleSyncWarning.textContent=stale?"최근 동기화가 지연되어 마지막 확인 목록을 표시합니다. 이후 이동·반납은 아직 반영되지 않았을 수 있습니다.":text(state.publicSyncWarning);
+ if(stale||error){var connect=node("button","sample-refresh","최신 시트 연결");connect.type="button";connect.disabled=busy;connect.onclick=function(){provider.connect().catch(function(){});};el.sampleUpdated.append(connect);}
  var defs=[["office","사무실 보유"],["transit","물류 확인"],["history","반납 이력"]];
  el.sampleViews.replaceChildren();
- defs.forEach(function(d){var n=records.filter(function(x){return x.kind===d[0];}).length,b=node("button",view===d[0]?"on":"",d[1]+(stale?"":" "+n));b.type="button";b.setAttribute("aria-pressed",String(view===d[0]));b.onclick=function(){view=d[0];expanded.clear();render();};el.sampleViews.append(b);});
- var items=stale ? [] : filtered(),groups=new Map();
+ defs.forEach(function(d){var n=records.filter(function(x){return x.kind===d[0];}).length,b=node("button",view===d[0]?"on":"",d[1]+" "+n);b.type="button";b.setAttribute("aria-pressed",String(view===d[0]));b.onclick=function(){view=d[0];expanded.clear();render();};el.sampleViews.append(b);});
+ var items=filtered(),groups=new Map();
  items.forEach(function(x){var key=x.row.name;if(!groups.has(key))groups.set(key,[]);groups.get(key).push(x);});
- el.sampleHeading.textContent=view==="office"?"사무실 보유 샘플":view==="transit"?"반납 보냄 · 물류 수령 대기":"반납 기록";
+ el.sampleHeading.textContent=view==="office"?(stale?"마지막 확인한 사무실 샘플":"사무실 보유 샘플"):view==="transit"?"반납 보냄 · 물류 수령 대기":"반납 기록";
  var late=items.filter(function(x){return x.overdue>0;}).length;
- el.sampleResultCount.textContent=stale?"최신 연결 필요":groups.size+"품목 · "+sum(items)+(late?" · 기한 경과 "+late+"건":"");
+ el.sampleResultCount.textContent=groups.size+"품목 · "+sum(items)+(late?" · 기한 경과 "+late+"건":"");
  el.sampleList.replaceChildren();
  groups.forEach(function(list,name){
   var box=node("details","sample-product-group");box.open=expanded.has(view+name);
@@ -77,7 +77,7 @@ function render(){
   });
   el.sampleList.append(box);
  });
- el.sampleEmpty.hidden=items.length>0;el.sampleEmpty.textContent=stale?"오래된 자료는 보유 목록에서 숨겼습니다. 최신 시트를 연결해 확인해 주세요.":busy?"샘플 기록을 확인하고 있습니다.":error?"최신 자료를 확인하지 못했습니다.":sampleFilters.query?"검색 결과가 없습니다.":view==="office"?"장부상 사무실 보유 샘플이 없습니다.":view==="transit"?"물류 수령을 기다리는 반납 기록이 없습니다.":"반납 기록이 없습니다.";
+ el.sampleEmpty.hidden=items.length>0;el.sampleEmpty.textContent=busy?"샘플 기록을 확인하고 있습니다.":error?"최신 자료를 확인하지 못했습니다.":sampleFilters.query?"검색 결과가 없습니다.":view==="office"?"장부상 사무실 보유 샘플이 없습니다.":view==="transit"?"물류 수령을 기다리는 반납 기록이 없습니다.":"반납 기록이 없습니다.";
  if(typeof applyPendingScroll_==="function")applyPendingScroll_();
 }
 function receive(next){state=next||{};records=(state.records||[]).map(classify).filter(Boolean);render();}

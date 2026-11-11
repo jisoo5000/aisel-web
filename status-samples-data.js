@@ -318,7 +318,7 @@
       await ensureAuth();
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
       var provider = new deps.firebase.auth.GoogleAuthProvider();
-      provider.addScope("https://www.googleapis.com/auth/spreadsheets");
+      provider.addScope("https://www.googleapis.com/auth/spreadsheets.readonly");
       provider.setCustomParameters({prompt:"select_account"});
       var result = await auth.signInWithPopup(provider);
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
