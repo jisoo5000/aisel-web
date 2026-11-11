@@ -78,3 +78,14 @@
  html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active{background:#E9ECF2;color:#34383C;border-color:#E3E5E7}
  html:root body.aisel-erp-shell #mainBar>.maintab[data-main]:not(.active):not(:disabled):hover{background:#F6F6F6;border-color:#E3E5E7}
 }
+
+/* Group disclosure is independent of role-owned hidden flags and sidebar toggle. */
+@media screen {
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group{display:flex;align-items:center;justify-content:space-between;gap:6px;flex:none;box-sizing:border-box;width:100%;min-height:44px;height:44px;margin:0;padding:0 16px 0 28px;border:0;border-bottom:1px solid #E3E5E7;border-radius:0;box-shadow:none;background:#fff;color:#6C727C;font-family:inherit;font-size:11px;font-weight:600;line-height:18px;text-align:left;cursor:pointer}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group:hover{background:#F6F6F6}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group:focus-visible{outline:2px solid #8A96A5;outline-offset:-2px}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group[hidden],html:root body.aisel-erp-shell #mainBar>.maintab[data-erp-group-collapsed="true"]{display:none!important}
+ html:root body.aisel-erp-shell .erp-nav-chevron{display:inline-flex;flex:0 0 16px;width:16px;height:16px}
+ html:root body.aisel-erp-shell .erp-nav-chevron svg{display:block;width:16px;height:16px}
+ html:root body.aisel-erp-shell .erp-nav-group[aria-expanded="true"] .erp-nav-chevron{transform:rotate(90deg)}
+}

@@ -30,13 +30,16 @@
   backdrop.className = 'noprint'; backdrop.tabIndex = -1; backdrop.setAttribute('aria-label', '업무 메뉴 닫기');
   header.prepend(toggle); header.before(aside, backdrop); aside.append(heading, subtitle, main);
   main.setAttribute('role', 'navigation'); main.setAttribute('aria-label', '업무 순서');
-  const labels = [];
-  let menuRole;
+  const labels = [], expandedGroups = new Set();
+  let menuRole, groupScope;
   function arrange(){
     const session=window.AiselAccess?.session,role=session?.role||'pending';
     subtitle.textContent=session?.displayName?[session.displayName,({designer:'디자이너',logistics:'물류',md:'MD',owner:'대표'})[role]].filter(Boolean).join(' · '):'업무 관리';
+    const scope=(session?.uid||'')+':'+role;
+    if(scope!==groupScope){expandedGroups.clear();groupScope=scope;menuRole=null;}
     if(role===menuRole)return;menuRole=role;
     for(const {caption}of labels)caption.remove();labels.length=0;
+    for(const button of main.querySelectorAll('.maintab'))delete button.dataset.erpGroupCollapsed;
     const groups=role==='designer'?[['내 작업',['references','designmeeting','orders']],['판매',['sales']]]
       :role==='logistics'?[['물류',['products','samples']],['기타',['orders','designmeeting','meetingmaterials','references','sales']]]
       :role==='md'?[['판매',['sales']],['상품',['references','orders','designmeeting','meetingmaterials']],['물류',['products','samples']]]
@@ -44,9 +47,19 @@
     groups.push(['업무',['operations']],['관리',['staff','permissionaudit']]);
     for(const item of window.AiselCompanyERP?.navigation()||[]){let group=groups.find(g=>g[0]===item.group);if(!group){group=[item.group,[]];groups.push(group);}group[1].push(item.view);}
     groups.forEach(([label,views])=>{
-      const caption=document.createElement('div');caption.className='erp-nav-group';caption.textContent=label;main.append(caption);
+      const caption=document.createElement('button');caption.type='button';caption.className='erp-nav-group';
+      const title=document.createElement('span');title.textContent=label;
+      const arrow=document.createElement('span');arrow.className='erp-nav-chevron';arrow.setAttribute('aria-hidden','true');
+      arrow.innerHTML='<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m5 3 5 5-5 5"/></svg>';
+      caption.append(title,arrow);main.append(caption);
       const buttons=views.map(view=>main.querySelector('[data-main="'+view+'"]')).filter(Boolean);
-      buttons.forEach(button=>main.append(button));labels.push({caption,buttons});
+      buttons.forEach(button=>{if(!button.id)button.id='erp-nav-item-'+encodeURIComponent(button.dataset.main);main.append(button);});
+      caption.setAttribute('aria-controls',buttons.map(button=>button.id).join(' '));
+      const group={caption,buttons,label};labels.push(group);
+      caption.addEventListener('click',()=>{
+        if(expandedGroups.has(label))expandedGroups.delete(label);else expandedGroups.add(label);
+        syncGroup(group);
+      });
     });
   }
   let drawerOpen = false, pinnedCollapsed = false, savedInert = [];
@@ -79,9 +92,21 @@
     toggle.title = visible ? '업무 메뉴 접기' : '업무 메뉴 열기';
     close.hidden = pinnedMenu();
   }
+  function syncGroup({caption,buttons,label}) {
+    const hidden=!buttons.some(button=>!button.hidden),expanded=expandedGroups.has(label);
+    if(caption.hidden!==hidden)caption.hidden=hidden;
+    caption.setAttribute('aria-expanded',String(expanded));
+    // Keep permission visibility separate from the user's disclosure state.
+    for(const button of buttons)button.dataset.erpGroupCollapsed=String(!expanded);
+  }
   function sync() {
+    const focusedGroup=labels.find(group=>group.caption===document.activeElement)?.label;
     arrange();
-    labels.forEach(({caption, buttons}) => { const hidden = !buttons.some(button => !button.hidden); if (caption.hidden !== hidden) caption.hidden = hidden; });
+    labels.forEach(syncGroup);
+    if(focusedGroup&&!main.contains(document.activeElement)){
+      const target=labels.find(group=>group.label===focusedGroup&&!group.caption.hidden)?.caption;
+      if(target&&!aside.hidden)target.focus();else if(drawerOpen)close.focus();else toggle.focus();
+    }
     for (const button of main.querySelectorAll('.maintab')) {
       if (button.classList.contains('active') && !button.hidden) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
