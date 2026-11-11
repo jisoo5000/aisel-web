@@ -89,3 +89,53 @@
  html:root body.aisel-erp-shell .erp-nav-chevron svg{display:block;width:16px;height:16px}
  html:root body.aisel-erp-shell .erp-nav-group[aria-expanded="true"] .erp-nav-chevron{transform:rotate(90deg)}
 }
+
+/* 2026-11-11: shared AISEL menu workspace tokens; screen only. */
+@media screen {
+ html:root body.aisel-erp-shell {
+  --aisel-menu-surface:#F1F3F6;--aisel-menu-selected:#E9ECF2;
+  --aisel-menu-line:#E3E5E7;--aisel-menu-ink:#34383C;--aisel-menu-muted:#6C727C;
+  --aisel-menu-gap:6px;--aisel-menu-control-height:28px;
+ }
+ html:root body.aisel-erp-shell #appBrandHeader {gap:var(--aisel-menu-gap);padding:6px 12px;}
+ html:root body.aisel-erp-shell #appBrandHeader #appPageTitle {font-size:14px;line-height:20px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main],
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group {white-space:nowrap;min-width:0;}
+ html:root body.aisel-erp-shell #mainBar>button.erp-nav-group {background:var(--aisel-menu-surface);}
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active {background:var(--aisel-menu-selected);}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView) {font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:var(--aisel-menu-ink);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-main {padding:6px 6px 18px;}
+ html:root body.aisel-erp-shell #erpOperationsView {padding:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-section-heading,.ce-actions,.ce-filters,.ce-list-tools,.cg-tabs),
+ html:root body.aisel-erp-shell #erpOperationsView :is(.ops-toolbar,.ops-tabs,.ops-actions),
+ html:root body.aisel-erp-shell #aiselMeetingMaterialsView :is(.amm-top,.amm-toolbar,.amm-nav,.amm-record-tools) {gap:6px 4px;align-items:center;margin-top:0;margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-section-heading {flex-wrap:wrap;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-section-heading :is(h1,h2),
+ html:root body.aisel-erp-shell #erpOperationsView>h2 {margin:0;font:600 14px/20px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:var(--aisel-menu-ink);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-section-heading>.ce-actions {margin:0;}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace .ce-button,#erpOperationsView .ops-button,#erpOperationsView .ops-toolbar button,#erpOperationsView .ops-actions button,#erpOperationsView .ops-tabs button) {
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  height:var(--aisel-menu-control-height);min-height:var(--aisel-menu-control-height);padding:0 8px;
+  border:1px solid var(--aisel-menu-line);border-radius:3px;box-shadow:none;
+  background:#fff;color:var(--aisel-menu-ink);font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);
+  white-space:nowrap;text-decoration:none;
+ }
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace .ce-filters,#aiselCompanyWorkspace .ce-list-tools,#erpOperationsView .ops-toolbar) :is(select,input:not([type=checkbox]):not([type=radio])) {
+  box-sizing:border-box;height:28px;min-height:28px;padding-top:0;padding-bottom:0;border:1px solid var(--aisel-menu-line);border-radius:3px;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:var(--aisel-menu-muted);
+ }
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace .ce-filters,#erpOperationsView .ops-toolbar) select {text-align:center;text-align-last:center;}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace .cg-tabs,#erpOperationsView .ops-tabs) {display:flex;flex-wrap:nowrap;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding-bottom:2px;}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace .cg-tabs,#erpOperationsView .ops-tabs) button:is([aria-pressed=true],[aria-selected=true]) {background:var(--aisel-menu-selected);font-weight:600;color:var(--aisel-menu-ink);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-form,.ce-form-grid),
+ html:root body.aisel-erp-shell #erpOperationsView .ops-form-grid {gap:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-detail,.ce-flow,.ce-project,.ce-stat),
+ html:root body.aisel-erp-shell #erpOperationsView :is(.ops-form,.ops-notice) {padding:6px;border-color:var(--aisel-menu-line);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-notice,.ce-filters,.ce-form,.ce-detail,.ce-table-scroll,.ce-connection) {margin-top:6px;margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-table th,
+ html:root body.aisel-erp-shell #erpOperationsView th {background:var(--aisel-menu-surface);color:var(--aisel-menu-muted);font-weight:400;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-table :is(th,td),
+ html:root body.aisel-erp-shell #erpOperationsView :is(th,td) {padding:6px;border-color:var(--aisel-menu-line);}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView) [hidden] {display:none!important;}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView) button:focus-visible {outline:2px solid #8A96A5;outline-offset:2px;}
+}
+
