@@ -139,3 +139,37 @@
  html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView) button:focus-visible {outline:2px solid #8A96A5;outline-offset:2px;}
 }
 
+/* Shared AISEL workspace rules, 2026-11-11. Screen-only; production print is untouched. */
+@media screen {
+ html:root body.aisel-erp-shell{--aisel-workspace-gap:6px;--aisel-workspace-tint:#F1F3F6;padding-top:var(--aisel-header-offset,64px)!important;}
+ html:root body.aisel-erp-shell #appBrandHeader{display:grid!important;grid-template-columns:28px minmax(0,1fr) auto 44px;align-items:center;gap:6px;padding:6px 12px;min-height:44px;}
+ html:root body.aisel-erp-shell #aiselErpMenuToggle{grid-column:1;grid-row:1;width:28px;height:28px;min-height:28px;padding:5px;flex-basis:28px;border:0;background:transparent;}
+ html:root body.aisel-erp-shell #aiselErpMenuToggle svg{width:18px;height:18px;}
+ html:root body.aisel-erp-shell #appBrandHeader h1{grid-column:2;grid-row:1;display:flex;gap:6px;min-width:0;margin:0;align-items:center;font-size:12px;line-height:18px;}
+ html:root body.aisel-erp-shell #appBrandHeader .app-brand{font-size:12px;font-weight:600;line-height:18px;white-space:nowrap;}
+ html:root body.aisel-erp-shell #appBrandHeader #appPageTitle{font-size:12px;font-weight:600;line-height:18px;white-space:normal;overflow-wrap:anywhere;padding-left:6px;}
+ html:root body.aisel-erp-shell #aiselSessionButton{grid-column:4;grid-row:1;width:44px;min-width:0;min-height:28px;height:28px;padding:0;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);border:0;background:transparent;color:#6C727C;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet{grid-column:3;grid-row:1;display:inline-flex;align-items:center;justify-content:flex-end;min-height:28px;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:transparent;color:#6C727C;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);white-space:nowrap;text-decoration:none;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet:hover{color:#34383C;text-decoration:underline;text-underline-offset:3px;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet[aria-disabled="true"]{color:#9298A1;cursor:default;text-decoration:none;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet[hidden]{display:none!important;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet:focus-visible{outline:1px solid #8A96A5;outline-offset:2px;}
+ html:root body.aisel-erp-shell #productProgressFrame{height:calc(100dvh - var(--aisel-header-offset,64px));}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-main{padding:6px;}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView,#aiselStaffDirectory,#aiselPermissionAudit,#aiselMeetingMaterialsView) h2{font:600 14px/20px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-section-heading,.ce-filters,.ce-list-tools,.ce-actions,.ce-flow-head){gap:6px;margin-top:0;margin-bottom:6px;flex-wrap:wrap;min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-section-heading>div,.ce-filters>*,.ce-list-tools>*,.ce-actions>*){min-width:0;max-width:100%;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-project-list,.ce-projects,.ce-flows,.cg-grid,.cg-detail){gap:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-notice{margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-notice:empty{display:none;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(.ce-project,.ce-flow,.cg-card-body){padding:6px;border-color:#E3E5E7;border-radius:3px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-button{font-size:12px;line-height:18px;border-color:#E3E5E7;border-radius:3px;padding:4px 6px;min-height:28px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(button,a).ce-link{border:0;box-shadow:none;background:transparent;color:#6C727C;font-size:12px;line-height:18px;overflow-wrap:anywhere;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(button[aria-pressed="true"],.ce-table th){background:#F1F3F6;color:#34383C;}
+}
+@media screen and (max-width:480px){
+ html:root body.aisel-erp-shell #appBrandHeader{grid-template-columns:28px minmax(0,1fr) 44px;padding:6px;}
+ html:root body.aisel-erp-shell #aiselSessionButton{grid-column:3;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet{grid-column:2 / 4;grid-row:2;justify-self:end;min-height:24px;}
+}
+@media print{#aiselWorkspaceSheet{display:none!important;}}

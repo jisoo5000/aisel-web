@@ -158,3 +158,35 @@
  html:root body #aiselMeetingMaterialsView .amm-record-frame {display:block;width:100%;height:max(480px,calc(100dvh - 230px));border:1px solid var(--aisel-line,#E3E5E7);border-radius:3px;background:#fff;}
  html:root body #aiselMeetingMaterialsView .amm-title a {color:inherit;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere;}
 }
+
+
+/* Mobile meeting workspace: app records first; source documents stay in the header. */
+@media screen{
+ html:root body #aiselMeetingMaterialsView{padding:6px;box-sizing:border-box;}
+ html:root body #aiselMeetingMaterialsView :is(.amm-top,.amm-controls,.amm-navigation,.amm-actions,.amm-presenter){gap:6px;margin:0 0 6px;flex-wrap:wrap;min-width:0;}
+ html:root body #aiselMeetingMaterialsView .amm-top h2{font-size:14px;line-height:20px;}
+ html:root body #aiselMeetingMaterialsView .amm-top p{font-size:12px;line-height:18px;}
+ html:root body #aiselMeetingMaterialsView :is(.amm-print,.amm-export,.amm-records-open){display:none!important;}
+ html:root body #aiselMeetingMaterialsView .amm-person>h3{display:none;}
+ html:root body #aiselMeetingMaterialsView :is(.amm-directory,.amm-pages,.amm-grid,.amm-right){gap:6px;}
+ html:root body #aiselMeetingMaterialsView .amm-page{padding:6px;border-color:#E3E5E7;border-radius:3px;min-width:0;}
+ html:root body #aiselMeetingMaterialsView .amm-page-head{gap:6px;padding:6px;margin-bottom:6px;background:#F1F3F6;border-color:#E3E5E7;align-items:flex-start;}
+ html:root body #aiselMeetingMaterialsView .amm-meeting-meta{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body #aiselMeetingMaterialsView .amm-meeting-meta time{font:inherit;color:#6C727C;}
+ html:root body #aiselMeetingMaterialsView .amm-meeting-meta strong{font:600 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:#34383C;}
+ html:root body #aiselMeetingMaterialsView .amm-meeting-card{gap:6px;padding:6px;margin-bottom:6px;border-color:#E3E5E7;border-radius:3px;}
+ html:root body #aiselMeetingMaterialsView .amm-controls>label{min-width:0;max-width:100%;}
+ html:root body #aiselMeetingMaterialsView :is(button,input,select,textarea){max-width:100%;box-sizing:border-box;}
+ html:root body #aiselMeetingMaterialsView .amm-actions{display:flex;justify-content:flex-end;}
+ html:root body #aiselMeetingMaterialsView .amm-actions button{white-space:normal;height:auto;min-height:32px;}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form{display:grid;gap:6px;}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form label{display:grid;gap:6px;min-width:0;}
+ html:root body #aiselMeetingMaterialsView .amm-decision-form :is(select,textarea){width:100%;font:400 16px/24px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body #aiselMeetingMaterialsView .amm-resource-link{border:0;border-radius:0;background:transparent;box-shadow:none;font-size:12px;line-height:18px;}
+}
+@media screen and (max-width:600px){
+ html:root body #aiselMeetingMaterialsView .amm-grid{grid-template-columns:minmax(0,1fr);}
+ html:root body #aiselMeetingMaterialsView .amm-photos{min-height:0;max-height:320px;padding:6px;}
+ html:root body #aiselMeetingMaterialsView .amm-photos img{max-height:300px;}
+ html:root body #aiselMeetingMaterialsView .amm-controls{display:grid;grid-template-columns:minmax(0,1fr);}
+}

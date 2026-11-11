@@ -178,3 +178,81 @@
     update();
   }
 })();
+
+/* 2026-11-11: one source link and compact heading for every authorized workspace.
+   This registry is navigation only: it never fetches or synchronizes Google data. */
+(function(root){
+ 'use strict';
+ const header=document.getElementById('appBrandHeader');
+ if(!header||document.getElementById('aiselWorkspaceSheet'))return;
+ const book='1zkd_VXxnqw27LArmZ7lNfOhwQnTDjDGqnYrJrvRs-Xg';
+ const product='1i3IoFbY5lfUX80fH608f59EKk23mkSAkIs_pRGjlNPA';
+ const meetings='1M-SIsip6OwpFVuk6kgpvECKcR-8hJcUkHsLvaX56TBQ';
+ const sales='1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0';
+ const source=(id,gid,title)=>({url:'https://docs.google.com/spreadsheets/d/'+id+'/edit#gid='+gid,title});
+ const registry={
+  orders:source(product,2026100410,'AISEL 제품·작업지시서 / 작업지시서'),
+  editor:source(product,2026100410,'AISEL 제품·작업지시서 / 작업지시서'),
+  products:source(product,2026100410,'AISEL 제품·작업지시서 / 작업지시서'),
+  references:source('1aFz93S83fvuzW24LMX7s7BA9d7x3orKnY3219Nx55Kk',2026110201,'에이슬 레퍼런스 / 콘텐츠 사진'),
+  designmeeting:source(meetings,2026101101,'AISEL 디자인회의 / 디자인회의 검토대기'),
+  meetingmaterials:source(meetings,2026101101,'AISEL 디자인회의 / 디자인회의 검토대기'),
+  samples:source('16sQmAVKB07qrhOgzacozifIATmeqalhqGQViCgY_Pug',1840754350,'촬영샘플관리 / 촬영샘플관리'),
+  sales:source(sales,2026100512,'AISEL 운영DB / 신상 성과'),
+  'company-salesTable':source(sales,2026100512,'AISEL 운영DB / 신상 성과'),
+  'company-finance':source('1N341S2gmxCWkpIiTy9A2Jj05C3ayWKFC-tNTS9IRX9Y',0,'광고성과 기록 / 광고성과'),
+  'company-hiring':source('1zho3CXpJtXJH_qirPo4dcImDcFf2IK0qtI4dg-FgRqM',1102,'에이슬 채용·인력 현황 / 채용 현황'),
+  'company-attendance':source(book,394706886,'ERP 운영대장 / 출퇴근'),
+  'company-leave':source(book,1504605267,'ERP 운영대장 / 휴가신청'),
+  'company-automation':source(book,1099923818,'ERP 운영대장 / 원본연결'),
+  'company-apiUsage':source(book,2026111121,'ERP 운영대장 / Google API 사용 내역'),
+  'company-replenishment':source('1Nj3gn7oJ1q0mtTdMzE8ScPlITY9FoTweB8aTVguxoO8',2026111110,'제작발주 / 판매·재고')
+ };
+ for(const key of ['overview','operation','product','content'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
+ const management=new Set(['company-hiring','company-attendance','company-leave','company-automation','company-apiUsage','company-evaluation']);
+ const link=document.createElement('a');link.id='aiselWorkspaceSheet';link.textContent='구글시트';link.className='noprint';
+ link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;header.append(link);
+ function safeUrl(value){try{const u=new URL(value);return u.protocol==='https:'&&u.hostname==='docs.google.com'&&!u.username&&!u.password&&!u.port&&/^\/spreadsheets\/d\/[A-Za-z0-9_-]+\/edit\/?$/.test(u.pathname)?u.href:'';}catch(_){return '';}}
+ function selection(){
+  const view=root.AiselUnified?.view,s=root.AiselAccess?.session;
+  // A company-wide workbook must never expand a staff member's assigned-record access.
+  if(!view||s?.active!==true||s.role!=='owner'||!s.uid||s.legacy||s.passwordChangeRequired)return null;
+  if(management.has(view)&&!root.AiselManagement?.unlocked)return null;
+  const spec=root.AiselWorkflowDomain?.specs?.[String(view).replace(/^company-/,'')];
+  let item=spec?.sheetId!==undefined?source(book,spec.sheetId,'ERP 운영대장 / '+spec.sheet):registry[view];
+  if(view==='references'){
+   const tab=document.querySelector('#referenceCollectionView .rc-filters [aria-pressed="true"]'),label=tab?.textContent.trim(),category=tab?.dataset.category;
+   const shared={marketing:[2026103102,'마케팅'],idea:[2026110203,'아이디어'],'촬영':[2026103103,'촬영'],'코디':[2026103104,'코디']};
+   const chosen=shared[category]||shared[label];
+   if(category==='product')item=source(product,2026101316,'AISEL 제품·작업지시서 / 레퍼런스 수집');
+   else if(chosen)item=source('1aFz93S83fvuzW24LMX7s7BA9d7x3orKnY3219Nx55Kk',chosen[0],'에이슬 레퍼런스 / '+chosen[1]);
+  }
+  if(view==='company-replenishment'){
+   const frame=document.querySelector('#aiselCompanyWorkspace .ce-replenishment-frame');
+   const url=safeUrl(frame?.src);if(url)item={url,title:'제작발주 / '+frame.title};
+  }
+  if(view==='meetingmaterials'&&document.querySelector('#aiselMeetingMaterialsView.amm-records-mode')){
+   const frame=document.querySelector('.amm-record-frame'),url=safeUrl(frame?.src);if(url)item={url,title:'디자인회의 / 회의 기록'};
+  }
+  return {view,item};
+ }
+ function refresh(){
+  const result=selection();link.hidden=!result;
+  const url=safeUrl(result?.item?.url),title=result?.item?.title;
+  if(url){link.href=url;link.removeAttribute('aria-disabled');link.removeAttribute('tabindex');link.title=title;link.setAttribute('aria-label','구글시트 · '+title);}
+  else{link.removeAttribute('href');link.setAttribute('aria-disabled','true');link.tabIndex=-1;link.title='이 화면은 앱에서 관리하며 연결된 구글시트가 없습니다.';link.setAttribute('aria-label','구글시트 연결 없음');}
+ }
+ link.addEventListener('click',event=>{refresh();if(link.hidden||!link.hasAttribute('href'))event.preventDefault();});
+ for(const name of ['aisel-workspace-route','aisel-access-change','aisel-session-change','aisel-management-locked'])root.addEventListener(name,refresh);
+ // Track locally rendered sub-tabs only; no timer and no extra network requests.
+ let queued=false;
+ const observer=new MutationObserver(records=>{
+  if(!records.some(r=>r.target!==header&&!header.contains(r.target)))return;
+  if(queued)return;queued=true;queueMicrotask(()=>{queued=false;refresh();});
+ });
+ observer.observe(document.body,{childList:true,subtree:true});
+ function measure(){const height=Math.ceil(header.getBoundingClientRect().height);if(height>0)document.body.style.setProperty('--aisel-header-offset',(height+6)+'px');}
+ if(root.ResizeObserver)new ResizeObserver(measure).observe(header);else root.addEventListener('resize',measure);
+ refresh();measure();
+ root.AiselWorkspaceUI=Object.freeze({refresh,sourceFor:()=>selection()?.item||null});
+})(window);

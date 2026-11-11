@@ -108,7 +108,7 @@
  function photoList(record,reference){const result=[],seen=new Set(),meetingPhotos=Array.isArray(record.photos)?record.photos:record.photo?[{original:record.photo,thumb:record.photo}]:Object.values(record.photos||{});for(const photo of [...(reference?.photos||[]),...meetingPhotos]){const original=http(photo.original||photo.url),thumb=http(photo.thumb||photo.thumbnail||original),key=photo.hash||original||thumb;if(!key||seen.has(key))continue;seen.add(key);result.push({original:original||thumb,thumb,hash:photo.hash});}return result;}
  function page(item,index,total){
   const {record,reference,row}=item,article=el('article',undefined,'amm-page'),head=el('header',undefined,'amm-page-head');
-  head.append(el('strong',dateLabel(row.date)+' · '+row.designer),el('span',String(index+1).padStart(2,'0')+' / '+total));article.append(head);
+  const meta=el('div',undefined,'amm-meeting-meta');meta.append(el('time',dateLabel(row.date)),el('strong',row.designer||'담당자 미지정'));head.append(meta,el('span',String(index+1).padStart(2,'0')+' / '+total));article.append(head);
   const grid=el('div',undefined,'amm-grid'),left=el('div',undefined,'amm-left'),photos=el('div',undefined,'amm-photos');
   for(const [i,p] of item.photos.slice(0,1).entries()){const img=el('img');img.alt=(row.title||'회의 레퍼런스')+' 사진 '+(i+1);img.loading='lazy';img.decoding='async';img.dataset.original=p.original;img.src=i===0&&row.reference?root.AiselGalleryIndex.imageSource('references',row.refId,p.thumb):p.thumb;photos.append(img);}
   if(!item.photos.length)photos.append(el('p','등록된 사진이 없습니다.'));
@@ -227,7 +227,7 @@
    for(const group of matches){const open=button('',()=>openGroup(group));open.className='amm-meeting-card';const photo=group.items[0]?.thumbnail;
     if(http(photo)){const img=el('img');img.alt=(person||'미지정')+' '+dateLabel(group.date)+' 대표 사진';img.loading='lazy';img.decoding='async';img.src=photo;open.append(img);}
     else open.append(el('span','사진 없음','amm-empty-photo'));
-    open.append(el('time',dateLabel(group.date)));open.title=group.items.length+'개 자료';column.append(open);
+    const meta=el('div',undefined,'amm-meeting-meta');meta.append(el('time',dateLabel(group.date)),el('strong',person||'담당자 미지정'));open.prepend(meta);open.title=group.items.length+'개 자료';column.append(open);
    }
    if(!matches.length)column.append(el('p',archived?'보관한 회의가 없습니다.':'예정된 회의가 없습니다.'));
    box.append(column);
@@ -254,7 +254,7 @@
   ensure();visible=true;pane.hidden=false;document.body.classList.add('aisel-meeting-materials-open');$('.amm-legacy').hidden=true;
   const ready=(async()=>{const requested=routeSelection(hash);archived=false;
    if(requested.date){directory=false;setPeople(requested.designer);$('.amm-date').value=requested.date;$('.amm-designer').value=requested.designer;await loadSelection({refresh:false});}
-   else if(requested.list)await showDirectory({archive:false});else await showRecords();return true;
+   else if(requested.sheet)await showRecords();else await showDirectory({archive:false});return true;
   })();readyFlight=ready;return background?Promise.resolve(true):ready;
  }
  async function archiveSelection(){
