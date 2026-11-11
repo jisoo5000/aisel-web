@@ -98,7 +98,8 @@
   const previous=button('이전',()=>movePresentation(-1)),next=button('다음',()=>movePresentation(1)),exit=button('발표 닫기',()=>closePresentation());previous.className='amm-previous';next.className='amm-next';exit.className='amm-exit';
   const position=el('span','','amm-position');position.setAttribute('aria-live','polite');presenter.append(previous,position,next,exit);
   pane.append(top,navigation,controls,presenter,el('p','','amm-count'),status,el('div',undefined,'amm-records noprint'),el('div',undefined,'amm-directory'),el('div',undefined,'amm-pages'));
-  document.getElementById('mainBar').parentNode.append(pane);
+  // Navigation may live in the fixed sidebar; content belongs to the page body.
+  document.body.append(pane);
   for(const input of [date,person])input.addEventListener('change',()=>{if(!canLeave()){if(loaded[0]){date.value=loaded[0].row.date;person.value=loaded[0].row.designer;}return;}epoch++;loaded=[];$('.amm-pages').replaceChildren();if($('.amm-more'))$('.amm-more').hidden=true;busy(false);message('회의 열기를 누르면 선택한 회의를 불러옵니다.');$('.amm-count').textContent='';});
  }
  function field(label,value,cls=''){const block=el('div',undefined,'amm-field '+cls);block.append(el('strong',label),el('div',text(value),'amm-value'));return block;}
