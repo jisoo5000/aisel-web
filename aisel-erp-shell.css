@@ -26,7 +26,8 @@
   html:root body.aisel-erp-shell #productProgressFrame {height:calc(100dvh - 64px);}
   html:root body.aisel-erp-shell :is(#aiselErpMenuToggle,.erp-nav-close):focus-visible {outline:2px solid #34383C;outline-offset:2px;}
 }
-@media screen and (min-width:1024px) {
+@media screen and (min-width:1024px) and (orientation:landscape), screen and (min-width:1024px) and (hover:hover) and (pointer:fine) {
+  html:root body.aisel-erp-shell :is(#aiselErpMenuToggle,.erp-nav-close) {display:none!important;}
   html:root body.aisel-erp-shell {padding:88px 32px 32px calc(var(--erp-sidebar) + 32px);background:#F6F7F8!important;}
   html:root body.aisel-erp-shell #aiselErpNavigation {z-index:50;width:var(--erp-sidebar);padding:24px 16px;}
   html:root body.aisel-erp-shell #appBrandHeader {left:var(--erp-sidebar);width:calc(100% - var(--erp-sidebar));padding:14px 24px;min-height:64px;}
@@ -39,8 +40,6 @@
   html:root body.aisel-erp-shell #galleryView #galleryTabs {max-width:600px;}
   html:root body.aisel-erp-shell #editorView {background:#FFF;}
   html:root body.aisel-erp-shell #scrollFabWrap {right:24px;}
-  html:root body.aisel-erp-shell.erp-sidebar-collapsed {padding-left:32px;}
-  html:root body.aisel-erp-shell.erp-sidebar-collapsed #appBrandHeader {left:0;width:100%;}
 }
 @media screen and (max-width:359px) {
   html:root body.aisel-erp-shell #appBrandHeader {gap:6px;padding-left:8px;padding-right:8px;}
@@ -70,3 +69,10 @@
  html:root body.aisel-erp-shell .erp-sales-cue:focus-visible{outline:2px solid #8A96A5;outline-offset:2px}
 }
 @media print{#aiselDesignerSalesCue{display:none!important}}
+
+/* 2026-11-11: one horizontal rule per menu item; no stacked card outlines. */
+@media screen {
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main]{border:0;border-bottom:1px solid #E3E5E7;border-radius:0;box-shadow:none;background:#fff}
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active{background:#E9ECF2;color:#34383C;border-color:#E3E5E7}
+ html:root body.aisel-erp-shell #mainBar>.maintab[data-main]:not(.active):not(:disabled):hover{background:#F6F6F6;border-color:#E3E5E7}
+}

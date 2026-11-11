@@ -4,7 +4,7 @@
   const main = document.getElementById('mainBar');
   const header = document.getElementById('appBrandHeader');
   if (!main || !header || !window.AiselUnified || document.getElementById('aiselErpNavigation')) return;
-  const media = window.matchMedia('(min-width: 1024px)');
+  const media = window.matchMedia('(min-width: 1024px) and (orientation: landscape), (min-width: 1024px) and (hover: hover) and (pointer: fine)');
   const body = document.body;
   const aside = document.createElement('aside');
   aside.id = 'aiselErpNavigation'; aside.className = 'noprint';
@@ -41,7 +41,7 @@
       buttons.forEach(button=>main.append(button));labels.push({caption,buttons});
     });
   }
-  let drawerOpen = false, desktopCollapsed = false, savedInert = [];
+  let drawerOpen = false, savedInert = [];
   function restoreBackground() {
     savedInert.forEach(([element, wasInert]) => { element.inert = wasInert; }); savedInert = [];
   }
@@ -57,13 +57,13 @@
     } else { aside.removeAttribute('role'); aside.removeAttribute('aria-modal'); }
     render();
     if (drawerOpen) close.focus();
-    else if (returnFocus) toggle.focus();
+    else if (returnFocus && !media.matches) toggle.focus();
   }
   function render() {
-    const visible = media.matches ? !desktopCollapsed : drawerOpen;
+    const visible = media.matches || drawerOpen;
     aside.hidden = !visible; backdrop.hidden = !drawerOpen;
     body.classList.toggle('erp-drawer-open', drawerOpen);
-    body.classList.toggle('erp-sidebar-collapsed', desktopCollapsed);
+    toggle.hidden = media.matches;
     toggle.setAttribute('aria-expanded', String(visible));
     toggle.setAttribute('aria-label', visible ? '업무 메뉴 접기' : '업무 메뉴 열기');
     close.hidden = media.matches;
@@ -77,8 +77,7 @@
     }
   }
   toggle.addEventListener('click', () => {
-    if (media.matches) { desktopCollapsed = !desktopCollapsed; render(); }
-    else setDrawer(!drawerOpen);
+    if (!media.matches) setDrawer(!drawerOpen);
   });
   close.addEventListener('click', () => setDrawer(false));
   backdrop.addEventListener('click', () => setDrawer(false));
@@ -97,7 +96,12 @@
     if (drawerOpen && records.some(record => record.attributeName === 'aria-pressed')) setDrawer(false);
   }).observe(main, { subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'class', 'aria-pressed'] });
   window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
-  media.addEventListener('change', () => { desktopCollapsed = false; setDrawer(false, false); });
+  media.addEventListener('change', () => {
+    const focused = document.activeElement;
+    setDrawer(false, false);
+    if (!media.matches && aside.contains(focused)) toggle.focus();
+    else if (media.matches && (focused === toggle || focused === close)) main.querySelector('.maintab.active:not([hidden]),.maintab:not([hidden])')?.focus();
+  });
   body.classList.add('aisel-erp-shell'); sync(); render();
   window.AiselErpShell=Object.freeze({closeMenu:()=>setDrawer(false,false),refresh:()=>{menuRole=null;sync();}});
   // A short, optional performance cue on the workorder list. Data comes only

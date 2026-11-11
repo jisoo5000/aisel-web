@@ -238,8 +238,6 @@
  html:root body :is(#mbSubTabs,#mbRefsDateTabs) :is(.mb-subtab,.ref-date-tab).active{
   background:#E9ECF2!important;color:#34383C;border-color:#E3E5E7!important;font-weight:600;
  }
- html:root body.aisel-erp-shell #mainBar>.maintab[data-main]{border:1px solid #E3E5E7;background:#fff;border-radius:3px}
- html:root body.aisel-erp-shell #mainBar>.maintab[data-main].active{border-color:#E3E5E7;background:#E9ECF2;color:#34383C}
 }
 
 /* 2026-11-08: center choice menus across lists and meeting details. */
