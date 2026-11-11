@@ -44,6 +44,7 @@
   const note=options.note===undefined?get(id).note:String(options.note).trim();
   const resultUrl=options.resultUrl===undefined?get(id).resultUrl:String(options.resultUrl).trim();
   if(note.length>2000||resultUrl.length>2048||resultUrl&&!/^https?:\/\/\S+$/i.test(resultUrl))throw fail('결과물 링크는 http 또는 https 주소로 입력해주세요.');
+  if(options.rating!==undefined&&(!Number.isInteger(options.rating)||options.rating<0||options.rating>5))throw fail('별점은 0~5 사이에서 선택해주세요.');
   const request=Symbol(id);pending.set(id,request);onChange();
   try{
    const ctx=await context();if(ctx.stamp!==scope)throw fail('로그인 계정이 변경되었습니다.');
@@ -52,7 +53,7 @@
    const version=expected+1,from=get(id).status||'active',target=ctx.app.database().ref(PATH+'/'+id);
    // Atomic leaf update: existing history is never sent back or overwritten.
    // Parent validation rejects stale versions, including concurrent devices.
-   await target.update({version,status:next,updatedAt:now,updatedBy:ctx.person.uid,updatedByEmail:ctx.person.email,note:note||'',resultUrl:resultUrl||'',['history/e'+version]:{from,to:next,at:now,uid:ctx.person.uid,email:ctx.person.email}});
+   await target.update({...(options.rating===undefined?{}:{rating:options.rating}),version,status:next,updatedAt:now,updatedBy:ctx.person.uid,updatedByEmail:ctx.person.email,note:note||'',resultUrl:resultUrl||'',['history/e'+version]:{from,to:next,at:now,uid:ctx.person.uid,email:ctx.person.email}});
    if(ctx.stamp!==identity())throw fail('로그인 계정이 변경되었습니다.');
    const saved=(await target.once('value')).val();
    if(ctx.stamp!==identity())throw fail('로그인 계정이 변경되었습니다.');
@@ -196,6 +197,7 @@
       <div class="rc-title-row"><label class="rc-field rc-title"><span class="rc-sr-only">제목</span><input data-rc-field="title" type="text" maxlength="160" placeholder="레퍼런스 제목" aria-label="레퍼런스 제목"></label><div class="rc-title-actions"><button type="button" id="rcWorkorder" hidden>작업지시서</button><button type="button" id="rcSave">저장</button><button type="button" id="rcDelete">삭제</button></div></div>
       <div class="rc-metadata"><label class="rc-date"><span id="rcDateText"></span><input id="rcDate" type="date" aria-label="레퍼런스 날짜"></label><select id="rcCategory" aria-label="카테고리"><option value="">카테고리</option></select><label class="rc-designer-field"><span id="rcDesignerText" aria-hidden="true">담당자</span><select id="rcDesigner" aria-label="담당자"><option value="">담당자</option></select></label><div id="rcCategoryManager"></div><div id="rcDesignerManager"></div><div class="rc-link-tools"><button type="button" id="rcSourceOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>링크</span></button><button type="button" id="rcLinkEdit" aria-label="링크 수정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4-12 12-5 1Z M13 7l4 4"/></svg></button><button type="button" id="rcLinkDelete" aria-label="링크 삭제"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7m4-7v7"/></svg></button><div id="rcLinkEditor" hidden><input id="rcLinkInput" type="url" inputmode="url" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="참고 링크" placeholder="https://"></div><p id="rcLinkError" role="alert" hidden></p></div></div>
       <div id="rcPhotos" class="rc-photos" aria-label="참고 사진"></div>
+      <div id="rcRating" class="rc-rating-row" role="group" aria-label="레퍼런스 평점"></div>
       <input id="rcCameraInput" type="file" accept="image/*" capture="environment" hidden><input id="rcPhotoInput" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden>
       <section id="rcNotes" class="rc-notes" aria-label="참고"><div id="rcNoteEntries"></div></section>
       <div class="rc-detail-actions"><span id="rcAuthor" hidden></span></div>
@@ -622,12 +624,13 @@
         const src=http(r.thumbnail)||(r._draft&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(r.thumbnail||'')?r.thumbnail:'');
         if(src){const img=document.createElement('img');bindUploadedPreview(img,src,r.id);img.alt='';img.width=185;img.height=160;img.loading=index<3?'eager':'lazy';img.fetchPriority=index===0?'high':'auto';img.decoding='async';button.append(img);}
         else{const space=document.createElement('span');space.className='rc-no-photo';space.textContent=r._draft?'작성 중':'';button.append(space);}
+        const stars=document.createElement('span');stars.className='rc-card-rating';stars.setAttribute('aria-label','레퍼런스 평점 '+ratingValue(r.id)+'점 / 5점');stars.innerHTML=ratingStars(ratingValue(r.id));button.append(stars);
         const info=document.createElement('span');info.className='rc-card-info';
         const title=document.createElement('strong'),source=http(r.sourceUrl||r.sourceLinks?.[0]);if(source){const a=document.createElement('a');a.href=source;a.target='_blank';a.rel='noopener noreferrer';a.textContent=AI.title(r);title.append(a);}else title.textContent=AI.title(r);
         const meta=document.createElement('span');meta.className='rc-card-meta';
-        const tag=document.createElement('span');tag.className='rc-category';tag.textContent=r._draft?'작성 중':categoryLabel(r);
+        const tag=r._draft?document.createElement('span'):null;if(tag){tag.className='rc-draft-tag';tag.textContent='작성 중';}
         const date=document.createElement('time');date.dateTime=r.date||'';date.textContent=shortDate(r.date);
-        const designer=document.createElement('span');designer.className='rc-card-designer';designer.textContent=r.designer||'미지정';meta.append(date,tag);info.append(title,designer,meta);button.append(info);const card=document.createElement('article');card.className='rc-lifecycle-card';card.dataset.id=r.id;card.append(button,info);if(!r._draft)renderLifeActions(card,r);frag.append(card);
+        const designer=document.createElement('span');designer.className='rc-card-designer';designer.textContent=r.designer||'미지정';meta.append(date);if(tag)meta.append(tag);info.append(title,designer,meta);title.title=AI.title(r);const card=document.createElement('article');card.className='rc-lifecycle-card';card.dataset.id=r.id;card.append(button,info);if(!r._draft)renderLifeActions(card,r);frag.append(card);
       }
       $('#rcGrid').replaceChildren(frag);
     }
@@ -643,15 +646,13 @@
     if(noteCategory&&unknown.some(r=>!categoryCoverageErrors.has(r.id)))void hydrateCategoryCoverage(unknown);
   }
 
-  async function startLifecycle(){if(!lifecycle)return;try{await lifecycle.start(()=>{$('#rcLifeRetry')?.remove();gallerySignature='';renderList();},e=>message(e.message,true));}catch(e){message('활용 기록 연결을 확인해주세요. 자료는 그대로 유지됩니다.',true);if(!$('#rcLifeRetry')){const retry=document.createElement('button');retry.id='rcLifeRetry';retry.type='button';retry.textContent='활용 기록 다시 연결';retry.onclick=()=>startLifecycle();$('#rcNotices').append(retry);}}}
+  async function startLifecycle(){if(!lifecycle)return;try{await lifecycle.start(()=>{$('#rcLifeRetry')?.remove();gallerySignature='';renderList();if(active)renderRating();},e=>message(e.message,true));}catch(e){message('활용 기록 연결을 확인해주세요. 자료는 그대로 유지됩니다.',true);if(!$('#rcLifeRetry')){const retry=document.createElement('button');retry.id='rcLifeRetry';retry.type='button';retry.textContent='활용 기록 다시 연결';retry.onclick=()=>startLifecycle();$('#rcNotices').append(retry);}}}
   function lifeCanEdit(r){return lifecycle?.ready&&!lifecycle.isPending(r.id)&&(role==='owner'||galleryState?.role==='owner'||r.permissions?.canEdit===true||r.creator===account);}
   function lifeTime(at){return at?new Date(at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';}
   function renderLifeActions(card,r){
     const value=lifecycle?.get(r.id)||{status:'active'},editable=lifeCanEdit(r);
     const check=document.createElement('label');check.className='rc-usage-check';const input=document.createElement('input');input.type='checkbox';input.checked=value.status==='used';input.disabled=!editable;input.setAttribute('aria-label',(r.title||'자료')+' 활용 완료');input.onchange=()=>{input.checked=value.status==='used';void changeLife(r,input.checked?'active':'used');};check.append(input);card.append(check);
-    const actions=document.createElement('div');actions.className='rc-usage-actions';
-    const archive=document.createElement('button');archive.type='button';archive.textContent=value.status==='active'?'보관':'복원';archive.disabled=!editable;archive.onclick=()=>changeLife(r,value.status==='active'?'stored':'active');
-    const history=document.createElement('button');history.type='button';history.textContent='기록';history.disabled=!lifecycle?.ready;history.onclick=()=>lifeDialog(r);actions.append(archive,history);card.append(actions);
+    if(value.status!=='active'){const actions=document.createElement('div');actions.className='rc-usage-actions';const restore=document.createElement('button');restore.type='button';restore.textContent='복원';restore.disabled=!editable;restore.onclick=()=>changeLife(r,'active');actions.append(restore);card.append(actions);}
     if(value.status!=='active'){const stamp=document.createElement('p');stamp.className='rc-usage-stamp';stamp.textContent=(lifecycle.labels[value.status]||'')+' · '+lifeTime(value.updatedAt)+' · '+(value.updatedByEmail||'');card.append(stamp);}
   }
   async function changeLife(r,next,options={}){
@@ -673,6 +674,52 @@
       const list=document.createElement('ol');list.className='rc-usage-history';const events=Object.values(value.history||{}).sort((a,b)=>b.at-a.at);for(const event of events){const item=document.createElement('li');item.textContent=lifeTime(event.at)+' · '+(event.from===event.to?'메모 수정':lifecycle.labels[event.to])+' · '+event.email;list.append(item);}if(!events.length){const empty=document.createElement('p');empty.textContent='아직 활용 이력이 없습니다.';box.append(empty);}else box.append(list);
       for(const [id,labelText,kind,val] of [['rcUsageNote','활용 메모 (선택)','textarea',value.note||''],['rcUsageLink','결과물 링크 (선택)','input',value.resultUrl||'']]){const label=document.createElement('label');label.textContent=labelText;const field=document.createElement(kind);field.id=id;field.value=val;field.disabled=!lifeCanEdit(r);field.maxLength=kind==='input'?2048:2000;if(kind==='input')field.type='url';label.append(field);box.append(label);}
     },lifeCanEdit(r)?async()=>{assertAuth(stamp);await lifecycle.change(r.id,value.status,{expectedVersion:value.version,note:$('#rcUsageNote').value,resultUrl:$('#rcUsageLink').value});gallerySignature='';renderList();}:null);
+  }
+
+
+  // Human reference ratings share the existing per-reference metadata and ACL.
+  // The content record, source sheet, notes and usage status remain independent.
+  function ratingValue(id){const value=lifecycle?.get(id)?.rating;return Number.isInteger(value)&&value>=0&&value<=5?value:0;}
+  function ratingStar(filled){return '<svg viewBox="0 0 24 24" aria-hidden="true" class="rc-rating-star'+(filled?' is-filled':'')+'"><path d="m12 2.8 2.85 5.78 6.38.93-4.62 4.5 1.09 6.35L12 17.36l-5.7 3 1.09-6.35-4.62-4.5 6.38-.93Z"/></svg>';}
+  function ratingStars(value){return [1,2,3,4,5].map(n=>ratingStar(n<=value)).join('');}
+  const ratingBusy=new Set();
+  function renderRating(){
+    const box=$('#rcRating');if(!box||!active)return;
+    const id=active.id,value=ratingValue(id),busy=ratingBusy.has(id)||lifecycle?.isPending(id),disabled=!canEdit()||!lifecycle?.ready||busy;
+    if(box.dataset.recordId!==id||box.children.length!==2){
+      box.replaceChildren();box.dataset.recordId=id;
+      const label=document.createElement('span');label.className='rc-rating-label';label.textContent='레퍼런스 평점';
+      const stars=document.createElement('span');stars.className='rc-rating-buttons';
+      for(let score=1;score<=5;score++){
+        const button=document.createElement('button');button.type='button';button.dataset.rating=score;
+        button.onclick=()=>setRating(id,score);stars.append(button);
+      }
+      box.append(label,stars);
+    }
+    box.setAttribute('aria-busy',String(!!busy));
+    box.querySelectorAll('button').forEach(button=>{
+      const score=Number(button.dataset.rating),filled=score<=value;
+      button.innerHTML=ratingStar(filled);button.disabled=!!disabled;
+      button.setAttribute('aria-pressed',String(score===value));
+      button.setAttribute('aria-label',score+'점'+(score===value?' 선택됨 · 다시 누르면 해제':' 선택'));
+      button.title=score===value?'다시 누르면 별점 해제':score+'점';
+    });
+  }
+  async function setRating(id,score){
+    if(active?.id!==id||!canEdit()||!lifecycle?.ready||lifecycle.isPending(id)||ratingBusy.has(id))return;
+    const stamp=authStamp(),next=ratingValue(id)===score?0:score;
+    ratingBusy.add(id);renderRating();
+    try{
+      if(!await save())return;assertAuth(stamp);
+      if(active?.id!==id)return;
+      if(!active.version){message('사진이나 참고 내용을 먼저 추가해주세요.',true);return;}
+      const before=lifecycle.get(id);
+      message('별점 저장 중…');
+      await lifecycle.change(id,before.status||'active',{expectedVersion:before.version,rating:next});
+      assertAuth(stamp);gallerySignature='';renderList();
+      if(active?.id===id)message(next?'별점 저장됨':'별점 해제됨');
+    }catch(error){try{assertAuth(stamp);if(active?.id===id)message(errorText(error),true);}catch(_){/* Ignore the previous account's result. */}}
+    finally{ratingBusy.delete(id);if(active?.id===id)renderRating();}
   }
 
   function shortDate(value){const date=String(value||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(date)?date.slice(2).replaceAll('-','. '):date;}
@@ -879,7 +926,7 @@
     dialog('삭제할 링크',box=>links.forEach((url,index)=>{const button=document.createElement('button');button.type='button';button.className='rc-link-delete-item';button.textContent=url;button.onclick=()=>remove(index);box.append(button);}));
   }
   async function create(epoch=showEpoch,selection=openEpoch){const stamp=authStamp();if(!permissions.canCreate||!await save())return;assertAuth(stamp);if(selection!==openEpoch||epoch!==showEpoch||!visible||pane.hidden)return;captureList();const choice=initialReferenceCategory();active={id:'ref_'+crypto.randomUUID().replace(/-/g,''),version:0,title:'',date:today(),designer:'',category:choice?.category||'',contentType:choice?.contentType||'',noteEntries:[{id:'note_'+crypto.randomUUID(),date:today(),text:''}],sourceLinks:[],notes:'',sourceUrl:'',categoryMode:'manual',photos:[],permissions:{canEdit:true,canArchive:false}};activeBase=null;pendingSave=null;saveConflict=null;pendingFiles=[];linkEditor=null;dirty=true;revision++;finishDetailLoad(selection);$('#rcList').hidden=true;$('#rcDetail').hidden=false;renderDetail();setRoute(active.id);await persistDraft();message('');return true;}
-  function renderDetail(){normalizeDetail(active);$('.rc-detail-actions').before($('#rcNotices'));$('#rcLatest').hidden=!saveConflict;$('#rcSaveCopy').hidden=!saveConflict||!permissions.canCreate;$('#rcSave').disabled=!!saveFlight||!canEdit();fields.forEach(k=>{const input=$('[data-rc-field="'+k+'"]');if(input.dataset.recordId!==active.id||document.activeElement!==input&&!composing.has(input)&&input.value!==(active[k]||''))input.value=active[k]||'';input.dataset.recordId=active.id;input.disabled=!canEdit();});$('#rcSave').hidden=!canEdit();$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcDelete').disabled=!!saveFlight;$('#rcCategory').disabled=!canEdit();$('#rcDate').value=active.date||'';$('#rcDate').disabled=!canEdit();$('#rcDateText').textContent=shortDate(active.date);renderReferenceCategory();renderDesigner();updateSource();renderPhotos();renderNotes();renderAnalysis();$('[data-rc-field="title"]').placeholder=AI.title(active);}
+  function renderDetail(){normalizeDetail(active);$('.rc-detail-actions').before($('#rcNotices'));$('#rcLatest').hidden=!saveConflict;$('#rcSaveCopy').hidden=!saveConflict||!permissions.canCreate;$('#rcSave').disabled=!!saveFlight||!canEdit();fields.forEach(k=>{const input=$('[data-rc-field="'+k+'"]');if(input.dataset.recordId!==active.id||document.activeElement!==input&&!composing.has(input)&&input.value!==(active[k]||''))input.value=active[k]||'';input.dataset.recordId=active.id;input.disabled=!canEdit();});$('#rcSave').hidden=!canEdit();$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcDelete').disabled=!!saveFlight;$('#rcCategory').disabled=!canEdit();$('#rcDate').value=active.date||'';$('#rcDate').disabled=!canEdit();$('#rcDateText').textContent=shortDate(active.date);renderReferenceCategory();renderDesigner();updateSource();renderPhotos();renderRating();renderNotes();renderAnalysis();$('[data-rc-field="title"]').placeholder=AI.title(active);}
   function updateSource(){
     const editing=linkEditor?.id===active?.id,tools=$('.rc-link-tools');tools.classList.toggle('is-editing',editing);$('#rcLinkEditor').hidden=!editing;
     for(const id of ['rcSourceOpen','rcLinkEdit','rcLinkDelete'])$('#'+id).hidden=editing;
