@@ -49,7 +49,7 @@
       buttons.forEach(button=>main.append(button));labels.push({caption,buttons});
     });
   }
-  let drawerOpen = false, savedInert = [];
+  let drawerOpen = false, pinnedCollapsed = false, savedInert = [];
   function restoreBackground() {
     savedInert.forEach(([element, wasInert]) => { element.inert = wasInert; }); savedInert = [];
   }
@@ -68,13 +68,15 @@
     else if (returnFocus && !pinnedMenu()) toggle.focus();
   }
   function render() {
-    const visible = pinnedMenu() || drawerOpen;
+    const pinned = pinnedMenu() && !pinnedCollapsed;
+    const visible = pinned || drawerOpen;
     aside.hidden = !visible; backdrop.hidden = !drawerOpen;
     body.classList.toggle('erp-drawer-open', drawerOpen);
-    toggle.hidden = pinnedMenu();
-    body.classList.toggle('erp-nav-pinned', pinnedMenu());
+    toggle.hidden = false;
+    body.classList.toggle('erp-nav-pinned', pinned);
     toggle.setAttribute('aria-expanded', String(visible));
     toggle.setAttribute('aria-label', visible ? '업무 메뉴 접기' : '업무 메뉴 열기');
+    toggle.title = visible ? '업무 메뉴 접기' : '업무 메뉴 열기';
     close.hidden = pinnedMenu();
   }
   function sync() {
@@ -86,7 +88,8 @@
     }
   }
   toggle.addEventListener('click', () => {
-    if (!pinnedMenu()) setDrawer(!drawerOpen);
+    if (pinnedMenu()) { pinnedCollapsed = !pinnedCollapsed; render(); }
+    else setDrawer(!drawerOpen);
   });
   close.addEventListener('click', () => setDrawer(false));
   backdrop.addEventListener('click', () => setDrawer(false));
@@ -108,8 +111,8 @@
   const syncLayout = () => {
     const focused = document.activeElement;
     setDrawer(false, false);
-    if (!pinnedMenu() && aside.contains(focused)) toggle.focus();
-    else if (pinnedMenu() && (focused === toggle || focused === close)) main.querySelector('.maintab.active:not([hidden]),.maintab:not([hidden])')?.focus();
+    if (aside.hidden && aside.contains(focused)) toggle.focus();
+    else if (!aside.hidden && pinnedMenu() && focused === close) toggle.focus();
   };
   media.addEventListener('change', syncLayout);
   pointer.addEventListener('change', syncLayout);
