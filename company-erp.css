@@ -246,3 +246,51 @@
   #aiselCompanyWorkspace .ca-card .ce-detail-line{grid-template-columns:72px minmax(0,1fr);gap:6px;}
  }
 }
+
+/* Leave dashboards: employee self-service and owner overview, screen only. */
+@media screen {
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host{min-width:0;max-width:100%;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-section-heading{margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-section-heading p{margin:3px 0 0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host :is(.cl-toolbar,.cl-actions,.cl-controls,.cl-tabs){display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 6px;min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-actions{justify-content:flex-end;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button{border:1px solid #B8CAE4;background:#EEF4FC;color:#245A9B;white-space:nowrap;min-height:28px;height:auto;padding:4px 8px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button:hover{background:#E0ECFA;border-color:#789CCA;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host :is(.cl-primary,.cl-tabs .ce-button[aria-pressed="true"]){background:#3267AC;color:#FFF;border-color:#3267AC;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button:disabled{opacity:.55;cursor:wait;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid #E3E8EF;border-radius:3px;background:#F5F8FC;min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat strong{font-size:21px;line-height:28px;color:#245A9B;font-weight:600;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat small{font-size:11px;line-height:16px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-tabs{margin:0;margin-right:auto;flex-wrap:nowrap;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls select{height:28px;max-width:100%;min-width:0;font:inherit;color:#586575;border:1px solid #D5DFEC;border-radius:3px;background:#FFF;padding:0 6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results{border:1px solid #E3E8EF;border-radius:3px;padding:12px;min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results h3{font-size:13px;line-height:20px;font-weight:600;margin:0 0 6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:12px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table :is(th,td){white-space:normal;overflow-wrap:anywhere;text-align:left;vertical-align:middle;border:1px solid #E3E8EF;padding:8px 6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table th{background:#EEF3F9;color:#586575;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table .ce-empty{padding:28px 12px;text-align:center;color:#6C727C;background:#FAFBFD;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-row-actions{margin:0;gap:6px;flex-wrap:wrap;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-badge{display:inline-block;padding:2px 6px;border-radius:3px;background:#EEF3F9;color:#38618E;white-space:nowrap;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-pending,
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-cancellation_requested{background:#FFF6DF;color:#7D641F;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-rejected,
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-cancelled{background:#F2F3F5;color:#6C727C;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-footnote{font-size:11px;line-height:17px;margin:6px 0;}
+}
+@media screen and (max-width:600px){
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{padding:8px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls .cl-tabs{width:100%;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-tabs .ce-button{flex:1;padding-left:6px;padding-right:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results{padding:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table,
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table tbody{display:block;width:100%;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table tr{display:block;border:1px solid #E3E8EF;border-radius:3px;margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table td{display:grid;grid-template-columns:84px minmax(0,1fr);gap:6px;border:0;border-bottom:1px solid #F0F2F5;align-items:center;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table td::before{content:attr(data-label);font-size:11px;color:#6C727C;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table .cl-empty-row td{display:block;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table .cl-empty-row td::before{display:none;}
+}

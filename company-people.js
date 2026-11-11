@@ -1,32 +1,38 @@
 (function(root){
  'use strict';
- let data=null,scope='',loadedAt=0,flight=null,month='',all=true,queryKey='',attendanceView='today';
+ let data=null,scope='',loadedAt=0,flight=null,month='',all=true,queryKey='',attendanceView='today',leaveMode=false,leaveView='usage',adminLeaveView='summary',employeeFilter='',leaveStatus='',revision=0;
+ const leaveCache=new Map();
+ const dayKey=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
  const states={working:'근무 중',completed:'퇴근',corrected:'정정 승인',pending:'신청',approved:'승인',rejected:'반려',cancelled:'취소',cancellation_requested:'취소 요청'};
  const kinds={annual:'연차',half:'반차',other:'기타 휴가'};
  const errors={already_clocked_today:'오늘 출퇴근 기록이 있습니다. 수정이 필요하면 정정을 요청해 주세요.',already_clocked_out:'이미 퇴근이 기록되었습니다.',invalid_break_minutes:'휴게시간을 실제 근무 시간 안에서 분 단위로 입력해 주세요.',correction_required:'출근 기록이 오래되었습니다. 실제 시간을 정정 요청으로 기록해 주세요.',invalid_correction:'출근·퇴근·휴게시간을 확인해 주세요. 미래 시각은 입력할 수 없습니다.',invalid_correction_date:'기존 근무일에 해당하는 출근 시각을 입력해 주세요.',correction_pending:'확인 대기 중인 정정 요청이 있습니다.',leave_budget_unconfigured:'이 직원의 휴가 부여 일수를 먼저 설정해 주세요.',leave_balance_insufficient:'확인된 잔여 휴가보다 신청 일수가 많습니다.',leave_overlap:'같은 기간에 진행 중인 휴가 신청이 있습니다.',leave_dates_require_same_year:'연도가 바뀌는 휴가는 연도별로 나눠 신청해 주세요.',invalid_leave_days:'날짜와 신청 일수를 확인해 주세요. 반차는 하루 중 0.5일입니다.',version_conflict:'다른 곳에서 먼저 변경했습니다. 최신 기록을 확인한 뒤 다시 처리해 주세요.',idempotency_conflict:'이 요청은 이미 다른 내용으로 저장되었습니다. 최신 기록을 확인해 주세요.'};
  const stamp=value=>value?new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'미기록';
  const local=value=>value?new Date(value+9*3600000).toISOString().slice(0,16):'';
  function identity(){const s=root.AiselAccess?.session;return [s?.uid,s?.role,s?.credentialVersion||0].join(':');}
- function reset(){data=null;scope='';loadedAt=0;flight=null;queryKey='';attendanceView='today';}
+ function reset(){revision++;data=null;scope='';loadedAt=0;flight=null;queryKey='';attendanceView='today';leaveCache.clear();employeeFilter='';leaveStatus='';leaveView='usage';adminLeaveView='summary';}
  root.addEventListener('aisel-access-change',()=>{if(scope!==identity())reset();});
  async function load(ctx,force=false){
-  if(scope!==identity()){reset();scope=identity();}const signature=scope,key=scope+':'+month+':'+all;
+  if(scope!==identity()){reset();scope=identity();}const signature=scope,run=revision,key=scope+':'+month+':'+all+':'+(leaveMode?'leave':'attendance'),cacheKey=dayKey()+':'+key,isLeave=leaveMode;
   if(queryKey!==key){data=null;flight=null;queryKey=key;}
-  if(data&&!force&&Date.now()-loadedAt<60000)return data;if(flight)return flight;
-  const promise=ctx.request('peopleSummary',{month,...(ctx.owner()?{all}:{})}).then(result=>{if(signature!==identity()||queryKey!==key)return null;data=result;loadedAt=Date.now();return data;}).finally(()=>{if(flight===promise)flight=null;});flight=promise;return promise;
+  const cached=isLeave&&!force&&leaveCache.get(cacheKey);if(cached){data=cached.data;loadedAt=cached.at;return data;}
+  if(data&&!force&&!isLeave&&Date.now()-loadedAt<60000)return data;if(flight)return flight;
+  const promise=ctx.request('peopleSummary',{month,...(ctx.owner()?{all}:{})}).then(result=>{if(signature!==identity()||run!==revision||queryKey!==key)return null;data=result;loadedAt=Date.now();if(isLeave){for(const k of leaveCache.keys())if(!k.startsWith(dayKey()+':'))leaveCache.delete(k);leaveCache.set(cacheKey,{data,at:loadedAt});}return data;}).finally(()=>{if(flight===promise)flight=null;});flight=promise;return promise;
  }
  function render(section,ctx){
-  const {host,el,button}=ctx;host.classList.toggle('ca-host',section==='attendance');if(!month)month=new Date(Date.now()+9*3600000).toISOString().slice(0,7);
-  const top=el('div','ce-section-heading'),title=el('div');title.append(el('h2','',section==='attendance'?'출퇴근':'휴가 관리'),el('p','ce-muted',section==='attendance'?'수동 기록 · 비콘 연결 전':'신청·승인·사용 내역과 회사가 등록한 부여 일수를 확인합니다.'));top.append(title);host.append(top);
-  const toolbar=el('div','ce-filters'),monthInput=el('input');monthInput.type='month';monthInput.value=month;monthInput.setAttribute('aria-label','조회 월');monthInput.style.width='150px';toolbar.append(monthInput);
-  if(ctx.owner()){const sel=el('select');for(const [v,t]of [['all','전체 직원'],['mine','내 기록']]){const o=el('option','',t);o.value=v;sel.append(o);}sel.value=all?'all':'mine';sel.setAttribute('aria-label','근태 조회 대상');sel.addEventListener('change',()=>{all=sel.value==='all';data=null;ctx.redraw();});toolbar.append(sel);}
-  monthInput.addEventListener('change',()=>{if(!monthInput.value)return;month=monthInput.value;if(section==='attendance')attendanceView='month';data=null;ctx.redraw();});toolbar.append(button('새로고침',()=>{data=null;ctx.redraw();}));host.append(toolbar);
-  const body=el('div');host.append(body);body.append(el('p','ce-muted','기록을 확인하고 있습니다.'));
-  const scopeNow=identity();load(ctx).then(result=>{if(!result||scopeNow!==identity()||!body.isConnected)return;body.replaceChildren();if(section==='attendance')attendance(body,ctx,result);else leaves(body,ctx,result);ctx.message('마지막 확인 '+stamp(loadedAt));}).catch(error=>{if(body.isConnected)ctx.message(errors[error.message]||error.message,true);});
+  const {host,el,button}=ctx;leaveMode=section!=='attendance';host.classList.toggle('ca-host',!leaveMode);host.classList.toggle('cl-host',leaveMode);if(!month)month=dayKey().slice(0,7);
+  if(leaveMode)all=section==='leave'&&ctx.owner();
+  const top=el('div','ce-section-heading'),title=el('div');title.append(el('h2','',section==='attendance'?'출퇴근':all?'휴가 관리':'내 휴가'),el('p','ce-muted',section==='attendance'?'수동 기록 · 비콘 연결 전':all?'직원별 신청과 승인·사용 내역을 확인합니다.':'휴가 사용 내역과 남은 휴가를 확인합니다.'));top.append(title);host.append(top);
+  const toolbar=el('div','ce-filters cl-toolbar'),monthInput=el('input');monthInput.type='month';monthInput.value=month;monthInput.setAttribute('aria-label','조회 월');monthInput.style.width='150px';toolbar.append(monthInput);
+  if(!leaveMode&&ctx.owner()){const sel=el('select');for(const [v,t]of [['all','전체 직원'],['mine','내 기록']]){const o=el('option','',t);o.value=v;sel.append(o);}sel.value=all?'all':'mine';sel.setAttribute('aria-label','근태 조회 대상');sel.addEventListener('change',()=>{all=sel.value==='all';data=null;ctx.redraw();});toolbar.append(sel);}
+  monthInput.addEventListener('change',()=>{if(!monthInput.value)return;month=monthInput.value;if(section==='attendance')attendanceView='month';data=null;ctx.redraw();});
+  if(!leaveMode)toolbar.append(button('새로고침',()=>{data=null;ctx.redraw();}));
+  host.append(toolbar);
+  const body=el('div','cl-body');host.append(body);body.append(el('p','ce-muted','기록을 확인하고 있습니다.'));
+  const scopeNow=identity();const promise=load(ctx),run=revision;promise.then(result=>{if(!result||scopeNow!==identity()||run!==revision||!body.isConnected)return;body.replaceChildren();if(section==='attendance')attendance(body,ctx,result);else leaves(body,ctx,result,all);ctx.message('마지막 확인 '+stamp(loadedAt));}).catch(error=>{if(body.isConnected&&run===revision){body.replaceChildren(el('p','ce-empty','기록을 불러오지 못했습니다. 연결 상태를 확인해 주세요.'));ctx.message(errors[error.message]||error.message,true);}});
  }
  async function save(ctx,action,payload,requestId='people-'+root.crypto.randomUUID()){
   if(ctx.isWriting())return false;ctx.setWriting(true);const oldScope=identity();ctx.message('저장 중입니다.');
-  try{await ctx.request(action,{requestId,...payload});if(oldScope!==identity())return false;await load(ctx,true);if(oldScope!==identity())return false;ctx.setDirty(false);ctx.redraw();ctx.message('저장한 기록을 다시 확인했습니다.');return true;}
+  try{await ctx.request(action,{requestId,...payload});if(oldScope!==identity())return false;leaveCache.clear();await load(ctx,true);if(oldScope!==identity())return false;ctx.setDirty(false);ctx.redraw();ctx.message('저장한 기록을 다시 확인했습니다.');return true;}
   catch(error){if(oldScope===identity())ctx.message(errors[error.message]||error.message,true);return false;}
   finally{if(oldScope===identity())ctx.setWriting(false);}
  }
@@ -149,15 +155,92 @@
   const next=el('div','ca-card');next.append(el('h3','','도착 후 확인할 것'),el('p','','설치할 사무실 · 직원 휴대폰 종류 · 실제 출퇴근 인식 · 오류 시 정정 처리'),el('p','ce-muted','실제 기기 시험과 기존 기록 비교를 마친 뒤 오션 관리자 해지 여부를 정합니다.'));host.append(next);
  }
 
- function leaves(body,ctx,result){const {el,button}=ctx,actions=el('div','ce-actions');actions.append(button('휴가 신청',()=>form(ctx,'휴가 신청',[
-  {key:'kind',label:'휴가 종류',options:Object.entries(kinds)},{key:'startDate',label:'시작일',type:'date',value:result.today},{key:'endDate',label:'종료일',type:'date',value:result.today},{key:'days',label:'사용할 일수 (휴무일 제외)',type:'number',step:.5,min:.5,max:366},{key:'reason',label:'신청 메모',multiline:true,required:false}
- ],(v,id)=>save(ctx,'peopleLeaveRequest',v,id))));
-  if(ctx.owner())actions.append(button('휴가 부여 설정',()=>{const people=ctx.staff();if(!people.length){ctx.message('직원 목록 확인 후 다시 열어 주세요.',true);return;}form(ctx,'회사에서 확인한 휴가 부여 일수',[
-   {key:'uid',label:'직원',options:people.map(p=>[p.uid,p.displayName||p.uid])},{key:'granted',label:'부여 일수',type:'number',step:.5},{key:'carried',label:'이월 일수',type:'number',step:.5},{key:'adjustment',label:'조정 일수',type:'number',step:.5,min:-366},{key:'reason',label:'부여·조정 근거',multiline:true}
-  ],(v,id)=>{const year=month.slice(0,4),prior=result.balances.find(b=>b.uid===v.uid&&b.year===year);return save(ctx,'peopleBudgetSave',{...v,year,expectedVersion:prior?.version||0},id);});}));body.append(actions);
-  for(const b of result.balances){const name=ctx.staff().find(s=>s.uid===b.uid)?.displayName||(b.uid===root.AiselAccess.session.uid?'내 휴가':'직원'),card=el('div','ce-project');card.append(el('h3','',name+' · '+b.year),el('p','',b.configured?'부여 '+b.granted+'일 · 이월 '+b.carried+'일 · 조정 '+b.adjustment+'일 · 승인 사용 '+b.used+'일 · 잔여 '+b.remaining+'일':'회사 휴가 부여 기준 확인 전'));body.append(card);}
-  if(!result.leaves.length)body.append(el('p','ce-empty','이 기간의 휴가 신청이 없습니다.'));
-  for(const row of result.leaves){const card=el('article','ce-project');card.append(el('h3','',[row.displayName||'이름 확인 필요',kinds[row.kind],states[row.status]].join(' · ')),el('p','',row.startDate+' ~ '+row.endDate+' · '+row.days+'일'));if(row.reason)card.append(el('p','ce-muted',row.reason));const controls=el('div','ce-actions');if(ctx.owner()&&['pending','cancellation_requested'].includes(row.status)){const choices=row.status==='pending'?[['approved','승인'],['rejected','반려']]:[['cancelled','취소 승인'],['approved','기존 승인 유지']];for(const [status,label]of choices)controls.append(button(label,()=>save(ctx,'peopleLeaveDecide',{id:row.id,expectedVersion:row.version,status})));}if(row.uid===root.AiselAccess.session.uid&&['pending','approved'].includes(row.status))controls.append(button(row.status==='approved'?'취소 요청':'신청 취소',()=>save(ctx,'peopleLeaveCancel',{id:row.id,expectedVersion:row.version})));card.append(controls);body.append(card);}
+ function leaveRequest(ctx,result){
+  form(ctx,'휴가 신청',[
+   {key:'kind',label:'휴가 종류',options:Object.entries(kinds)},{key:'startDate',label:'시작일',type:'date',value:result.today},{key:'endDate',label:'종료일',type:'date',value:result.today},{key:'days',label:'사용할 일수 (휴무일 제외)',type:'number',step:.5,min:.5,max:366},{key:'reason',label:'신청 메모',multiline:true,required:false}
+  ],(v,id)=>save(ctx,'peopleLeaveRequest',v,id));
+ }
+ function leaveBudget(ctx,result){
+  const people=ctx.staff();if(!people.length){ctx.message('직원 목록을 확인하지 못했습니다. 휴가 부여 설정은 직원 목록 연결 후 사용할 수 있습니다.',true);return;}
+  form(ctx,'회사에서 확인한 휴가 부여 일수',[
+   {key:'uid',label:'직원',options:people.map(p=>[p.uid,p.displayName||'이름 확인 필요'])},{key:'granted',label:'부여 일수',type:'number',step:.5},{key:'carried',label:'이월 일수',type:'number',step:.5},{key:'adjustment',label:'조정 일수',type:'number',step:.5,min:-366},{key:'reason',label:'부여·조정 근거',multiline:true}
+  ],(v,id)=>{const year=month.slice(0,4),prior=result.balances.find(b=>b.uid===v.uid&&String(b.year)===year);return save(ctx,'peopleBudgetSave',{...v,year,expectedVersion:prior?.version||0},id);});
+ }
+ function leaveTable(ctx,headers,rows,empty){
+  const {el}=ctx,wrap=el('div','ce-table-scroll cl-table-scroll'),table=el('table','ce-table cl-table'),head=el('thead'),tr=el('tr'),tbody=el('tbody');
+  for(const text of headers){const th=el('th','',text);th.scope='col';tr.append(th);}head.append(tr);table.append(head,tbody);
+  for(const values of rows){const row=el('tr');values.forEach((value,i)=>{const td=el('td');td.dataset.label=headers[i];if(value?.nodeType)td.append(value);else td.textContent=String(value??'—');row.append(td);});tbody.append(row);}
+  if(!rows.length){const tr=el('tr','cl-empty-row'),td=el('td','ce-empty',empty);td.colSpan=headers.length;tr.append(td);tbody.append(tr);}
+  wrap.append(table);return wrap;
+ }
+ function leaves(body,ctx,result,admin){
+  const {el,button}=ctx,uid=root.AiselAccess.session.uid,balances=(result.balances||[]).filter(b=>admin||b.uid===uid),allRows=(result.leaves||[]).filter(r=>admin||r.uid===uid);
+  const monthRows=allRows.filter(r=>r.startDate.slice(0,7)<=month&&r.endDate.slice(0,7)>=month);
+  const pending=allRows.filter(r=>['pending','cancellation_requested'].includes(r.status));
+  const approved=monthRows.filter(r=>['approved','cancellation_requested'].includes(r.status));
+  const byUid=new Map();
+  if(admin)for(const p of ctx.staff())byUid.set(p.uid,{uid:p.uid,name:p.displayName||'이름 확인 필요'});
+  for(const row of allRows)if(!byUid.has(row.uid))byUid.set(row.uid,{uid:row.uid,name:row.displayName||'이름 확인 필요'});
+  for(const b of balances)if(!byUid.has(b.uid))byUid.set(b.uid,{uid:b.uid,name:b.uid===uid?(root.AiselAccess.session.displayName||'내 휴가'):'이름 확인 필요'});
+  const people=[...byUid.values()].sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+  const actions=el('div','ce-actions cl-actions');
+  if(admin)actions.append(button('휴가 부여 설정',()=>leaveBudget(ctx,result)));
+  else actions.append(button('휴가 신청',()=>leaveRequest(ctx,result),'ce-button cl-primary'));
+  body.append(actions);
+  const stats=el('div','cl-stats'),addStat=(label,value,note)=>{const card=el('div','cl-stat');card.append(el('span','ce-muted',label),el('strong','',value));if(note)card.append(el('small','ce-muted',note));stats.append(card);};
+  const days=v=>Number.isFinite(v)?v+'일':'확인 전';
+  if(admin){
+   addStat('승인 대기',pending.length+'건','다른 달의 대기 신청 포함');
+   addStat('선택 월 신청',monthRows.length+'건',month+' 기간 포함');
+   addStat('선택 월 승인',approved.length+'건','취소 승인 대기 포함');
+   addStat('휴가 부여 확인',people.filter(p=>!balances.some(b=>b.uid===p.uid&&b.configured)).length+'명','등록 직원 기준');
+  }else{
+   const b=balances.find(b=>String(b.year)===month.slice(0,4));
+   addStat('남은 휴가',b?.configured?days(b.remaining):'설정 전',month.slice(0,4)+'년 기준');
+   addStat('부여·이월·조정',b?.configured?days(b.granted+b.carried+b.adjustment):'설정 전','회사에서 확인한 일수');
+   addStat('승인 차감',b?days(b.used):'확인 전','사용 예정·취소 대기 포함');
+   addStat('신청 대기',pending.length+'건','승인 결과를 기다리는 신청');
+  }
+  body.append(stats);
+  const controls=el('div','cl-controls'),tabs=el('div','cl-tabs');tabs.setAttribute('aria-label','휴가 내역 보기');
+  let current=admin?adminLeaveView:leaveView;
+  const sections=admin?[['summary','직원별 현황'],['requests','신청·승인'],['usage','사용 내역']]:[['usage','사용 내역'],['requests','신청 내역']];
+  const panel=el('div','cl-results');
+  const setTab=value=>{current=value;if(admin)adminLeaveView=value;else leaveView=value;draw();};
+  const tabButtons=sections.map(([key,label])=>{const b=button(label,()=>setTab(key));b.dataset.leaveView=key;tabs.append(b);return [key,b];});controls.append(tabs);
+  let employeeSelect;
+  if(admin){employeeSelect=el('select');employeeSelect.setAttribute('aria-label','휴가 직원 필터');const option=el('option','','전체 직원');option.value='';employeeSelect.append(option);for(const p of people){const o=el('option','',p.name);o.value=p.uid;employeeSelect.append(o);}if(!byUid.has(employeeFilter))employeeFilter='';employeeSelect.value=employeeFilter;employeeSelect.addEventListener('change',()=>{employeeFilter=employeeSelect.value;draw();});controls.append(employeeSelect);}
+  const statusSelect=el('select');statusSelect.setAttribute('aria-label','휴가 상태 필터');for(const [v,t]of [['','전체 상태'],...Object.entries(states).filter(([k])=>['pending','approved','rejected','cancelled','cancellation_requested'].includes(k))]){const o=el('option','',t);o.value=v;statusSelect.append(o);}statusSelect.value=leaveStatus;statusSelect.addEventListener('change',()=>{leaveStatus=statusSelect.value;draw();});controls.append(statusSelect);
+  body.append(controls,panel);
+  function draw(){
+   for(const [key,b]of tabButtons)b.setAttribute('aria-pressed',String(key===current));statusSelect.hidden=current==='summary';
+   panel.replaceChildren();const matches=r=>!admin||!employeeFilter||r.uid===employeeFilter;
+   if(current==='summary'){
+    panel.append(el('h3','','직원별 휴가 신청 현황'));
+    const rows=people.filter(p=>!employeeFilter||p.uid===employeeFilter).map(p=>{
+     const b=balances.find(b=>b.uid===p.uid),monthRecords=monthRows.filter(r=>r.uid===p.uid),wait=pending.filter(r=>r.uid===p.uid);
+     const name=button(p.name,()=>{employeeFilter=p.uid;employeeSelect.value=p.uid;setTab('requests');},'ce-button cl-name');
+     return [name,monthRecords.length+'건',wait.length+'건',b?days(b.used):'확인 전',b?.configured?days(b.remaining):'설정 전',b?.configured?'설정 완료':'부여 확인 필요'];
+    });
+    panel.append(leaveTable(ctx,['직원','선택 월 신청','승인 대기','올해 승인 차감','남은 휴가','부여 상태'],rows,'등록된 직원과 신청 기록이 아직 없습니다.'));
+    panel.append(el('p','ce-muted cl-footnote','직원 이름을 누르면 해당 직원의 신청을 확인할 수 있습니다. 승인 차감은 해당 연도의 사용 예정 휴가도 포함합니다.'));
+    return;
+   }
+   let rows=(current==='usage'?approved:allRows.filter(r=>monthRows.includes(r)||pending.includes(r))).filter(matches).filter(r=>!leaveStatus||r.status===leaveStatus).sort((a,b)=>b.startDate.localeCompare(a.startDate)||(b.createdAt||0)-(a.createdAt||0));
+   panel.append(el('h3','',current==='usage'?'휴가 사용 내역':'휴가 신청·승인 내역'));
+   if(current==='usage')panel.append(el('p','ce-muted cl-footnote',month+' 승인된 휴가 · 미래 일정은 사용 예정으로 표시합니다.'));
+   const output=rows.map(row=>{
+    const actions=el('div','ce-actions cl-row-actions');
+    if(admin&&['pending','cancellation_requested'].includes(row.status)){const choices=row.status==='pending'?[['approved','승인'],['rejected','반려']]:[['cancelled','취소 승인'],['approved','기존 승인 유지']];for(const [status,label]of choices)actions.append(button(label,()=>save(ctx,'peopleLeaveDecide',{id:row.id,expectedVersion:row.version,status}),status==='approved'?'ce-button cl-primary':'ce-button'));}
+    if(!admin&&row.uid===uid&&['pending','approved'].includes(row.status))actions.append(button(row.status==='approved'?'취소 요청':'신청 취소',()=>save(ctx,'peopleLeaveCancel',{id:row.id,expectedVersion:row.version})));
+    const state=current==='usage'&&row.status==='approved'?(row.startDate>result.today?'사용 예정':row.endDate<result.today?'사용 완료':'사용 중'):(states[row.status]||'상태 확인');
+    const badge=el('span','cl-badge cl-'+row.status,state);
+    const dates=row.startDate===row.endDate?row.startDate:row.startDate+' ~ '+row.endDate;
+    return [...(admin?[row.displayName||byUid.get(row.uid)?.name||'이름 확인 필요']:[]),kinds[row.kind]||'종류 확인',dates,days(row.days),badge,row.reason||'—',actions];
+   });
+   panel.append(leaveTable(ctx,[...(admin?['직원']:[]),'종류','기간','일수','상태','신청 메모','처리'],output,current==='usage'?'이 달에 승인된 휴가 사용 내역이 없습니다.':'해당 조건의 휴가 신청이 없습니다.'));
+  }
+  draw();
  }
  root.AiselCompanyPeople={render,reset};
 })(window);

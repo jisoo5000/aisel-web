@@ -98,7 +98,7 @@
  function role(){return window.AiselAccess?.session?.role||(A.isOwner()?'owner':knownRole||DM.getRole());}
  function allowedWorkorder(){return window.AiselAccess?.allowed('orders')===true;}
  function companyView(view){return window.AiselCompanyERP?.route(view);}
- function allowedView(view){if(role()==='designer'&&!['orders','editor','sales','references','designmeeting'].includes(view))return false;if(String(view).startsWith('company-'))return companyView(view)?.allowed()===true;if(view==='operations'){const s=window.AiselAccess?.session;return s?.active===true&&!s.legacy&&!!s.uid&&['owner','md','logistics'].includes(s.role);}if(['staff','permissionaudit'].includes(view))return window.AiselAccess?.isOwner===true;return view==='products'||view==='samples'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
+ function allowedView(view){if(role()==='designer'&&!['orders','editor','sales','references','designmeeting','company-myLeave'].includes(view))return false;if(String(view).startsWith('company-'))return companyView(view)?.allowed()===true;if(view==='operations'){const s=window.AiselAccess?.session;return s?.active===true&&!s.legacy&&!!s.uid&&['owner','md','logistics'].includes(s.role);}if(['staff','permissionaudit'].includes(view))return window.AiselAccess?.isOwner===true;return view==='products'||view==='samples'||window.AiselAccess?.allowed(view==='meetingmaterials'?'designmeeting':view)===true;}
  function applyRole(){
   const awaitingAccess=!window.AiselAccess?.session;
   for(const button of main.querySelectorAll('[data-main]')){
@@ -277,7 +277,7 @@
   busy=true;let completed=false,openingEditor=false;
   try{
    if(!await guard(view,intent)||intent!==navigationRevision)return false;
-   if((['staff','permissionaudit'].includes(view)||['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
+   if((['staff','permissionaudit'].includes(view)||['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-myLeave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
    if(intent!==navigationRevision||!allowedView(view))return false;info();if(view!=='editor')returnToProducts=false;
    if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:!!id,...(id?{id}:{})})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
