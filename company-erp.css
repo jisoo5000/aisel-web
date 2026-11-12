@@ -448,10 +448,18 @@
 
 /* Confirmed leave field alignment and actionable handover guidance. */
 @media screen {
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is([name=applicantName],[name=department],[name=position],[name=contact],[name=kind],[name=days]){text-align:center!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is([name=applicantName],[name=department],[name=position],[name=contact],[name=kind],[name=startDate],[name=endDate],[name=days]){text-align:center!important;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form select[name=kind]{text-align-last:center!important;padding-left:24px!important;padding-right:24px!important;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[name=days]{appearance:textfield;-moz-appearance:textfield;padding-left:6px!important;padding-right:6px!important;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[name=days]::-webkit-inner-spin-button,
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[name=days]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .cl-day-hint{display:block;width:100%;align-self:stretch;text-align:right;}
+}
+
+/* Dates share the same visual center, with the calendar icon outside the text box. */
+@media screen {
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]{position:relative;text-align:center!important;padding:0 18px!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-datetime-edit{display:block;flex:1;text-align:center;padding:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-date-and-time-value{text-align:center;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-calendar-picker-indicator{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:12px;height:12px;margin:0;padding:0;}
 }

@@ -156,6 +156,14 @@
   const next=el('div','ca-card');next.append(el('h3','','도착 후 확인할 것'),el('p','','설치할 사무실 · 직원 휴대폰 종류 · 실제 출퇴근 인식 · 오류 시 정정 처리'),el('p','ce-muted','실제 기기 시험과 기존 기록 비교를 마친 뒤 오션 관리자 해지 여부를 정합니다.'));host.append(next);
  }
 
+ function refreshLeaveForm(host){
+  const forms=host.matches?.('.cl-request-form')?[host]:[...host.querySelectorAll('.cl-request-form')];
+  for(const f of forms){
+   const contact=f.querySelector('[name=contact]'),handover=f.querySelector('[name=handover]');
+   if(contact)contact.placeholder='010-****-****';
+   if(handover)handover.placeholder="전달할 업무·진행 상황·다음 할 일\n인계받을 사람·마감일·자료 위치";
+  }
+ }
  function leaveRequest(ctx,result){
   const user=root.AiselAccess.session,profile=result.leaveProfile||{},fallback={md:'MD팀',logistics:'물류팀'};
   const {f,controls}=form(ctx,'휴가 신청',[
@@ -178,8 +186,8 @@
   group(['startDate','endDate','days'],'cl-date-row');
   controls.days.setAttribute('aria-label','사용일수');controls.days.inputMode='decimal';
   controls.applicantName.autocomplete='name';
-  controls.contact.autocomplete='tel';controls.contact.placeholder='010-****-****';
-  controls.handover.placeholder='인계받을 사람 · 업무별 진행 상황과 다음 할 일 · 마감일 · 자료 위치';
+  controls.contact.autocomplete='tel';
+  refreshLeaveForm(f);
   controls.days.parentElement.append(ctx.el('span','cl-day-hint','휴무일 제외'));
   controls.kind.addEventListener('change',()=>{if(controls.kind.value==='half'){controls.endDate.value=controls.startDate.value;controls.days.value='0.5';}else if(controls.days.value==='0.5')controls.days.value='1';});
   let lastStart=controls.startDate.value;
@@ -269,6 +277,6 @@
   }
   draw();
  }
- root.AiselCompanyPeople={render,reset,resetManagement};
+ root.AiselCompanyPeople={render,reset,resetManagement,refreshLeaveForm};
 })(window);
 
