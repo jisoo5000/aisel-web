@@ -178,7 +178,7 @@
 }
 
 @media screen{
- #aiselCompanyWorkspace .ce-replenishment-frame{display:block;box-sizing:border-box;width:100%;height:calc(100dvh - 230px);min-height:560px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;margin-top:6px;}
+ #aiselCompanyWorkspace :is(.ce-replenishment-frame,.ce-production-frame){display:block;box-sizing:border-box;width:100%;height:calc(100dvh - 230px);min-height:560px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;margin-top:6px;}
  #aiselCompanyWorkspace [aria-label="판매·재고 보기"] [aria-pressed="true"]{background:#E9ECF2;}
 }
 
@@ -462,4 +462,11 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-datetime-edit{display:block;flex:1;text-align:center;padding:0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-date-and-time-value{text-align:center;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-calendar-picker-indicator{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:12px;height:12px;margin:0;padding:0;}
+}
+
+/* Production planning uses one private sheet; equal-width tabs preserve compact layout. */
+@media screen{
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .ce-filters.ce-production-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+ #aiselCompanyWorkspace .ce-production-tabs .ce-button{width:100%;min-width:0;text-align:center;}
+ #aiselCompanyWorkspace .ce-production-tabs [aria-pressed="true"]{background:#E9ECF2;}
 }

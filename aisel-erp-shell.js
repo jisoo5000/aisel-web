@@ -231,7 +231,8 @@
   'company-apiUsage':source(book,2026111121,'ERP 운영대장 / Google API 사용 내역'),
   'company-replenishment':source('1Nj3gn7oJ1q0mtTdMzE8ScPlITY9FoTweB8aTVguxoO8',2026111110,'제작발주 / 판매·재고')
  };
- for(const key of ['overview','operation','product','content','growth'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
+ for(const key of ['overview','operation','content','growth'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
+ registry['company-product']=source(book,2026111201,'ERP 운영대장 / 제작기획 현황');
  const management=new Set(['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-apiUsage','company-evaluation']);
  const link=document.createElement('a');link.id='aiselWorkspaceSheet';link.textContent='구글시트';link.className='noprint';
  link.target='_blank';link.rel='noopener noreferrer';link.hidden=true;header.append(link);
@@ -253,6 +254,7 @@
   if(view==='company-recruitmentReferences'){
    const frame=document.querySelector('#aiselCompanyWorkspace .ce-recruitment-frame'),url=safeUrl(frame?.src);if(url)item={url,title:frame.title};
   }
+  if(view==='company-product'&&!document.querySelector('#aiselCompanyWorkspace .ce-production-frame'))item=source(book,696470300,'ERP 운영대장 / 업무대장');
   if(view==='company-replenishment'){
    const frame=document.querySelector('#aiselCompanyWorkspace .ce-replenishment-frame');
    const url=safeUrl(frame?.src);if(url)item={url,title:'제작발주 / '+frame.title};
