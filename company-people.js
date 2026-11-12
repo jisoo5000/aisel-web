@@ -186,7 +186,8 @@
   const actions=el('div','ce-actions cl-actions');
   if(admin)actions.append(button('휴가 부여 설정',()=>leaveBudget(ctx,result)));
   else actions.append(button('휴가 신청',()=>leaveRequest(ctx,result),'ce-button cl-primary'));
-  body.append(actions);
+  const toolbar=ctx.host.querySelector('.cl-toolbar');
+  if(toolbar){toolbar.querySelector('.cl-actions')?.remove();toolbar.append(actions);}else body.append(actions);
   const stats=el('div','cl-stats'),addStat=(label,value,note)=>{const card=el('div','cl-stat');card.append(el('span','ce-muted',label),el('strong','',value));if(note)card.append(el('small','ce-muted',note));stats.append(card);};
   const days=v=>Number.isFinite(v)?v+'일':'확인 전';
   if(admin){
