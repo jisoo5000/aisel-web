@@ -14,6 +14,8 @@
   var FLOW_PUBLIC_FIELDS = FLOW_FIELDS.slice(0,8), ALL_HEADERS = HEADERS.concat(FLOW_HEADERS), ALL_FIELDS = FIELDS.concat(FLOW_FIELDS);
   var flow = deps.flow || null;
   if(!flow && typeof require === "function") try{flow = require("./status-samples-flow.js");}catch(ignore){}
+  var CURRENT_HEADERS = ["물류입고일","사무실입고일","관리번호","공급처명","상품명","컬러","사이즈","수량","작업구분","샘플위치","반납예정일","반납일자","담당자","연장사유"].concat(FLOW_HEADERS,["고유번호","반납 보냄","확인 대기"]);
+  var CURRENT_FIELDS = ["warehouseDate","receivedDate","managementNumber","supplier","name","color","size","quantity","operation","location","returnDueDate","returnedDate","owner","extensionReason"].concat(FLOW_FIELDS,["stableNumber","returnDispatched","pendingLabel"]);
   var AUDIT_TITLE = "샘플변경이력";
   var AUDIT_HEADERS = ["변경시각","수정계정","관리번호","변경항목","이전값","변경값","상품명","기록키","원본탭ID"];
   var LOCATION_OWNERS = {"물류":"이주용","사무실":"최연경"};
@@ -47,6 +49,7 @@
       PUBLIC_FIELDS.forEach(function(key){var value = text(row[key]);if(value.length > 2000) throw error("PUBLIC_SOURCE_INVALID","공개 목록의 표시 항목을 확인해 주세요.");record[key] = value;});
       FLOW_PUBLIC_FIELDS.forEach(function(key){if(!safeFlowValue(key,row[key])) throw error("PUBLIC_SOURCE_INVALID","진행 단계와 수량을 확인해 주세요. 공개 목록을 갱신하지 않았습니다.");record[key] = text(row[key]);});
       record.returnCompleted = row.returnCompleted === true || filled(row.returnedDate) || ["반납","반납완료","샘플반납"].indexOf(text(row.operation).replace(/\s/g,"")) >= 0 || getReturnInfo(row).completed;
+      if(!record.returnCompleted&&row.returnDispatched==="TRUE"){record.operation="반납발송";record.location="이동중";}
       return record;
     })};
   }
@@ -94,6 +97,20 @@
     if(!Number.isFinite(next.getTime()) || next.getUTCFullYear() < 1000 || next.getUTCFullYear() > 9999) return "";
     return next.toISOString().slice(0,10);
   }
+  // Same calendar rule and configured holidays as the existing sample sheet.
+  var RETURN_HOLIDAYS = [
+  '2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02',
+  '2026-05-05', '2026-05-24', '2026-05-25', '2026-06-03', '2026-06-06', '2026-08-15',
+  '2026-08-17', '2026-09-24', '2026-09-25', '2026-09-26', '2026-10-03', '2026-10-05',
+  '2026-10-09', '2026-12-25', '2027-01-01'
+];
+  function defaultDueDate(value){
+    var day=normalizeDate(value);if(!day)return "";
+    var weekday=new Date(day+"T00:00:00Z").getUTCDay()||7;
+    var due=addCalendarDays(day,(weekday<=5?5-weekday:12-weekday)+14);
+    while(due&&(RETURN_HOLIDAYS.indexOf(due)>=0||[0,6].indexOf(new Date(due+"T00:00:00Z").getUTCDay())>=0))due=addCalendarDays(due,-1);
+    return due;
+  }
   function getReturnInfo(record){
     record = record || {};
     var operation = text(record.operation).replace(/\s+/g,""), isOutgoing = operation === "샘플출고";
@@ -108,7 +125,7 @@
     var info = {dueDate:"",canExtend:false,suggestedDate:"",reason:"",completed:completed,isOutgoing:isOutgoing};
     if(!isOutgoing){info.reason = completed ? "반납 완료" : "샘플 출고 기록만 연장할 수 있습니다.";return info;}
     // Do not hide invalid edited deadlines by falling back to a calculated one.
-    info.dueDate = filled(record.returnDueDate) ? normalizeDate(record.returnDueDate) : addCalendarDays(record.receivedDate,14);
+    info.dueDate = filled(record.returnDueDate) ? normalizeDate(record.returnDueDate) : (record.currentLayout?defaultDueDate(record.receivedDate):addCalendarDays(record.receivedDate,14));
     if(completed){info.reason = "반납 완료";return info;}
     if(!normalizeDate(record.receivedDate)){info.dueDate = "";info.reason = "입출고일자를 확인해 주세요.";return info;}
     if(!info.dueDate){info.reason = "반납예정일을 확인해 주세요.";return info;}
@@ -238,17 +255,22 @@
   }
   function rangeName(title){return "'" + title.replace(/'/g,"''") + "'";}
   function parseRows(values, meta, target){
-    var currentHeaders=["물류입고일","사무실입고일","관리번호","공급처명","상품명","컬러","사이즈","수량","작업구분","샘플위치","반납예정일","반납일자","담당자","연장사유"];
-    if(Array.isArray(values) && values[3] && currentHeaders.every(function(h,i){return text(values[3][i])===h;})){
-      var map={receivedDate:1,managementNumber:2,supplier:3,name:4,color:5,size:6,quantity:7,operation:8,location:9,returnDueDate:10,returnedDate:11,owner:12,extensionReason:13,flowState:14,flowTotal:15,officeSent:16,officeReceived:17,returnSent:18,warehouseReceived:19,cafe24Reflected:20,sellmateReflected:21,flowUpdatedAt:22,flowUpdatedBy:23};
-      var currentRows=values.slice(4).filter(function(r){return filled(r[4]);}).map(function(raw,index){
-        var record={id:"sample:"+encodeURIComponent(text(raw[2])||String(index+5)),canEdit:false,flowConfigured:false};
-        Object.keys(map).forEach(function(key){record[key]=text(raw[map[key]]);});
-        record.returnCompleted=filled(raw[11])||["반납","반납완료","샘플반납"].indexOf(text(raw[8]).replace(/\s/g,""))>=0;
-        if(!record.returnCompleted && /^(true|1)$/i.test(text(raw[25]))){record.operation="반납발송";record.location="이동중";}
-        return record;
+    if(Array.isArray(values) && values[3] && CURRENT_HEADERS.every(function(h,i){return text(values[3][i])===h;})){
+      var counts={},owners=[],currentRows=[];
+      values.slice(4).forEach(function(raw){var number=text(raw[2]);if(number)counts[number]=(counts[number]||0)+1;});
+      values.slice(4).forEach(function(raw,index){
+        if(!filled(raw[4]))return;
+        var number=text(raw[2]),unique=/^S-\d+$/.test(number)&&counts[number]===1&&Number(number.slice(2))===Number(raw[24]);
+        var normalized=CURRENT_FIELDS.map(function(_,i){return text(raw[i]);});
+        normalized[25]=/^(true|1)$/i.test(text(raw[25]))?"TRUE":"FALSE";
+        var record={id:unique?"sample:"+encodeURIComponent(number):"uneditable:"+(index+5),sourceRow:index+5,version:JSON.stringify(normalized),currentLayout:true,canEdit:unique,flowConfigured:true,editReason:unique?"":"관리번호가 비어 있거나 중복되어 원본 확인이 필요합니다."};
+        CURRENT_FIELDS.forEach(function(key,i){record[key]=normalized[i];});
+        record.returnCompleted=filled(record.returnedDate)||["반납","반납완료","샘플반납"].indexOf(record.operation.replace(/\s/g,""))>=0;
+        currentRows.push(record);if(record.owner&&owners.indexOf(record.owner)<0)owners.push(record.owner);
       });
-      return {records:currentRows,owners:[],source:{spreadsheetId:FILE_ID,sheetId:SHEET_ID,sheetName:target.title,syncedAt:now().toISOString(),currentLayout:true,flowConfigured:false},metadata:meta};
+      currentRows.sort(function(a,b){return normalizeDate(b.warehouseDate).localeCompare(normalizeDate(a.warehouseDate))||Number(b.stableNumber)-Number(a.stableNumber)||a.sourceRow-b.sourceRow;});
+      currentRows.forEach(function(row,i){row.order=i;});
+      return {records:currentRows,owners:owners,source:{spreadsheetId:FILE_ID,sheetId:SHEET_ID,sheetName:target.title,syncedAt:now().toISOString(),currentLayout:true,flowConfigured:true},metadata:meta};
     }
 
     if(!Array.isArray(values) || !values.length || HEADERS.some(function(h,i){return text(values[0][i]) !== h;})) throw error("HEADER_CHANGED","원본 시트의 항목이 변경되었습니다. 항목 구성을 확인해 주세요.");
@@ -284,7 +306,7 @@
     var parsed = parseRows(result.values,meta,sheet.properties);parsed.source.syncedAt = sourceReadAt;return parsed;
   }
   function accept(result){
-    var accepted = emit({status:"ready",connected:true,canEdit:!result.source.currentLayout,records:result.records,owners:result.owners,source:result.source,message:""});
+    var accepted = emit({status:"ready",connected:true,canEdit:true,records:result.records,owners:result.owners,source:result.source,message:""});
     publishPublic(result,generation);return accepted;
   }
   function report(e){
@@ -318,7 +340,7 @@
       await ensureAuth();
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
       var provider = new deps.firebase.auth.GoogleAuthProvider();
-      provider.addScope("https://www.googleapis.com/auth/spreadsheets.readonly");
+      provider.addScope("https://www.googleapis.com/auth/spreadsheets");
       provider.setCustomParameters({prompt:"select_account"});
       var result = await auth.signInWithPopup(provider);
       if(epoch !== generation) throw error("SESSION_CHANGED","Google 연결이 변경되었습니다.");
@@ -343,9 +365,9 @@
   function makeWriteRequests(result,row,changes,action){
     var requests = [];
     changes.forEach(function(change){
-      var col = ALL_FIELDS.indexOf(change.key);
+      var col = (row.currentLayout ? CURRENT_FIELDS : ALL_FIELDS).indexOf(change.key);
       if(col < 0) throw error("INVALID_EDIT","변경 항목을 확인해 주세요.");
-      requests.push({updateCells:{range:{sheetId:SHEET_ID,startRowIndex:row.sourceRow - 1,endRowIndex:row.sourceRow,startColumnIndex:col,endColumnIndex:col + 1},rows:[{values:[cell(change.value)]}],fields:"userEnteredValue"}});
+      requests.push({updateCells:{range:{sheetId:SHEET_ID,startRowIndex:row.sourceRow - 1,endRowIndex:row.sourceRow,startColumnIndex:col,endColumnIndex:col + 1},rows:[{values:[writeCell(row,change)]}],fields:"userEnteredValue"}});
     });
     var sheets = result.metadata.sheets || [];
     var log = sheets.filter(function(s){return s.properties.title === AUDIT_TITLE;})[0], auditId;
@@ -357,7 +379,10 @@
       requests.push({updateCells:{start:{sheetId:auditId,rowIndex:0,columnIndex:0},rows:[{values:AUDIT_HEADERS.map(cell)}],fields:"userEnteredValue"}});
     }
     var stamp = now().toISOString();
-    var auditRows = changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,ALL_HEADERS[ALL_FIELDS.indexOf(change.key)],change.previousValue === undefined ? row[change.key] : change.previousValue,change.value,row.name,row.id,String(SHEET_ID)].map(cell)};});
+    var auditRows = changes.map(function(change){return {values:[stamp,userEmail,row.managementNumber,(row.currentLayout ? CURRENT_HEADERS : ALL_HEADERS)[(row.currentLayout ? CURRENT_FIELDS : ALL_FIELDS).indexOf(change.key)],change.previousValue === undefined ? row[change.key] : change.previousValue,change.value,row.name,row.id,String(SHEET_ID)].map(cell)};});
+    if(row.currentLayout){
+      auditRows.push({values:[stamp,userEmail,row.managementNumber,"앱 샘플 변경 v1","",JSON.stringify({stableNumber:row.stableNumber,identity:[row.name,row.color,row.size],fields:changes.filter(function(c){return c.key!=="owner";}).map(function(c){return {column:CURRENT_FIELDS.indexOf(c.key),before:row[c.key],after:c.value};})}),row.name,row.id,String(SHEET_ID)].map(cell)});
+    }
     if(action){
       var actionLabels = {initialize:"현황 확인",arrive:"물류 실물 입고 확인",sendOffice:"사무실 발송",receiveOffice:"사무실 수령 확인",sendReturn:"반납 발송",receiveWarehouse:"물류 반납 수령 확인",reflectCafe24:"카페24 재고 반영 확인",reflectSellmate:"셀메이트 재고 반영 확인"};
       var startLabels = {arrival:"입고 대기 기준",warehouse:"물류 실물 기준",office:"사무실 실물 기준",returned:"물류 반납 실물 기준"};
@@ -366,6 +391,33 @@
     }
     requests.push({appendCells:{sheetId:auditId,rows:auditRows,fields:"userEnteredValue"}});
     return requests;
+  }
+  function writeCell(row,change){
+    if(row.currentLayout){
+      if(change.key==="owner")return {userEnteredValue:{formulaValue:'=IF($J'+row.sourceRow+'="사무실","최연경",IF($J'+row.sourceRow+'="물류","이주용",""))'}};
+      if(change.key==="returnDispatched")return {userEnteredValue:{boolValue:change.value==="TRUE"}};
+      if(["warehouseDate","receivedDate","returnedDate","returnDueDate"].indexOf(change.key)>=0&&normalizeDate(change.value))return {userEnteredValue:{numberValue:Date.parse(normalizeDate(change.value)+"T00:00:00Z")/86400000+25569}};
+    }
+    return cell(change.value);
+  }
+  function transferOptions(row){
+    if(!row||!row.currentLayout||!row.canEdit||row.returnCompleted||hasFlow(row))return [];
+    var quantity=text(row.quantity).replace(/,/g,"");
+    if(!/^[1-9]\d*$/.test(quantity)||!Number.isSafeInteger(Number(quantity)))return [];
+    if(row.returnDispatched==="TRUE")return [{type:"receiveWarehouse",label:"물류 반납 수령",dateLabel:"물류 반납일"}];
+    if(row.location==="물류")return [{type:"receiveOffice",label:"사무실 수령",dateLabel:"사무실입고일"}];
+    if(row.location==="사무실")return (!normalizeDate(row.receivedDate)?[{type:"receiveOffice",label:"사무실 수령일 입력",dateLabel:"사무실입고일"}]:[]).concat([{type:"sendReturn",label:"물류로 반납 보냄"}]);
+    return [];
+  }
+  function transferPatch(row,input){
+    if(!input||Object.keys(input).some(function(k){return ["type","date"].indexOf(k)<0;})||!transferOptions(row).some(function(a){return a.type===input.type;}))throw error("TRANSFER_UNAVAILABLE","현재 위치·반납 기록·수량을 다시 확인해 주세요.");
+    if(input.type==="sendReturn")return {returnDispatched:"TRUE"};
+    var day=normalizeDate(input.date),today=new Date(now().getTime()+9*3600000).toISOString().slice(0,10);
+    if(!day||day>today)throw error("TRANSFER_DATE","실제 수령한 날짜를 오늘 이전으로 입력해 주세요.");
+    var previous=normalizeDate(input.type==="receiveOffice"?row.warehouseDate:row.receivedDate);
+    if(previous&&day<previous)throw error("TRANSFER_DATE","이전 입고일보다 이른 수령일은 기록할 수 없습니다.");
+    if(input.type==="receiveOffice")return {receivedDate:day,location:"사무실",owner:LOCATION_OWNERS["사무실"],returnDueDate:normalizeDate(row.returnDueDate)||defaultDueDate(day)};
+    return {returnedDate:day,operation:"반납완료",location:"물류",owner:LOCATION_OWNERS["물류"]};
   }
   function applyAction(row,action){
     if(!row.flowConfigured) throw error("FLOW_HEADERS_REQUIRED","샘플 진행 항목 설정을 확인해 주세요. 원본 자료를 변경하지 않았습니다.");
@@ -377,15 +429,19 @@
     if(!accessToken || !state.connected) throw error("AUTH_REQUIRED","Google 계정으로 연결해 주세요.");
     if(saving) throw error("SAVE_BUSY","다른 기록을 저장하고 있습니다. 잠시 기다려 주세요.");
     if(!input || typeof input.id !== "string" || typeof input.expectedVersion !== "string") throw error("INVALID_EDIT","수정할 기록을 다시 선택해 주세요.");
+    var transfer = Object.prototype.hasOwnProperty.call(input,"transfer");
     var workflowAction = Object.prototype.hasOwnProperty.call(input,"action");
-    if(workflowAction ? Object.prototype.hasOwnProperty.call(input,"patch") || !input.action || typeof input.action !== "object" || Array.isArray(input.action) : !input.patch || typeof input.patch !== "object" || Array.isArray(input.patch)) throw error("INVALID_EDIT","진행 동작과 일반 수정을 한 번에 저장할 수 없습니다.");
+    if(transfer&&(workflowAction||Object.prototype.hasOwnProperty.call(input,"patch")))throw error("INVALID_EDIT","이동 작업은 한 번에 하나만 저장할 수 있습니다.");
+    if(!transfer && (workflowAction ? Object.prototype.hasOwnProperty.call(input,"patch") || !input.action || typeof input.action !== "object" || Array.isArray(input.action) : !input.patch || typeof input.patch !== "object" || Array.isArray(input.patch))) throw error("INVALID_EDIT","진행 동작과 일반 수정을 한 번에 저장할 수 없습니다.");
     var recordId = input.id, expectedVersion = input.expectedVersion;
     var loadedRecord = state.records.filter(function(r){return r.id === recordId && r.canEdit;})[0];
     if(!state.canEdit || !loadedRecord) throw error("INVALID_EDIT","목록에서 수정할 기록을 다시 선택해 주세요.");
     if(loadedRecord.version !== expectedVersion) throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 최신 기록을 확인한 뒤 다시 수정해 주세요.");
-    var inputKeys = workflowAction ? [] : Object.keys(input.patch), patch, keys, action = null;
+    var inputKeys = workflowAction || transfer ? [] : Object.keys(input.patch), patch, keys, action = null;
     var extending = !workflowAction && inputKeys.length === 2 && inputKeys.indexOf("returnDueDate") >= 0 && inputKeys.indexOf("extensionReason") >= 0;
-    if(workflowAction){
+    if(transfer){patch=transferPatch(loadedRecord,input.transfer);keys=Object.keys(patch);}
+    else if(workflowAction){
+      if(loadedRecord.currentLayout)throw error("TRANSFER_UNAVAILABLE","현재 시트는 입고·반납 버튼으로 변경해 주세요.");
       if(Object.keys(input.action).some(function(key){return ["type","start","quantity"].indexOf(key) < 0;}) || typeof input.action.type !== "string" || typeof input.action.quantity !== "number" || Object.prototype.hasOwnProperty.call(input.action,"start") && typeof input.action.start !== "string") throw error("FLOW_ACTION_INVALID","진행 동작과 수량을 확인해 주세요.");
       action = {type:input.action.type,quantity:input.action.quantity};if(Object.prototype.hasOwnProperty.call(input.action,"start")) action.start = input.action.start;
       patch = applyAction(loadedRecord,action);keys = Object.keys(patch);
@@ -397,6 +453,7 @@
       if(!reason || reason.length > 100 || /[\r\n\u2028\u2029]/.test(input.patch.extensionReason)) throw error("INVALID_EXTENSION_REASON","연장 사유를 한 줄로 100자 이내 입력해 주세요.");
       patch = {returnDueDate:dueDate,extensionReason:reason};keys = ["returnDueDate","extensionReason"];
     }else{
+      if(loadedRecord.currentLayout)throw error("TRANSFER_UNAVAILABLE","수령·반납 버튼으로 위치를 변경해 주세요.");
       if(hasFlow(loadedRecord)) throw error("FLOW_ACTION_REQUIRED","진행 중인 샘플은 수령·반납 확인으로 위치를 변경해 주세요.");
       if(inputKeys.length !== 1 || inputKeys[0] !== "location") throw error("INVALID_EDIT","샘플 위치 또는 반납 연장만 변경할 수 있습니다. 담당자는 위치에 따라 자동으로 정해집니다.");
       if(typeof input.patch.location !== "string" || input.patch.location.length > 100) throw error("INVALID_EDIT","입력한 값을 확인해 주세요.");
@@ -413,7 +470,10 @@
       if(!row || row.version !== expectedVersion){accept(result);throw error("CONFLICT","다른 곳에서 이 기록이 변경되었습니다. 입력을 확인한 뒤 취소하고 최신 기록에서 다시 수정해 주세요.");}
       var changes;
       var verificationKeys = keys, expectedAfter;
-      if(workflowAction){
+      if(transfer){
+        patch=transferPatch(row,input.transfer);keys=Object.keys(patch);verificationKeys=keys;
+        changes=keys.filter(function(k){return row[k]!==patch[k];}).map(function(k){return {key:k,value:patch[k]};});
+      }else if(workflowAction){
         patch = applyAction(row,action);
         patch.flowUpdatedAt = now().toISOString();patch.flowUpdatedBy = userEmail;
         var projected = Object.assign({},row,patch);
@@ -459,10 +519,11 @@
     getState:function(){return clone(state);},
     subscribe:function(listener){listeners.push(listener);listener(clone(state));return function(){listeners = listeners.filter(function(fn){return fn !== listener;});};},
     connect:connect,disconnect:disconnect,load:load,save:save,
-    normalizeDate:normalizeDate,addCalendarDays:addCalendarDays,getReturnInfo:getReturnInfo,makePublicCatalog:makePublicCatalog,
+    transferOptions:transferOptions,normalizeDate:normalizeDate,addCalendarDays:addCalendarDays,getReturnInfo:getReturnInfo,makePublicCatalog:makePublicCatalog,
     dispose:function(){disposed = true;publicSnapshot = null;wipe("");if(timer && deps.window && deps.window.clearInterval) deps.window.clearInterval(timer);if(deps.document && deps.document.removeEventListener) deps.document.removeEventListener("visibilitychange",refreshVisible);if(deps.window && deps.window.removeEventListener) deps.window.removeEventListener("focus",refreshVisible);listeners = [];}
   };
 });
+
 
 
 
