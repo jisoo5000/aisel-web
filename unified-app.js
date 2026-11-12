@@ -359,10 +359,17 @@
  main.addEventListener('click',e=>{const b=e.target.closest('.maintab[data-main]');if(!b)return;landingOpen=false;e.preventDefault();e.stopImmediatePropagation();show(b.dataset.main);},true);
  // The shared heading returns to the current menu's list through the same
  // permission checks, save guards and queued navigation as the sidebar.
- $('appPageTitle').addEventListener('click',()=>{
+ let titleNavigation=0;
+ $('appPageTitle').addEventListener('click',async()=>{
   if(!current)return;
+  const request=++titleNavigation,title=$('appPageTitle');
   landingOpen=false;
-  show(current==='editor'?'orders':current,{home:true});
+  title.setAttribute('aria-busy','true');
+  info('입력 내용을 확인하고 목록으로 이동 중…');
+  try{
+   const opened=await show(current==='editor'?'orders':current,{home:true});
+   if(request===titleNavigation&&!opened&&(!notice.textContent||notice.textContent==='입력 내용을 확인하고 목록으로 이동 중…'))info('현재 입력 내용을 유지했습니다. 저장 상태를 확인한 뒤 다시 눌러주세요.');
+  }finally{if(request===titleNavigation)title.removeAttribute('aria-busy');}
  });
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame?.contentWindow)return;

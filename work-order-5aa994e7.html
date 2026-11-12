@@ -250,7 +250,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=title-navigation-20261112">
+<link rel="preload" as="script" href="unified-app.js?v=title-navigation-save-scope-20261112">
 <link rel="preload" as="script" href="design-meeting.js?v=permissions-20261111">
 <link rel="preload" as="script" href="reference-collection.js?v=reference-half-stars-20261112">
 <link rel="preload" as="style" href="workorder-screen.css?v=20261112-cost-typography">
@@ -7774,7 +7774,7 @@
   let editorSaveFeedback_ = null;
   function editorSaveState_(){
     if(!editorSaveFeedback_ || editorSaveFeedback_.ref !== woRef || editorSaveFeedback_.code !== currentCode || editorSaveFeedback_.owner!==draftOwner_()){
-      editorSaveFeedback_={ref:woRef,code:currentCode,owner:draftOwner_(),revision:0,serial:0,latest:0,result:null,queued:false,confirmed:false,manual:false,sheetError:false,indexFailed:false,pending:new Map(),failedKeys:new Map(),fieldSuccess:new Map(),sentSnapshots:[]};
+      editorSaveFeedback_={ref:woRef,code:currentCode,owner:draftOwner_(),revision:0,serial:0,latest:0,result:null,queued:false,confirmed:false,manual:false,sheetError:false,indexFailed:false,pending:new Map(),writes:new Set(),failedKeys:new Map(),fieldSuccess:new Map(),sentSnapshots:[]};
     }
     return editorSaveFeedback_;
   }
@@ -7995,8 +7995,8 @@
         }
       });
     }
-    pendingSaveWrites_.add(writePromise);
-    writePromise.then(()=>pendingSaveWrites_.delete(writePromise));
+    pendingSaveWrites_.add(writePromise);state.writes.add(writePromise);
+    writePromise.then(()=>{pendingSaveWrites_.delete(writePromise);state.writes.delete(writePromise);});
     return writePromise;
   }
   $("#saveBtn").addEventListener("click",async()=>{
@@ -12749,7 +12749,9 @@
       const inFlight=state.pending.get(state.latest);
       const sameWrite=ctx&&inFlight&&inFlight.revision===revision&&inFlight.draftRevision===ctx.revision&&!state.queued;
       if(!loading&&ref&&code!==justDeletedCode_&&!sameWrite&&await save()===false)return false;
-      return !(await Promise.all([...pendingSaveWrites_])).includes(false);
+      // Other records and background status migrations must not trap this editor.
+      // Retain the current record's writes even if its server acknowledgement is late.
+      return !(await Promise.all([...state.writes])).includes(false);
     })().catch(()=>false);
     let timer;
     const result=await Promise.race([remote,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),15000);})]);
@@ -17997,7 +17999,7 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=leave-navigation-20261112"></script>
-<script src="unified-app.js?v=title-navigation-20261112"></script>
+<script src="unified-app.js?v=title-navigation-save-scope-20261112"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-management-20261112" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261112-cost-typography" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=title-navigation-20261112">
