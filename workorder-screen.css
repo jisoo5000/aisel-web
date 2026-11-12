@@ -881,9 +881,9 @@
 @media screen {
  html:root body #editorView #sheet #costCell :is(.cost-table .amt,.fixed-loss-value),
  html:root body #editorView #sheet .size-cost-card :is(.size-cost-amount,.size-cost-total,.size-cost-fixed > span:last-child) {
-  color:#202124;
-  -webkit-text-fill-color:#202124;
+  color:#34383C;
+  -webkit-text-fill-color:#34383C;
   opacity:1;
-  font-weight:600;
+  font-weight:400;
  }
 }
