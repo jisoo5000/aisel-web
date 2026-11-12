@@ -27,6 +27,50 @@
  @media(max-width:800px){#aiselCompanyWorkspace .cg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
  @media(max-width:560px){#aiselCompanyWorkspace .cg-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px;}#aiselCompanyWorkspace .cg-detail{grid-template-columns:minmax(0,1fr);}#aiselCompanyWorkspace .cg-detail .cg-photo{position:static;}#aiselCompanyWorkspace .cg-card-body{padding:8px;}}
 }
+
+/* Native recruitment dashboard. Uses the same compact ERP controls and palette. */
+#aiselCompanyWorkspace .cr-dashboard{display:grid;gap:6px;min-width:0}
+#aiselCompanyWorkspace .cr-toolbar{margin:0;gap:6px;flex-wrap:wrap}
+#aiselCompanyWorkspace .cr-status,#aiselCompanyWorkspace .cr-count{margin:0;font-size:12px;line-height:18px}
+#aiselCompanyWorkspace .cr-body{display:grid;gap:6px;min-width:0}
+#aiselCompanyWorkspace .cr-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+#aiselCompanyWorkspace .cr-stat{display:grid;gap:6px;padding:6px;border:1px solid var(--line,#dedbd7);border-radius:3px;background:var(--sheet-tint,#f9f8f6);font-size:12px;min-width:0}
+#aiselCompanyWorkspace .cr-stat strong{font-size:14px;line-height:20px;font-weight:600;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .cr-filters{gap:6px;margin:0;flex-wrap:wrap}
+#aiselCompanyWorkspace .cr-filters input{flex:1;min-width:120px;width:auto}
+#aiselCompanyWorkspace .cr-results,#aiselCompanyWorkspace .cr-history{display:grid;gap:6px}
+#aiselCompanyWorkspace .cr-job{border:1px solid var(--line,#dedbd7);border-radius:3px;min-width:0;background:#fff}
+#aiselCompanyWorkspace .cr-job>summary{cursor:pointer;padding:6px;list-style:none;display:grid;grid-template-columns:minmax(150px,2fr) minmax(110px,1fr) minmax(80px,.65fr) minmax(80px,.6fr);gap:6px;align-items:center;font-size:12px;line-height:18px}
+#aiselCompanyWorkspace .cr-job>summary::-webkit-details-marker{display:none}
+#aiselCompanyWorkspace .cr-job>summary:focus-visible{outline:2px solid #80756b;outline-offset:1px}
+#aiselCompanyWorkspace .cr-job[open]>summary{background:#f7f5f2;border-bottom:1px solid var(--line,#dedbd7)}
+#aiselCompanyWorkspace .cr-title{display:grid;gap:3px;min-width:0;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .cr-title strong{font-weight:600}
+#aiselCompanyWorkspace .cr-title>span::before{content:'＋ ';color:#867f76}
+#aiselCompanyWorkspace .cr-job[open] .cr-title>span::before{content:'− '}
+#aiselCompanyWorkspace .cr-expanded{padding:6px;display:grid;gap:6px;min-width:0}
+#aiselCompanyWorkspace .cr-meta{display:flex;gap:6px;align-items:center;justify-content:space-between}
+#aiselCompanyWorkspace .cr-details{display:grid;grid-template-columns:minmax(90px,1fr) minmax(0,4fr);gap:6px;margin:0;padding:6px;font-size:12px;line-height:18px}
+#aiselCompanyWorkspace .cr-details dt{color:#77716a;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .cr-details dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+#aiselCompanyWorkspace .cr-collection-note{margin:0;white-space:pre-wrap}
+#aiselCompanyWorkspace .cr-note-form{display:grid;gap:6px;margin:0;padding-top:6px;border-top:1px solid var(--line,#dedbd7)}
+#aiselCompanyWorkspace .cr-favorite{display:flex;align-items:center;gap:6px;font-size:12px}
+#aiselCompanyWorkspace .cr-favorite input{width:16px;height:16px;accent-color:#80756b}
+#aiselCompanyWorkspace .cr-note-form textarea{width:100%;box-sizing:border-box;resize:vertical}
+#aiselCompanyWorkspace .cr-history summary{grid-template-columns:1fr 1fr}
+@media(max-width:600px){
+ #aiselCompanyWorkspace .cr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #aiselCompanyWorkspace .cr-job>summary{grid-template-columns:1fr 1fr}
+ #aiselCompanyWorkspace .cr-title{grid-column:1/-1}
+ #aiselCompanyWorkspace .cr-qualification{grid-column:1/-1}
+ #aiselCompanyWorkspace .cr-job-state{font-size:11px;color:#77716a}
+ #aiselCompanyWorkspace .cr-deadline{text-align:right;font-size:11px}
+ #aiselCompanyWorkspace .cr-filters select{flex:1;min-width:80px;width:auto;max-width:100%}
+ #aiselCompanyWorkspace .cr-details{grid-template-columns:1fr}
+ #aiselCompanyWorkspace .cr-details dt{font-weight:600;padding-top:6px}
+}
+
 @media screen {
  #aiselCompanyWorkspace{box-sizing:border-box;width:100%;max-width:1040px;margin:0 auto;padding:0;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;font:400 12px/18px 'AISEL Screen',sans-serif;}
  #aiselCompanyWorkspace[hidden]{display:none!important;}
@@ -202,6 +246,7 @@
  #aiselCompanyWorkspace .cg-guide-table td>button{justify-self:start}
 }
 
+
 /* Attendance dashboard: record-based totals; no absence or lateness inference. */
 @media screen {
  #aiselCompanyWorkspace .ca-workspace{display:grid;gap:6px;min-width:0;}
@@ -254,32 +299,102 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-section-heading p{margin:3px 0 0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host :is(.cl-toolbar,.cl-actions,.cl-controls,.cl-tabs){display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 6px;min-width:0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-actions{justify-content:flex-end;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button{border:1px solid #B8CAE4;background:#EEF4FC;color:#245A9B;white-space:nowrap;min-height:28px;height:auto;padding:4px 8px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button:hover{background:#E0ECFA;border-color:#789CCA;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host :is(.cl-primary,.cl-tabs .ce-button[aria-pressed="true"]){background:#3267AC;color:#FFF;border-color:#3267AC;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button{border:1px solid var(--aisel-menu-line,#E3E5E7);background:#FFF;color:var(--aisel-menu-ink,#34383C);white-space:nowrap;min-height:28px;height:auto;padding:4px 8px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button:hover{background:var(--aisel-menu-surface,#F1F3F6);border-color:var(--aisel-menu-line,#E3E5E7);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host :is(.cl-primary,.cl-tabs .ce-button[aria-pressed="true"]){background:var(--aisel-menu-selected,#E9ECF2);color:var(--aisel-menu-ink,#34383C);border-color:var(--aisel-menu-selected,#E9ECF2);}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button:disabled{opacity:.55;cursor:wait;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:6px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid #E3E8EF;border-radius:3px;background:#F5F8FC;min-width:0;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat strong{font-size:21px;line-height:28px;color:#245A9B;font-weight:600;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;background:var(--aisel-menu-surface,#F1F3F6);min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat strong{font-size:21px;line-height:28px;color:var(--aisel-menu-ink,#34383C);font-weight:600;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat small{font-size:11px;line-height:16px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-tabs{margin:0;margin-right:auto;flex-wrap:nowrap;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls select{height:28px;max-width:100%;min-width:0;font:inherit;color:#586575;border:1px solid #D5DFEC;border-radius:3px;background:#FFF;padding:0 6px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results{border:1px solid #E3E8EF;border-radius:3px;padding:12px;min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls select{height:28px;max-width:100%;min-width:0;font:inherit;color:var(--aisel-menu-muted,#6C727C);border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;background:#FFF;padding:0 6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results{border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;padding:12px;min-width:0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results h3{font-size:13px;line-height:20px;font-weight:600;margin:0 0 6px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse;font-size:12px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table :is(th,td){white-space:normal;overflow-wrap:anywhere;text-align:left;vertical-align:middle;border:1px solid #E3E8EF;padding:8px 6px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table th{background:#EEF3F9;color:#586575;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table .ce-empty{padding:28px 12px;text-align:center;color:#6C727C;background:#FAFBFD;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table :is(th,td){white-space:normal;overflow-wrap:anywhere;text-align:left;vertical-align:middle;border:1px solid var(--aisel-menu-line,#E3E5E7);padding:8px 6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table th{background:var(--aisel-menu-surface,#F1F3F6);color:var(--aisel-menu-muted,#6C727C);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-table .ce-empty{padding:28px 12px;text-align:center;color:#6C727C;background:#FFF;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-row-actions{margin:0;gap:6px;flex-wrap:wrap;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-badge{display:inline-block;padding:2px 6px;border-radius:3px;background:#EEF3F9;color:#38618E;white-space:nowrap;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-badge{display:inline-block;padding:2px 6px;border-radius:3px;background:var(--aisel-menu-surface,#F1F3F6);color:var(--aisel-menu-ink,#34383C);white-space:nowrap;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-pending,
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-cancellation_requested{background:#FFF6DF;color:#7D641F;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-cancellation_requested{background:var(--aisel-menu-selected,#E9ECF2);color:var(--aisel-menu-ink,#34383C);}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-rejected,
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-cancelled{background:#F2F3F5;color:#6C727C;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-cancelled{background:var(--aisel-menu-surface,#F1F3F6);color:#6C727C;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-footnote{font-size:11px;line-height:17px;margin:6px 0;}
 }
 @media screen and (max-width:600px){
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{padding:8px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls .cl-tabs{width:100%;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-tabs .ce-button{flex:1;padding-left:6px;padding-right:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results{padding:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table,
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table tbody{display:block;width:100%;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table tr{display:block;border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;margin-bottom:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table td{display:grid;grid-template-columns:84px minmax(0,1fr);gap:6px;border:0;border-bottom:1px solid var(--aisel-menu-line,#E3E5E7);align-items:center;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table td::before{content:attr(data-label);font-size:11px;color:#6C727C;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table .cl-empty-row td{display:block;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table .cl-empty-row td::before{display:none;}
+}
+
+/* Compact ERP body responds to its content width; standalone mobile media remain supported. */
+@media screen {
+@container aisel-content (max-width:800px){#aiselCompanyWorkspace .cg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@container aisel-content (max-width:560px){#aiselCompanyWorkspace .cg-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 8px;}#aiselCompanyWorkspace .cg-detail{grid-template-columns:minmax(0,1fr);}#aiselCompanyWorkspace .cg-detail .cg-photo{position:static;}#aiselCompanyWorkspace .cg-card-body{padding:8px;}}
+@container aisel-content (max-width:600px){
+ #aiselCompanyWorkspace .cr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #aiselCompanyWorkspace .cr-job>summary{grid-template-columns:1fr 1fr}
+ #aiselCompanyWorkspace .cr-title{grid-column:1/-1}
+ #aiselCompanyWorkspace .cr-qualification{grid-column:1/-1}
+ #aiselCompanyWorkspace .cr-job-state{font-size:11px;color:#77716a}
+ #aiselCompanyWorkspace .cr-deadline{text-align:right;font-size:11px}
+ #aiselCompanyWorkspace .cr-filters select{flex:1;min-width:80px;width:auto;max-width:100%}
+ #aiselCompanyWorkspace .cr-details{grid-template-columns:1fr}
+ #aiselCompanyWorkspace .cr-details dt{font-weight:600;padding-top:6px}
+}
+@container aisel-content (max-width:700px){
+  #aiselCompanyWorkspace{width:100%;border:0;border-radius:0;}
+  #aiselCompanyWorkspace .ce-header{padding:10px 12px;height:68px;}
+  #aiselCompanyWorkspace .ce-layout{display:flex;flex-direction:column;height:calc(100% - 68px);}
+  #aiselCompanyWorkspace .ce-nav{display:flex;gap:4px;overflow-x:auto;flex-shrink:0;border:0;border-bottom:1px solid #DEDEDE;padding:6px 8px;}
+  #aiselCompanyWorkspace .ce-nav-button{width:auto;white-space:nowrap;margin:0;padding:6px 8px;}
+  #aiselCompanyWorkspace .ce-nav>p{display:none;}
+  #aiselCompanyWorkspace .ce-main{padding:10px 12px 20px;flex:1;}
+  #aiselCompanyWorkspace .ce-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #aiselCompanyWorkspace .ce-flows{grid-template-columns:1fr;}
+  #aiselCompanyWorkspace .ce-detail-line{grid-template-columns:1fr;gap:2px;}
+  #aiselCompanyWorkspace .ce-form{grid-template-columns:1fr;}
+ }
+@container aisel-content (max-width:600px){#aiselCompanyWorkspace .gp-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#aiselCompanyWorkspace .gp-line{grid-template-columns:82px minmax(0,1fr)}#aiselCompanyWorkspace .gp-check-grid{grid-template-columns:minmax(0,1fr)}}
+@container aisel-content (max-width:600px){#aiselCompanyWorkspace .ce-recruitment-frame{height:calc(100dvh - 180px);min-height:360px;}}
+@container aisel-content (max-width:640px){
+ #aiselCompanyWorkspace .cg-guide-stages{grid-template-columns:1fr}
+ #aiselCompanyWorkspace .cg-guide-table,#aiselCompanyWorkspace .cg-guide-table tbody,#aiselCompanyWorkspace .cg-guide-table tr,#aiselCompanyWorkspace .cg-guide-table td{display:block;width:100%;box-sizing:border-box}
+ #aiselCompanyWorkspace .cg-guide-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+ #aiselCompanyWorkspace .cg-guide-table tr{border:1px solid #E3E5E7;border-radius:3px;margin-bottom:6px}
+ #aiselCompanyWorkspace .cg-guide-table td{display:grid;grid-template-columns:74px minmax(0,1fr);gap:6px;border:0;border-bottom:1px solid #E3E5E7}
+ #aiselCompanyWorkspace .cg-guide-table td::before{content:attr(data-label);color:#666;font-weight:500}
+ #aiselCompanyWorkspace .cg-guide-table td:first-child{background:#F1F3F6;font-weight:600}
+ #aiselCompanyWorkspace .cg-guide-table td:last-child{border-bottom:0}
+ #aiselCompanyWorkspace .cg-guide-table td>button{justify-self:start}
+}
+@container aisel-content (max-width:700px){
+  #aiselCompanyWorkspace .ca-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
+  #aiselCompanyWorkspace .ca-table,#aiselCompanyWorkspace .ca-table tbody{display:block;width:100%;}
+  #aiselCompanyWorkspace .ca-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+  #aiselCompanyWorkspace .ca-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid #e3e5e7;margin:6px 0;}
+  #aiselCompanyWorkspace .ca-table td{display:flex;flex-direction:column;align-items:flex-start;gap:3px;border:0;border-bottom:1px solid #e3e5e7;text-align:left;min-width:0;}
+  #aiselCompanyWorkspace .ca-table td:before{content:attr(data-label);color:#6c727c;font-size:11px;}
+  #aiselCompanyWorkspace .ca-table td:last-child{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between;border-bottom:0;}
+  #aiselCompanyWorkspace .ca-actions>.ce-muted{width:100%;margin-left:0;}
+  #aiselCompanyWorkspace .ca-headline input{width:100%;}
+  #aiselCompanyWorkspace .ca-templates{grid-template-columns:minmax(0,1fr);}
+  #aiselCompanyWorkspace .ca-card .ce-detail-line{grid-template-columns:72px minmax(0,1fr);gap:6px;}
+ }
+@container aisel-content (max-width:600px){
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stats{grid-template-columns:repeat(2,minmax(0,1fr));}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{padding:8px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls .cl-tabs{width:100%;}
@@ -293,4 +408,5 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table td::before{content:attr(data-label);font-size:11px;color:#6C727C;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table .cl-empty-row td{display:block;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-table .cl-empty-row td::before{display:none;}
+}
 }

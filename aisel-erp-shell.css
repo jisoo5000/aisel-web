@@ -35,11 +35,6 @@
   html:root body.aisel-erp-shell.erp-nav-pinned .erp-nav-close {display:none!important;}
 }
 @media screen and (min-width:1024px) and (orientation:landscape), screen and (min-width:1024px) and (hover:hover) and (pointer:fine) {
-  html:root body.aisel-erp-shell #galleryView {max-width:1040px;padding:20px;background:#FFF;border:1px solid #E3E5E7;border-radius:3px;}
-  html:root body.aisel-erp-shell #galleryView .gallery-grid {grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;}
-  html:root body.aisel-erp-shell #galleryView .gcard-thumb {height:200px;}
-  html:root body.aisel-erp-shell #galleryView :is(#gallerySearchRow,#galleryFilters) {max-width:440px;}
-  html:root body.aisel-erp-shell #galleryView #galleryTabs {max-width:600px;}
   html:root body.aisel-erp-shell #editorView {background:#FFF;}
   html:root body.aisel-erp-shell #scrollFabWrap {right:24px;}
 }
@@ -187,29 +182,42 @@
  html:root body.aisel-erp-shell.erp-mobile #mainBar>button.erp-nav-group,
  html:root body.aisel-erp-shell.erp-mobile #mainBar>.maintab[data-main]{min-height:44px;height:auto;padding-top:10px;padding-bottom:10px;font-size:13px;line-height:22px;white-space:normal;}
  html:root body.aisel-erp-shell.erp-mobile .erp-nav-close{width:40px;height:40px;}
- html:root body.aisel-erp-shell.erp-mobile :is(#aiselCompanyWorkspace,#erpOperationsView,#aiselStaffDirectory,#aiselPermissionAudit,#aiselMeetingMaterialsView){box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin-left:auto;margin-right:auto;}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace :is(.ce-body,.ce-form,.ce-form-grid,.ce-form-columns,.ce-detail,.cg-detail,.cg-guide-stages){grid-template-columns:minmax(0,1fr);}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace .ce-main{padding:8px;}
- html:root body.aisel-erp-shell.erp-mobile :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-actions,.ce-filters,.ce-list-tools,.ops-toolbar,.ops-actions){display:flex;flex-wrap:wrap;gap:8px;min-width:0;}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace .ce-search{flex:1 1 100%;min-width:0;}
- html:root body.aisel-erp-shell.erp-mobile :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-button,.ops-button,.ops-toolbar button,.ops-tabs button,.cg-tabs button,.gp-tabs button){min-height:36px;height:auto;line-height:20px;padding:7px 8px;white-space:normal;}
- html:root body.aisel-erp-shell.erp-mobile :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-form,.ce-form-grid,.gp-form,.ops-form-grid) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;min-height:40px;font-size:16px;line-height:24px;max-width:100%;}
- html:root body.aisel-erp-shell.erp-mobile :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-filters,.ce-list-tools,.ops-toolbar) :is(input:not([type=checkbox]):not([type=radio]),select){min-height:36px;height:auto;max-width:100%;}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace :is(.cg-tabs,.gp-tabs){display:flex;flex-wrap:wrap;overflow:visible;gap:6px;white-space:normal;}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace :is(.cg-tabs,.gp-tabs)>button{flex:1 0 auto;}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace :is(.ce-stats,.ce-summary,.gp-stats){grid-template-columns:repeat(2,minmax(0,1fr));}
- html:root body.aisel-erp-shell.erp-mobile #aiselCompanyWorkspace :is(.ce-stat,.gp-stat){min-width:0;overflow-wrap:anywhere;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list{display:block;width:100%;min-width:0;table-layout:auto;border:0;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list tbody{display:block;width:100%;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list tbody tr{display:block;width:100%;box-sizing:border-box;margin-bottom:8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list tbody td{display:grid;grid-template-columns:minmax(70px,28%) minmax(0,1fr);gap:8px;align-items:start;width:100%;min-width:0!important;max-width:none!important;box-sizing:border-box;padding:8px!important;white-space:normal;overflow-wrap:anywhere;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list tbody td::before{content:attr(data-mobile-label);color:#6C727C;font-weight:400;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list tbody td>*{min-width:0;max-width:100%;}
- html:root body.aisel-erp-shell.erp-mobile .erp-mobile-list tbody td:last-child{border-bottom:0;}
+ html:root body.aisel-erp-shell.erp-compact-content :is(#aiselCompanyWorkspace,#erpOperationsView,#aiselStaffDirectory,#aiselPermissionAudit,#aiselMeetingMaterialsView){box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin-left:auto;margin-right:auto;}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace :is(.ce-body,.ce-form,.ce-form-grid,.ce-form-columns,.ce-detail,.cg-detail,.cg-guide-stages){grid-template-columns:minmax(0,1fr);}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace .ce-main{padding:8px;}
+ html:root body.aisel-erp-shell.erp-compact-content :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-actions,.ce-filters,.ce-list-tools,.ops-toolbar,.ops-actions){display:flex;flex-wrap:wrap;gap:8px;min-width:0;}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace .ce-search{flex:1 1 100%;min-width:0;}
+ html:root body.aisel-erp-shell.erp-compact-content :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-button,.cl-host .ce-button,.ops-button,.ops-toolbar button,.ops-tabs button,.cg-tabs button,.gp-tabs button){min-height:36px;height:auto;line-height:20px;padding:7px 8px;white-space:normal;}
+ html:root body.aisel-erp-shell.erp-compact-content :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-form,.ce-form-grid,.gp-form,.ops-form-grid) :is(input:not([type=checkbox]):not([type=radio]),select,textarea){box-sizing:border-box;min-height:40px;font-size:16px;line-height:24px;max-width:100%;}
+ html:root body.aisel-erp-shell.erp-compact-content :is(#aiselCompanyWorkspace,#erpOperationsView) :is(.ce-filters,.ce-list-tools,.ops-toolbar) :is(input:not([type=checkbox]):not([type=radio]),select){min-height:36px;height:auto;max-width:100%;}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace :is(.cg-tabs,.gp-tabs){display:flex;flex-wrap:wrap;overflow:visible;gap:6px;white-space:normal;}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace :is(.cg-tabs,.gp-tabs)>button{flex:1 0 auto;}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace :is(.ce-stats,.ce-summary,.gp-stats){grid-template-columns:repeat(2,minmax(0,1fr));}
+ html:root body.aisel-erp-shell.erp-compact-content #aiselCompanyWorkspace :is(.ce-stat,.gp-stat){min-width:0;overflow-wrap:anywhere;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list{display:block;width:100%;min-width:0;table-layout:auto;border:0;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list thead{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list tbody{display:block;width:100%;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list tbody tr{display:block;width:100%;box-sizing:border-box;margin-bottom:8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list tbody td{display:grid;grid-template-columns:minmax(70px,28%) minmax(0,1fr);gap:8px;align-items:start;width:100%;min-width:0!important;max-width:none!important;box-sizing:border-box;padding:8px!important;white-space:normal;overflow-wrap:anywhere;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list tbody td::before{content:attr(data-mobile-label);color:#6C727C;font-weight:400;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list tbody td>*{min-width:0;max-width:100%;}
+ html:root body.aisel-erp-shell.erp-compact-content .erp-mobile-list tbody td:last-child{border-bottom:0;}
  html:root body.aisel-erp-shell.erp-mobile :is(dialog,.ce-modal,.ops-modal){max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);box-sizing:border-box;overflow:auto;}
  html:root body.aisel-erp-shell.erp-mobile #editorSaveStatus[data-state="error"]{max-width:100%;flex-wrap:wrap;}
  html:root body.aisel-erp-shell #editorSaveStatus .save-status-detail{flex-basis:100%;max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:#A63F57;}
  html:root body.aisel-erp-shell #editorSaveStatus .save-status-detail[hidden]{display:none;}
  html:root body.aisel-erp-shell.erp-mobile #editorSaveStatus button{min-height:32px;padding:4px 8px;}
+}
+/* 2026-11-12: every menu uses the confirmed 390px workorder content width.
+   Sidebar/header respond to the viewport separately; print and full-screen presentation retain their layouts. */
+@media screen {
+ html:root body.aisel-erp-shell {--aisel-content-width:390px;}
+ html:root body.aisel-erp-shell :is(#galleryView,#salesView,#editorView,#designMeetingView,#referenceCollectionView,#aiselMoodboardsView,#meetingMaterialsView,#productProgressView,#aiselCompanyWorkspace,#erpOperationsView,#aiselStaffDirectory,#aiselPermissionAudit,#aiselMeetingMaterialsView:not(.amm-presenting)) {
+  box-sizing:border-box;width:100%;min-width:0;max-width:var(--aisel-content-width)!important;margin-left:auto;margin-right:auto;
+ }
+ html:root body.aisel-erp-shell :is(#aiselStartupNotice,#unifiedNotice) {max-width:var(--aisel-content-width);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace {container:aisel-content / inline-size;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cg-grid {grid-template-columns:repeat(2,minmax(0,1fr));}
+ html:root body.aisel-erp-shell #erpOperationsView :is(.ops-form-grid,.ops-progress) {grid-template-columns:minmax(0,1fr);}
+ html:root body.aisel-erp-shell :is(#aiselCompanyWorkspace,#erpOperationsView,#aiselStaffDirectory,#aiselPermissionAudit) :is(.ce-table-scroll,.ops-scroll) {min-width:0;max-width:100%;overflow:auto;}
 }

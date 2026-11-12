@@ -47,7 +47,7 @@
       :role==='logistics'?[['물류',['products','samples']],['기타',['orders','designmeeting','meetingmaterials','references','sales']]]
       :role==='md'?[['판매',['sales']],['상품',['references','orders','designmeeting','meetingmaterials']],['물류',['products','samples']]]
       :[['상품·제작',['references','designmeeting','meetingmaterials','orders']],['판매',['sales']],['물류',['products','samples']]];
-    groups.push(['업무',['operations']],['관리',['staff','permissionaudit']]);
+    groups.push(['업무',['operations']],['근무·휴가',[]],['관리',['staff','permissionaudit']]);
     for(const item of window.AiselCompanyERP?.navigation()||[]){let group=groups.find(g=>g[0]===item.group);if(!group){group=[item.group,[]];groups.push(group);}group[1].push(item.view);}
     groups.forEach(([label,views])=>{
       const caption=document.createElement('button');caption.type='button';caption.className='erp-nav-group';
@@ -165,7 +165,7 @@
   wide.addEventListener('change', syncLayout);
   compact.addEventListener('change', syncLayout);
   pointer.addEventListener('change', syncLayout);
-  body.classList.add('aisel-erp-shell'); sync(); render();
+  body.classList.add('aisel-erp-shell','erp-compact-content'); sync(); render();
   window.AiselErpShell=Object.freeze({closeMenu:()=>setDrawer(false,false),refresh:()=>{menuRole=null;sync();}});
   // A short, optional performance cue on the workorder list. Data comes only
   // from the existing assigned-sales service and stays in this account's memory.
