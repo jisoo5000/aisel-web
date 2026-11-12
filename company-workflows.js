@@ -1,5 +1,86 @@
 (function(root){'use strict';
 const D=root.AiselWorkflowDomain;if(!D)return;let epoch=0,cache={},flights={};
+
+function createProductWorkflowLinks(){
+ const types=['meeting','naming','purchase','contentPlan','styling','reaction','campaign'];
+ const clean=v=>typeof v==='string'?v.trim():'';
+ const code=v=>clean(v).toUpperCase();
+ const key=r=>clean(r?.type)+'/'+clean(r?.id);
+ function identity(r){const v=r?.values||{};return {productCode:code(v.productCode),planningId:clean(v.planningId),assetId:clean(v.assetId),adId:clean(v.adId)};}
+ function related(anchor,record){
+  if(!anchor||!record||!types.includes(record.type))return false;
+  if(key(anchor)===key(record))return true;
+  const a=identity(anchor),b=identity(record);
+  // A shared reference or video must never join two different products.
+  if(a.productCode&&b.productCode)return a.productCode===b.productCode;
+  return ['planningId','assetId','adId'].some(k=>a[k]&&a[k]===b[k]);
+ }
+ function records(anchor,input,{includeArchived=false}={}){
+  const found=new Map();
+  for(const r of input||[]){
+   if(!r||!clean(r.id)||!related(anchor,r)||!includeArchived&&r.archived)continue;
+   const old=found.get(key(r));
+   if(!old||Number(r.version)>Number(old.version))found.set(key(r),r);
+  }
+  return [...found.values()].sort((a,b)=>types.indexOf(a.type)-types.indexOf(b.type)||(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0)||key(a).localeCompare(key(b)));
+ }
+ function available(r){return Object.values(identity(r)).some(Boolean);}
+ function date(v){const s=clean(v);return /^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s))&&new Date(s).toISOString().slice(0,10)===s;}
+ function handoffKey(r,target,meetingDate=''){
+  if(!types.includes(r?.type)||!clean(r?.id)||!types.includes(target))throw Error('연결할 원본 기록을 확인해 주세요.');
+  if(target==='meeting'&&!date(meetingDate))throw Error('실제 회의일을 선택해 주세요.');
+  return JSON.stringify(['aisel-workflow-handoff-v1',r.type,r.id,target,target==='meeting'?meetingDate:'']);
+ }
+ function seed(r,target){
+  if(!types.includes(target)||!available(r))throw Error('품번 또는 기획·영상 ID를 먼저 연결해 주세요.');
+  const v=r.values||{},out={};
+  for(const k of ['productCode','planningId','assigneeName','sourceUrl'])if(clean(v[k]))out[k]=v[k];
+  out.title=clean(v.title)+(target==='meeting'?' · 후속 검토':'');
+  const context=['원본 기록: '+key(r),'원본 버전: '+r.version];
+  if(v.periodStart||v.periodEnd)context.push('관찰기간: '+(v.periodStart||'미확인')+' ~ '+(v.periodEnd||'미확인'));
+  if(v.returnEnd)context.push('반품 관찰 종료: '+v.returnEnd);
+  for(const [k,label]of [['evidence','확인 근거'],['rationale','판단 근거'],['experiment','비교 조건'],['nextAction','다음 행동']])if(clean(v[k]))context.push(label+': '+v[k]);
+  if(target==='meeting'){
+   out.reference=context.join('\n').slice(0,4000);
+   out.hypothesis=clean(v.hypothesis||v.testHypothesis);
+   out.nextAction=clean(v.nextAction);
+   out.meetingDate='';
+  }else{
+   out.evidence=context.join('\n').slice(0,4000);
+   out.nextAction=clean(v.nextAction);
+   if(['contentPlan','styling','campaign'].includes(target)&&v.assetId)out.assetId=v.assetId;
+  }
+  // Do not copy completion, orders, quantities, costs, approval or dates.
+  return out;
+ }
+ function sameValues(a,b){const keys=[...new Set([...Object.keys(a||{}),...Object.keys(b||{})])];return keys.every(k=>(a?.[k]??'')===(b?.[k]??''));}
+ function verified(saved,checked,p){
+  const a=saved?.item,b=checked?.item;
+  return !!a&&!!b&&a.id===p.id&&b.id===p.id&&a.type===p.type&&b.type===p.type&&
+   Number.isSafeInteger(a.version)&&a.version===p.expectedVersion+1&&b.version===a.version&&
+   a.status===p.status&&b.status===p.status&&!a.archived&&!b.archived&&sameValues(a.values,p.values)&&sameValues(b.values,p.values);
+ }
+ return Object.freeze({types,identity,related,records,available,date,handoffKey,seed,sameValues,verified});
+}
+const ProductLinks=createProductWorkflowLinks();
+
+async function readRecords(type,request,run){
+ if(cache[type])return cache[type];if(flights[type])return flights[type];
+ const pending=(async()=>{
+  const rows=[],seen=new Set();let cursor;
+  do{
+   const result=await request('workflowList',{type,limit:100,...(cursor?{cursor}:{})});
+   if(run!==epoch)throw Error('계정 또는 권한이 변경되었습니다.');
+   if(!Array.isArray(result?.items)||result.items.some(r=>!r||r.type!==type||typeof r.id!=='string'||!r.values))throw Error('연결 기록의 형식을 확인하지 못했습니다.');
+   rows.push(...result.items);cursor=result.nextCursor;
+   if(cursor&&seen.has(cursor))throw Error('목록 연결 확인 필요');if(cursor)seen.add(cursor);
+  }while(cursor);
+  if(run!==epoch)throw Error('계정 또는 권한이 변경되었습니다.');
+  return cache[type]=[...new Map(rows.map(r=>[r.id,r])).values()];
+ })().finally(()=>{if(run===epoch&&flights[type]===pending)delete flights[type];});
+ flights[type]=pending;return pending;
+}
+
 function reset(){epoch++;cache={};flights={};usageCache=null;usageFlight=null;usageView='costs';}
 const sources={meeting:'https://docs.google.com/spreadsheets/d/1Phnl7244HYoFLcVMw_u4zJ-KCZ1SrziQAfUIfDFmkBw/edit',content:'https://docs.google.com/spreadsheets/d/1KztjNTkAeu6aa82EGecJewU0W-DtK-PUGcGs_DRGQ5E/edit',sales:'https://docs.google.com/spreadsheets/d/1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0/edit#gid=2026100512',finance:'https://docs.google.com/spreadsheets/d/1N341S2gmxCWkpIiTy9A2Jj05C3ayWKFC-tNTS9IRX9Y/edit'};
 function render(type,ctx){
@@ -11,19 +92,90 @@ function render(type,ctx){
  const flow=el('ol','ce-flow-steps');for(const step of spec.workflow)flow.append(el('li','',step));host.append(flow);
  if(spec.source){host.append(link('기존 원본 열기',sources[spec.source]));if(['meeting','content'].includes(spec.source)){const details=el('details','ce-project');details.append(el('summary','','하루 한 번 연결한 원본 보기'));const box=el('div');details.append(box);host.append(details);details.addEventListener('toggle',async()=>{if(!details.open||box.childNodes.length)return;box.append(el('p','ce-muted','원본 연결 확인 중'));try{const r=await request('companySourceSnapshot',{kind:spec.source});if(run!==epoch||!box.isConnected)return;box.replaceChildren();box.append(el('p','ce-muted',r.status?.status==='needs_attention'?'원본 연결 확인 필요 · 마지막 성공 자료가 있으면 함께 표시합니다.':r.snapshot?'원본 확인 '+new Date(r.snapshot.readAt).toLocaleString('ko-KR'):'아직 원본을 읽은 기록이 없습니다.'));for(const t of r.snapshot?.tables||[]){box.append(el('h3','',t.range));table(box,t.rows,el);}if(r.snapshot?.coverage)box.append(el('p','ce-muted',r.snapshot.coverage));}catch(e){if(box.isConnected)box.replaceChildren(el('p','ce-error',e.message));}});}}
  const controls=el('div','ce-list-tools'),search=el('input');search.type='search';search.placeholder='검색';search.setAttribute('aria-label','검색');const archived=el('input');archived.type='checkbox';const archiveLabel=el('label');archiveLabel.append(archived,document.createTextNode('보관 포함'));const searchLabel=el('label','ce-search');searchLabel.append(search);controls.append(searchLabel,archiveLabel);host.append(controls);const list=el('div','ce-projects');host.append(list);
- function draw(){list.replaceChildren();const rows=(cache[type]||[]).filter(r=>(archived.checked||!r.archived)&&JSON.stringify(r.values).toLowerCase().includes(search.value.toLowerCase())).sort((a,b)=>b.updatedAt-a.updatedAt);if(!rows.length)list.append(el('p','ce-empty',cache[type]?'아직 기록이 없습니다.':'저장된 기록을 확인하고 있습니다.'));for(const r of rows){const card=el('details','ce-project cw-card'),sum=el('summary','',r.values.title+' · '+r.status+(r.archived?' · 보관':''));card.append(sum,el('p','ce-muted',[r.values.productCode,r.values.assigneeName,r.values.dueDate].filter(Boolean).join(' · ')));for(const f of spec.fields){const v=r.values[f.key];if(v===''||v===undefined||v===null)continue;const row=el('p');row.append(el('strong','',f.label+' · '));if(f.type==='url')row.append(link('열기',v));else row.append(document.createTextNode(String(v)));card.append(row);}for(const [name,value]of Object.entries(D.metrics(type,r.values))){const isRate=['판매율','반품률','CTR'].includes(name),formatted=value===null?'미확인':isRate?(value*100).toFixed(1)+'%':name==='ROAS'?value.toFixed(2)+'배':Math.round(value).toLocaleString('ko-KR');card.append(el('p','',name+' · '+formatted+(type==='reaction'&&r.values.sampleState!=='비교 가능'?' · 잠정':'')));}card.append(el('p','ce-muted',r.id+' · 수정 '+new Date(r.updatedAt).toLocaleString('ko-KR')),button(r.archived?'복원':'보관',()=>archiveRecord(r)));if(!r.archived)card.append(button('수정',()=>edit(r)));list.append(card);}}
+ function draw(){list.replaceChildren();const rows=(cache[type]||[]).filter(r=>(archived.checked||!r.archived)&&JSON.stringify(r.values).toLowerCase().includes(search.value.toLowerCase())).sort((a,b)=>b.updatedAt-a.updatedAt);if(!rows.length)list.append(el('p','ce-empty',cache[type]?'아직 기록이 없습니다.':'저장된 기록을 확인하고 있습니다.'));for(const r of rows){const card=el('details','ce-project cw-card'),sum=el('summary','',r.values.title+' · '+r.status+(r.archived?' · 보관':''));card.append(sum,el('p','ce-muted',[r.values.productCode,r.values.assigneeName,r.values.dueDate].filter(Boolean).join(' · ')));for(const f of spec.fields){const v=r.values[f.key];if(v===''||v===undefined||v===null)continue;const row=el('p');row.append(el('strong','',f.label+' · '));if(f.type==='url')row.append(link('열기',v));else row.append(document.createTextNode(String(v)));card.append(row);}for(const [name,value]of Object.entries(D.metrics(type,r.values))){const isRate=['판매율','반품률','CTR'].includes(name),formatted=value===null?'미확인':isRate?(value*100).toFixed(1)+'%':name==='ROAS'?value.toFixed(2)+'배':Math.round(value).toLocaleString('ko-KR');card.append(el('p','',name+' · '+formatted+(type==='reaction'&&r.values.sampleState!=='비교 가능'?' · 잠정':'')));}card.append(el('p','ce-muted',r.id+' · 수정 '+new Date(r.updatedAt).toLocaleString('ko-KR')),button(r.archived?'복원':'보관',()=>archiveRecord(r)));if(!r.archived)card.append(button('수정',()=>edit(r)));productHistory(r,card);list.append(card);}}
  search.addEventListener('input',draw);archived.addEventListener('change',draw);draw();
- if(!cache[type]){if(!flights[type])flights[type]=(async()=>{const rows=[],seen=new Set();let cursor;do{const r=await request('workflowList',{type,limit:100,...(cursor?{cursor}:{})});rows.push(...r.items);cursor=r.nextCursor;if(cursor&&seen.has(cursor))throw Error('목록 연결 확인 필요');seen.add(cursor);}while(cursor);if(run===epoch)cache[type]=rows;})().finally(()=>{if(run===epoch)delete flights[type];});flights[type].then(()=>{if(run===epoch&&list.isConnected)draw();}).catch(e=>{if(list.isConnected)list.replaceChildren(el('p','ce-error',e.message));});}
+ if(!cache[type])readRecords(type,request,run).then(()=>{if(run===epoch&&list.isConnected)draw();}).catch(e=>{if(run===epoch&&list.isConnected)list.replaceChildren(el('p','ce-error',e.message));});
  async function archiveRecord(r){setWriting(true);try{await request('workflowArchive',{type,id:r.id,expectedVersion:r.version,requestId:'req-'+root.crypto.randomUUID(),archived:!r.archived});const checked=await request('workflowGet',{type,id:r.id});if(run!==epoch)return;cache[type]=(cache[type]||[]).map(x=>x.id===r.id?checked.item:x);draw();message('보관 상태를 저장하고 다시 확인했습니다.');}catch(e){message(e.message,true);}finally{if(run===epoch)setWriting(false);}}
- function edit(record){
-  setDirty(true);host.replaceChildren();host.append(el('h2','',spec.label+' · '+(record?'수정':'새 기록')),el('p','ce-muted',spec.note));const form=el('form','ce-form'),inputs={};
-  for(const f of [{key:'status',label:'상태',type:'select',options:D.statusOptions},...spec.fields]){const label=el('label','ce-field'),input=el(f.type==='textarea'?'textarea':f.type==='select'?'select':'input');label.append(el('span','',f.label));if(f.options)for(const option of f.options){const n=el('option','',option);n.value=option;input.append(n);}else if(f.type!=='textarea')input.type=['date','number','url'].includes(f.type)?f.type:'text';if(f.type==='number')input.step='any';input.name=f.key;input.value=f.key==='status'?record?.status||'대기':record?.values[f.key]??'';if(f.key==='title')input.required=true;label.append(input);form.append(label);inputs[f.key]=input;}
-  const actions=el('div','ce-actions'),save=el('button','ce-button','저장'),cancel=button('취소',()=>{setDirty(false);ctx.redraw();});save.type='submit';actions.append(save,cancel);form.append(actions);host.append(form);
-  const recordId=record?.id||'record-'+root.crypto.randomUUID(),requestId='req-'+root.crypto.randomUUID();
-  form.addEventListener('submit',async e=>{e.preventDefault();if(!form.reportValidity())return;save.disabled=cancel.disabled=true;setWriting(true);const values={};for(const f of spec.fields){const v=inputs[f.key].value.trim();values[f.key]=f.type==='number'&&v!==''?Number(v):v;}
-   try{const saved=await request('workflowSave',{type,id:recordId,requestId,expectedVersion:record?.version||0,status:inputs.status.value,values}),checked=await request('workflowGet',{type,id:recordId});if(run!==epoch)return;if(checked.item.version<saved.item.version)throw Error('저장된 최신 기록을 확인해야 합니다.');cache[type]=[...(cache[type]||[]).filter(x=>x.id!==recordId),checked.item];setDirty(false);setWriting(false);ctx.redraw();message('저장하고 다시 확인했습니다. 구글 운영대장은 다음 일일 연결에 반영합니다.');}catch(error){if(run===epoch){message(error.message,true);save.disabled=cancel.disabled=false;}}finally{if(run===epoch)setWriting(false);}
+
+ function productHistory(record,card){
+  if(!ProductLinks.types.includes(record.type))return;
+  const details=el('details','ce-project cw-product-history'),summary=el('summary','','상품 연결 이력'),box=el('div');
+  details.append(summary,box);card.append(details);let loaded=false,pending=false;
+  details.addEventListener('toggle',async()=>{
+   if(!details.open||loaded||pending||run!==epoch)return;
+   if(!ProductLinks.available(record)){box.replaceChildren(el('p','ce-muted','품번 또는 기획·영상 ID를 입력하면 연결 이력이 표시됩니다.'));return;}
+   pending=true;box.replaceChildren(el('p','ce-muted','저장된 연결 이력을 확인하고 있습니다.'));
+   const outcomes=await Promise.all(ProductLinks.types.map(async kind=>{
+    try{await readRecords(kind,request,run);return {kind,ok:true};}catch(error){return {kind,ok:false,error};}
+   }));
+   pending=false;if(run!==epoch||!box.isConnected)return;loaded=true;box.replaceChildren();
+   const failed=outcomes.filter(x=>!x.ok);
+   if(failed.length){box.append(el('p','ce-error','연결 확인 필요: '+failed.map(x=>D.specs[x.kind].label).join(', ')),button('실패한 목록 다시 확인',()=>{loaded=false;details.open=false;details.open=true;}));}
+   const items=ProductLinks.records(record,ProductLinks.types.flatMap(k=>cache[k]||[]));
+   if(!items.length){box.append(el('p','ce-muted',failed.length?'일부 이력을 확인하지 못했습니다.':'같은 품번·기획·영상 ID로 연결된 기록이 아직 없습니다.'));return;}
+   const wrap=el('div','ce-table-scroll'),table=el('table','ce-table'),thead=el('thead'),tr=el('tr');
+   for(const label of ['업무','기록 상태','대상·일정','다음 행동','열기'])tr.append(el('th','',label));thead.append(tr);table.append(thead);const tbody=el('tbody');
+   for(const item of items){const v=item.values||{},row=el('tr');row.append(el('td','',D.specs[item.type].label),el('td','',item.status));
+    row.append(el('td','',[v.productCode,v.orderType,v.meetingDate||v.dueDate||v.periodEnd].filter(Boolean).join(' · ')),el('td','',v.nextAction||''));
+    const cell=el('td');cell.append(button('기록 보기',()=>edit(item,{},item.type)));row.append(cell);tbody.append(row);}
+   table.append(tbody);wrap.append(table);box.append(wrap,el('p','ce-muted','기존 기록의 상태입니다. 실제 발주·상품등록·광고 집행 결과는 각 기록의 근거로 확인합니다.'));
+   const actions=el('div','ce-actions'),next=el('select');next.setAttribute('aria-label','연결할 다음 업무');
+   for(const kind of ProductLinks.types.filter(k=>k!==record.type||k==='meeting')){const option=el('option','',D.specs[kind].label);option.value=kind;next.append(option);}
+   if(['reaction','campaign'].includes(record.type))next.value='meeting';
+   actions.append(next,button('다음 업무 준비',()=>{try{edit(null,ProductLinks.seed(record,next.value),next.value,record);}catch(e){message(e.message,true);}}));box.append(actions);
   });
  }
+
+ function edit(record,seed={},editType=type,origin=null){
+  const spec=D.specs[editType];if(!spec)return;
+  let base=record,saving=false,pendingAttempt=null;
+  setDirty(true);host.replaceChildren();host.append(el('h2','',spec.label+' · '+(record?'수정':'새 기록')),el('p','ce-muted',spec.note));
+  if(origin)host.append(el('p','ce-muted','이전 기록의 품번·기획 ID와 검토 근거를 가져왔습니다. 담당자·일정을 확인하고 저장하세요.'));
+  const form=el('form','ce-form'),inputs={};
+  for(const f of [{key:'status',label:'상태',type:'select',options:D.statusOptions},...spec.fields]){
+   const label=el('label','ce-field'),input=el(f.type==='textarea'?'textarea':f.type==='select'?'select':'input');label.append(el('span','',f.label));
+   if(f.options)for(const option of f.options){const n=el('option','',option);n.value=option;input.append(n);}else if(f.type!=='textarea')input.type=['date','number','url'].includes(f.type)?f.type:'text';
+   if(f.type==='number')input.step='any';else input.maxLength=f.type==='textarea'?4000:2048;
+   input.name=f.key;input.value=f.key==='status'?record?.status||'대기':record?.values[f.key]??seed[f.key]??'';
+   if(f.key==='title'||origin&&editType==='meeting'&&f.key==='meetingDate')input.required=true;
+   label.append(input);form.append(label);inputs[f.key]=input;
+  }
+  const actions=el('div','ce-actions'),save=el('button','ce-button','저장'),cancel=button('취소',()=>{setDirty(false);ctx.redraw();});save.type='submit';actions.append(save,cancel);form.append(actions);host.append(form);
+  let recordId=record?.id||'record-'+root.crypto.randomUUID(),lastFingerprint='',requestId='';
+  form.addEventListener('submit',async e=>{
+   e.preventDefault();if(saving||run!==epoch||!host.isConnected||!form.reportValidity())return;
+   saving=true;save.disabled=cancel.disabled=true;setWriting(true);
+   const values={...(base?.values||{})};for(const f of spec.fields){const v=inputs[f.key].value.trim();values[f.key]=f.type==='number'&&v!==''?Number(v):v;}
+   const status=inputs.status.value,fingerprint=JSON.stringify({values,status});
+   try{
+    if(origin){
+     const identity=ProductLinks.handoffKey(origin,editType,values.meetingDate);
+     if(!root.crypto?.subtle)throw Error('안전한 연결 저장을 사용할 수 없습니다. HTTPS 주소에서 다시 열어 주세요.');
+     const hash=await root.crypto.subtle.digest('SHA-256',new TextEncoder().encode(identity));
+     if(run!==epoch||!host.isConnected)return;
+     recordId='handoff-'+Array.from(new Uint8Array(hash),x=>x.toString(16).padStart(2,'0')).join('');
+     let existing;try{existing=await request('workflowGet',{type:editType,id:recordId});}catch(error){if(error.message!=='not_found'&&error.code!=='not_found')throw error;}
+     if(run!==epoch||!host.isConnected)return;
+     if(existing?.item){if(existing.item.id!==recordId||existing.item.type!==editType)throw Error('연결된 기록을 확인하지 못했습니다.');if(existing.item.archived)throw Error('같은 연결 기록이 보관되어 있습니다. 해당 업무에서 보관 포함으로 확인해 주세요.');
+      if(pendingAttempt&&fingerprint===lastFingerprint&&ProductLinks.verified(existing,existing,pendingAttempt)){cache[editType]=[...(cache[editType]||[]).filter(x=>x.id!==recordId),existing.item];setDirty(false);setWriting(false);ctx.redraw();message('이전 저장 결과를 확인했습니다. 중복으로 만들지 않았습니다.');return;}throw Error('같은 원본에서 이미 연결한 기록이 있습니다. 입력은 유지했습니다. 취소 후 상품 연결 이력에서 기존 기록을 확인해 주세요.');}
+    }
+    if(pendingAttempt&&fingerprint!==lastFingerprint){
+     let current;try{current=await request('workflowGet',{type:editType,id:recordId});}catch(error){if(error.message!=='not_found'&&error.code!=='not_found')throw error;}
+     if(run!==epoch||!host.isConnected)return;
+     if(current?.item&&current.item.version>pendingAttempt.expectedVersion)throw Error('이전 저장이 이미 반영됐거나 다른 곳에서 수정했습니다. 입력은 유지했습니다. 내용을 복사한 뒤 취소하여 최신 기록과 합쳐 주세요.');
+    }
+    if(fingerprint!==lastFingerprint){requestId='req-'+root.crypto.randomUUID();lastFingerprint=fingerprint;}
+    const payload={type:editType,id:recordId,requestId,expectedVersion:base?.version||0,status,values};pendingAttempt=payload;
+    const saved=await request('workflowSave',payload),checked=await request('workflowGet',{type:editType,id:recordId});
+    if(run!==epoch||!host.isConnected)return;
+    if(!ProductLinks.verified(saved,checked,payload))throw Error('저장 결과가 입력 내용과 다르거나 이후 수정됐습니다. 입력은 유지했습니다. 최신 기록을 확인해 주세요.');
+    cache[editType]=[...(cache[editType]||[]).filter(x=>x.id!==recordId),checked.item];pendingAttempt=null;
+    setDirty(false);setWriting(false);ctx.redraw();message(origin?'다음 업무에 연결해 저장했습니다. 구글 운영대장은 다음 일일 연결에 반영합니다.':'저장하고 다시 확인했습니다. 구글 운영대장은 다음 일일 연결에 반영합니다.');
+   }catch(error){if(run===epoch&&host.isConnected){message(error.message,true);save.disabled=cancel.disabled=false;}}
+   finally{if(run===epoch){saving=false;setWriting(false);}}
+  });
+ }
+
 }
 function glowny(ctx){
  const {host:parentHost,el,button,request,message,setDirty,setWriting}=ctx,run=epoch,type='glowny',host=el('div','cg-workspace');parentHost.append(host);
@@ -247,7 +399,7 @@ function usage({host,el,button,request}){
  for(const [key,view]of Object.entries(USAGE_VIEWS)){const b=button(view.label,()=>choose(key));b.dataset.usageView=key;bar.append(b);}
  choose(usageView);
 }
-root.AiselWorkflows=Object.freeze({render,reset});
+root.AiselWorkflows=Object.freeze({render,reset,productLinks:ProductLinks});
 })(window);
 
 
