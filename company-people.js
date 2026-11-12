@@ -21,7 +21,7 @@
  function render(section,ctx){
   const {host,el,button}=ctx;leaveMode=section!=='attendance';host.classList.toggle('ca-host',!leaveMode);host.classList.toggle('cl-host',leaveMode);if(!month)month=dayKey().slice(0,7);
   if(leaveMode)all=section==='leave'&&ctx.owner();
-  const top=el('div','ce-section-heading'),title=el('div');title.append(el('h2','',section==='attendance'?'출퇴근':all?'휴가 관리':'내 휴가'),el('p','ce-muted',section==='attendance'?'수동 기록 · 비콘 연결 전':all?'직원별 신청과 승인·사용 내역을 확인합니다.':'휴가 사용 내역과 남은 휴가를 확인합니다.'));top.append(title);host.append(top);
+  const top=el('div','ce-section-heading'),title=el('div');title.append(el('h2','',section==='attendance'?'출퇴근':'휴가 관리'),el('p','ce-muted',section==='attendance'?'수동 기록 · 비콘 연결 전':all?'직원별 신청과 승인·사용 내역을 확인합니다.':'휴가 사용 내역과 남은 휴가를 확인합니다.'));top.append(title);host.append(top);
   const toolbar=el('div','ce-filters cl-toolbar'),monthInput=el('input');monthInput.type='month';monthInput.value=month;monthInput.setAttribute('aria-label','조회 월');monthInput.style.width='150px';toolbar.append(monthInput);
   if(!leaveMode&&ctx.owner()){const sel=el('select');for(const [v,t]of [['all','전체 직원'],['mine','내 기록']]){const o=el('option','',t);o.value=v;sel.append(o);}sel.value=all?'all':'mine';sel.setAttribute('aria-label','근태 조회 대상');sel.addEventListener('change',()=>{all=sel.value==='all';data=null;ctx.redraw();});toolbar.append(sel);}
   monthInput.addEventListener('change',()=>{if(!monthInput.value)return;month=monthInput.value;if(section==='attendance')attendanceView='month';data=null;ctx.redraw();});

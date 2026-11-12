@@ -16,7 +16,7 @@
  let peopleStaffAt=0,peopleStaffFlight=null;
  let replenishmentView='summary',recruitmentReferenceView='summary';
  let workflowCatalog=null,catalogFlight=null,catalogFilter='',catalogGroup='all';
- const controllers=new Set(),tabs={overview:'전체 업무흐름',catalog:'전체 업무목록',operation:'운영 업무',product:'상품·제작',content:'콘텐츠·광고',replenishment:'판매·재고',salesTable:'판매표',finance:'매출·광고·수익',growth:'매출·순익',hiring:'채용·인력',recruitmentReferences:'채용 레퍼런스',attendance:'출퇴근',leave:'휴가 관리',myLeave:'내 휴가',automation:'자동화·연결'};
+ const controllers=new Set(),tabs={overview:'전체 업무흐름',catalog:'전체 업무목록',operation:'운영 업무',product:'상품·제작',content:'콘텐츠·광고',replenishment:'판매·재고',salesTable:'판매표',finance:'매출·광고·수익',growth:'매출·순익',hiring:'채용·인력',recruitmentReferences:'채용 레퍼런스',attendance:'출퇴근',leave:'휴가 관리',myLeave:'휴가 관리',automation:'자동화·연결'};
  const notices={invalid_record_field:'기록 항목을 확인해주세요.',invalid_record_text:'입력 내용의 길이와 형식을 확인해주세요.',invalid_number:'숫자 입력을 확인해주세요.',invalid_period:'시작일과 종료일을 확인해주세요.',invalid_record_option:'선택한 상태를 확인해주세요.',decision_evidence_required:'판단 근거와 확인한 결과를 기록해주세요.',review_evidence_required:'합의한 기준·근거·본인 의견·다음 확인일을 기록해주세요.',management_login_required:'관리 영역에 다시 로그인해주세요.',sheets_not_enabled:'시트 연결 설정을 확인해야 합니다.',service_unavailable:'저장 서버 연결을 확인해야 합니다.',sync_cooldown:'방금 연결을 확인했습니다. 15분 뒤 다시 갱신할 수 있습니다.',sheets_access_required:'시트 접근 권한을 확인해야 합니다.',permission_denied:'이 계정에서 회사 ERP를 이용할 권한이 없습니다.',unauthenticated:'로그인 상태를 다시 확인해 주세요.',version_conflict:'다른 곳에서 먼저 수정했습니다. 최신 기록을 다시 불러온 뒤 변경해 주세요.',completion_evidence_required:'완료 결과나 확인 근거를 입력해 주세요.',prior_step_incomplete:'이 업무에 먼저 필요한 결과를 확인해 주세요.',invalid_assignee:'담당자 계정이 변경되었습니다. 직원 목록을 새로 확인해 주세요.',completed_step_immutable:'이미 완료한 단계입니다. 후속 수정은 메모와 다음 업무에 기록해 주세요.'};
  function message(text,error=false){notice.textContent=text;notice.classList.toggle('ce-error',error);}
  function friendly(error){return notices[error?.message]||error?.message||'연결을 확인하지 못했습니다.';}
@@ -35,7 +35,7 @@
   }catch(error){if(error?.name==='AbortError')throw Error('연결 시간이 길어지고 있습니다. 다시 확인해 주세요.');throw error;}
   finally{clearTimeout(timer);controllers.delete(controller);}
  }
- const navigation=[['product','상품·제작','제작기획 현황'],['content','상품·제작','콘텐츠·광고'],['salesTable','판매','판매표'],['finance','판매','매출·광고·수익'],['growth','판매','매출·순익'],['replenishment','판매','판매·재고'],['overview','업무','전체 업무흐름'],['catalog','업무','전체 업무목록'],['operation','업무','운영 업무'],['hiring','관리','채용·인력'],['recruitmentReferences','관리','채용 레퍼런스'],['attendance','관리','출퇴근'],['leave','관리','휴가 관리'],['myLeave','근무·휴가','내 휴가'],['automation','관리','자동화·연결']];
+ const navigation=[['product','상품·제작','제작기획 현황'],['content','상품·제작','콘텐츠·광고'],['salesTable','판매','판매표'],['finance','판매','매출·광고·수익'],['growth','판매','매출·순익'],['replenishment','판매','판매·재고'],['overview','업무','전체 업무흐름'],['catalog','업무','전체 업무목록'],['operation','업무','운영 업무'],['hiring','관리','채용·인력'],['recruitmentReferences','관리','채용 레퍼런스'],['attendance','관리','출퇴근'],['leave','관리','휴가 관리'],['myLeave','근무·휴가','휴가 관리'],['automation','관리','자동화·연결']];
  for(const [key,spec]of Object.entries(root.AiselWorkflowDomain?.specs||{})){tabs[key]=spec.label;navigation.push([key,spec.group,spec.label]);}tabs.apiUsage='Google API 사용 내역';navigation.push(['apiUsage','관리','Google API 사용 내역']);
  const canView=key=>allowed()&&(key==='myLeave'||session()?.role!=='designer'&&(owner()||key==='attendance'));
  function canLeave(){if(dirty||writing){message(writing?'저장 결과를 확인하고 있습니다.':'작성 중인 내용을 저장하거나 취소한 뒤 이동해 주세요.',true);return false;}return true;}
