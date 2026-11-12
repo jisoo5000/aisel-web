@@ -1,5 +1,5 @@
 (function(root){'use strict';
-const D=root.AiselWorkflowDomain;if(!D)return;let epoch=0,cache={},flights={};
+const D=root.AiselWorkflowDomain;if(!D)return;let epoch=0,cache={},flights={},complete={};
 
 function createProductWorkflowLinks(){
  const types=['meeting','naming','purchase','contentPlan','styling','reaction','campaign'];
@@ -65,7 +65,7 @@ function createProductWorkflowLinks(){
 const ProductLinks=createProductWorkflowLinks();
 
 async function readRecords(type,request,run){
- if(cache[type])return cache[type];if(flights[type])return flights[type];
+ if(complete[type])return cache[type];if(flights[type])return flights[type];
  const pending=(async()=>{
   const rows=[],seen=new Set();let cursor;
   do{
@@ -76,12 +76,12 @@ async function readRecords(type,request,run){
    if(cursor&&seen.has(cursor))throw Error('목록 연결 확인 필요');if(cursor)seen.add(cursor);
   }while(cursor);
   if(run!==epoch)throw Error('계정 또는 권한이 변경되었습니다.');
-  return cache[type]=[...new Map(rows.map(r=>[r.id,r])).values()];
+  const merged=new Map(rows.map(r=>[r.id,r]));for(const r of cache[type]||[]){const current=merged.get(r.id);if(!current||r.version>current.version)merged.set(r.id,r);}cache[type]=[...merged.values()];complete[type]=true;return cache[type];
  })().finally(()=>{if(run===epoch&&flights[type]===pending)delete flights[type];});
  flights[type]=pending;return pending;
 }
 
-function reset(){epoch++;cache={};flights={};usageCache=null;usageFlight=null;usageView='costs';}
+function reset(){epoch++;cache={};flights={};complete={};usageCache=null;usageFlight=null;usageView='costs';}
 const sources={meeting:'https://docs.google.com/spreadsheets/d/1Phnl7244HYoFLcVMw_u4zJ-KCZ1SrziQAfUIfDFmkBw/edit',content:'https://docs.google.com/spreadsheets/d/1KztjNTkAeu6aa82EGecJewU0W-DtK-PUGcGs_DRGQ5E/edit',sales:'https://docs.google.com/spreadsheets/d/1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0/edit#gid=2026100512',finance:'https://docs.google.com/spreadsheets/d/1N341S2gmxCWkpIiTy9A2Jj05C3ayWKFC-tNTS9IRX9Y/edit'};
 function render(type,ctx){
  const {host,el,button,request,message,setDirty,setWriting}=ctx,run=epoch,spec=D.specs[type];
@@ -94,7 +94,7 @@ function render(type,ctx){
  const controls=el('div','ce-list-tools'),search=el('input');search.type='search';search.placeholder='검색';search.setAttribute('aria-label','검색');const archived=el('input');archived.type='checkbox';const archiveLabel=el('label');archiveLabel.append(archived,document.createTextNode('보관 포함'));const searchLabel=el('label','ce-search');searchLabel.append(search);controls.append(searchLabel,archiveLabel);host.append(controls);const list=el('div','ce-projects');host.append(list);
  function draw(){list.replaceChildren();const rows=(cache[type]||[]).filter(r=>(archived.checked||!r.archived)&&JSON.stringify(r.values).toLowerCase().includes(search.value.toLowerCase())).sort((a,b)=>b.updatedAt-a.updatedAt);if(!rows.length)list.append(el('p','ce-empty',cache[type]?'아직 기록이 없습니다.':'저장된 기록을 확인하고 있습니다.'));for(const r of rows){const card=el('details','ce-project cw-card'),sum=el('summary','',r.values.title+' · '+r.status+(r.archived?' · 보관':''));card.append(sum,el('p','ce-muted',[r.values.productCode,r.values.assigneeName,r.values.dueDate].filter(Boolean).join(' · ')));for(const f of spec.fields){const v=r.values[f.key];if(v===''||v===undefined||v===null)continue;const row=el('p');row.append(el('strong','',f.label+' · '));if(f.type==='url')row.append(link('열기',v));else row.append(document.createTextNode(String(v)));card.append(row);}for(const [name,value]of Object.entries(D.metrics(type,r.values))){const isRate=['판매율','반품률','CTR'].includes(name),formatted=value===null?'미확인':isRate?(value*100).toFixed(1)+'%':name==='ROAS'?value.toFixed(2)+'배':Math.round(value).toLocaleString('ko-KR');card.append(el('p','',name+' · '+formatted+(type==='reaction'&&r.values.sampleState!=='비교 가능'?' · 잠정':'')));}card.append(el('p','ce-muted',r.id+' · 수정 '+new Date(r.updatedAt).toLocaleString('ko-KR')),button(r.archived?'복원':'보관',()=>archiveRecord(r)));if(!r.archived)card.append(button('수정',()=>edit(r)));productHistory(r,card);list.append(card);}}
  search.addEventListener('input',draw);archived.addEventListener('change',draw);draw();
- if(!cache[type])readRecords(type,request,run).then(()=>{if(run===epoch&&list.isConnected)draw();}).catch(e=>{if(run===epoch&&list.isConnected)list.replaceChildren(el('p','ce-error',e.message));});
+ if(!complete[type])readRecords(type,request,run).then(()=>{if(run===epoch&&list.isConnected)draw();}).catch(e=>{if(run===epoch&&list.isConnected)list.replaceChildren(el('p','ce-error',e.message));});
  async function archiveRecord(r){setWriting(true);try{await request('workflowArchive',{type,id:r.id,expectedVersion:r.version,requestId:'req-'+root.crypto.randomUUID(),archived:!r.archived});const checked=await request('workflowGet',{type,id:r.id});if(run!==epoch)return;cache[type]=(cache[type]||[]).map(x=>x.id===r.id?checked.item:x);draw();message('보관 상태를 저장하고 다시 확인했습니다.');}catch(e){message(e.message,true);}finally{if(run===epoch)setWriting(false);}}
 
  function productHistory(record,card){
