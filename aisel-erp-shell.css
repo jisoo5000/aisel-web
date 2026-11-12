@@ -168,9 +168,9 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace :is(button[aria-pressed="true"],.ce-table th){background:#F1F3F6;color:#34383C;}
 }
 @media screen and (max-width:480px){
- html:root body.aisel-erp-shell #appBrandHeader{grid-template-columns:28px minmax(0,1fr) 44px;padding:6px;}
- html:root body.aisel-erp-shell #aiselSessionButton{grid-column:3;}
- html:root body.aisel-erp-shell #aiselWorkspaceSheet{grid-column:2 / 4;grid-row:2;justify-self:end;min-height:24px;}
+ html:root body.aisel-erp-shell #appBrandHeader{grid-template-columns:28px minmax(0,1fr) auto 44px;padding:6px;}
+ html:root body.aisel-erp-shell #aiselSessionButton{grid-column:4;}
+ html:root body.aisel-erp-shell #aiselWorkspaceSheet{grid-column:3;grid-row:1;justify-self:end;min-height:28px;}
 }
 @media print{#aiselWorkspaceSheet{display:none!important;}}
 
@@ -180,10 +180,10 @@
  html:root body.aisel-erp-shell.erp-mobile{padding-left:0!important;padding-right:0!important;padding-bottom:max(20px,env(safe-area-inset-bottom));}
  /* Compact content never consumes the pinned desktop sidebar's reserved width. */
  html:root body.aisel-erp-shell.erp-mobile.erp-nav-pinned{padding-left:calc(var(--erp-sidebar) + 16px)!important;padding-right:16px!important;}
- html:root body.aisel-erp-shell.erp-mobile #appBrandHeader{grid-template-columns:36px minmax(0,1fr) 48px;gap:4px;padding:4px max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left));}
+ html:root body.aisel-erp-shell.erp-mobile #appBrandHeader{grid-template-columns:36px minmax(0,1fr) auto 48px;gap:4px;padding:4px max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left));}
  html:root body.aisel-erp-shell.erp-mobile #aiselErpMenuToggle{width:36px;height:36px;min-height:36px;padding:8px;}
- html:root body.aisel-erp-shell.erp-mobile #aiselSessionButton{grid-column:3;width:48px;height:36px;min-height:36px;}
- html:root body.aisel-erp-shell.erp-mobile #aiselWorkspaceSheet{grid-row:2;grid-column:2 / 4;min-height:28px;}
+ html:root body.aisel-erp-shell.erp-mobile #aiselSessionButton{grid-column:4;width:48px;height:36px;min-height:36px;}
+ html:root body.aisel-erp-shell.erp-mobile #aiselWorkspaceSheet{grid-row:1;grid-column:3;min-height:36px;}
  html:root body.aisel-erp-shell.erp-mobile #mainBar>button.erp-nav-group,
  html:root body.aisel-erp-shell.erp-mobile #mainBar>.maintab[data-main]{min-height:44px;height:auto;padding-top:10px;padding-bottom:10px;font-size:13px;line-height:22px;white-space:normal;}
  html:root body.aisel-erp-shell.erp-mobile .erp-nav-close{width:40px;height:40px;}
