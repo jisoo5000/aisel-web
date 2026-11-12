@@ -227,7 +227,7 @@
   if(view!=='operations')window.AiselOperations?.hide();
   if(!companyView(view))window.AiselCompanyERP?.hide();
  }
- function route(view,replace=false,code){const url=new URL(location.href);url.hash=companyView(view)?view:view==='operations'?'operations':view==='staff'?'staff':view==='permissionaudit'?'permission-audit':view==='samples'?'samples':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
+ function route(view,replace=false,code,home=false){const url=new URL(location.href);url.hash=companyView(view)?view:view==='operations'?'operations':view==='staff'?'staff':view==='permissionaudit'?'permission-audit':view==='samples'?'samples':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(!home&&url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
  async function navigationWait(task,intent=navigationRevision){
   let timer;try{return await Promise.race([Promise.resolve(task),new Promise((_,reject)=>{timer=setTimeout(()=>{if(intent===navigationRevision)navigationRevision++;reject(Error('연결 시간이 길어지고 있습니다. 입력은 유지했습니다. 다른 메뉴로 이동하거나 다시 시도해 주세요.'));},30000);})]);}
   finally{clearTimeout(timer);}
@@ -270,16 +270,18 @@
   else{await A.orders();select('orders');}
   restoreLocation(previousLocation);
  }
- async function show(view,{history:writeHistory=true,replace=false,code,id}={}){
+ async function show(view,{history:writeHistory=true,replace=false,code,id,home=false}={}){
   if(!['products','samples','orders','sales','editor','references','designmeeting','moodboards','meetingmaterials','staff','permissionaudit','operations'].includes(view)&&!companyView(view))return false;
   if(!allowedView(view)){info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return false;}
-  if(view==='moodboards'&&current===view&&window.AiselMoodboards?.visible)return true;
+  if(view==='moodboards'&&current===view&&window.AiselMoodboards?.visible&&!home)return true;
   if(view==='editor'&&(typeof code!=='string'||!code.trim()||code.length>160||/[.#$\[\]\/\u0000-\u001f]/.test(code)))return false;
   // Keep the latest destination while an input save is finishing.
-  if(busy)return new Promise(resolve=>{pendingNavigation?.resolve(false);pendingNavigation={view,options:{history:writeHistory,replace,code,id},resolve};});
+  if(busy)return new Promise(resolve=>{pendingNavigation?.resolve(false);pendingNavigation={view,options:{history:writeHistory,replace,code,id,home},resolve};});
   const previousView=current,previousCode=window.AiselWorkorderMeetingPhotos?.currentCode,previousLocation={state:history.state,url:location.href},intent=navigationRevision;
   busy=true;let completed=false,openingEditor=false;
   try{
+   // Returning to a list must also respect the detail pane's own save guard.
+   if(home&&current==='meetingmaterials'&&window.AiselMeetingMaterials?.canLeave()===false)return false;
    if(!await navigationWait(guard(view,intent),intent)||intent!==navigationRevision)return false;
    if((['staff','permissionaudit'].includes(view)||['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
    if(intent!==navigationRevision||!allowedView(view))return false;info();if(view!=='editor')returnToProducts=false;
@@ -291,7 +293,7 @@
    else if(view==='moodboards'){
     const openingUid=window.AiselAccess.session?.uid;
     if(!window.AiselMoodboards)throw Error('무드보드 화면을 불러오지 못했습니다. 새로고침 후 다시 열어주세요.');
-    const opened=await window.AiselMoodboards.show();
+    const opened=await window.AiselMoodboards.show({home});
     if(openingUid!==window.AiselAccess.session?.uid||!allowedView(view)){window.AiselMoodboards.hide();return false;}
     if(opened===false){await restoreAfterOpenFailure(previousView,previousCode,previousLocation);return false;}
     if(intent!==navigationRevision)return false;
@@ -299,7 +301,7 @@
    }
    else if(view==='meetingmaterials'){
     const materials=await navigationWait(meetingMaterials(),intent);if(intent!==navigationRevision||!allowedView(view))return false;
-    await materials.show({hash:id,background:true});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
+    await materials.show({hash:home?'#meeting-materials':id,background:true});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
     document.body.dataset.aiselListView='meetingmaterials';
    }
    else if(companyView(view)){if(companyView(view).show()===false)throw Error('업무 화면을 열지 못했습니다.');document.body.dataset.aiselListView=view;}
@@ -331,7 +333,7 @@
     returnToProducts=['products','samples'].includes(previousView);if(returnToProducts)returnStatusView=previousView;
    }
    select(view);
-   if(writeHistory)route(view,replace,code);
+   if(writeHistory)route(view,replace,code,home);
    else if(view==='editor')route(view,true,code);
    window.scrollTo(0,0);completed=true;return true;
   }catch(e){
@@ -355,6 +357,13 @@
  }});
  // Capture before the existing tab handlers so only one navigation runs.
  main.addEventListener('click',e=>{const b=e.target.closest('.maintab[data-main]');if(!b)return;landingOpen=false;e.preventDefault();e.stopImmediatePropagation();show(b.dataset.main);},true);
+ // The shared heading returns to the current menu's list through the same
+ // permission checks, save guards and queued navigation as the sidebar.
+ $('appPageTitle').addEventListener('click',()=>{
+  if(!current)return;
+  landingOpen=false;
+  show(current==='editor'?'orders':current,{home:true});
+ });
  window.addEventListener('message',e=>{
   if(e.origin!==location.origin||e.source!==frame?.contentWindow)return;
   const data=e.data||{};

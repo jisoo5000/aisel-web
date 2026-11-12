@@ -135,8 +135,10 @@
     });
     pane.append(restore, message, el('div', undefined, 'mb-board-list'), editor); document.getElementById('mainBar').after(pane);
   }
-  async function show() {
-    ensure(); visible = true; pane.hidden = false; const stamp = epoch;
+  async function show({home=false}={}) {
+    ensure();
+    if (home && !await back()) return false;
+    visible = true; pane.hidden = false; const stamp = epoch;
     try {
       const grant = await window.AiselGalleryIndex.authorize('references');
       if (grant.role !== 'owner') throw Error('대표자 계정에서 사용할 수 있습니다.');
