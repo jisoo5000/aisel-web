@@ -1,6 +1,6 @@
 (function(root){'use strict';
 const D=root.AiselWorkflowDomain;if(!D)return;let epoch=0,cache={},flights={};
-function reset(){epoch++;cache={};flights={};}
+function reset(){epoch++;cache={};flights={};usageCache=null;usageFlight=null;usageView='costs';}
 const sources={meeting:'https://docs.google.com/spreadsheets/d/1Phnl7244HYoFLcVMw_u4zJ-KCZ1SrziQAfUIfDFmkBw/edit',content:'https://docs.google.com/spreadsheets/d/1KztjNTkAeu6aa82EGecJewU0W-DtK-PUGcGs_DRGQ5E/edit',sales:'https://docs.google.com/spreadsheets/d/1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0/edit#gid=2026100512',finance:'https://docs.google.com/spreadsheets/d/1N341S2gmxCWkpIiTy9A2Jj05C3ayWKFC-tNTS9IRX9Y/edit'};
 function render(type,ctx){
  const {host,el,button,request,message,setDirty,setWriting}=ctx,run=epoch,spec=D.specs[type];
@@ -177,7 +177,77 @@ function glowny(ctx){
  draw();if(!cache[type])fetchRows();
 }
 function table(host,rows,el){const wrap=el('div','ce-table-scroll'),table=el('table','ce-table');for(const [i,values]of rows.entries()){const tr=el('tr');for(const v of values)tr.append(el(i===0?'th':'td','',String(v??'')));table.append(tr);}wrap.append(table);host.append(wrap);}
-async function usage({host,el,request}){const run=epoch;host.append(el('h2','','Google API 사용 내역'),el('p','ce-muted','하루 한 번 자료를 모으고 메뉴 이동·검색에는 Google API를 호출하지 않습니다. 직접 저장·출퇴근은 즉시 서버에 기록합니다.'));const box=el('div');host.append(box);try{const r=await request('companyApiUsage');if(run!==epoch||!box.isConnected)return;box.append(el('p','ce-muted',r.scope));if(!r.items.length)box.append(el('p','ce-muted','계측을 시작한 뒤 실제 호출부터 표시합니다. 과거 호출량은 미측정입니다.'));else table(box,[['한국 날짜','요소','읽기·쓰기','실제 요청','성공','실패','응답 대기'],...r.items.map(x=>[x.date,x.source,x.method==='read'?'읽기':'쓰기',x.requests,x.success,x.failed,x.inFlight])],el);}catch(e){if(box.isConnected)box.append(el('p','ce-error',e.message));}}
+const USAGE_BOOK='https://docs.google.com/spreadsheets/d/1zkd_VXxnqw27LArmZ7lNfOhwQnTDjDGqnYrJrvRs-Xg/edit';
+const USAGE_VIEWS={costs:{label:'비용 요약',gid:'2026111303'},audit:{label:'호출 점검',gid:'2026111302'},api:{label:'사용 내역',gid:'2026111121'}};
+let usageView='costs',usageCache=null,usageFlight=null;
+const usageIdentity=()=>{const s=root.AiselAccess?.session;return s?.active&&s.role==='owner'&&!s.passwordChangeRequired&&root.AiselManagement?.unlocked?[s.uid,s.credentialVersion||0].join(':'):'';};
+async function readUsage(request,force=false){
+ const identity=usageIdentity(),run=epoch,now=Date.now();
+ if(!identity)throw Error('관리 영역에 다시 로그인해주세요.');
+ if(usageCache?.identity===identity&&now-usageCache.at<(force?60000:300000))return usageCache;
+ if(usageFlight?.identity===identity&&usageFlight.run===run)return usageFlight.promise;
+ const flight={identity,run,promise:null};
+ flight.promise=Promise.resolve().then(()=>request('companyApiUsage')).then(data=>{
+  if(run!==epoch||identity!==usageIdentity())throw Error('계정 또는 관리 권한이 변경되었습니다.');
+  if(!Array.isArray(data?.items))throw Error('사용량 응답을 확인하지 못했습니다.');
+  return usageCache={identity,at:Date.now(),data};
+ }).finally(()=>{if(usageFlight===flight)usageFlight=null;});
+ usageFlight=flight;return flight.promise;
+}
+function usage({host,el,button,request}){
+ const run=epoch,identity=usageIdentity();
+ if(!identity){host.append(el('p','ce-error','관리 영역에 다시 로그인해주세요.'));return;}
+ const panel=el('section','ce-usage-panel'),head=el('div','ce-section-heading'),link=el('a','ce-link','구글시트');
+ link.target='_blank';link.rel='noopener noreferrer';head.append(el('h2','','사용량·비용'),link);
+ const bar=el('div','ce-filters ce-usage-tabs');bar.setAttribute('aria-label','사용량·비용 보기');
+ const body=el('div','ce-usage-body');panel.append(head,bar,body);host.append(panel);
+ let selected='',revision=0;
+ const valid=stamp=>run===epoch&&identity===usageIdentity()&&panel.isConnected&&revision===stamp;
+ async function drawApi(force=false){
+  const stamp=++revision;body.replaceChildren();
+  body.append(el('p','ce-muted','이 앱에서 구글시트를 읽고 저장한 사용 내역입니다.'));
+  const tools=el('div','ce-usage-tools'),readAt=el('span','ce-muted'),refresh=button('새로고침',()=>drawApi(true));
+  refresh.disabled=true;tools.append(readAt,refresh);body.append(tools);const result=el('div');body.append(result);
+  readAt.textContent='사용량 확인 중';
+  try{
+   const entry=await readUsage(request,force);if(!valid(stamp))return;
+   readAt.textContent='확인 '+new Date(entry.at).toLocaleString('ko-KR')+' · 5분간 재사용';
+   refresh.disabled=false;
+
+   if(!entry.data.items.length)result.append(el('p','ce-empty','아직 집계된 호출이 없습니다. 과거 호출량은 미측정입니다.'));
+   else{
+    const groups=new Map(),dates=[...new Set(entry.data.items.map(x=>String(x.date||'')).filter(Boolean))].sort();let total=0;
+    for(const x of entry.data.items){const count=Number(x.requests),source=String(x.source||'미분류');if(Number.isFinite(count)&&count>=0){groups.set(source,(groups.get(source)||0)+count);total+=count;}}
+    const overview=el('section','ce-usage-overview');overview.setAttribute('aria-label','기능별 사용 요약');
+    overview.append(el('p','ce-usage-total','기록된 사용 '+total.toLocaleString('ko-KR')+'회'),el('p','ce-muted',dates.length?dates[0]+(dates.length>1?' ~ '+dates[dates.length-1]:''):'기록 날짜 미확인'));
+    const list=el('dl','ce-usage-summary');for(const [source,count]of [...groups].sort((a,b)=>b[1]-a[1])){const row=el('div');row.append(el('dt','',source),el('dd','',count.toLocaleString('ko-KR')+'회'));list.append(row);}overview.append(list,el('p','ce-muted','이 횟수만으로 Firebase 비용이나 과다 사용을 판단할 수는 없습니다.'));result.append(overview);
+    const details=el('details','ce-usage-details');details.append(el('summary','','개발자 상세'));if(entry.data.scope)details.append(el('p','ce-muted',entry.data.scope));result.append(details);
+    const labels=['한국 날짜','항목','읽기·쓰기','요청','성공','실패','응답 대기'];
+    const wrap=el('div','ce-usage-results'),grid=el('table','ce-usage-table'),head=el('thead'),header=el('tr'),rows=el('tbody');
+    grid.setAttribute('aria-label','Google API 사용 내역');
+    for(const label of labels){const th=el('th','',label);th.scope='col';header.append(th);}head.append(header);grid.append(head,rows);
+    for(const x of entry.data.items){
+     const row=el('tr'),values=[x.date,x.source,x.method==='read'?'읽기':x.method==='write'?'쓰기':x.method||'미확인',x.requests,x.success,x.failed,x.inFlight];
+     values.forEach((value,i)=>{const cell=el('td','',String(value??''));cell.dataset.label=labels[i];row.append(cell);});rows.append(row);
+    }wrap.append(grid);details.append(wrap);
+   }
+  }catch(error){if(valid(stamp)){readAt.textContent='';refresh.disabled=false;result.append(el('p','ce-error',error.message));}}
+ }
+ function choose(key){
+  if(selected===key)return;selected=key;usageView=key;revision++;
+  const view=USAGE_VIEWS[key];link.href=USAGE_BOOK+'#gid='+view.gid;
+  for(const b of bar.querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.usageView===key));
+  body.replaceChildren();
+  if(key==='api'){drawApi();return;}
+  body.append(el('p','ce-muted',key==='costs'?'비용·예산 상태와 줄일 부분만 요약합니다. 마지막으로 기록한 청구 내역 기준입니다.':'불필요한 호출, 유지할 호출, 조치와 검증 결과를 기록합니다.'));
+  const frame=el('iframe','ce-usage-frame');frame.title='사용량·비용 · '+view.label;frame.loading='lazy';frame.referrerPolicy='strict-origin-when-cross-origin';
+  frame.src=USAGE_BOOK+'?rm=minimal&gid='+view.gid+'#gid='+view.gid+'&range=A1';body.append(frame);
+  body.append(el('p','ce-muted','같은 구글시트에 바로 기록됩니다. 표가 보이지 않으면 오른쪽 위 구글시트에서 Google 로그인을 확인해주세요.'));
+ }
+ for(const [key,view]of Object.entries(USAGE_VIEWS)){const b=button(view.label,()=>choose(key));b.dataset.usageView=key;bar.append(b);}
+ choose(usageView);
+}
 root.AiselWorkflows=Object.freeze({render,reset});
 })(window);
+
 
