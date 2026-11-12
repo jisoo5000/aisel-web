@@ -4,8 +4,8 @@
   const main = document.getElementById('mainBar');
   const header = document.getElementById('appBrandHeader');
   if (!main || !header || !window.AiselUnified || document.getElementById('aiselErpNavigation')) return;
-  // Desktop navigation stays pinned at every window width and browser zoom.
-  // Only the explicit menu toggle may collapse it; mobile-first changes preserve this rule.
+  // User decision 2026-11-12: desktop joins the mobile drawer at 767px or below.
+  // At 768px and above keep the desktop sidebar and explicit manual toggle.
   // iPadOS can report a Mac UA; touch distinguishes it from a desktop Mac.
   const userAgent = navigator.userAgent || '';
   const touchApple = /Macintosh|MacIntel/.test(userAgent + ' ' + navigator.platform) && navigator.maxTouchPoints > 0;
@@ -15,7 +15,7 @@
   const pointer = window.matchMedia('(hover: hover) and (pointer: fine)');
   const wide = window.matchMedia('(min-width: 1024px)');
   const compact = window.matchMedia('(max-width: 767px)');
-  const pinnedMenu = () => desktopDevice || (!mobileDevice && pointer.matches) || media.matches;
+  const pinnedMenu = () => !compact.matches && (desktopDevice || (!mobileDevice && pointer.matches) || media.matches);
   const body = document.body;
   const aside = document.createElement('aside');
   aside.id = 'aiselErpNavigation'; aside.className = 'noprint';
