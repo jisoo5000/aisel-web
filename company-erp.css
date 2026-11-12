@@ -304,9 +304,9 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host :is(.cl-primary,.cl-tabs .ce-button[aria-pressed="true"]){background:var(--aisel-menu-selected,#E9ECF2);color:var(--aisel-menu-ink,#34383C);border-color:var(--aisel-menu-selected,#E9ECF2);}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .ce-button:disabled{opacity:.55;cursor:wait;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:6px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{display:flex;flex-direction:column;gap:6px;padding:6px;border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;background:var(--aisel-menu-surface,#F1F3F6);min-width:0;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat strong{font-size:16px;line-height:22px;color:var(--aisel-menu-ink,#34383C);font-weight:600;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat small{font-size:11px;line-height:16px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:6px;padding:6px;border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;background:var(--aisel-menu-surface,#F1F3F6);min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat strong{font-size:14px;line-height:18px;color:var(--aisel-menu-ink,#34383C);font-weight:600;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-stat small{grid-column:1/-1;font-size:11px;line-height:16px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-tabs{margin:0;margin-right:auto;flex-wrap:nowrap;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-controls select{height:28px;max-width:100%;min-width:0;font:inherit;color:var(--aisel-menu-muted,#6C727C);border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;background:#FFF;padding:0 6px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-results{border:1px solid var(--aisel-menu-line,#E3E5E7);border-radius:3px;padding:12px;min-width:0;}
@@ -426,19 +426,22 @@
 @media screen {
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form{display:flex;flex-direction:column;gap:6px!important;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(.cl-person-row,.cl-contact-row,.cl-date-row){display:grid;gap:6px;align-items:start;min-width:0;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-person-row{grid-template-columns:1fr 1fr 64px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-contact-row{grid-template-columns:minmax(0,1fr) 100px;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-date-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 52px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-person-row{grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-contact-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-date-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 72px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .ce-field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;font-size:12px;line-height:18px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(input,select,textarea){box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin:0;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(select,input[type=date],input[type=number],input[readonly]){height:28px!important;min-height:28px!important;padding:0 4px!important;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif)!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(select,input){height:28px!important;min-height:28px!important;padding:0 4px!important;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif)!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form select{appearance:none;-webkit-appearance:none;padding-right:24px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='m3 4.5 3 3 3-3' fill='none' stroke='%236C727C' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 6px center;background-size:12px 12px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-datetime-edit{font:inherit;padding:0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-calendar-picker-indicator{width:12px;margin:0;padding:0;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=number]{text-align:center;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-day-hint{font-size:10px;line-height:14px;white-space:nowrap;color:var(--aisel-menu-muted,#6C727C);}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(input[type=text],input[type=tel]){height:28px!important;min-height:28px!important;padding:0 6px!important;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form textarea{min-height:64px!important;resize:vertical;}
- html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .ce-actions{margin:0;gap:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form textarea{height:64px;min-height:64px!important;padding:6px!important;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif)!important;resize:vertical;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(input,textarea)::placeholder{font:inherit;opacity:1;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .ce-actions{margin:0!important;gap:6px!important;justify-content:flex-end;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .ce-actions .ce-button{box-sizing:border-box;height:28px!important;min-height:28px!important;min-width:52px;padding:0 6px!important;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif)!important;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-application-details .ce-detail-line{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:0 0 6px;white-space:pre-wrap;}
  #aiselCompanyWorkspace .ce-notice:empty{display:none;}
 }

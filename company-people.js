@@ -37,7 +37,7 @@
   catch(error){if(oldScope===identity())ctx.message(errors[error.message]||error.message,true);return false;}
   finally{if(oldScope===identity())ctx.setWriting(false);}
  }
- function form(ctx,title,fields,submit){const {host,el,button}=ctx;ctx.setDirty(false);ctx.message('');host.replaceChildren(el('h2','',title));const f=el('form','ce-form'),controls={};for(const s of fields){const label=el('label','ce-field',s.label),input=el(s.options?'select':s.multiline?'textarea':'input');input.name=s.key;if(s.options){for(const [v,t]of s.options){const o=el('option','',t);o.value=v;input.append(o);}}else if(!s.multiline)input.type=s.type||'text';input.value=s.value??(s.options?s.options[0][0]:'');input.required=s.required!==false;input.maxLength=s.maxLength||2000;if(s.readOnly)input.readOnly=true;if(s.type==='number'){input.min=s.min??0;input.max=s.max??366;input.step=s.step??1;}label.append(input);f.append(label);controls[s.key]=input;}const buttons=el('div','ce-actions'),ok=el('button','ce-button','저장');ok.type='submit';const cancel=button('취소',()=>{ctx.setDirty(false);ctx.redraw();});buttons.append(ok,cancel);f.append(buttons);host.append(f);f.addEventListener('input',()=>ctx.setDirty(true));const requestId='people-'+root.crypto.randomUUID();f.addEventListener('submit',async event=>{event.preventDefault();if(!f.reportValidity()||ctx.isWriting())return;const values=Object.fromEntries(Object.entries(controls).map(([k,v])=>[k,v.type==='number'?Number(v.value):v.value.trim()]));ok.disabled=cancel.disabled=true;const success=await submit(values,requestId);if(!success)ok.disabled=cancel.disabled=false;});return {f,controls};}
+ function form(ctx,title,fields,submit,options={}){const {host,el,button}=ctx;ctx.setDirty(false);ctx.message('');host.replaceChildren(el('h2','',title));const f=el('form','ce-form'),controls={};for(const s of fields){const label=el('label','ce-field',s.label),input=el(s.options?'select':s.multiline?'textarea':'input');input.name=s.key;if(s.options){for(const [v,t]of s.options){const o=el('option','',t);o.value=v;input.append(o);}}else if(!s.multiline)input.type=s.type||'text';input.value=s.value??(s.options?s.options[0][0]:'');input.required=s.required!==false;input.maxLength=s.maxLength||2000;if(s.readOnly)input.readOnly=true;if(s.type==='number'){input.min=s.min??0;input.max=s.max??366;input.step=s.step??1;}label.append(input);f.append(label);controls[s.key]=input;}const buttons=el('div','ce-actions'),ok=el('button','ce-button',options.submitLabel||'저장');ok.type='submit';const cancel=button('취소',()=>{ctx.setDirty(false);ctx.redraw();});if(options.submitLast)buttons.append(cancel,ok);else buttons.append(ok,cancel);f.append(buttons);host.append(f);f.addEventListener('input',()=>ctx.setDirty(true));const requestId='people-'+root.crypto.randomUUID();f.addEventListener('submit',async event=>{event.preventDefault();if(!f.reportValidity()||ctx.isWriting())return;const values=Object.fromEntries(Object.entries(controls).map(([k,v])=>[k,v.type==='number'?Number(v.value):v.value.trim()]));ok.disabled=cancel.disabled=true;const success=await submit(values,requestId);if(!success)ok.disabled=cancel.disabled=false;});return {f,controls};}
  function detail(ctx,title,text){const n=ctx.el('p','ce-detail-line');n.append(ctx.el('strong','',title),ctx.el('span','',text));return n;}
  // Attendance uses the existing authenticated people service. Beacon reception is not enabled here.
  function minutes(value){return Number.isFinite(value)&&value>=0?Math.floor(value/60)+'시간 '+(value%60)+'분':'미확정';}
@@ -159,7 +159,7 @@
  function leaveRequest(ctx,result){
   const user=root.AiselAccess.session,profile=result.leaveProfile||{},fallback={md:'MD팀',logistics:'물류팀'};
   const {f,controls}=form(ctx,'휴가 신청',[
-   {key:'displayName',label:'성명',value:user.displayName||'',readOnly:true},
+   {key:'applicantName',label:'성명',value:profile.applicantName||user.displayName||'',maxLength:80},
    {key:'department',label:'부서',value:profile.department||fallback[user.role]||'',maxLength:80},
    {key:'position',label:'직급',value:profile.position||(['md','logistics'].includes(user.role)?'사원':''),maxLength:40},
    {key:'contact',label:'연락처',type:'tel',value:profile.contact||'',maxLength:40},
@@ -169,13 +169,15 @@
    {key:'days',label:'사용일수',type:'number',step:.5,min:.5,max:366,value:1},
    {key:'reason',label:'사용사유',multiline:true},
    {key:'handover',label:'인수인계 내용',multiline:true}
-  ],(v,id)=>{const {displayName,...payload}=v;return save(ctx,'peopleLeaveRequest',{...payload,formVersion:2},id);});
+  ],(v,id)=>save(ctx,'peopleLeaveRequest',{...v,formVersion:3},id),{submitLabel:'신청',submitLast:true});
   f.classList.add('cl-request-form');
+  f.querySelector('[type=submit]').classList.add('cl-primary');
   const group=(keys,cls)=>{const row=ctx.el('div',cls),labels=keys.map(k=>controls[k].parentElement);labels[0].before(row);row.append(...labels);};
-  group(['displayName','department','position'],'cl-person-row');
+  group(['applicantName','department','position'],'cl-person-row');
   group(['contact','kind'],'cl-contact-row');
   group(['startDate','endDate','days'],'cl-date-row');
   controls.days.setAttribute('aria-label','사용일수');controls.days.inputMode='decimal';
+  controls.applicantName.autocomplete='name';
   controls.contact.autocomplete='tel';controls.contact.placeholder='본인 연락처';
   controls.handover.placeholder='담당자·전달할 업무 또는 없음';
   controls.days.parentElement.append(ctx.el('span','cl-day-hint','휴무일 제외'));
