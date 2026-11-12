@@ -445,3 +445,13 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-application-details .ce-detail-line{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:0 0 6px;white-space:pre-wrap;}
  #aiselCompanyWorkspace .ce-notice:empty{display:none;}
 }
+
+/* Confirmed leave field alignment and actionable handover guidance. */
+@media screen {
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is([name=applicantName],[name=department],[name=position],[name=contact],[name=kind],[name=days]){text-align:center!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form select[name=kind]{text-align-last:center!important;padding-left:24px!important;padding-right:24px!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[name=days]{appearance:textfield;-moz-appearance:textfield;padding-left:6px!important;padding-right:6px!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[name=days]::-webkit-inner-spin-button,
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[name=days]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .cl-day-hint{display:block;width:100%;align-self:stretch;text-align:right;}
+}

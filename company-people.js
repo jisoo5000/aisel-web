@@ -178,8 +178,8 @@
   group(['startDate','endDate','days'],'cl-date-row');
   controls.days.setAttribute('aria-label','사용일수');controls.days.inputMode='decimal';
   controls.applicantName.autocomplete='name';
-  controls.contact.autocomplete='tel';controls.contact.placeholder='본인 연락처';
-  controls.handover.placeholder='담당자·전달할 업무 또는 없음';
+  controls.contact.autocomplete='tel';controls.contact.placeholder='010-****-****';
+  controls.handover.placeholder='인계받을 사람 · 업무별 진행 상황과 다음 할 일 · 마감일 · 자료 위치';
   controls.days.parentElement.append(ctx.el('span','cl-day-hint','휴무일 제외'));
   controls.kind.addEventListener('change',()=>{if(controls.kind.value==='half'){controls.endDate.value=controls.startDate.value;controls.days.value='0.5';}else if(controls.days.value==='0.5')controls.days.value='1';});
   let lastStart=controls.startDate.value;
