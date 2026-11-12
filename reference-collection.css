@@ -357,8 +357,8 @@
 /* 2026-11-11 follow-up: one-line titles and single dividers on category tabs. */
 @media screen {
  #referenceCollectionView .rc-card-info strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
- html:root body #referenceCollectionView .rc-filters{display:flex!important;flex-wrap:nowrap!important;gap:0!important;border:1px solid #E3E5E7!important;border-radius:3px;box-sizing:border-box;height:28px;min-height:28px;overflow-x:auto}
- html:root body #referenceCollectionView #rcList .rc-filters button[aria-pressed]{flex:1 0 auto!important;width:auto!important;min-width:0!important;height:26px!important;min-height:26px!important;border:0!important;border-radius:0!important;margin:0!important;white-space:nowrap;font-size:12px!important;line-height:18px!important;padding:0 6px!important;box-sizing:border-box}
+ html:root body #referenceCollectionView .rc-filters{display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr));gap:0!important;border:1px solid #E3E5E7!important;border-radius:3px;box-sizing:border-box;height:28px;min-height:28px;overflow-x:auto}
+ html:root body #referenceCollectionView #rcList .rc-filters button[aria-pressed]{flex:none!important;width:100%!important;min-width:0!important;height:26px!important;min-height:26px!important;border:0!important;border-radius:0!important;margin:0!important;white-space:nowrap;font-size:12px!important;line-height:18px!important;padding:0 4px!important;box-sizing:border-box}
  html:root body #referenceCollectionView #rcList .rc-filters button[aria-pressed]+button[aria-pressed]{border-left:1px solid #E3E5E7!important}
  html:root body #referenceCollectionView #rcList .rc-filters button[aria-pressed][aria-pressed=true]{background:#E9ECF2!important;color:#34383C}
 }
@@ -369,7 +369,7 @@
  html:root body #referenceCollectionView .rc-rating-buttons {display:flex;justify-content:flex-start;gap:0;min-width:0;width:100%}
  html:root body #referenceCollectionView .rc-rating-buttons button {display:flex;align-items:center;justify-content:center;flex:0 1 28px;min-width:0;width:20%;height:28px;padding:2px}
  html:root body #referenceCollectionView .rc-rating-star {max-width:100%}
- html:root body #referenceCollectionView input.rc-usp-input {min-width:0;width:100%;height:28px;min-height:28px;padding:0 8px;border:1px solid #E3E5E7;border-radius:3px;font-size:12px;line-height:18px;background:#fff;color:#34383C}
+ html:root body #referenceCollectionView input.rc-usp-input {min-width:0;width:100%;height:28px;min-height:28px;padding:0 8px;border:1px solid #E3E5E7;border-radius:3px;font-size:12px!important;font-weight:400;line-height:18px!important;background:#fff;color:#34383C}
 }
 @media screen and (max-width:600px) {
  html:root body #referenceCollectionView #rcPhotos figure,
@@ -382,3 +382,11 @@
 
 /* Half-star fill shares the same color; the full outline remains one pixel. */
 #referenceCollectionView .rc-rating-half-fill{fill:currentColor;stroke:none}
+
+/* 2026-11-12: reference controls retain their own fixed role under compact layout. */
+@media screen {
+ html:root body #referenceCollectionView :is(#rcSourcingDate,#rcCategory,#rcDesigner,.rc-note-category select){text-align:center!important;text-align-last:center!important}
+ html:root body #referenceCollectionView #rcDetail :is(.rc-date,.rc-note-date){text-align:center;place-items:center}
+ html:root body #referenceCollectionView #rcDetail #rcDesigner{height:28px!important;min-height:28px!important;line-height:18px!important;font-size:12px!important}
+ html:root body #referenceCollectionView input.rc-usp-input::placeholder{font-size:inherit!important;font-weight:inherit;line-height:inherit;opacity:1}
+}
