@@ -421,3 +421,24 @@
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-toolbar input[type=month]{min-width:0;flex:0 1 150px;}
  html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-host .cl-toolbar input[type=month]::-webkit-datetime-edit{font:inherit;}
 }
+
+/* Leave application: mail-form fields, compact dates, shared 6px spacing. */
+@media screen {
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form{display:flex;flex-direction:column;gap:6px!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(.cl-person-row,.cl-contact-row,.cl-date-row){display:grid;gap:6px;align-items:start;min-width:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-person-row{grid-template-columns:1fr 1fr 64px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-contact-row{grid-template-columns:minmax(0,1fr) 100px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-date-row{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 52px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .ce-field{display:flex;flex-direction:column;gap:6px;min-width:0;margin:0;font-size:12px;line-height:18px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(input,select,textarea){box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(select,input[type=date],input[type=number],input[readonly]){height:28px!important;min-height:28px!important;padding:0 4px!important;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif)!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-datetime-edit{font:inherit;padding:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=date]::-webkit-calendar-picker-indicator{width:12px;margin:0;padding:0;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form input[type=number]{text-align:center;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-day-hint{font-size:10px;line-height:14px;white-space:nowrap;color:var(--aisel-menu-muted,#6C727C);}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form :is(input[type=text],input[type=tel]){height:28px!important;min-height:28px!important;padding:0 6px!important;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form textarea{min-height:64px!important;resize:vertical;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-request-form .ce-actions{margin:0;gap:6px;}
+ html:root body.aisel-erp-shell #aiselCompanyWorkspace .cl-application-details .ce-detail-line{display:flex;flex-direction:column;align-items:flex-start;gap:2px;margin:0 0 6px;white-space:pre-wrap;}
+ #aiselCompanyWorkspace .ce-notice:empty{display:none;}
+}

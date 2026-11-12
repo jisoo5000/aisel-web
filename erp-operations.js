@@ -112,8 +112,8 @@
    {key:'policyEvidence',label:'판매처 반품 조건 근거 URL',type:'url'}
   ],async data=>{const request={...data,purchaseId:purchase.id,productName:purchase.productName,orderedQuantity:purchase.quantity,accountRef:purchase.accountRef,reasonTruthful:true,status:'draft'};await access().request('operationsRequestReturn',{request,requestId:id,expectedVersion:0});return 'returns';});
  }
- function hide(){visible=false;view.hidden=true;epoch++;loading=false;writing=false;refresh.disabled=false;}
+ function hide(){visible=false;view.hidden=true;if(!writing&&formHost.childElementCount)return;epoch++;loading=false;writing=false;refresh.disabled=false;}
  function show(){if(!allowed())return false;visible=true;view.hidden=false;if(role()==='logistics'&&active==='candidates')active='jobs';showTabs();render();load();return true;}
- root.addEventListener('aisel-access-change',()=>{hide();items=[];connector={pickle:'unconnected'};links={};loaded=false;lastSignature='';writing=false;formHost.replaceChildren();body.replaceChildren();});
- root.AiselOperations={show,hide,canLeave:()=>!writing&&!formHost.childElementCount,get visible(){return visible;}};
+ root.addEventListener('aisel-access-change',()=>{epoch++;hide();items=[];connector={pickle:'unconnected'};links={};loaded=false;lastSignature='';writing=false;formHost.replaceChildren();body.replaceChildren();});
+ root.AiselOperations={show,hide,canLeave:({allowDraft=false}={})=>!writing&&(allowDraft||!formHost.childElementCount),get visible(){return visible;}};
 })(window);

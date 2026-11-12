@@ -250,7 +250,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=compact-controls-20261112">
+<link rel="preload" as="script" href="unified-app.js?v=leave-navigation-20261112">
 <link rel="preload" as="script" href="design-meeting.js?v=permissions-20261111">
 <link rel="preload" as="script" href="reference-collection.js?v=reference-half-stars-20261112">
 <link rel="preload" as="style" href="workorder-screen.css?v=20261108-order-state">
@@ -12720,13 +12720,14 @@
 
   }
   async function settleEditorSave_(){
+    const {allowLocal=false,isCurrent=()=>true}=arguments[0]||{};
     if(!isViewVisible_("editorView"))return true;
     if(!await waitForEditorComposition_()){
       alert("한글 입력을 마친 뒤 다시 이동해주세요."); return false;
     }
     clearTimeout(saveT);saveT=null;
     const ref=woRef,code=currentCode,state=editorSaveState_(),revision=state.revision;
-    const sameIntent=()=>ref===woRef&&code===currentCode&&isCurrentSaveState_(state)&&state.revision===revision&&!isEditorComposing_();
+    const sameIntent=()=>isCurrent()&&ref===woRef&&code===currentCode&&isCurrentSaveState_(state)&&state.revision===revision&&!isEditorComposing_();
     // A navigation deadline must never skip the durable local draft.
     const ctx=captureDraft_();
     if(ctx){await ctx.ready;await ctx.chain;if(ctx.dirty&&ctx.local==='failed'){alert("기기 초안 저장을 확인하지 못해 현재 작지를 유지합니다. 다시 저장해주세요.");return false;}}
@@ -12746,8 +12747,8 @@
     const result=await Promise.race([remote,new Promise(resolve=>{timer=setTimeout(()=>resolve(null),15000);})]);
     clearTimeout(timer);
     if(!sameIntent())return false;
-    if(result===null){state.waiting=true;renderEditorSaveState_(state);return false;}
-    if(result===false){alert("저장하지 못해 현재 작지를 유지합니다. 연결을 확인하고 다시 시도해주세요.");return false;}
+    if(result===null){state.waiting=true;renderEditorSaveState_(state);return !!(allowLocal&&ctx?.local==='saved');}
+    if(result===false){if(allowLocal&&ctx?.local==='saved'){state.waiting=true;renderEditorSaveState_(state);return true;}alert("저장하지 못해 현재 작지를 유지합니다. 연결을 확인하고 다시 시도해주세요.");return false;}
     return true;
   }
   // 목록으로 이동하기 전에 현재 품번의 저장을 끝냅니다.
@@ -17965,7 +17966,7 @@ window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:(
 <link rel="stylesheet" href="reference-collection.css?v=reference-half-stars-20261112">
 <script>
 window.AiselUnifiedAdapter={
- async leave(){if(!await settleEditorSave_())return false;return true;},
+ async leave(options){if(!await settleEditorSave_(options))return false;return true;},
  hide(){if(woRef)detachWoRefNow_("통합 메뉴 이동");['editorView','galleryView','salesView','moodboardView','quickOrderView','sampleMgmtView'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});},
  async orders(){restoringRoute_=true;try{await showGallery();}finally{restoringRoute_=false;}},
  async sales(){restoringRoute_=true;try{await showSales();}finally{restoringRoute_=false;}},
@@ -17984,8 +17985,8 @@ window.AiselUnifiedAdapter={
 <script src="aisel-access-ui.js?v=permissions-20261111"></script>
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
-<script src="erp-operations.js?v=20261108-1"></script>
-<script src="unified-app.js?v=compact-controls-20261112"></script>
+<script src="erp-operations.js?v=leave-navigation-20261112"></script>
+<script src="unified-app.js?v=leave-navigation-20261112"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=permissions-20261111" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261108-order-state" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=295-harness">
@@ -18048,12 +18049,12 @@ window.AiselUnifiedAdapter={
 <script src="aisel-erp-shell.js?v=leave-ui-20261112"></script>
 
 <!-- Company ERP: additive workspace; legacy menus and editor remain unchanged. -->
-<link rel="stylesheet" href="company-erp.css?v=leave-compact-20261112" media="screen">
+<link rel="stylesheet" href="company-erp.css?v=leave-navigation-20261112" media="screen">
 <script src="management-session.js?v=20261110-7"></script>
 <script src="company-erp-domain.js?v=20261110-6"></script>
-<script src="company-people.js?v=leave-compact-20261112"></script>
+<script src="company-people.js?v=leave-navigation-20261112"></script>
 <script src="company-sales.js?v=20261110-6"></script>
 <script src="company-sources.js?v=20261110-6"></script>
 <script src="company-workflow-domain.js?v=20261111-glowny1"></script>
 <script src="company-workflows.js?v=20261111-glowny1"></script>
-<script src="company-erp.js?v=leave-ui-20261112"></script>
+<script src="company-erp.js?v=leave-navigation-20261112"></script>

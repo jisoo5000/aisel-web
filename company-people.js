@@ -5,11 +5,12 @@
  const dayKey=()=>new Date(Date.now()+9*3600000).toISOString().slice(0,10);
  const states={working:'근무 중',completed:'퇴근',corrected:'정정 승인',pending:'신청',approved:'승인',rejected:'반려',cancelled:'취소',cancellation_requested:'취소 요청'};
  const kinds={annual:'연차',half:'반차',other:'기타 휴가'};
- const errors={already_clocked_today:'오늘 출퇴근 기록이 있습니다. 수정이 필요하면 정정을 요청해 주세요.',already_clocked_out:'이미 퇴근이 기록되었습니다.',invalid_break_minutes:'휴게시간을 실제 근무 시간 안에서 분 단위로 입력해 주세요.',correction_required:'출근 기록이 오래되었습니다. 실제 시간을 정정 요청으로 기록해 주세요.',invalid_correction:'출근·퇴근·휴게시간을 확인해 주세요. 미래 시각은 입력할 수 없습니다.',invalid_correction_date:'기존 근무일에 해당하는 출근 시각을 입력해 주세요.',correction_pending:'확인 대기 중인 정정 요청이 있습니다.',leave_budget_unconfigured:'이 직원의 휴가 부여 일수를 먼저 설정해 주세요.',leave_balance_insufficient:'확인된 잔여 휴가보다 신청 일수가 많습니다.',leave_overlap:'같은 기간에 진행 중인 휴가 신청이 있습니다.',leave_dates_require_same_year:'연도가 바뀌는 휴가는 연도별로 나눠 신청해 주세요.',invalid_leave_days:'날짜와 신청 일수를 확인해 주세요. 반차는 하루 중 0.5일입니다.',version_conflict:'다른 곳에서 먼저 변경했습니다. 최신 기록을 확인한 뒤 다시 처리해 주세요.',idempotency_conflict:'이 요청은 이미 다른 내용으로 저장되었습니다. 최신 기록을 확인해 주세요.'};
+ const errors={leave_application_required:'부서·직급·연락처·사용사유·인수인계 내용을 확인해 주세요.',already_clocked_today:'오늘 출퇴근 기록이 있습니다. 수정이 필요하면 정정을 요청해 주세요.',already_clocked_out:'이미 퇴근이 기록되었습니다.',invalid_break_minutes:'휴게시간을 실제 근무 시간 안에서 분 단위로 입력해 주세요.',correction_required:'출근 기록이 오래되었습니다. 실제 시간을 정정 요청으로 기록해 주세요.',invalid_correction:'출근·퇴근·휴게시간을 확인해 주세요. 미래 시각은 입력할 수 없습니다.',invalid_correction_date:'기존 근무일에 해당하는 출근 시각을 입력해 주세요.',correction_pending:'확인 대기 중인 정정 요청이 있습니다.',leave_budget_unconfigured:'이 직원의 휴가 부여 일수를 먼저 설정해 주세요.',leave_balance_insufficient:'확인된 잔여 휴가보다 신청 일수가 많습니다.',leave_overlap:'같은 기간에 진행 중인 휴가 신청이 있습니다.',leave_dates_require_same_year:'연도가 바뀌는 휴가는 연도별로 나눠 신청해 주세요.',invalid_leave_days:'날짜와 신청 일수를 확인해 주세요. 반차는 하루 중 0.5일입니다.',version_conflict:'다른 곳에서 먼저 변경했습니다. 최신 기록을 확인한 뒤 다시 처리해 주세요.',idempotency_conflict:'이 요청은 이미 다른 내용으로 저장되었습니다. 최신 기록을 확인해 주세요.'};
  const stamp=value=>value?new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'미기록';
  const local=value=>value?new Date(value+9*3600000).toISOString().slice(0,16):'';
  function identity(){const s=root.AiselAccess?.session;return [s?.uid,s?.role,s?.credentialVersion||0].join(':');}
  function reset(){revision++;data=null;scope='';loadedAt=0;flight=null;queryKey='';attendanceView='today';leaveCache.clear();employeeFilter='';leaveStatus='';leaveView='usage';adminLeaveView='summary';}
+ function resetManagement(){if(!leaveMode||all){reset();return;}for(const key of leaveCache.keys())if(key.includes(':true:leave'))leaveCache.delete(key);}
  root.addEventListener('aisel-access-change',()=>{if(scope!==identity())reset();});
  async function load(ctx,force=false){
   if(scope!==identity()){reset();scope=identity();}const signature=scope,run=revision,key=scope+':'+month+':'+all+':'+(leaveMode?'leave':'attendance'),cacheKey=dayKey()+':'+key,isLeave=leaveMode;
@@ -28,7 +29,7 @@
   if(!leaveMode)toolbar.append(button('새로고침',()=>{data=null;ctx.redraw();}));
   host.append(toolbar);
   const body=el('div','cl-body');host.append(body);body.append(el('p','ce-muted','기록을 확인하고 있습니다.'));
-  const scopeNow=identity();const promise=load(ctx),run=revision;promise.then(result=>{if(!result||scopeNow!==identity()||run!==revision||!body.isConnected)return;body.replaceChildren();if(section==='attendance')attendance(body,ctx,result);else leaves(body,ctx,result,all);ctx.message('마지막 확인 '+stamp(loadedAt));}).catch(error=>{if(body.isConnected&&run===revision){body.replaceChildren(el('p','ce-empty','기록을 불러오지 못했습니다. 연결 상태를 확인해 주세요.'));ctx.message(errors[error.message]||error.message,true);}});
+  const scopeNow=identity();const promise=load(ctx),run=revision;promise.then(result=>{if(!result||scopeNow!==identity()||run!==revision||!body.isConnected)return;body.replaceChildren();if(section==='attendance')attendance(body,ctx,result);else leaves(body,ctx,result,all);ctx.message(leaveMode?'':'마지막 확인 '+stamp(loadedAt));}).catch(error=>{if(body.isConnected&&run===revision){body.replaceChildren(el('p','ce-empty','기록을 불러오지 못했습니다. 연결 상태를 확인해 주세요.'));ctx.message(errors[error.message]||error.message,true);}});
  }
  async function save(ctx,action,payload,requestId='people-'+root.crypto.randomUUID()){
   if(ctx.isWriting())return false;ctx.setWriting(true);const oldScope=identity();ctx.message('저장 중입니다.');
@@ -36,7 +37,7 @@
   catch(error){if(oldScope===identity())ctx.message(errors[error.message]||error.message,true);return false;}
   finally{if(oldScope===identity())ctx.setWriting(false);}
  }
- function form(ctx,title,fields,submit){const {host,el,button}=ctx;ctx.setDirty(false);host.replaceChildren(el('h2','',title));const f=el('form','ce-form'),controls={};for(const s of fields){const label=el('label','ce-field',s.label),input=el(s.options?'select':s.multiline?'textarea':'input');input.name=s.key;if(s.options){for(const [v,t]of s.options){const o=el('option','',t);o.value=v;input.append(o);}}else if(!s.multiline)input.type=s.type||'text';input.value=s.value??(s.options?s.options[0][0]:'');input.required=s.required!==false;input.maxLength=2000;if(s.type==='number'){input.min=s.min??0;input.max=s.max??366;input.step=s.step??1;}label.append(input);f.append(label);controls[s.key]=input;}const buttons=el('div','ce-actions'),ok=el('button','ce-button','저장');ok.type='submit';const cancel=button('취소',()=>{ctx.setDirty(false);ctx.redraw();});buttons.append(ok,cancel);f.append(buttons);host.append(f);f.addEventListener('input',()=>ctx.setDirty(true));const requestId='people-'+root.crypto.randomUUID();f.addEventListener('submit',async event=>{event.preventDefault();if(!f.reportValidity()||ctx.isWriting())return;const values=Object.fromEntries(Object.entries(controls).map(([k,v])=>[k,v.type==='number'?Number(v.value):v.value.trim()]));ok.disabled=cancel.disabled=true;const success=await submit(values,requestId);if(!success)ok.disabled=cancel.disabled=false;});}
+ function form(ctx,title,fields,submit){const {host,el,button}=ctx;ctx.setDirty(false);ctx.message('');host.replaceChildren(el('h2','',title));const f=el('form','ce-form'),controls={};for(const s of fields){const label=el('label','ce-field',s.label),input=el(s.options?'select':s.multiline?'textarea':'input');input.name=s.key;if(s.options){for(const [v,t]of s.options){const o=el('option','',t);o.value=v;input.append(o);}}else if(!s.multiline)input.type=s.type||'text';input.value=s.value??(s.options?s.options[0][0]:'');input.required=s.required!==false;input.maxLength=s.maxLength||2000;if(s.readOnly)input.readOnly=true;if(s.type==='number'){input.min=s.min??0;input.max=s.max??366;input.step=s.step??1;}label.append(input);f.append(label);controls[s.key]=input;}const buttons=el('div','ce-actions'),ok=el('button','ce-button','저장');ok.type='submit';const cancel=button('취소',()=>{ctx.setDirty(false);ctx.redraw();});buttons.append(ok,cancel);f.append(buttons);host.append(f);f.addEventListener('input',()=>ctx.setDirty(true));const requestId='people-'+root.crypto.randomUUID();f.addEventListener('submit',async event=>{event.preventDefault();if(!f.reportValidity()||ctx.isWriting())return;const values=Object.fromEntries(Object.entries(controls).map(([k,v])=>[k,v.type==='number'?Number(v.value):v.value.trim()]));ok.disabled=cancel.disabled=true;const success=await submit(values,requestId);if(!success)ok.disabled=cancel.disabled=false;});return {f,controls};}
  function detail(ctx,title,text){const n=ctx.el('p','ce-detail-line');n.append(ctx.el('strong','',title),ctx.el('span','',text));return n;}
  // Attendance uses the existing authenticated people service. Beacon reception is not enabled here.
  function minutes(value){return Number.isFinite(value)&&value>=0?Math.floor(value/60)+'시간 '+(value%60)+'분':'미확정';}
@@ -156,9 +157,31 @@
  }
 
  function leaveRequest(ctx,result){
-  form(ctx,'휴가 신청',[
-   {key:'kind',label:'휴가 종류',options:Object.entries(kinds)},{key:'startDate',label:'시작일',type:'date',value:result.today},{key:'endDate',label:'종료일',type:'date',value:result.today},{key:'days',label:'사용할 일수 (휴무일 제외)',type:'number',step:.5,min:.5,max:366},{key:'reason',label:'신청 메모',multiline:true,required:false}
-  ],(v,id)=>save(ctx,'peopleLeaveRequest',v,id));
+  const user=root.AiselAccess.session,profile=result.leaveProfile||{},fallback={md:'MD팀',logistics:'물류팀'};
+  const {f,controls}=form(ctx,'휴가 신청',[
+   {key:'displayName',label:'성명',value:user.displayName||'',readOnly:true},
+   {key:'department',label:'부서',value:profile.department||fallback[user.role]||'',maxLength:80},
+   {key:'position',label:'직급',value:profile.position||(['md','logistics'].includes(user.role)?'사원':''),maxLength:40},
+   {key:'contact',label:'연락처',type:'tel',value:profile.contact||'',maxLength:40},
+   {key:'kind',label:'휴가 종류',options:Object.entries(kinds)},
+   {key:'startDate',label:'시작일',type:'date',value:result.today},
+   {key:'endDate',label:'종료일',type:'date',value:result.today},
+   {key:'days',label:'사용일수',type:'number',step:.5,min:.5,max:366,value:1},
+   {key:'reason',label:'사용사유',multiline:true},
+   {key:'handover',label:'인수인계 내용',multiline:true}
+  ],(v,id)=>{const {displayName,...payload}=v;return save(ctx,'peopleLeaveRequest',{...payload,formVersion:2},id);});
+  f.classList.add('cl-request-form');
+  const group=(keys,cls)=>{const row=ctx.el('div',cls),labels=keys.map(k=>controls[k].parentElement);labels[0].before(row);row.append(...labels);};
+  group(['displayName','department','position'],'cl-person-row');
+  group(['contact','kind'],'cl-contact-row');
+  group(['startDate','endDate','days'],'cl-date-row');
+  controls.days.setAttribute('aria-label','사용일수');controls.days.inputMode='decimal';
+  controls.contact.autocomplete='tel';controls.contact.placeholder='본인 연락처';
+  controls.handover.placeholder='담당자·전달할 업무 또는 없음';
+  controls.days.parentElement.append(ctx.el('span','cl-day-hint','휴무일 제외'));
+  controls.kind.addEventListener('change',()=>{if(controls.kind.value==='half'){controls.endDate.value=controls.startDate.value;controls.days.value='0.5';}else if(controls.days.value==='0.5')controls.days.value='1';});
+  let lastStart=controls.startDate.value;
+  controls.startDate.addEventListener('change',()=>{if(controls.endDate.value===lastStart||controls.endDate.value<controls.startDate.value||controls.kind.value==='half')controls.endDate.value=controls.startDate.value;lastStart=controls.startDate.value;});
  }
  function leaveBudget(ctx,result){
   const people=ctx.staff();if(!people.length){ctx.message('직원 목록을 확인하지 못했습니다. 휴가 부여 설정은 직원 목록 연결 후 사용할 수 있습니다.',true);return;}
@@ -237,12 +260,13 @@
     const state=current==='usage'&&row.status==='approved'?(row.startDate>result.today?'사용 예정':row.endDate<result.today?'사용 완료':'사용 중'):(states[row.status]||'상태 확인');
     const badge=el('span','cl-badge cl-'+row.status,state);
     const dates=row.startDate===row.endDate?row.startDate:row.startDate+' ~ '+row.endDate;
-    return [...(admin?[row.displayName||byUid.get(row.uid)?.name||'이름 확인 필요']:[]),kinds[row.kind]||'종류 확인',dates,days(row.days),badge,row.reason||'—',actions];
+    const application=el('div','cl-application-details');for(const [label,value]of [['부서 / 직급',[row.department,row.position].filter(Boolean).join(' / ')],['연락처',row.contact],['사용사유',row.reason],['인수인계 내용',row.handover],['처리 메모',row.decisionNote]])if(value)application.append(detail(ctx,label,value));
+    return [...(admin?[row.displayName||byUid.get(row.uid)?.name||'이름 확인 필요']:[]),kinds[row.kind]||'종류 확인',dates,days(row.days),badge,application.childElementCount?application:'—',actions];
    });
-   panel.append(leaveTable(ctx,[...(admin?['직원']:[]),'종류','기간','일수','상태','신청 메모','처리'],output,current==='usage'?'이 달에 승인된 휴가 사용 내역이 없습니다.':'해당 조건의 휴가 신청이 없습니다.'));
+   panel.append(leaveTable(ctx,[...(admin?['직원']:[]),'종류','기간','일수','상태','신청 내용','처리'],output,current==='usage'?'이 달에 승인된 휴가 사용 내역이 없습니다.':'해당 조건의 휴가 신청이 없습니다.'));
   }
   draw();
  }
- root.AiselCompanyPeople={render,reset};
+ root.AiselCompanyPeople={render,reset,resetManagement};
 })(window);
 

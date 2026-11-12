@@ -87,7 +87,7 @@
    if(!css.isConnected)document.head.append(css);
   });
   const moduleReady=window.AiselMeetingMaterials?Promise.resolve(window.AiselMeetingMaterials):new Promise((resolve,reject)=>{
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=compact-controls-20261112';
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=leave-navigation-20261112';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
@@ -228,26 +228,30 @@
   if(!companyView(view))window.AiselCompanyERP?.hide();
  }
  function route(view,replace=false,code){const url=new URL(location.href);url.hash=companyView(view)?view:view==='operations'?'operations':view==='staff'?'staff':view==='permissionaudit'?'permission-audit':view==='samples'?'samples':view==='products'?'products':view==='orders'?'workorders':view==='sales'?'sales':view==='moodboards'?'moodboards':view==='meetingmaterials'?(url.hash.startsWith('#meeting-materials')?url.hash.slice(1):'meeting-materials'):view==='editor'?'workorder='+encodeURIComponent(code):url.hash;history[replace?'replaceState':'pushState']({aiselUnified:true,view,code:code||null},'',url);}
+ async function navigationWait(task,intent=navigationRevision){
+  let timer;try{return await Promise.race([Promise.resolve(task),new Promise((_,reject)=>{timer=setTimeout(()=>{if(intent===navigationRevision)navigationRevision++;reject(Error('연결 시간이 길어지고 있습니다. 입력은 유지했습니다. 다른 메뉴로 이동하거나 다시 시도해 주세요.'));},30000);})]);}
+  finally{clearTimeout(timer);}
+ }
  async function guard(target,intent=navigationRevision){
   const isCurrent=()=>intent===navigationRevision;
   if(companyView(current)&&window.AiselCompanyERP?.canLeave()===false)return false;
-  if(current==='meetingmaterials'&&target!=='meetingmaterials'&&window.AiselMeetingMaterials?.canLeave()===false)return false;
-  if(current==='operations'&&target!=='operations'&&window.AiselOperations?.canLeave()===false){info('작성 중인 요청을 저장하거나 닫은 뒤 이동해 주세요.');return false;}
+  if(current==='meetingmaterials'&&target!=='meetingmaterials'&&window.AiselMeetingMaterials?.canLeave({allowDraft:true})===false)return false;
+  if(current==='operations'&&target!=='operations'&&window.AiselOperations?.canLeave({allowDraft:true})===false){info('작성 중인 요청을 저장하거나 닫은 뒤 이동해 주세요.');return false;}
   // A menu switch keeps the same account and document alive. Once the current
   // input is durable locally, the reference request can finish in its own pane.
   // Identity changes below still use the default server-confirmed save guard.
   if(current==='references'&&target!=='references'&&(!await RC.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   if(current==='designmeeting'&&target!=='designmeeting'&&(!await DM.canLeave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   if(current==='moodboards'&&target!=='moodboards'&&(!await window.AiselMoodboards.save()||!isCurrent()))return false;
-  if(!isCurrent()||!await A.leave()||!isCurrent())return false;
+  if(!isCurrent()||!await A.leave({allowLocal:true,isCurrent})||!isCurrent())return false;
   if(current==='references'&&target!=='references'&&(!isCurrent()||!await RC.leave({allowLocal:true,isCurrent})||!isCurrent()))return false;
   return isCurrent();
  }
  function drainNavigation(completed=true){
   if(busy||!pendingNavigation)return;
   const next=pendingNavigation;pendingNavigation=null;
-  if(!completed){next.resolve(false);return;}
-  show(next.view,next.options).then(next.resolve);
+  // A failed destination must not swallow a later menu choice. Re-run every save/permission guard.
+  show(next.view,next.options).then(next.resolve,()=>next.resolve(false));
  }
  async function restoreAfterOpenFailure(view,previousCode,previousLocation){
   // Detach the failed subscription before a late response can replace another screen.
@@ -276,8 +280,8 @@
   const previousView=current,previousCode=window.AiselWorkorderMeetingPhotos?.currentCode,previousLocation={state:history.state,url:location.href},intent=navigationRevision;
   busy=true;let completed=false,openingEditor=false;
   try{
-   if(!await guard(view,intent)||intent!==navigationRevision)return false;
-   if((['staff','permissionaudit'].includes(view)||['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-myLeave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
+   if(!await navigationWait(guard(view,intent),intent)||intent!==navigationRevision)return false;
+   if((['staff','permissionaudit'].includes(view)||['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
    if(intent!==navigationRevision||!allowedView(view))return false;info();if(view!=='editor')returnToProducts=false;
    if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:!!id,...(id?{id}:{})})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){if(await DM.show({history:writeHistory,preserveDetail:false,background:true})===false)return false;select(view);completed=true;return true;}
@@ -294,7 +298,7 @@
     document.body.dataset.aiselListView='moodboards';
    }
    else if(view==='meetingmaterials'){
-    const materials=await meetingMaterials();if(intent!==navigationRevision||!allowedView(view))return false;
+    const materials=await navigationWait(meetingMaterials(),intent);if(intent!==navigationRevision||!allowedView(view))return false;
     await materials.show({hash:id,background:true});if(intent!==navigationRevision||!allowedView(view)){materials.hide();return false;}
     document.body.dataset.aiselListView='meetingmaterials';
    }
@@ -392,7 +396,7 @@
   if(!allowedView(target.view)){e.stopImmediatePropagation();restoreLocation(previous);info('이 메뉴는 담당 권한이 있는 계정에서 사용할 수 있습니다.');return;}
   if(target.owner!=='unified'&&target.view===current){lastLocation=next;return;}
   e.stopImmediatePropagation();
-  if(busy){restoreLocation(previous);return;}
+  if(busy){restoreLocation(previous);const id=target.id||(target.owner==='reference'&&new URL(next.url).hash.startsWith('#reference=')?decodeURIComponent(new URL(next.url).hash.slice(11)):undefined);await show(target.view,{history:true,code:target.code,id});return;}
   if(target.owner==='unified'){
    if(!await show(target.view,{history:false,code:target.code,id:target.id})){restoreLocation(previous);return;}
    lastLocation=next;return;
@@ -400,7 +404,7 @@
   let completed=false;
   try{
    busy=true;
-   if(!await guard(target.view)){restoreLocation(previous);return;}
+   if(!await navigationWait(guard(target.view))){restoreLocation(previous);return;}
    if(target.owner==='reference'){
     const id=new URL(next.url).hash.startsWith('#reference=')?decodeURIComponent(new URL(next.url).hash.slice(11)):undefined;
     if(await RC.show({history:false,id,preserveDetail:!!id})===false){restoreLocation(previous);return;}
