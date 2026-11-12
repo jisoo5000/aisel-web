@@ -7724,15 +7724,15 @@
   function restoreDraft_(ctx,schedule=true){
     if(!currentDraft_(ctx)||!ctx.candidate||loading||!ctx.serverReady||isEditorComposing_())return false;
     const record=ctx.candidate,live=!!ctx.liveConflict;
-    // Previously cached drafts stay as a quiet backup. The latest server document
-    // wins stale snapshots, reused product codes and concurrent edits to one field.
+    // Cached drafts defer to the latest server document. An active edit is a
+    // new save intent: do not discard its changed fields during reconciliation.
     if(!live&&(ctx.dirty||isTypingNow()||ctx.serverMissing||record.newRecord||
       !Number.isFinite(Number(record.savedAt))||Number(record.savedAt)<=Number(lastSavedState_?.updatedAt||0))){
       ctx.candidate=null;ctx.candidates=[];ctx.liveConflict=false;ctx.choicePaused=false;return true;
     }
     if(ctx.serverMissing)return false;
     const current=collect(),plan=mobileDraftMerge_(record,current);
-    const merged=plan.resolve(Object.fromEntries(plan.conflicts.map(conflict=>[conflict.id,'server'])));
+    const merged=plan.resolve(Object.fromEntries(plan.conflicts.map(conflict=>[conflict.id,live?'draft':'server'])));
     const previous=editorContentBaseline_,savedServer=lastSavedState_;
     ctx.reconciling=true;
     try{
