@@ -74,3 +74,36 @@
  .permission-audit th,.permission-audit td{padding:6px;text-align:left;border-bottom:1px solid #E3E5E7;white-space:nowrap;font:inherit}.permission-audit thead th{background:#F4F5F6;font-weight:600}.permission-audit tbody th span{display:block;font-size:12px;font-weight:400;color:#6C727C;margin-top:4px}.permission-audit-notes{color:#6C727C;margin-top:12px}
 }
 @media screen and (max-width:639px){html:root body .permission-audit{padding:12px}.permission-audit button{white-space:nowrap}.permission-audit table{min-width:0}.permission-audit thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.permission-audit tbody{display:block}.permission-audit tbody tr{display:block;border-bottom:1px solid #E3E5E7;padding:6px}.permission-audit tbody :is(th,td){display:grid;grid-template-columns:120px minmax(0,1fr);gap:6px;padding:3px 0;border:0;white-space:normal;overflow-wrap:anywhere}.permission-audit tbody :is(th,td)::before{content:attr(data-label);color:#6C727C}.permission-audit tbody th strong,.permission-audit tbody th span{grid-column:2}.permission-audit tbody th strong{grid-row:1}.permission-audit tbody td[colspan]{display:block}}
+
+
+/* One compact card layout uses the content width, not the desktop viewport. */
+@media screen {
+ html:root body #aiselPermissionAudit {width:100%;max-width:390px;padding:6px;color:#34383C;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body #aiselPermissionAudit h2 {font:600 14px/20px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body #aiselPermissionAudit .permission-audit-toolbar {gap:6px;flex-wrap:wrap;}
+ html:root body #aiselPermissionAudit .permission-audit-actions {display:flex;align-items:center;flex-wrap:wrap;gap:4px;}
+ html:root body #aiselPermissionAudit button {height:28px;min-height:28px;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);padding:0 6px;white-space:nowrap;}
+ html:root body #aiselPermissionAudit .permission-audit-summary {margin:6px 0;padding:6px;background:#F1F3F6;}
+ html:root body #aiselPermissionAudit .permission-audit-scroll {overflow:visible;border:0;}
+ html:root body #aiselPermissionAudit table,html:root body #aiselPermissionAudit tbody {display:block;width:100%;min-width:0;}
+ html:root body #aiselPermissionAudit thead {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+ html:root body #aiselPermissionAudit tbody tr {display:block;margin:0 0 6px;padding:6px;border:1px solid #E3E5E7;border-radius:3px;}
+ html:root body #aiselPermissionAudit tbody :is(th,td) {display:grid;grid-template-columns:minmax(116px,40%) minmax(0,1fr);gap:6px;align-items:start;padding:6px 0;border:0;text-align:left;white-space:normal;min-width:0;font:inherit;}
+ html:root body #aiselPermissionAudit tbody :is(th,td)::before {content:attr(data-label);grid-column:1;grid-row:1;color:#6C727C;white-space:normal;word-break:keep-all;overflow-wrap:normal;font-weight:400;}
+ html:root body #aiselPermissionAudit .audit-value {grid-column:2;grid-row:1;min-width:0;margin:0;padding:0;overflow-wrap:anywhere;}
+ html:root body #aiselPermissionAudit .audit-identity {display:flex;flex-direction:column;gap:6px;}
+ html:root body #aiselPermissionAudit .audit-identity strong {font:600 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);}
+ html:root body #aiselPermissionAudit .audit-identity span {font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);margin:0;color:#6C727C;}
+ html:root body #aiselPermissionAudit tbody td[colspan] {display:block;}
+ html:root body #aiselPermissionAudit tbody td[colspan]::before {content:none;}
+ html:root body .aisel-access-dialog {width:min(390px,calc(100vw - 12px));padding:12px;}
+ html:root body .aisel-access-dialog [hidden] {display:none!important;}
+ html:root body .aisel-access-dialog .access-field {gap:6px;margin-bottom:6px;}
+ html:root body .aisel-access-dialog .access-actions {gap:4px;margin:6px 0;}
+ html:root body .aisel-access-dialog :is(input:not([type=checkbox]),select,button) {height:28px!important;min-height:28px!important;font-size:12px!important;line-height:18px!important;}
+ html:root body .aisel-access-dialog textarea {box-sizing:border-box;width:100%;min-height:80px;resize:vertical;padding:6px;border:1px solid #E3E5E7;border-radius:3px;font:400 12px/18px var(--aisel-screen-font,'AISEL Screen',sans-serif);color:#34383C;}
+ html:root body .access-handover-list {display:grid;gap:6px;}
+ html:root body .access-handover-card {padding:6px;border:1px solid #E3E5E7;border-radius:3px;min-width:0;}
+ html:root body .access-handover-card p {white-space:pre-wrap;margin:6px 0;}
+ html:root body .access-handover-card.is-complete {background:#F1F5FA;}
+}

@@ -1,0 +1,26 @@
+name: Staff management UI verification
+on:
+  push:
+    branches: ['codex/staff-management-20261112']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --ignore-scripts jsdom@26.1.0 playwright@1.58.2
+      - run: npx playwright install chromium
+      - run: node --test tests/staff-management-20261112.test.cjs
+      - run: node scripts/staff-management-screen.cjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: staff-screen-proof
+          path: staff-screen-proof/
