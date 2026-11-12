@@ -1,5 +1,15 @@
 /* AISEL APP Core: 382px content, 28px filters and 160px list thumbnails; detail and print behavior are preserved. */
 @media screen {
+ #rcPhotoPreview{box-sizing:border-box;width:min(960px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:94dvh;margin:auto;padding:12px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;overflow:auto}
+ #rcPhotoPreview::backdrop{background:#34383C99}
+ #rcPhotoPreview[open]{display:flex;flex-direction:column;gap:8px}
+ #rcPhotoPreview .rc-preview-tools{display:flex;align-items:center;gap:8px;flex:none}
+ #rcPhotoPreview .rc-preview-tools strong{flex:1;min-width:0;font:600 14px/20px var(--aisel-font,sans-serif);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+ #rcPhotoPreview button{flex:none;height:32px;min-height:32px;padding:0 8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#34383C;font:400 12px/18px var(--aisel-font,sans-serif);cursor:pointer}
+ #rcPhotoPreview button:focus-visible{outline:2px solid #34383C;outline-offset:2px}
+ #rcPhotoPreview>img{display:block;min-height:0;width:100%;max-height:calc(94dvh - 74px);object-fit:contain}
+}
+@media screen {
  #referenceCollectionView{--aisel-control-height:28px;--aisel-input-height:32px;--aisel-page-gutter:4px;--aisel-line:#E3E5E7;--aisel-muted:#6C727C;--aisel-soft:#F6F7F8;--aisel-radius:3px;--rc-accent:#875566;box-sizing:border-box;width:100%;max-width:var(--aisel-screen-width,390px);margin:0 auto;padding:0 var(--aisel-page-gutter) calc(80px + env(safe-area-inset-bottom));color:var(--aisel-ink,#34383C);background:#fff;font:400 13px/20px var(--aisel-font,sans-serif)}
  #referenceCollectionView *,#referenceCollectionView *::before,#referenceCollectionView *::after{box-sizing:border-box}
  #referenceCollectionView[hidden],#referenceCollectionView [hidden]{display:none!important}
