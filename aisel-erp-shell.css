@@ -178,6 +178,8 @@
 /* 2026-11-12: phone-first workspace. Native width class avoids legacy media rewriting. */
 @media screen {
  html:root body.aisel-erp-shell.erp-mobile{padding-left:0!important;padding-right:0!important;padding-bottom:max(20px,env(safe-area-inset-bottom));}
+ /* Compact content never consumes the pinned desktop sidebar's reserved width. */
+ html:root body.aisel-erp-shell.erp-mobile.erp-nav-pinned{padding-left:calc(var(--erp-sidebar) + 16px)!important;padding-right:16px!important;}
  html:root body.aisel-erp-shell.erp-mobile #appBrandHeader{grid-template-columns:36px minmax(0,1fr) 48px;gap:4px;padding:4px max(4px,env(safe-area-inset-right)) 4px max(4px,env(safe-area-inset-left));}
  html:root body.aisel-erp-shell.erp-mobile #aiselErpMenuToggle{width:36px;height:36px;min-height:36px;padding:8px;}
  html:root body.aisel-erp-shell.erp-mobile #aiselSessionButton{grid-column:3;width:48px;height:36px;min-height:36px;}
