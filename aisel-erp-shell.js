@@ -44,9 +44,9 @@
     for(const {caption}of labels)caption.remove();labels.length=0;
     for(const button of main.querySelectorAll('.maintab'))delete button.dataset.erpGroupCollapsed;
     const groups=role==='designer'?[['내 작업',['references','designmeeting','orders']],['판매',['sales']]]
-      :role==='logistics'?[['물류',['products','samples']],['기타',['orders','designmeeting','meetingmaterials','references','sales']]]
-      :role==='md'?[['판매',['sales']],['상품',['references','orders','designmeeting','meetingmaterials']],['물류',['products','samples']]]
-      :[['상품·제작',['references','designmeeting','meetingmaterials','orders']],['판매',['sales']],['물류',['products','samples']]];
+      :role==='logistics'?[['물류',['products','samples']],['기타',['references','meetingmaterials','designmeeting','orders','sales']]]
+      :role==='md'?[['판매',['sales']],['상품',['references','meetingmaterials','designmeeting','orders']],['물류',['products','samples']]]
+      :[['상품·제작',['references','meetingmaterials','designmeeting','orders']],['판매',['sales']],['물류',['products','samples']]];
     groups.push(['업무',['operations']],['근무·휴가',[]],['관리',['staff','permissionaudit']]);
     for(const item of window.AiselCompanyERP?.navigation()||[]){let group=groups.find(g=>g[0]===item.group);if(!group){group=[item.group,[]];groups.push(group);}group[1].push(item.view);}
     groups.forEach(([label,views])=>{
