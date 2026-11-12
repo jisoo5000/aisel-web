@@ -887,3 +887,15 @@
   font-weight:400;
  }
 }
+
+/* 2026-11-12: match cost inputs and summary values to the amount column. */
+@media screen {
+ html:root body #editorView #sheet #costCell {--aisel-cost-value-font:13px;}
+ html:root body #editorView #sheet #costCell :is(.cost-table .nm,.cost-name-short,.cost-table .unit,.cost-table .qty,.cost-pair input,.fixed-row > input,.fixed-loss-value,.total-row .v,#ownerRetailRow #targetThreshold,#ownerRetailRow .mobile-retail-unit) {
+  font-size:var(--aisel-cost-value-font)!important;
+  font-weight:400;
+ }
+}
+@media screen and (max-width:359px) {
+ html:root body #editorView #sheet #costCell {--aisel-cost-value-font:12px;}
+}
