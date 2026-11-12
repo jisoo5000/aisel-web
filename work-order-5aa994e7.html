@@ -15669,7 +15669,7 @@ $("fabricSaveBtn").addEventListener("click", async () => {
   const boundFrames=new WeakSet(),boundWindows=new WeakSet();
   const rootFor=doc=>doc.scrollingElement || doc.documentElement;
   const visible=element=>!!element?.getClientRects().length;
-  let scheduled=false;
+  let scheduled=false,scrollIntent=0;
   function schedule(){
     if(scheduled)return;scheduled=true;
     requestAnimationFrame(()=>{scheduled=false;updateFabState();});
@@ -15721,14 +15721,17 @@ $("fabricSaveBtn").addEventListener("click", async () => {
     topBtn.disabled=y<=4;bottomBtn.disabled=maxY-y<=4;
   }
   function move(direction){
+    scrollIntent++;
     const root=scrolling(),step=Math.max(120,viewport(root)-80);
     const top=Math.max(0,Math.min(maxScroll(root),root.scrollTop+direction*step));
     root.scrollTo({top,behavior:window.matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
     schedule();
   }
   function jumpToEdge(bottom){
+    const intent=++scrollIntent;
     const root=scrolling();
     root.scrollTo({top:bottom?maxScroll(root):0,behavior:'instant'});
+    requestAnimationFrame(()=>{if(intent!==scrollIntent)return;root.scrollTo({top:bottom?maxScroll(root):0,behavior:'instant'});schedule();});
     schedule();
   }
   function pageKey(event){
@@ -17963,7 +17966,7 @@ window.AiselReferenceCategories.configure({workspace:'aisel-workorder',getUser:(
 }
 </style>
 
-<link rel="stylesheet" href="reference-collection.css?v=reference-half-stars-20261112">
+<link rel="stylesheet" href="reference-collection.css?v=reference-controls-20261112">
 <script>
 window.AiselUnifiedAdapter={
  async leave(options){if(!await settleEditorSave_(options))return false;return true;},
