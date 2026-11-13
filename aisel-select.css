@@ -1,0 +1,36 @@
+/* Shared single-choice menus. Screen only: keep form values and A4 output intact. */
+@media screen {
+ html:root body select:not([multiple]):is(:not([size]),[size="0"],[size="1"]) {
+  text-align:center!important;text-align-last:center!important;
+  appearance:none!important;-webkit-appearance:none!important;
+  padding-left:18px!important;padding-right:18px!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%236C727C' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+  background-repeat:no-repeat!important;background-position:right 5px center!important;background-size:12px 12px!important;
+ }
+ html:root body #aiselSelectMenu {
+  position:fixed;inset:auto;box-sizing:border-box;margin:0;padding:4px 0;
+  width:max-content;min-width:0;max-width:calc(100vw - 16px);max-height:320px;
+  border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C;
+  box-shadow:none;z-index:2147483647;overflow:auto;overscroll-behavior:contain;
+  scrollbar-width:none;text-align:center;text-align-last:center;
+  font-family:var(--aisel-font,'AISEL Screen',sans-serif);font-weight:400;
+  -webkit-text-size-adjust:100%;touch-action:pan-y;
+ }
+ html:root body #aiselSelectMenu[hidden] {display:none!important;}
+ html:root body #aiselSelectMenu::backdrop {background:transparent;pointer-events:none;}
+ html:root body #aiselSelectMenu :is(.aisel-select-option,.aisel-select-group) {
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+  width:100%;min-height:28px;margin:0;padding:4px 18px;border:0;border-radius:0;
+  font:inherit;line-height:inherit;text-align:center;text-align-last:center;
+  white-space:normal;overflow-wrap:anywhere;color:inherit;background:transparent;
+ }
+ html:root body #aiselSelectMenu .aisel-select-option {cursor:pointer;}
+ html:root body #aiselSelectMenu .aisel-select-option[aria-selected="true"] {background:#E9ECF2;color:#34383C;}
+ html:root body #aiselSelectMenu .aisel-select-option[data-active] {background:#EEF0F3;color:#34383C;outline:1px solid #94A8C4;outline-offset:-1px;}
+ html:root body #aiselSelectMenu .aisel-select-option[aria-disabled="true"] {color:#9BA1AA;cursor:default;}
+ html:root body #aiselSelectMenu .aisel-select-group {color:#6C727C;font-weight:600;}
+ @media (pointer:coarse) {
+  html:root body #aiselSelectMenu .aisel-select-option {min-height:36px;}
+ }
+}
+@media print {#aiselSelectMenu {display:none!important;}}
