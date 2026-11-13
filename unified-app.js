@@ -143,7 +143,7 @@
   }
   const changedIdentity=accessIdentity&&accessIdentity!==session.uid,restore=accessRestore?.uid===session.uid?accessRestore:null;
   accessIdentity=session.uid;accessRestore=null;
-  if(current==='home'){initialRoutePending=false;renderHome();return;}
+  if(current==='home'&&!initialRoutePending){info();renderHome();return;}
   if(initialRoutePending){initialRoutePending=false;openInitialLocation().catch(error=>info(error.message));}
   else if(initialRouteInFlight&&!changedIdentity){return;}
   else if(restore&&allowedView(restore.view))show(restore.view,{replace:true,code:restore.code});
@@ -467,7 +467,7 @@
   }catch(error){restoreLocation(previous);info(error.message||'화면을 열지 못했습니다.');}
   finally{busy=false;drainNavigation(completed);}
  };
- window.AiselUnified={show,home(){landingOpen=false;return show('home');},get view(){return current;}};
+ window.AiselUnified={show,home(){landingOpen=false;initialRoutePending=false;return show('home');},get view(){return current;}};
  // Conversion and reopening a linked meeting use the same save guard, route and
  // acknowledged editor load as every other cross-menu workorder navigation.
  if(window.AiselDesignMeetingAdapter)window.AiselDesignMeetingAdapter.open=code=>show('editor',{code});
