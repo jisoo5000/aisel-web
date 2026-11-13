@@ -27,8 +27,8 @@
   const title=text(row.title).replace(/\s/g,'');
   return /아네트/.test(title)&&/부츠컷|플레어/.test(title)?0:/스테디|디벨롭|컴포트/.test(title)?1:2;
  }
- function preparationRows(source){
-  return source.filter(row=>row.category==='product'&&!row.archivedAt)
+ function preparationRows(source,designer=''){
+  return source.filter(row=>row.category==='product'&&!row.archivedAt&&(!designer||text(row.designer).trim()===designer))
    .slice().sort((a,b)=>preparationRank(a)-preparationRank(b)||(Number(b.updatedAt)||0)-(Number(a.updatedAt)||0)||text(a.id).localeCompare(text(b.id)));
  }
  function selectionHash(date,designer,ids){
@@ -44,7 +44,8 @@
   person.className='amm-preparation-designer';person.setAttribute('aria-label','회의 담당자');
   const first=el('option','담당자 선택');first.value='';person.append(first);
   for(const name of [...new Set([...PEOPLE,...(root.AiselDesigners?.list?.()||[])].filter(Boolean))]){const o=el('option',name);o.value=name;person.append(o);}
-  const transfer=button('디자인회의로 이동',()=>transferPreparation());transfer.className='amm-preparation-transfer';
+  person.addEventListener('change',()=>{preparationPage=0;renderPreparation();prepareStatus('선택 '+preparationSelected.size+'개');});
+  const transfer=button('디자인회의 슬라이드',()=>transferPreparation());transfer.className='amm-preparation-transfer';
   tools.append(date,person,transfer);
   const info=el('p','제품 레퍼런스 · 아네트 패턴과 스테디셀러 디벨롭 우선','amm-preparation-note');
   const status=el('p','','amm-preparation-status');status.setAttribute('role','status');
@@ -67,15 +68,16 @@
   }
  }
  function renderPreparation(){
-  const pages=Math.max(1,Math.ceil(preparationItems.length/10));preparationPage=Math.max(0,Math.min(preparationPage,pages-1));
+  const designer=$('.amm-preparation-designer').value,filtered=preparationRows(preparationItems,designer),available=new Set(filtered.map(row=>row.id));
+  preparationSelected=new Set([...preparationSelected].filter(id=>available.has(id)));
+  const pages=Math.max(1,Math.ceil(filtered.length/10));preparationPage=Math.max(0,Math.min(preparationPage,pages-1));
   const list=$('.amm-preparation-list');list.replaceChildren();
-  for(const row of preparationItems.slice(preparationPage*10,preparationPage*10+10)){
+  for(const row of filtered.slice(preparationPage*10,preparationPage*10+10)){
    const item=el('label',undefined,'amm-preparation-row'),check=el('input');check.type='checkbox';check.value=row.id;
    check.checked=preparationSelected.has(row.id);check.disabled=preparationBusy||preparationLoading;check.setAttribute('aria-label',(row.title||'제목 없음')+' 회의 선택');
    check.addEventListener('change',()=>{
-    if(check.checked&&preparationSelected.size>=10){check.checked=false;prepareStatus('한 회의에 최대 10개를 선택해주세요.',true);return;}
     if(check.checked)preparationSelected.add(row.id);else preparationSelected.delete(row.id);
-    item.classList.toggle('selected',check.checked);prepareStatus('선택 '+preparationSelected.size+' / 10개');
+    item.classList.toggle('selected',check.checked);prepareStatus('선택 '+preparationSelected.size+'개');
    });
    item.append(check);
    if(row.thumbnail){const img=el('img');img.alt=row.title||'제품 사진';meetingImage(img,'references',row.id,row.thumbnail,preparationPage===0);item.append(img);}
@@ -83,8 +85,8 @@
    const meta=el('span',undefined,'amm-preparation-meta');meta.append(el('strong',row.title||'제목 없음'),el('small',preparationRank(row)===0?'아네트 패턴':preparationRank(row)===1?'스테디셀러 · 디벨롭':row.designer||'담당자 미지정'));
    item.append(meta);item.classList.toggle('selected',check.checked);list.append(item);
   }
-  if(!preparationItems.length)list.append(el('p','등록된 제품 레퍼런스가 없습니다.'));
-  $('.amm-preparation-position').textContent=(preparationPage+1)+' / '+pages+' · 전체 '+preparationItems.length+'개';
+  if(!filtered.length)list.append(el('p',designer?designer+' 담당 제품 레퍼런스가 없습니다.':'등록된 제품 레퍼런스가 없습니다.'));
+  $('.amm-preparation-position').textContent=(preparationPage+1)+' / '+pages+' · 전체 '+filtered.length+'개';
   $('.amm-preparation-prev').disabled=preparationBusy||preparationLoading||preparationPage===0;
   $('.amm-preparation-next').disabled=preparationBusy||preparationLoading||preparationPage>=pages-1;
   $('.amm-preparation-transfer').disabled=preparationBusy||preparationLoading||root.AiselAccess?.isOwner!==true;
@@ -98,7 +100,7 @@
    if(!snapshot.available||!snapshot.complete)throw Error('제품 레퍼런스 전체 목록을 확인하지 못했습니다. 다시 열어주세요.');
    preparationItems=preparationRows(snapshot.records);
    const available=new Set(preparationItems.map(row=>row.id));preparationSelected=new Set([...preparationSelected].filter(id=>available.has(id)));
-   renderPreparation();prepareStatus('선택 '+preparationSelected.size+' / 10개');return true;
+   renderPreparation();prepareStatus('선택 '+preparationSelected.size+'개');return true;
   }catch(error){if(stamp===epoch){preparationItems=[];renderPreparation();prepareStatus(error.message,true);}return false;}
   finally{if(stamp===epoch){preparationLoading=false;for(const input of pane.querySelectorAll('.amm-preparation-controls input,.amm-preparation-controls select'))input.disabled=false;renderPreparation();}}
  }
@@ -106,8 +108,8 @@
   if(preparationBusy||preparationLoading||!preparationSelected.size)return;
   const date=$('.amm-preparation-date').value,designer=$('.amm-preparation-designer').value;
   if(!validDate(date)||!designer){prepareStatus('회의일과 담당자를 선택해주세요.',true);return;}
-  const stamp=epoch,uid=account()?.uid,ids=preparationItems.filter(row=>preparationSelected.has(row.id)).map(row=>row.id),finished=[];
-  if(ids.length>10)return;
+  const stamp=epoch,uid=account()?.uid,ids=preparationRows(preparationItems,designer).filter(row=>preparationSelected.has(row.id)).map(row=>row.id),finished=[];
+  if(!ids.length){prepareStatus('선택한 담당자의 자료를 다시 선택해주세요.',true);return;}
   preparationBusy=true;renderPreparation();for(const input of pane.querySelectorAll('.amm-preparation-controls input,.amm-preparation-controls select'))input.disabled=true;
   try{
    const grant=await root.AiselCollectionWrites.authorize('meetings');assertSession(stamp,uid);
@@ -115,7 +117,7 @@
    for(const id of ids){
     assertSession(stamp,uid);
     const detail=await root.AiselGalleryIndex.detail('references',id);assertSession(stamp,uid);
-    const reference=detail.record;if(!reference||reference.category!=='product'||reference.archivedAt)throw Error('분류나 보관 상태가 변경된 자료가 있습니다. 목록을 다시 확인해주세요.');
+    const reference=detail.record;if(!reference||reference.category!=='product'||reference.archivedAt||text(reference.designer).trim()!==designer)throw Error('분류·담당자 또는 보관 상태가 변경된 자료가 있습니다. 목록을 다시 확인해주세요.');
     const linked=await root.AiselDesignMeeting.bridge('refSelectForWorkorder',[],{id,version:reference.version});assertSession(stamp,uid);
     const c=linked.candidate,expectedId=await candidateId(id);assertSession(stamp,uid);
     if(!/^[a-f0-9]{64}$/.test(linked.inputHash||'')||linked.referenceId!==id||linked.referenceVersion!==reference.version||!c||c.id!==expectedId||linked.candidateId!==expectedId||c.sourceRefId!==id||c.designMeeting!==true||c.designMeetingDeletedAt||c.sourceReferenceSignature!==linked.inputHash||linked.currentInputHash!==linked.inputHash)throw Error('레퍼런스와 회의 후보의 연결을 확인하지 못했습니다.');
@@ -446,7 +448,7 @@
  function show({hash,background=false,present=false}={}){
   ensure();visible=true;pane.hidden=false;document.body.classList.add('aisel-meeting-materials-open');$('.amm-legacy').hidden=true;
   if(pane.querySelector('.amm-decision-form')||planningPending())return Promise.resolve(true);
-  const ready=(async()=>{presentationMode=present;const supplied=new URLSearchParams((hash||'').split('?')[1]||'');presentationIds=present?(supplied.get('ids')||'').split(',').filter(Boolean):[];if(present&&(!presentationIds.length||presentationIds.length>10||new Set(presentationIds).size!==presentationIds.length||presentationIds.some(id=>!/^refdm_[a-f0-9]{64}$/.test(id))))throw Error('선택한 회의 자료를 확인해주세요.');const requested=routeSelection(present?(hash||'').replace('#design-meeting-presentation','#meeting-materials'):hash);archived=false;
+  const ready=(async()=>{presentationMode=present;const supplied=new URLSearchParams((hash||'').split('?')[1]||'');presentationIds=present?(supplied.get('ids')||'').split(',').filter(Boolean):[];if(present&&(!presentationIds.length||new Set(presentationIds).size!==presentationIds.length||presentationIds.some(id=>!/^refdm_[a-f0-9]{64}$/.test(id))))throw Error('선택한 회의 자료를 확인해주세요.');const requested=routeSelection(present?(hash||'').replace('#design-meeting-presentation','#meeting-materials'):hash);archived=false;
    if(present&&(!requested.date||!requested.designer))throw Error('회의 날짜와 담당자를 확인해주세요.');$('.amm-top h2').textContent=present?'디자인회의':'회의자료 준비';
    if(requested.date){directory=false;setPeople(requested.designer);$('.amm-date').value=requested.date;$('.amm-designer').value=requested.designer;await loadSelection({refresh:false});if(present&&loaded.length===presentationIds.length){presenting=true;presentIndex=0;pane.classList.add('amm-presenting');document.body.classList.add('aisel-presenting');$('.amm-presenter').hidden=false;paintPresentation();$('.amm-exit').focus();}}
    else if(requested.sheet)await showRecords();else if(requested.list)await showDirectory({archive:false});else await showPreparation();return true;
