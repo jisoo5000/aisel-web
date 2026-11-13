@@ -21,7 +21,22 @@
   aside.id = 'aiselErpNavigation'; aside.className = 'noprint';
   aside.setAttribute('aria-label', '업무 메뉴');
   const heading = document.createElement('div'); heading.className = 'erp-nav-heading';
-  const brand = document.createElement('span'); brand.textContent = 'AISEL'; brand.className = 'erp-brand';
+  const brand = document.createElement('button'); brand.type = 'button'; brand.textContent = 'AISEL'; brand.className = 'erp-brand';
+  const headerBrand = header.querySelector('.app-brand');
+  const homeBrands = [brand];
+  if (headerBrand) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = headerBrand.className; button.textContent = headerBrand.textContent;
+    headerBrand.replaceWith(button); homeBrands.push(button);
+  }
+  for (const button of homeBrands) {
+    button.classList.add('aisel-home-link'); button.title = '로그인 · 시작 화면'; button.setAttribute('aria-label', '에이슬 시작 화면');
+    button.addEventListener('click', async () => {
+      if (button.disabled) return;
+      button.disabled = true;
+      try { if (drawerOpen) setDrawer(false, false); await window.AiselUnified.home?.(); }
+      finally { button.disabled = false; }
+    });
+  }
   const close = document.createElement('button'); close.type = 'button'; close.className = 'erp-nav-close';
   close.textContent = '×'; close.setAttribute('aria-label', '업무 메뉴 닫기');
   heading.append(brand, close);
@@ -240,7 +255,7 @@
  function selection(){
   const view=root.AiselUnified?.view,s=root.AiselAccess?.session;
   // A company-wide workbook must never expand a staff member's assigned-record access.
-  if(!view||s?.active!==true||s.role!=='owner'||!s.uid||s.legacy||s.passwordChangeRequired)return null;
+  if(!view||['home','company-links'].includes(view)||s?.active!==true||s.role!=='owner'||!s.uid||s.legacy||s.passwordChangeRequired)return null;
   if(management.has(view)&&!root.AiselManagement?.unlocked)return null;
   const spec=root.AiselWorkflowDomain?.specs?.[String(view).replace(/^company-/,'')];
   let item=spec?.sheetId!==undefined?source(book,spec.sheetId,'ERP 운영대장 / '+spec.sheet):registry[view];
@@ -282,7 +297,26 @@
  function measure(){const height=Math.ceil(header.getBoundingClientRect().height);if(height>0)document.body.style.setProperty('--aisel-header-offset',(height+6)+'px');}
  if(root.ResizeObserver)new ResizeObserver(measure).observe(header);else root.addEventListener('resize',measure);
  refresh();measure();
- root.AiselWorkspaceUI=Object.freeze({refresh,sourceFor:()=>selection()?.item||null});
+ function directory(){
+  const s=root.AiselAccess?.session;
+  if(s?.active!==true||s.role!=='owner'||!s.uid||s.legacy||s.passwordChangeRequired)return [];
+  const entries={...registry};
+  for(const [key,spec]of Object.entries(root.AiselWorkflowDomain?.specs||{}))if(spec.sheetId!==undefined)entries['company-'+key]=source(book,spec.sheetId,'ERP 운영대장 / '+spec.sheet);
+  const references='1aFz93S83fvuzW24LMX7s7BA9d7x3orKnY3219Nx55Kk';
+  for(const [key,gid,label]of [['marketing',2026103102,'마케팅'],['idea',2026110203,'아이디어'],['shooting',2026103103,'촬영'],['styling',2026103104,'코디']])entries['reference-'+key]=source(references,gid,'에이슬 레퍼런스 / '+label);
+  entries['reference-product']=source(product,2026101316,'AISEL 제품·작업지시서 / 레퍼런스 수집');
+  const purposes={orders:'제품 사진·품번·담당자·작업지시서',references:'레퍼런스 사진·링크·별점·USP',designmeeting:'디자인회의 검토와 결정',samples:'사무실 보유 샘플과 반납 현황',sales:'신상품 판매와 반품 성과','company-finance':'매출·광고비·수익 확인','company-product':'패턴·핏·원단·컬러 개발 계획','company-replenishment':'제작발주·입고·판매·재고 확인'};
+  const seen=new Set(),rows=[];
+  for(const [view,item]of Object.entries(entries)){
+    const key=view.replace(/^company-/,'');
+    if((management.has(view)||root.AiselWorkflowDomain?.specs?.[key]?.group==='관리')&&!root.AiselManagement?.unlocked)continue;
+    const url=safeUrl(item.url);if(!url||seen.has(url))continue;seen.add(url);
+    const parts=item.title.split(' / '),name=parts.at(-1),bookTitle=parts[0];
+    rows.push({view,name,book:bookTitle,purpose:purposes[view]||name+' 자료 확인',url});
+  }
+  return rows;
+ }
+ root.AiselWorkspaceUI=Object.freeze({refresh,sourceFor:()=>selection()?.item||null,directory});
 })(window);
 
 
@@ -292,7 +326,7 @@
  let queued=false;
  function labelTables(){
   queued=false;
-  document.querySelectorAll('#aiselCompanyWorkspace .ce-table:not(.cg-guide-table),#erpOperationsView table,#aiselStaffDirectory table,#aiselPermissionAudit table').forEach(table=>{
+  document.querySelectorAll('#aiselCompanyWorkspace .ce-table:not(.cg-guide-table):not(.ce-links-table),#erpOperationsView table,#aiselStaffDirectory table,#aiselPermissionAudit table').forEach(table=>{
    const headings=[...table.querySelectorAll('thead tr:last-child th')];
    if(!headings.length||headings.some(th=>th.colSpan>1||th.rowSpan>1)){table.classList.remove('erp-mobile-list');return;}
    const rows=[...table.querySelectorAll('tbody tr')];
