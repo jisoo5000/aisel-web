@@ -9,6 +9,7 @@
   // iPadOS can report a Mac UA; touch distinguishes it from a desktop Mac.
   const userAgent = navigator.userAgent || '';
   const touchApple = /Macintosh|MacIntel/.test(userAgent + ' ' + navigator.platform) && navigator.maxTouchPoints > 0;
+  const ipadDevice = /iPad/.test(userAgent) || touchApple;
   const mobileDevice = /Android|iPhone|iPad|iPod/.test(userAgent) || touchApple;
   const desktopDevice = !mobileDevice && /Windows NT|Macintosh|X11|CrOS|Linux x86_64/.test(userAgent);
   const media = window.matchMedia('(min-width: 1024px) and (orientation: landscape)');
@@ -17,6 +18,8 @@
   const compact = window.matchMedia('(max-width: 767px)');
   const pinnedMenu = () => !compact.matches && (desktopDevice || (!mobileDevice && pointer.matches) || media.matches);
   const body = document.body;
+  // iPad-only width exception; desktop and phone content retain their existing sizes.
+  body.classList.toggle('erp-ipad', ipadDevice);
   const aside = document.createElement('aside');
   aside.id = 'aiselErpNavigation'; aside.className = 'noprint';
   aside.setAttribute('aria-label', '업무 메뉴');
@@ -170,8 +173,13 @@
     if (drawerOpen && records.some(record => record.attributeName === 'aria-pressed')) setDrawer(false);
   }).observe(main, { subtree: true, attributes: true, attributeFilter: ['hidden', 'disabled', 'class', 'aria-pressed'] });
   window.addEventListener('aisel-access-change', () => { sync(); if (drawerOpen) setDrawer(false); });
+  let previousPinnedMode = pinnedMenu();
   const syncLayout = () => {
     const focused = document.activeElement;
+    const nextPinnedMode = pinnedMenu();
+    // Returning from Split View restores the iPad sidebar without resetting desktop choices.
+    if (ipadDevice && nextPinnedMode && !previousPinnedMode) pinnedCollapsed = false;
+    previousPinnedMode = nextPinnedMode;
     setDrawer(false, false);
     if (aside.hidden && aside.contains(focused)) toggle.focus();
     else if (!aside.hidden && pinnedMenu() && focused === close) toggle.focus();

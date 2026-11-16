@@ -244,3 +244,11 @@
  html:root body.aisel-erp-shell .ce-link-open{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:48px;height:30px;padding:0 8px;border:1px solid #D8DFEA;border-radius:3px;background:#F4F6F9;color:#2F3B52;font-size:12px;text-decoration:none;white-space:nowrap;}
  html:root body.aisel-erp-shell .ce-link-open:focus-visible{outline:2px solid #6283B1;outline-offset:2px;}
 }
+
+/* 2026-11-16: iPad workorders fill their available pane using the existing mobile composition.
+   Native navigation classes handle landscape/Split View; screen-only rules preserve A4 output. */
+@media screen {
+ html:root body.aisel-erp-shell.erp-ipad #editorView {
+  width:100%;max-width:100%!important;min-width:0;
+ }
+}
