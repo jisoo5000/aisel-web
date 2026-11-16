@@ -679,11 +679,36 @@
     }
     edit.content[field]=value;
   }
-  async function stageCard(id,field,value){
+  let listRatingQueue=Promise.resolve();
+  function stageCard(id,field,value){
+    if(field!=='ratingStar')return stageCardNow(id,field,value);
+    const stamp=authStamp();
+    listRatingQueue=listRatingQueue.catch(()=>{}).then(()=>{assertAuth(stamp);return stageCardNow(id,field,value);});
+    return listRatingQueue;
+  }
+  async function stageCardNow(id,field,value){
     if(listSaving||listStaging)return;listStaging=true;const stamp=authStamp();
     try{const edit=await loadListEdit(id);assertAuth(stamp);if(field==='ratingStar')updateListEdit(edit,'rating',nextRating(edit.life.rating??ratingValue(id),value));else updateListEdit(edit,field,value);}
     catch(error){try{assertAuth(stamp);message(errorText(error),true);}catch(_){}}
-    finally{listStaging=false;gallerySignature='';renderList();}
+    finally{
+      listStaging=false;gallerySignature='';
+      if(field==='ratingStar')refreshCardRating(id);else renderList();
+    }
+  }
+  function refreshCardRating(id){
+    const card=[...$('#rcGrid').children].find(node=>node.dataset.id===id),row=records.get(id);
+    if(!card||!row)return;
+    const edit=listEdits.get(id),rating=edit?.life.rating??ratingValue(id),stars=card.querySelector('.rc-card-rating');
+    stars.setAttribute('aria-label','레퍼런스 평점 '+rating*2+'점 / 10점');
+    stars.querySelectorAll('[data-card-rating]').forEach(button=>{
+      const score=Number(button.dataset.cardRating);
+      button.innerHTML=ratingStar(Math.max(0,Math.min(1,rating-score+1)));
+      button.setAttribute('aria-label',(row.title||'자료')+' 별점 '+nextRating(rating,score)*2+'점 선택');
+      button.setAttribute('aria-pressed',String(rating>=score-.5));
+    });
+    card.classList.toggle('is-modified',!!edit);
+    if(edit){let notice=card.querySelector('.rc-card-edit-state');if(!notice){notice=document.createElement('p');notice.className='rc-card-edit-state';card.append(notice);}notice.textContent=edit.error||'저장 전';notice.classList.toggle('rc-error',!!edit.error);}
+    renderListControls();
   }
   async function stageSelection(field,value){
     if(listSaving||listStaging||!listSelected.size)return;listStaging=true;renderListControls();const stamp=authStamp(),ids=[...listSelected],failed=[];
@@ -711,11 +736,11 @@
     const choices=new Map();for(const entry of referenceCategoryEntries())if(!choices.has(entry.category))choices.set(entry.category,entry.category==='content'?'콘텐츠':entry.name);
     if(!choices.has(data.category))choices.set(data.category,categoryLabel(data));
     selectOptions(category,[...choices],data.category);category.title=choices.get(data.category)||'분류';category.onchange=()=>void stageCard(row.id,'referenceCategory',category.value);
-    const ratingLine=document.createElement('div');ratingLine.className='rc-card-rating-line';stars.before(ratingLine);ratingLine.append(stars,category);
+    const ratingLine=document.createElement('div');ratingLine.className='rc-card-rating-line';stars.before(ratingLine);ratingLine.append(stars);
     const date=document.createElement('label');date.className='rc-card-date';const dateText=document.createElement('span');dateText.textContent=shortDate(data.date)||'날짜';
     const dateInput=document.createElement('input');dateInput.type='date';dateInput.value=data.date||'';dateInput.disabled=disabled;dateInput.setAttribute('aria-label',(row.title||'자료')+' 날짜 수정');dateInput.onchange=()=>void stageCard(row.id,'date',dateInput.value);date.append(dateText,dateInput);
     const designer=document.createElement('select');designer.className='rc-card-designer';designer.disabled=disabled;designer.setAttribute('aria-label',(row.title||'자료')+' 담당자 수정');
-    const names=[...new Set([...designerNames(),data.designer].filter(Boolean))];selectOptions(designer,[['','미지정'],...names.map(name=>[name,name])],data.designer||'');designer.onchange=()=>void stageCard(row.id,'designer',designer.value);meta.replaceChildren(date,designer);
+    const names=[...new Set([...designerNames(),data.designer].filter(Boolean))];selectOptions(designer,[['','미지정'],...names.map(name=>[name,name])],data.designer||'');designer.onchange=()=>void stageCard(row.id,'designer',designer.value);meta.replaceChildren(date,category,designer);
     const usp=edit?.life.usp??String(lifecycle.get(row.id).usp||'');
     if(usp){const text=document.createElement('p');text.className='rc-card-usp';text.textContent=usp;text.title=usp;ratingLine.after(text);}
     card.classList.toggle('is-selected',listSelected.has(row.id));card.classList.toggle('is-modified',!!edit);
@@ -785,12 +810,12 @@
       });
     }catch(error){try{assertAuth(stamp);message(errorText(error),true);}catch(_){}}
   }
-  function openUspEditor(row){
+  function openUspEditor(row,onCreated){
     const stamp=authStamp();let input;
     dialog(row?'USP 이름 수정':'새 USP 등록',box=>{input=document.createElement('input');input.type='text';input.maxLength=500;input.value=row?.name||'';input.placeholder='USP';input.setAttribute('aria-label','USP 문구');box.append(input);},async()=>{
       assertAuth(stamp);const name=input.value.normalize('NFKC').trim().replace(/\s+/g,' ');if(!name)throw Error('USP 문구를 입력해주세요.');
       $('#rcDialogConfirm').disabled=true;
-      try{await changeUspCatalog({operation:row?'rename':'add',...(row?{id:row.id}:{}),name});assertAuth(stamp);if(!row){if(listSelected.size)await stageSelection('usp',name);else{listUspFilter=name;gallerySignature='';renderList();}}}
+      try{await changeUspCatalog({operation:row?'rename':'add',...(row?{id:row.id}:{}),name});assertAuth(stamp);if(!row){if(onCreated)await onCreated(name);else if(listSelected.size)await stageSelection('usp',name);else{listUspFilter=name;gallerySignature='';renderList();}}}
       finally{$('#rcDialogConfirm').disabled=false;}
     });input.focus();
   }
@@ -907,8 +932,11 @@
     const id=active.id,value=displayedRating(id),busy=ratingBusy.has(id)||lifecycle?.isPending(id),disabled=!canEdit()||!lifecycle?.ready||lifecycle?.isPending(id)&&!ratingBusy.has(id);
     if(box.dataset.recordId!==id||box.children.length!==2){
       box.replaceChildren();box.dataset.recordId=id;
-      const input=document.createElement('input');input.type='text';input.className='rc-usp-input';input.placeholder='USP';input.maxLength=500;input.setAttribute('aria-label','USP');input.autocomplete='off';
-      input.oninput=()=>captureUsp(id,input.value);input.onblur=()=>{if(!input._composing)void save();};input.oncompositionstart=()=>{input._composing=true;};input.oncompositionend=()=>{input._composing=false;captureUsp(id,input.value);};input.onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&!input._composing){e.preventDefault();void save();}};
+      const input=document.createElement('select');input.className='rc-usp-input';input.setAttribute('aria-label','USP');
+      const choose=async value=>{if(active?.id!==id||!canEdit())return;captureUsp(id,value);renderRating();await save();};
+      input.onchange=()=>{if(input.value==='__new_usp__'){renderRating();openUspEditor(null,choose);}else void choose(input.value);};
+      input.onfocus=()=>{if(uspCatalog)return;void loadUspCatalog().then(()=>{if(active?.id===id)renderRating();}).catch(error=>message(errorText(error),true));};
+      void loadUspCatalog().then(()=>{if(active?.id===id)renderRating();}).catch(error=>message(errorText(error),true));
       const stars=document.createElement('span');stars.className='rc-rating-buttons';
       for(let score=1;score<=5;score++){
         const button=document.createElement('button');button.type='button';button.dataset.rating=score;
@@ -918,8 +946,11 @@
     }
     box.setAttribute('aria-busy',String(!!busy));
     const input=box.querySelector('.rc-usp-input'),draft=uspDraft(id);const valueText=draft?draft.value:String(lifecycle.get(id).usp||'');
-    if(!input._composing&&input.value!==valueText)input.value=valueText;input.disabled=!canEdit()||!lifecycle?.ready;
-    box.querySelectorAll('button').forEach(button=>{
+    const choices=[['','USP'],...(uspCatalog?.entries||[]).filter(row=>!row.hidden).map(row=>[row.name,row.name])];
+    if(valueText&&!choices.some(row=>row[0]===valueText))choices.splice(1,0,[valueText,valueText]);
+    if(uspCatalog?.canManage)choices.push(['__new_usp__','＋ 새 USP 등록']);
+    selectOptions(input,choices,valueText);input.disabled=!canEdit()||!lifecycle?.ready;
+    box.querySelectorAll('[data-rating]').forEach(button=>{
       const score=Number(button.dataset.rating),fill=Math.max(0,Math.min(1,value-score+1)),next=nextRating(value,score);
       button.innerHTML=ratingStar(fill);button.disabled=!!disabled;
       button.setAttribute('aria-pressed',String(fill>0));
@@ -1255,7 +1286,7 @@
   function setupQuickAdd(){
     const bar=document.createElement('div');bar.className='rc-quick-bar';bar.innerHTML='<button type="button" id="rcQuickOpen">＋ 새 레퍼런스</button>';$('#rcDetail').append(bar);
     const modal=document.createElement('dialog');modal.id='rcQuick';modal.setAttribute('aria-labelledby','rcQuickHeading');
-    modal.innerHTML='<div class="rc-quick-heading"><strong id="rcQuickHeading">새 레퍼런스</strong><button type="button" id="rcQuickClose" aria-label="추가창 닫기">닫기</button></div><p id="rcQuickMeta"></p><div id="rcQuickPreview"></div><div class="rc-quick-photo-actions"><button type="button" id="rcQuickPhoto">＋ 사진 선택</button><button type="button" id="rcQuickPaste">붙여넣기</button></div><input id="rcQuickFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden><input id="rcQuickTitle" type="text" maxlength="160" placeholder="제목 (선택)" aria-label="새 레퍼런스 제목"><input id="rcQuickLink" type="url" placeholder="링크 붙여넣기 (선택)" aria-label="새 레퍼런스 링크"><p id="rcQuickStatus" role="status" aria-live="polite"></p><button type="button" id="rcQuickSubmit">추가</button>';
+    modal.innerHTML='<div class="rc-quick-heading"><strong id="rcQuickHeading">새 레퍼런스</strong><button type="button" id="rcQuickClose" aria-label="추가창 닫기">닫기</button></div><p id="rcQuickMeta"></p><div class="rc-quick-body"><section class="rc-quick-photo-area" aria-label="사진 추가"><div class="rc-quick-photo-hint">사진을 선택하거나 여기에 붙여넣어 주세요.</div><div id="rcQuickPreview"></div><div class="rc-quick-photo-actions"><button type="button" id="rcQuickPhoto">＋ 사진 선택</button><button type="button" id="rcQuickPaste">붙여넣기</button></div><input id="rcQuickFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden></section><label class="rc-quick-field">제목<input id="rcQuickTitle" type="text" maxlength="160" placeholder="제목 (선택)" aria-label="새 레퍼런스 제목"></label><label class="rc-quick-field">링크<input id="rcQuickLink" type="url" placeholder="링크 붙여넣기 (선택)" aria-label="새 레퍼런스 링크"></label></div><div class="rc-quick-footer"><p id="rcQuickStatus" role="status" aria-live="polite"></p><button type="button" id="rcQuickSubmit">추가</button></div>';
     pane.append(modal);$('#rcQuickOpen').onclick=quickOpen;$('#rcQuickClose').onclick=quickClose;
     modal.oncancel=event=>{event.preventDefault();quickClose();};
     $('#rcQuickPhoto').onclick=()=>$('#rcQuickFiles').click();$('#rcQuickFiles').onchange=event=>{void quickReceive(event.target.files);event.target.value='';};
