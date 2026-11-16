@@ -725,11 +725,36 @@
     }
   }
   function cancelListEdits(){if(listSaving||listStaging)return;listEdits.clear();listSelected.clear();gallerySignature='';renderList();message('변경을 취소했습니다.');}
+  let cardPickerSpacingFrame=0,cardPickerMeasureContext=null;
+  function scheduleCardPickerSpacing(){
+    if(cardPickerSpacingFrame)return;
+    cardPickerSpacingFrame=requestAnimationFrame(()=>{
+      cardPickerSpacingFrame=0;
+      const labels=$('#rcList')?.querySelectorAll('.rc-card-picker-label')||[];
+      if(!labels.length)return;
+      cardPickerMeasureContext=cardPickerMeasureContext||document.createElement('canvas').getContext('2d');
+      if(!cardPickerMeasureContext)return;
+      for(const label of labels){
+        label.style.marginRight='0px';
+        const style=getComputedStyle(label),width=parseFloat(style.width);
+        if(!width||label.scrollWidth>label.clientWidth+1)continue;
+        cardPickerMeasureContext.font=style.font;
+        if('letterSpacing' in cardPickerMeasureContext)cardPickerMeasureContext.letterSpacing=style.letterSpacing==='normal'?'0px':style.letterSpacing;
+        const metric=cardPickerMeasureContext.measureText(label.textContent);
+        if(!Number.isFinite(metric.actualBoundingBoxRight))continue;
+        // Text is centered and clipped to its label box. Remove only the
+        // trailing blank ink space, so different final glyphs share one gap.
+        const inkEnd=Math.min(width,(width-metric.width)/2+metric.actualBoundingBoxRight);
+        label.style.marginRight=-Math.max(0,width-inkEnd)+'px';
+      }
+    });
+  }
+  document.fonts?.addEventListener('loadingdone',scheduleCardPickerSpacing);
   function cardPicker(select){
     const field=document.createElement('span');field.className='rc-card-picker';
     const text=document.createElement('span');text.className='rc-card-picker-label';text.setAttribute('aria-hidden','true');
     const arrow=document.createElement('span');arrow.className='rc-card-picker-arrow';arrow.setAttribute('aria-hidden','true');
-    const sync=()=>{text.textContent=select.selectedOptions[0]?.textContent||'';field.title=text.textContent;};
+    const sync=()=>{text.textContent=select.selectedOptions[0]?.textContent||'';field.title=text.textContent;scheduleCardPickerSpacing();};
     sync();select.addEventListener('input',sync);select.addEventListener('change',sync);field.append(text,arrow,select);return field;
   }
   function renderCardEditError(card,edit){
