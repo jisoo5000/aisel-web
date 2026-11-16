@@ -250,7 +250,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=home-links-20261113b">
+<link rel="preload" as="script" href="unified-app.js?v=sales-comparison-20261116">
 <link rel="preload" as="script" href="design-meeting.js?v=app-speed-20261116">
 <link rel="preload" as="script" href="reference-collection.js?v=reference-spacing-20261116f">
 <link rel="preload" as="style" href="workorder-screen.css?v=20261112-cost-typography">
@@ -3345,7 +3345,7 @@
   <h1><span class="app-brand">AISEL</span><button type="button" class="app-page-title" id="appPageTitle" title="현재 메뉴의 목록으로 이동">작업지시서</button></h1>
 </header>
 <div class="mainbar noprint notranslate" id="mainBar" lang="ko" translate="no">
-  <button type="button" class="maintab" data-main="sales" disabled>판매성과</button>
+  <button type="button" class="maintab" data-main="sales" disabled>신상품 판매 성과</button>
   <button type="button" class="maintab" data-main="products" disabled>출고현황</button>
   <button type="button" class="maintab" data-main="references" disabled>레퍼런스</button>
   <button type="button" class="maintab" id="dmMainTab" data-main="designmeeting" disabled>디자인회의</button>
@@ -3405,7 +3405,7 @@
 </div>
 
 <div class="gallery notranslate" id="salesView" lang="ko" translate="no" style="display:none">
-  <div class="gallery-head"><h2>판매성과</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
+  <div class="gallery-head"><h2>신상품 판매 성과</h2><p class="sales-source-note" id="salesSourceNote">어제까지 최근 7일 · 직전 7일 비교</p></div>
   <div class="gallery-tabs" id="salesTabs" aria-label="판매 상태">
     <button type="button" class="gtab active" data-status="sale" aria-pressed="true">판매 중</button>
     <button type="button" class="gtab" data-status="prep" aria-pressed="false">판매 준비</button>
@@ -16346,8 +16346,8 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
 /* AISEL APP Core 1.0.0: screen layout only; the print contract stays unchanged. */
 @media screen {
  html:root body #salesView #salesTableBody .sheet-sales-grid {
-  display:grid!important;grid-template-columns:minmax(0,1fr) 40px 40px 28px 40px 44px!important;
-  column-gap:4px!important;row-gap:0!important;align-items:center;
+  display:grid!important;grid-template-columns:minmax(0,1fr) 24px 42px 34px 40px 44px!important;
+  column-gap:2px!important;row-gap:0!important;align-items:center;
   box-sizing:border-box;width:100%;min-width:0!important;height:36px!important;min-height:36px!important;
   padding:0!important;border-bottom:1px solid #E3E5E7;color:#34383C;font-size:12px!important;line-height:18px;
  }
@@ -16365,9 +16365,9 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   color:#34383C;font-family:inherit;font-size:12px!important;font-weight:600;line-height:18px!important;text-align:left;
  }
  html:root body #salesView #salesTableBody .sheet-sales-name-label {display:block;flex:1 1 auto;text-align:left;}
- html:root body #salesView #salesTableBody .sheet-sales-rating {display:flex;align-items:center;justify-content:center;width:40px;}
+ html:root body #salesView #salesTableBody .sheet-sales-rating {display:flex;align-items:center;justify-content:center;width:24px;}
  html:root body #salesView #salesTableBody .sheet-sales-badge {
-  flex:0 0 40px!important;width:40px!important;min-width:0!important;height:22px;padding-left:0!important;padding-right:0!important;
+  flex:0 0 24px!important;width:24px!important;min-width:0!important;height:22px;padding-left:0!important;padding-right:0!important;
   border:0;border-radius:3px;font-size:12px;line-height:18px;font-weight:500;
  }
  html:root body #salesView #salesTableBody .sheet-sales-grid > :nth-child(1) {text-align:left;}
@@ -16384,14 +16384,11 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   align-items:center;margin:0 0 8px!important;padding:0!important;font-size:11px;line-height:16px;
  }
  html:root body #salesView .sheet-sales-meta-info {
-  display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px!important;min-width:0;
+  display:flex;flex-direction:column;flex-wrap:nowrap;align-items:flex-start;gap:4px!important;min-width:0;
  }
  html:root body #salesView :is(#salesScopeNote,#salesUpdated) {
   margin:0!important;padding:0;font-size:11px!important;line-height:16px!important;color:#6C727C;
  }
- html:root body #salesView :is(#salesScopeNote,#salesUpdated) {white-space:nowrap;flex:0 0 auto;}
- html:root body #salesView .sheet-sales-read-state {grid-column:1/-1;margin-top:4px;color:#A63F57;font-size:11px;line-height:16px;}
- html:root body #salesView .sheet-sales-read-state[hidden] {display:none;}
  html:root body #salesView .sheet-sales-refresh {
   box-sizing:border-box;width:auto!important;min-width:64px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
   margin:0;padding:0 8px!important;align-self:center;border:1px solid #E3E5E7;border-radius:3px;
@@ -16402,12 +16399,52 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
  html:root body .sheet-sales-dialog button {box-sizing:border-box;height:28px;min-height:28px;padding:0 8px;}
 }
 
+/* 2026-11-16: anonymous product comparison, own-product accent, mobile cards. */
+@media screen {
+ #salesView{max-width:none!important}
+ #salesView .sp-list{width:100%;min-width:0}
+ #salesView .sp-grid{display:grid;grid-template-columns:48px minmax(150px,1.5fr) minmax(130px,1fr) 72px 64px minmax(160px,1.6fr);gap:6px;align-items:center;font-size:12px;line-height:18px;min-width:0}
+ #salesView .sp-head{padding:6px;color:#6c727c;border-bottom:1px solid #e3e5e7}
+ #salesView .sp-row{padding:6px;border-bottom:1px solid #e3e5e7}
+ #salesView .sp-mine{background:#edf4fc}
+ #salesView .sp-product{display:flex;gap:6px;align-items:center;min-width:0}
+ #salesView .sp-photo{width:48px;height:64px;flex:0 0 48px;background:#f1f3f6;display:flex;align-items:center;justify-content:center;font-size:10px;color:#6c727c}
+ #salesView .sp-photo img{width:48px;height:64px;object-fit:cover}
+ #salesView .sp-identity{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0}
+ #salesView .sp-name{display:block;width:100%;overflow-wrap:anywhere;font-weight:600}
+ #salesView .sp-own{color:#426790;background:#dfeaf7;padding:0 4px;border-radius:3px;font-size:11px}
+ #salesView .sp-launch,#salesView .sp-new,#salesView .sp-period,#salesView .sp-coverage,#salesView .sp-footnote{color:#6c727c;font-size:11px;line-height:18px}
+ #salesView .sp-period,#salesView .sp-coverage,#salesView .sp-footnote{margin:6px 0;overflow-wrap:anywhere}
+ #salesView .sp-rank{font-weight:600;text-align:center}
+ #salesView .sp-change,#salesView .sp-insight{display:flex;flex-direction:column;gap:2px;min-width:0}
+ #salesView .sp-insight{overflow-wrap:anywhere}
+ #salesView .sp-insight-label{font-size:10px;color:#6c727c}
+ #salesView .sp-change small{font-size:11px;color:#6c727c}
+ #salesView .sp-mobile-label{display:none}
+ #salesView .sp-sales strong{font-weight:500;white-space:normal}
+ @media(max-width:1000px){
+  #salesView .sp-grid{grid-template-columns:40px minmax(0,1fr) minmax(100px,.8fr)}
+  #salesView .sp-head{display:none}
+  #salesView .sp-row{gap:6px;padding:10px 6px}
+  #salesView .sp-rank{grid-column:1;grid-row:1}
+  #salesView .sp-product{grid-column:2/4;grid-row:1}
+  #salesView .sp-sales{grid-column:1/3}
+  #salesView .sp-change{grid-column:3}
+  #salesView .sp-returns{grid-column:1/4;display:flex;gap:6px}
+  #salesView .sp-insight{grid-column:1/4;border-top:1px solid #e3e5e7;padding-top:6px}
+  #salesView .sp-mobile-label{display:block;color:#6c727c;font-size:11px}
+ }
+}
+
+@media screen{#salesView .sp-grid.sp-legacy{grid-template-columns:48px minmax(150px,1fr) 80px 80px}@media(max-width:1000px){#salesView .sp-grid.sp-legacy{grid-template-columns:40px minmax(0,1fr) minmax(100px,.8fr)}#salesView .sp-legacy .sp-share{grid-column:1/3;display:flex;gap:6px}#salesView .sp-legacy .sp-returns{grid-column:3;display:flex;flex-wrap:wrap;gap:6px}}}
+
 </style>
 <script id="aisel-sheet-sales-view-script">
 /* v281: reuse verified account/group snapshots; keep rows visible during refresh. */
 (function(root){
  'use strict';
  function periodStatus(snapshot,now=new Date()){
+  if(snapshot?.source==='sales-comparison'){const p=snapshot.period;if(!p)return '주간 집계 연결 필요';const yesterday=new Date(now.getTime()+9*3600000-86400000).toISOString().slice(0,10);return (p.end<yesterday?'갱신 지연 · ':'집계 ')+p.start+' ~ '+p.end;}
   const label=String(snapshot?.periodLabel||'').trim();
   const match=label.match(/^(\d{4})\.(\d{2})\.(\d{2})\s*[–—~-]\s*(?:(\d{4})\.)?(\d{2})\.(\d{2})$/);
   if(!match)return '집계기간 확인 필요';
@@ -16428,6 +16465,7 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   return item.share>=20?{key:'good',label:'리오더'}:{key:'normal',label:'보통'};
  }
  function returnMetric(snapshot){
+  if(snapshot.source==='sales-comparison')return {key:'comparison-return',label:snapshot.returnLabel||'반품 지표',shortLabel:'반품',note:snapshot.returnPeriod||''};
   const key=snapshot.returnMetric?.key;
   if(!key||key==='legacy-sheet-return-rate')return {key:'legacy-sheet-return-rate',label:'운영시트 반품률',shortLabel:'반품%',note:''};
   if(key==='estimated-receipt-return-request-rate')return {
@@ -16441,58 +16479,63 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   throw Error('시트 반품 지표를 확인해 주세요.');
  }
  function render(host,snapshot,search,pageScope=""){
-  if(!snapshot||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('시트 자료를 확인해 주세요.');
-  const metric=returnMetric(snapshot);
-  host.replaceChildren();
-  const header=document.createElement('div');header.className='sheet-sales-grid sheet-sales-head';
-  for(const label of ['상품명 (판매순)','','디자이너','공장','판매%','반품%']){const span=document.createElement('span');span.textContent=label;if(!label)span.setAttribute('aria-hidden','true');header.append(span);}host.append(header);
-  const query=String(search||'').trim().toLocaleLowerCase('ko');
-  const matching=snapshot.items.filter(x=>{
-   const normalize=value=>String(value || '').toLocaleLowerCase('ko').replace(/\s+/g,'');
-   const needle=normalize(query);
-   return normalize(x.name).includes(needle) || normalize(root.AiselWorkorderCodeForName?.(x.name)).includes(needle);
-  });
-  const displayed=root.AiselListPagination.take("sales",matching,{host,filter:JSON.stringify([pageScope,query]),onMore:()=>{if(root.AiselAccess?.allowed('sales'))render(host,snapshot,search,pageScope);}});
-  for(const item of displayed){
-   const row=document.createElement('div');row.className='sheet-sales-grid';
-   const values=[item.rank==null?'—':item.rank+'위',item.name,item.designer,item.factory,item.share==null?'—':item.share.toFixed(1)+'%',item.returns==null?'—':item.returns.toFixed(1)+'%'];
-   values.forEach((value,i)=>{
-    if(i===0)return; // Keep the source rank for details; the list keeps the source order without a rank column.
-    const cell=document.createElement(i===1?'button':'span');cell.textContent=value;cell.title=value;
-    if(i===1){
-     cell.type='button';cell.className='sheet-sales-name';cell.replaceChildren();
-     const name=document.createElement('span');name.className='sheet-sales-name-label';name.textContent=value;cell.append(name);
-     const rating=performance(item);
-     cell.setAttribute('aria-label',rating?value+' · 성과 '+rating.label:value);
-     cell.addEventListener('click',()=>details(values,metric));
-     row.append(cell);
-     const ratingCell=document.createElement('span');ratingCell.className='sheet-sales-rating';
-     if(rating){const badge=document.createElement('span');badge.className='sheet-sales-badge sheet-sales-badge-'+rating.key;badge.textContent=rating.label;badge.title=(snapshot.periodLabel||'운영시트 집계 기간')+' · 매장 전체 판매비중·'+metric.label+' 기준';ratingCell.append(badge);}
-     else ratingCell.setAttribute('aria-hidden','true');
-     row.append(ratingCell);
-     return;
-    }
-    if(i===5){cell.title=value+' · '+metric.label;if(item.returns>=20)cell.className='sheet-sales-warning';else if(item.returns>=15)cell.className='sheet-sales-caution';}
-    row.append(cell);
-   });host.append(row);
+  if(!snapshot||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해 주세요.');
+  host.replaceChildren();host.classList.add('sp-list');
+  const E=(tag,cls,text)=>{const x=document.createElement(tag);if(cls)x.className=cls;if(text!==undefined)x.textContent=text;return x;};
+  const ready=snapshot.source==='sales-comparison',metric=returnMetric(snapshot);
+  const notice=E('p','sp-coverage',ready?'전체 신상품 '+snapshot.totalCount+'개 · 판매수량 연결 '+snapshot.rankedCount+'개'+(snapshot.rankScope==='all_new'?' · 전체 순위':' · 연결된 상품 기준 순위'):pageScope==='core'?'핵심 SKU · 저장된 판매비중과 반품률':'전체 비교 연결 준비 중 · 현재 조회 권한의 상품');
+  host.append(notice);
+  if(ready&&snapshot.period)host.append(E('p','sp-period','이번 기간 '+snapshot.period.start+' ~ '+snapshot.period.end+' / 전주 '+snapshot.comparisonPeriod.start+' ~ '+snapshot.comparisonPeriod.end));
+  const header=E('div','sp-grid sp-head'+(ready?'':' sp-legacy'));
+  (ready?['전체 순위','상품','전주 → 이번 기간','판매 변화','반품','한줄 분석']:['순위','상품','판매비중',metric.shortLabel]).forEach(x=>header.append(E('span','',x)));host.append(header);
+  const q=String(search||'').toLocaleLowerCase('ko').replace(/\s/g,'');
+  const matches=snapshot.items.filter(x=>String(x.name||'').toLocaleLowerCase('ko').replace(/\s/g,'').includes(q));
+  const shown=root.AiselListPagination?.take?root.AiselListPagination.take('sales',matches,{host,filter:JSON.stringify([pageScope,q]),onMore:()=>{if(root.AiselAccess?.allowed('sales'))render(host,snapshot,search,pageScope);}}):matches;
+  const number=v=>typeof v==='number'&&Number.isFinite(v),qty=v=>number(v)?v.toLocaleString('ko-KR')+'장':'미연결';
+  for(const item of shown){
+   const mine=item.isMine===true||(!ready&&root.AiselAccess?.ownOnly===true);
+   const row=E('article','sp-grid sp-row'+(ready?'':' sp-legacy')+(mine?' sp-mine':''));row.dataset.mine=String(mine);
+   const rank=E('div','sp-rank',number(item.rank)?item.rank+'위':'—');rank.setAttribute('aria-label','전체 순위');row.append(rank);
+   const product=E('div','sp-product'),image=E('div','sp-photo');
+   const photo=safeImage(item.imageUrl);
+   if(photo){const img=E('img');img.src=photo;img.alt='';img.loading='lazy';img.decoding='async';img.width=48;img.height=64;img.addEventListener('error',()=>{img.remove();image.textContent='사진 없음';},{once:true});image.append(img);}else image.append(E('span','','사진 없음'));
+   const identity=E('div','sp-identity'),name=E('strong','sp-name',item.name);identity.append(name);
+   if(mine)identity.append(E('span','sp-own','내 상품'));
+   if(item.isNew)identity.append(E('span','sp-new','신규'));
+   if(item.launchDate)identity.append(E('span','sp-launch','출시 '+item.launchDate));
+   product.append(image,identity);row.append(product);
+   if(!ready){
+    const share=E('div','sp-share');share.append(E('span','sp-mobile-label','판매비중'),E('span','',number(item.share)?item.share.toFixed(1)+'%':'미연결'));
+    const returns=E('div','sp-returns');returns.append(E('span','sp-mobile-label',metric.shortLabel),E('span','',number(item.returns)?item.returns.toFixed(1)+'%':'미연결'));
+    row.append(share,returns);host.append(row);continue;
+   }
+   const sales=E('div','sp-sales'),label=E('span','sp-mobile-label','전주 → 이번 기간');
+   sales.append(label,E('strong','',ready?qty(item.previous)+' → '+qty(item.current):'주간 수량 미연결'));row.append(sales);
+   const change=E('div','sp-change');change.append(E('span','sp-mobile-label','판매 변화'));
+   change.append(E('span','',number(item.delta)?(item.delta>0?'+':'')+item.delta.toLocaleString('ko-KR')+'장':item.isNew?'신규':'—'));
+   if(number(item.changeRate))change.append(E('small','',(item.changeRate>0?'+':'')+item.changeRate.toFixed(1)+'%'));
+   if(number(item.rankChange))change.append(E('small','',item.rankChange>0?'↑ '+item.rankChange+'계단':item.rankChange<0?'↓ '+Math.abs(item.rankChange)+'계단':'순위 유지'));
+   row.append(change);
+   const returns=E('div','sp-returns');returns.append(E('span','sp-mobile-label',metric.shortLabel),E('span','',number(item.returns)?item.returns.toFixed(1)+'%':'미연결'));returns.title=metric.label+' · '+(snapshot.returnPeriod||snapshot.periodLabel||'기간 확인 필요');row.append(returns);
+   const insight=E('div','sp-insight');insight.append(E('span','sp-insight-label',item.insight?.kind==='gpt'?'GPT 한줄 분석':'수치 요약'));
+   insight.append(E('span','',item.insight?.text||'주간 판매수량이 연결되면 전주 대비 변화를 확인할 수 있어요.'));row.append(insight);host.append(row);
   }
+  if(!shown.length)host.append(E('p','sp-empty','표시할 상품이 없습니다.'));
+  host.append(E('p','sp-footnote',metric.label+' · '+(snapshot.returnPeriod||snapshot.periodLabel||'집계기간 확인 필요')+' · 반품 관찰 기간은 주간 판매 비교와 다를 수 있습니다.'));
  }
- function details(values,metric){
-  const dialog=document.createElement('dialog');dialog.className='sheet-sales-dialog noprint';
-  const heading=document.createElement('h3');heading.textContent=values[1];dialog.append(heading);
-  ['순위','상품명','디자이너','공장','판매 비중',metric.label].forEach((label,i)=>{const line=document.createElement('p');line.textContent=label+' · '+values[i];dialog.append(line);});
-  if(metric.note){const note=document.createElement('p');note.textContent=metric.note;dialog.append(note);}
-  const close=document.createElement('button');close.type='button';close.textContent='닫기';close.addEventListener('click',()=>dialog.close());dialog.append(close);dialog.addEventListener('close',()=>dialog.remove());document.body.append(dialog);dialog.showModal();
- }
+ function safeImage(value){try{const u=new URL(value);return u.protocol==='https:'&&!u.search&&!u.username&&!u.password&&(u.hostname==='aisel.me'||u.hostname==='cafe24.com'||u.hostname.endsWith('.cafe24.com')||u.hostname.endsWith('.cafe24img.com'))&&/\/web\/product\//.test(u.pathname)?u.href:'';}catch{return '';}}
  async function read(endpoint,group='new'){
   if(!root.AiselAccess?.allowed('sales'))throw Error('로그인 후 판매성과를 확인해주세요.');
-  const snapshot=await root.AiselAccess.request('sales',{group});
-  if(snapshot.ok!==true||snapshot.source!=='operations-sheet'||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해주세요.');
+  let snapshot;
+  if(group==='core'||root.AiselAccess.session?.permissions?.salesComparisonVersion!==1)snapshot=await root.AiselAccess.request('sales',{group});
+  else try{snapshot=await root.AiselAccess.request('salesComparison');}
+  catch(error){if(!['invalid_action','comparison_not_ready'].includes(error?.code))throw error;snapshot=await root.AiselAccess.request('sales',{group});}
+  if(snapshot.ok!==true||!['operations-sheet','sales-comparison'].includes(snapshot.source)||!Array.isArray(snapshot.items))throw Error('판매 자료를 확인해주세요.');
   returnMetric(snapshot);return snapshot;
  }
  function start(endpoint){
   const host=document.getElementById('salesTableBody'),search=document.getElementById('salesSearchInput');
-  const freshFor=5*60*1000,cacheMaxAge=30*60*1000,cachePrefix='aisel.sales-sheet.account.v281:';
+  const freshFor=5*60*1000,cacheMaxAge=30*60*1000,cachePrefix='aisel.sales-sheet.account.v20261116:';
   // Restore only after current server-verified access. Assigned-only accounts
   // keep data in memory because assignments can change independently of roles.
   try{root.localStorage.removeItem('aisel.sales-sheet.cache.v1');}catch(_){}
@@ -16501,13 +16544,17 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   const current=()=>entry(group),cacheKey=selected=>cachePrefix+accountUid+':'+selected;
   function forgetCache(){try{if(accountUid)for(const selected of ['new','core'])root.sessionStorage.removeItem(cacheKey(selected));}catch(_){}}
   function compact(value){
-   if(value?.ok!==true||value.source!=='operations-sheet'||!Array.isArray(value.items)||value.items.length>500||!Number.isFinite(Date.parse(value.readAt)))throw Error('Invalid sales cache');
-   const metric=returnMetric(value),items=value.items.map(row=>{
-    if(!row||typeof row.name!=='string'||row.name.length>500||['designer','factory'].some(key=>typeof row[key]!=='string'||row[key].length>200)||['share','returns'].some(key=>row[key]!==null&&(!Number.isFinite(row[key])||row[key]<0))||(row.rank!==null&&(!Number.isSafeInteger(row.rank)||row.rank<1)))throw Error('Invalid sales cache');
-    const item={rank:row.rank,name:row.name,designer:row.designer,factory:row.factory,share:row.share,returns:row.returns};
-    if(typeof row.code==='string'&&row.code.length<=160)item.code=row.code;return item;
+   if(value?.ok!==true||!['operations-sheet','sales-comparison'].includes(value.source)||!Array.isArray(value.items)||value.items.length>500||!Number.isFinite(Date.parse(value.readAt)))throw Error('Invalid sales cache');
+   const metric=returnMetric(value),n=v=>typeof v==='number'&&Number.isFinite(v)?v:null;
+   const items=value.items.map(row=>{
+    if(typeof row?.name!=='string'||row.name.length>500)throw Error('Invalid sales item');
+    const item={name:row.name,rank:n(row.rank),share:n(row.share),returns:n(row.returns),designer:'',factory:''};
+    for(const k of ['current','previous','previousRank','delta','changeRate','rankChange'])item[k]=n(row[k]);
+    item.isMine=row.isMine===true;item.isNew=row.isNew===true;item.imageUrl=safeImage(row.imageUrl);item.launchDate=/^\d{4}-\d{2}-\d{2}$/.test(row.launchDate||'')?row.launchDate:null;
+    if(row.insight&&typeof row.insight.text==='string'&&row.insight.text.length<=180)item.insight={text:row.insight.text,kind:row.insight.kind==='gpt'?'gpt':'numeric'};
+    return item;
    });
-   return {ok:true,source:'operations-sheet',readAt:value.readAt,periodLabel:String(value.periodLabel||'').slice(0,200),returnMetric:{key:metric.key},items};
+   return {ok:true,source:value.source,readAt:value.readAt,periodLabel:String(value.periodLabel||'').slice(0,200),returnMetric:{key:metric.key},returnLabel:metric.label,returnPeriod:String(value.returnPeriod||'').slice(0,300),period:value.period||null,comparisonPeriod:value.comparisonPeriod||null,totalCount:n(value.totalCount),rankedCount:n(value.rankedCount),rankScope:value.rankScope,items};
   }
   function restoreCache(selected){
    if(!root.AiselAccess?.allowed('sales')||root.AiselAccess.ownOnly||!accountUid||(selected==='core'&&!root.AiselAccess.isOwner))return;
@@ -16529,7 +16576,10 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
   }
   search.placeholder='검색';search.setAttribute('aria-label','검색');
   document.getElementById('salesAuth').hidden=true;
-  document.getElementById('salesSourceNote').textContent='운영시트 신상성과 · 반품 지표는 시트 기준';
+  document.getElementById('salesSourceNote').textContent='전체 상품 비교 · 내 상품 강조';
+  document.querySelector('#salesView h2').textContent='신상품 판매 성과';
+  document.querySelectorAll('[data-main="sales"]').forEach(x=>x.textContent='신상품 판매 성과');
+  const scan=document.querySelector('#salesView .sales-scan-note');if(scan)scan.hidden=true;
   const sort=document.getElementById('salesSort');sort.replaceChildren(new Option('판매순','quantity'));sort.disabled=true;
   const updated=document.getElementById('salesUpdated');
   const meta=updated.parentElement,info=document.createElement('div');info.className='sheet-sales-meta-info';
@@ -16553,7 +16603,7 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
    updated.textContent='화면 조회 '+stamp;
   }
   function contentKey(value){
-   return JSON.stringify([value.periodLabel,returnMetric(value).key,value.items.map(x=>[x.rank,x.name,x.designer,x.factory,x.share,x.returns])]);
+   return JSON.stringify(compact(value));
   }
   function show(){
    const state=current(),snapshot=state.snapshot;
@@ -16627,6 +16677,8 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
    show();refreshIfStale();
   },true);
   root.AiselAccess.subscribe(session=>{
+   document.querySelector('#salesView h2').textContent=session?.role==='designer'?'내 신상품 판매 성과':'신상품 판매 성과';
+   const newTab=document.querySelector('#salesGroupTabs [data-group="new"]');if(newTab)newTab.textContent='신상품 전체';
    const next=session?JSON.stringify([session.uid,session.enabled,session.active,session.role,session.permissions]):'';
    for(const button of tabs.querySelectorAll('[data-group="core"]'))button.hidden=session?.role!=='owner';
    if(next===accountScope)return;
@@ -16647,7 +16699,7 @@ root.AiselAccess.watchLegacy(canonicalApp.database().ref("workorderIndex"),"chil
    if(state.inFlight)await state.inFlight;
    else if(!state.snapshot||Date.now()-Math.max(state.lastRead,state.lastAttempt)>=freshFor)await load();
    if(expected!==generation||root.AiselAccess?.session?.role!=='designer'||!root.AiselAccess.ownOnly||!root.AiselAccess.allowed('sales'))return null;
-   return state.snapshot&&!state.error?compact(state.snapshot):null;
+   if(!state.snapshot||state.error)return null;const summary=compact(state.snapshot);if(summary.source==='sales-comparison')summary.items=summary.items.filter(x=>x.isMine);return summary;
   }
   root.AiselSheetSalesSource={render:show,refreshIfStale,invalidate,readSummary};
   root.dispatchEvent(new CustomEvent('aisel-sales-source-ready'));
@@ -17999,7 +18051,7 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=leave-navigation-20261112"></script>
-<script src="unified-app.js?v=home-links-20261113b"></script>
+<script src="unified-app.js?v=sales-comparison-20261116"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-management-20261112" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261112-cost-typography" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=title-navigation-20261112">
@@ -18059,10 +18111,10 @@ window.AiselUnifiedAdapter={
 
 <!-- ERP navigation: existing router and permissions remain authoritative. -->
 <link rel="stylesheet" href="aisel-erp-shell.css?v=home-links-20261113" media="screen">
-<script src="aisel-erp-shell.js?v=home-links-20261113"></script>
+<script src="aisel-erp-shell.js?v=sales-comparison-20261116"></script>
 
 <!-- Company ERP: additive workspace; legacy menus and editor remain unchanged. -->
-<link rel="stylesheet" href="company-erp.css?v=production-planning-20261112" media="screen">
+<link rel="stylesheet" href="company-erp.css?v=sales-comparison-20261116" media="screen">
 <script src="management-session.js?v=20261110-7"></script>
 <script src="company-erp-domain.js?v=20261110-6"></script>
 
@@ -18070,6 +18122,6 @@ window.AiselUnifiedAdapter={
 
 <script src="company-workflow-domain.js?v=20261111-glowny1"></script>
 
-<script src="company-erp.js?v=app-speed-20261116-2"></script>
+<script src="company-erp.js?v=sales-comparison-20261116"></script>
 <link rel="stylesheet" href="aisel-select.css?v=20261113" media="screen">
 <script src="aisel-select.js?v=20261113"></script>
