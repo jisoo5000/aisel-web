@@ -209,9 +209,9 @@
       const expected=revision;flight=Promise.resolve(window.AiselSheetSalesSource.readSummary()).then(snapshot=>{
         if(expected!==revision||!permitted())return;
         if(!snapshot){detail.textContent='판매성과에서 연결 상태 확인';return;}
-        const rows=snapshot.items||[],ratings=rows.map(row=>window.AiselSheetSalesView?.performance(row)),low=ratings.filter(rating=>rating?.key==='low').length,unknown=ratings.filter(rating=>!rating).length;
-        detail.textContent=rows.length?'연결 '+rows.length+'개 · 확인 필요 '+low+'개'+(unknown?' · 판단 대기 '+unknown+'개':''):'연결된 담당 상품 없음';
-        cue.title=[snapshot.periodLabel||'운영시트 집계 기간','확인 필요: 판매비중 10% 미만 또는 반품 지표 20% 이상',snapshot.readAt?'자료 확인 '+snapshot.readAt:''].filter(Boolean).join(' · ');
+        const rows=snapshot.items||[];
+        detail.textContent=rows.length?'내 상품 '+rows.length+'개 · 판매 변화 보기':'연결된 담당 상품 없음';
+        cue.title=[snapshot.periodLabel||'운영시트 집계 기간','전체 신상품 순위와 전주 대비 판매수량',snapshot.readAt?'자료 확인 '+snapshot.readAt:''].filter(Boolean).join(' · ');
       }).catch(()=>{if(expected===revision)detail.textContent='판매성과에서 연결 상태 확인';}).finally(()=>{if(expected===revision)flight=null;});
     }
     cue.addEventListener('click',()=>window.AiselUnified.show('sales'));
