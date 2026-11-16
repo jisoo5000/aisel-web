@@ -361,7 +361,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
  function applyEditingState(){
    manageLinksButton.disabled=!active||!['owner','designer'].includes(role);
    const editable=(role==='owner'||role==='designer')&&!openingId&&!isDeleted(current(active))&&!deleteFlight;lookPicker.setDisabled(!editable);headerSave.disabled=!editable;
-   pane.querySelectorAll('#dmAddMeeting,#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmDesignerTrigger,#dmNewLink,#dmMeetingDate,#dmLinks input,#dmLinks button:not([data-dm-readonly]),.dm-photo,#dmPending button,.dm-reference-control,#dmReferenceRetry,.dm-choice,.dm-manual-select').forEach(el=>el.disabled=!editable);
+   pane.querySelectorAll('#dmAddMeeting,#dmGallery,#dmCamera,#dmAdopt,#dmAddLink,#dmAddPhotos,#dmDesigner,#dmDesignerTrigger,#dmNewLink,#dmMeetingDate,#dmLinks input,#dmLinks button:not([data-dm-readonly]),.dm-photo,.dm-photo-replace,#dmPending button,.dm-reference-control,#dmReferenceRetry,.dm-choice,.dm-manual-select').forEach(el=>el.disabled=!editable);
    if($dm('#dmDetailTitle').contentEditable!==String(editable))$dm('#dmDetailTitle').contentEditable=String(editable);
    for(const el of $dm('#dmDetail').querySelectorAll('[data-dm-field]'))el.disabled=!editable||(['decision','decisionReason'].includes(el.dataset.dmField)&&role!=='owner');
    syncUspEditor();
@@ -498,10 +498,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    });
  }
  async function digest(file){const bytes=await file.arrayBuffer();return [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(x=>x.toString(16).padStart(2,'0')).join('');}
- async function thumbnail(file){
-   const url=URL.createObjectURL(file);
-   try{const img=new Image();img.src=url;await img.decode();const scale=Math.min(1,480/Math.max(img.width,img.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.width*scale));canvas.height=Math.max(1,Math.round(img.height*scale));canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);let blob;for(const quality of [.78,.65,.5,.35,.2]){blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',quality));if(!blob)throw Error('썸네일 생성 실패');if(blob.size<=100*1024)break;}if(blob.size>100*1024)throw Error('사진 미리보기 용량을 줄이지 못했습니다. 기기 사진은 유지했습니다.');return {blob,width:img.width,height:img.height};}finally{URL.revokeObjectURL(url);}
- }
+ async function thumbnail(file){return AiselPhoto.prepareReferenceThumb(file);}
  function upload(item){if(uploadItemFlights.has(item.id))return uploadItemFlights.get(item.id);const candidateId=item.candidateId||item.id,previous=uploadFlights.get(candidateId);const flight=(async()=>{if(previous)await previous;return uploadNow(item);})().finally(()=>{uploadItemFlights.delete(item.id);if(uploadFlights.get(candidateId)===flight)uploadFlights.delete(candidateId);});uploadItemFlights.set(item.id,flight);uploadFlights.set(candidateId,flight);return flight;}
  async function uploadNow(item){
    const candidateId=item.candidateId||item.id,uploadStamp=authStamp();
@@ -525,7 +522,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
        // Older uploads used the source-file hash. Keep that deduplication, then
        // bind every new upload to the exact resized/compressed bytes sent.
        if(reusePhoto(sourceHash)){rememberUploadedPreview(candidateId,photos.find(photo=>photo.hash===sourceHash)?.thumb,file);continue;}
-       const pair=typeof AiselPhoto.preparePair==='function'?await AiselPhoto.preparePair(file,'collection'):null;assertAuth(uploadStamp);
+       const pair=typeof AiselPhoto.preparePair==='function'?await AiselPhoto.preparePair(file,'collection','referenceThumb'):null;assertAuth(uploadStamp);
        const prepared=pair?.prepared||await AiselPhoto.prepare(file,'collection');assertAuth(uploadStamp);
        const hash=prepared.blob===file?sourceHash:await digest(prepared.blob);assertAuth(uploadStamp);
        if(hash!==sourceHash&&reusePhoto(hash)){rememberUploadedPreview(candidateId,photos.find(photo=>photo.hash===hash)?.thumb,file);continue;}
@@ -544,7 +541,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
          const uploaded=await writer.uploadPhotos('meetings',{id:candidateId,hash,original:prepared.blob,thumb:thumb.blob});assertAuth(uploadStamp);
          original=C.httpUrl(uploaded?.original);small=C.httpUrl(uploaded?.thumb);if(!original||!small)throw Error('사진 업로드 확인이 필요합니다. 기기 사진은 유지했습니다.');
        }
-       photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});rememberUploadedPreview(candidateId,small,file);
+       photos.push({hash,original,thumb:small,width:thumb.width,height:thumb.height,bytes:prepared.bytes,sourceBytes:file.size,sourceWidth:prepared.sourceWidth,sourceHeight:prepared.sourceHeight,thumbBytes:thumb.blob.size});rememberUploadedPreview(candidateId,small,thumb.blob);
      }
      assertAuth(uploadStamp);await ensureRemoteCandidate(candidateId,{photos,photo:photos[0]?.original||''});
      const out=await meetingTransaction(candidateId,c=>{
@@ -807,16 +804,38 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
    }));
  }
  window.addEventListener('pageshow',()=>{externalNavigation=false;restoreExternalPosition();});
+ let photoViewer=null;
+ function closeMeetingPhoto(){if(photoViewer)photoViewer.close();}
+ function openMeetingPhoto(photo,trigger,image,c){
+   if(!memberUser()?.uid||pane.hidden||active!==c.id)return;
+   closeMeetingPhoto();const stamp=authStamp(),dialog=document.createElement('dialog');photoViewer=dialog;dialog.className='dm-photo-viewer noprint';dialog.setAttribute('aria-label','회의 사진 확대');
+   const close=document.createElement('button');close.type='button';close.textContent='닫기';close.onclick=()=>dialog.close();
+   const full=document.createElement('img');full.alt='회의 사진 확대';if(image.getAttribute('src'))full.src=image.currentSrc||image.src;
+   const status=document.createElement('p');status.setAttribute('role','status');status.textContent='큰 사진 불러오는 중…';dialog.append(close,full,status);document.body.append(dialog);
+   dialog.addEventListener('close',()=>{full.removeAttribute('src');dialog.remove();if(photoViewer===dialog)photoViewer=null;if(trigger.isConnected&&!pane.hidden)trigger.focus({preventScroll:true});});
+   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});dialog.showModal();close.focus();
+   const src=C.httpUrl(photo.original||photo.thumb),next=new Image(),current=()=>photoViewer===dialog&&dialog.open&&sameAuth(stamp)&&!pane.hidden&&active===c.id;
+   next.onload=()=>{if(current()){full.src=src;status.textContent=photo.bytes?'확대 사진 '+Math.ceil(photo.bytes/1024)+'KB':'';}};
+   next.onerror=()=>{if(current())status.textContent='큰 사진을 불러오지 못했어요. 닫고 다시 눌러주세요.';};if(src)next.src=src;else status.textContent='사진 연결을 확인해주세요.';
+ }
+ for(const event of ['aisel-access-change','aisel-session-change','beforeprint','popstate','aisel-workspace-route'])window.addEventListener(event,closeMeetingPhoto);
  function setDetailPhotoSource(img,photo,id){
-   // Show the existing lightweight preview in this 240px frame. Keep the
-   // original for source/AI use and fetch it here only if the preview fails.
-   const thumb=C.httpUrl(photo?.thumb),original=C.httpUrl(photo?.original),src=thumb||original;
-   img.onerror=null;
+   const src=photo?.thumb===photo?.original?'':C.httpUrl(photo?.thumb);img.hidden=!src;
+   img.onerror=()=>{img.hidden=true;const hint=img.parentElement?.querySelector('.dm-photo-hint');if(hint)hint.textContent='미리보기를 못 불러왔어요 · 눌러서 큰 사진 보기';};
    if(!src)return;
-   if(thumb&&original&&thumb!==original)img.onerror=()=>{img.onerror=null;img.src=original;};
    if(id)bindUploadedPreview(img,src,id);else img.src=src;
  }
- function renderDetailPhotos(c){const box=$dm('#dmPhotos');const photos=C.photos(c),signature=JSON.stringify([c.id,photos.map(p=>[p.hash,p.original,p.thumb])]);if(box.dataset.signature===signature)return;box.dataset.signature=signature;box.replaceChildren();$dm('#dmAddPhotos').hidden=photos.length>0;$dm('#dmAddPhotos').classList.toggle('dm-empty-photo',!photos.length);$dm('#dmAddPhotos').textContent='＋ 사진';photos.forEach((p,i)=>{const button=document.createElement('button');button.type='button';button.className='dm-photo';button.dataset.photoKey=p.hash||p.original;button.setAttribute('aria-label','참고 사진 '+(i+1)+' 변경');button.onclick=()=>{const input=$dm('#dmReplaceInput');input.dataset.target=c.id;input.dataset.key=p.hash||p.original;input.click();};const img=document.createElement('img');img.loading=i===0?'eager':'lazy';img.fetchPriority=i===0?'high':'auto';img.decoding='async';img.alt='참고 사진 '+(i+1);setDetailPhotoSource(img,p,c.id);button.append(img);box.append(button);});}
+ function renderDetailPhotos(c){
+   const box=$dm('#dmPhotos'),photos=C.photos(c),signature=JSON.stringify([c.id,photos.map(p=>[p.hash,p.original,p.thumb])]);if(box.dataset.signature===signature)return;closeMeetingPhoto();box.dataset.signature=signature;box.replaceChildren();$dm('#dmAddPhotos').hidden=photos.length>0;$dm('#dmAddPhotos').classList.toggle('dm-empty-photo',!photos.length);$dm('#dmAddPhotos').textContent='＋ 사진';
+   photos.forEach((p,i)=>{
+     const frame=document.createElement('div');frame.className='dm-photo-frame';
+     const button=document.createElement('button');button.type='button';button.className='dm-photo';button.dataset.photoKey=p.hash||p.original;button.setAttribute('aria-label','참고 사진 '+(i+1)+' 확대');
+     const img=document.createElement('img');img.loading=i===0?'eager':'lazy';img.fetchPriority=i===0?'high':'low';img.decoding='async';img.alt='참고 사진 '+(i+1);
+     const hint=document.createElement('span');hint.className='dm-photo-hint';hint.textContent=(p.thumb?'눌러서 확대':'눌러서 사진 보기')+(p.thumbBytes?' · '+Math.ceil(p.thumbBytes/1024)+'KB':'');button.append(img,hint);setDetailPhotoSource(img,p,c.id);button.onclick=()=>openMeetingPhoto(p,button,img,c);
+     const edit=document.createElement('button');edit.type='button';edit.className='dm-photo-replace';edit.textContent='사진 교체';edit.setAttribute('aria-label','참고 사진 '+(i+1)+' 교체');edit.onclick=()=>{if(!['owner','designer'].includes(role)||openingId||isDeleted(current(active))||deleteFlight)return;const input=$dm('#dmReplaceInput');input.dataset.target=c.id;input.dataset.key=p.hash||p.original;input.click();};frame.append(button,edit);box.append(frame);
+   });
+ }
+
  function renderReview(c){if(!c)return;stopReviewPolling();reviewActions.hidden=true;checkResult.hidden=true;$dm('#dmRequest').hidden=true;$dm('#dmReviewState').hidden=true;$dm('#dmReviewState').textContent='';$dm('#dmOpenWorkorder').hidden=true;
    // Keep the same nodes/caret while other fields or remote records update.
    if(active===c.id){const draft=detailState(c.id);for(const key of manualFields){const field=$dm('[data-dm-field="'+key+'"]');if(!draft.dirty.has(key)&&field.dataset.composing!=='true'&&document.activeElement!==field){const value=typeof c[key]==='string'?c[key]:'';if(field.value!==value)field.value=value;}}syncManualButtons();syncUspEditor();}
@@ -1176,7 +1195,7 @@ const detailSaveFlights=new Map();let deleteFlight=null,deletePreview=null,undoD
      lastRoute=target;
    }finally{navigationBusy=false;}
  });
- new MutationObserver(()=>{if(pane.hidden){listDatePicker.close();detailOpenEpoch++;openingId=null;detailLoading.hidden=true;clearDetailPreview();stopListening();}else startListening();}).observe(pane,{attributes:true,attributeFilter:['hidden']});
+ new MutationObserver(()=>{if(pane.hidden){closeMeetingPhoto();listDatePicker.close();detailOpenEpoch++;openingId=null;detailLoading.hidden=true;clearDetailPreview();stopListening();}else startListening();}).observe(pane,{attributes:true,attributeFilter:['hidden']});
  document.addEventListener('visibilitychange',()=>{if(document.hidden)stopListening();else if(!pane.hidden){startListening();watchActive();refresh();}});
  $dm('#dmMainTab').onclick=()=>show();
 
