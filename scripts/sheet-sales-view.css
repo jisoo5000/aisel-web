@@ -81,3 +81,40 @@
  html:root body .sheet-sales-dialog {border-color:#E3E5E7;border-radius:3px;background:#FFFFFF;color:#34383C;box-shadow:none;}
  html:root body .sheet-sales-dialog button {box-sizing:border-box;height:28px;min-height:28px;padding:0 8px;}
 }
+
+/* 2026-11-16: anonymous product comparison, own-product accent, mobile cards. */
+@media screen {
+ #salesView{max-width:none!important}
+ #salesView .sp-list{width:100%;min-width:0}
+ #salesView .sp-grid{display:grid;grid-template-columns:48px minmax(150px,1.5fr) minmax(130px,1fr) 72px 64px minmax(160px,1.6fr);gap:6px;align-items:center;font-size:12px;line-height:18px;min-width:0}
+ #salesView .sp-head{padding:6px;color:#6c727c;border-bottom:1px solid #e3e5e7}
+ #salesView .sp-row{padding:6px;border-bottom:1px solid #e3e5e7}
+ #salesView .sp-mine{background:#edf4fc}
+ #salesView .sp-product{display:flex;gap:6px;align-items:center;min-width:0}
+ #salesView .sp-photo{width:48px;height:64px;flex:0 0 48px;background:#f1f3f6;display:flex;align-items:center;justify-content:center;font-size:10px;color:#6c727c}
+ #salesView .sp-photo img{width:48px;height:64px;object-fit:cover}
+ #salesView .sp-identity{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-width:0}
+ #salesView .sp-name{display:block;width:100%;overflow-wrap:anywhere;font-weight:600}
+ #salesView .sp-own{color:#426790;background:#dfeaf7;padding:0 4px;border-radius:3px;font-size:11px}
+ #salesView .sp-launch,#salesView .sp-new,#salesView .sp-period,#salesView .sp-coverage,#salesView .sp-footnote{color:#6c727c;font-size:11px;line-height:18px}
+ #salesView .sp-period,#salesView .sp-coverage,#salesView .sp-footnote{margin:6px 0;overflow-wrap:anywhere}
+ #salesView .sp-rank{font-weight:600;text-align:center}
+ #salesView .sp-change,#salesView .sp-insight{display:flex;flex-direction:column;gap:2px;min-width:0}
+ #salesView .sp-insight{overflow-wrap:anywhere}
+ #salesView .sp-insight-label{font-size:10px;color:#6c727c}
+ #salesView .sp-change small{font-size:11px;color:#6c727c}
+ #salesView .sp-mobile-label{display:none}
+ #salesView .sp-sales strong{font-weight:500;white-space:normal}
+ @media(max-width:1000px){
+  #salesView .sp-grid{grid-template-columns:40px minmax(0,1fr) minmax(100px,.8fr)}
+  #salesView .sp-head{display:none}
+  #salesView .sp-row{gap:6px;padding:10px 6px}
+  #salesView .sp-rank{grid-column:1;grid-row:1}
+  #salesView .sp-product{grid-column:2/4;grid-row:1}
+  #salesView .sp-sales{grid-column:1/3}
+  #salesView .sp-change{grid-column:3}
+  #salesView .sp-returns{grid-column:1/4;display:flex;gap:6px}
+  #salesView .sp-insight{grid-column:1/4;border-top:1px solid #e3e5e7;padding-top:6px}
+  #salesView .sp-mobile-label{display:block;color:#6c727c;font-size:11px}
+ }
+}

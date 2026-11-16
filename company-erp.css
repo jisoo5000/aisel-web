@@ -517,3 +517,25 @@
  #aiselCompanyWorkspace .ce-usage-table td:nth-child(n+4){border-bottom:0;}
 }
 
+
+@media screen {
+ .sp-finance{min-width:0}
+ .sp-finance-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0}
+ .sp-finance-stat{display:flex;flex-direction:column;gap:6px;min-width:0;padding:12px;background:#f5f7fa;border:1px solid #e3e5e7;border-radius:3px}
+ .sp-finance-stat strong{font-size:20px;line-height:28px;overflow-wrap:anywhere}
+ .sp-finance-accounts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:8px 0}
+ .sp-finance-account,.sp-finance-date{border:1px solid #e3e5e7;border-radius:3px;padding:12px;min-width:0}
+ .sp-finance-account h3{margin:0 0 8px}
+ .sp-finance-definition{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;margin:6px 0}
+ .sp-finance-definition dt{color:#6c727c}
+ .sp-finance-definition dd{margin:0;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+ .sp-finance-detail{border-top:1px solid #e3e5e7;padding:8px 0}
+ .sp-finance-detail summary{cursor:pointer;padding:6px 0}
+ .sp-finance-dates{display:grid;gap:6px;margin-top:8px}
+ @media(max-width:767px){
+  .sp-finance-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sp-finance-accounts{grid-template-columns:minmax(0,1fr)}
+  .sp-finance-stat{padding:10px}
+  .sp-finance-stat strong{font-size:18px;line-height:26px}
+ }
+}
