@@ -26,13 +26,28 @@
    if(!profiles[profile])throw Error('사진 크기 기준을 확인해주세요.');
    return withImage(file,img=>prepareDecoded(file,img,profile));
  }
- async function preparePair(file,profile='collection'){
+ async function referenceThumbDecoded(img){
+   const scale=Math.min(1,320/Math.max(img.naturalWidth,img.naturalHeight));
+   const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));
+   for(let attempt=0;attempt<8;attempt++){
+     const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
+     for(const quality of [.7,.55,.4]){
+       const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+       if(!blob)throw Error('사진 미리보기를 만들지 못했습니다. 다시 선택해주세요.');
+       if(blob.size<=24*1024)return {blob,width:img.naturalWidth,height:img.naturalHeight,thumbnailWidth:canvas.width,thumbnailHeight:canvas.height};
+     }
+     canvas.width=Math.max(1,Math.round(canvas.width*.75));canvas.height=Math.max(1,Math.round(canvas.height*.75));
+   }
+   throw Error('사진 미리보기 용량을 줄이지 못했습니다. 기기 사진은 유지했습니다.');
+ }
+ async function prepareReferenceThumb(file){return withImage(file,referenceThumbDecoded);}
+ async function preparePair(file,profile='collection',thumbnailProfile='thumb'){
    if(!profiles[profile])throw Error('사진 크기 기준을 확인해주세요.');
    return withImage(file,async img=>{
      // Both outputs share one decode. Keep the saved original's existing profile,
      // and make the small JPEG directly from the decoded source without rereading it.
      const small=async()=>{const scale=Math.min(1,480/Math.max(img.naturalWidth,img.naturalHeight)),canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);let blob;for(const quality of [.78,.65,.5,.35,.2]){blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));if(blob&&blob.size<=102400)return{blob,thumbnailWidth:canvas.width,thumbnailHeight:canvas.height};}throw Error('사진 미리보기 용량을 줄이지 못했습니다. 기기 사진은 유지했습니다.');};
-     const [prepared,thumb]=await Promise.all([prepareDecoded(file,img,profile),small()]);
+     const [prepared,thumb]=await Promise.all([prepareDecoded(file,img,profile),thumbnailProfile==='referenceThumb'?referenceThumbDecoded(img):small()]);
      return {prepared,thumb:{...thumb,width:prepared.width,height:prepared.height}};
    });
  }
@@ -73,5 +88,5 @@
    root.addEventListener('beforeprint',()=>{if(dialog?.open)dialog.close();});
  }
 
- root.AiselPhoto={prepare,preparePair,dataURL,profiles,savedSource,mountPreview};
+ root.AiselPhoto={prepare,preparePair,prepareReferenceThumb,dataURL,profiles,savedSource,mountPreview};
 })(globalThis);
