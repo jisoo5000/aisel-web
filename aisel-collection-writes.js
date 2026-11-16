@@ -8,7 +8,7 @@
   const ENDPOINT = 'https://asia-southeast1-aisel-workorder.cloudfunctions.net/collectionsV214';
   const EDITABLE = new Set(['title','designer','date','category','categoryMode','contentType','sourceLinks','sourceUrl','photos','noteEntries','notes']);
   const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
-  const fail = (code, message) => Object.assign(Error(message || ({permission_denied:'이 자료의 저장 권한을 확인해주세요.',auth_changed:'로그인 계정이 변경되었습니다. 입력은 기기에 보관됩니다.',offline:'인터넷 연결 후 다시 저장해주세요. 입력은 기기에 보관됩니다.',conflict:'다른 곳에서 변경된 내용을 확인하고 있습니다.',connection_pending:'저장 연결을 확인하지 못했습니다. 입력은 기기에 보관됩니다.',network:'저장 확인이 지연되고 있습니다. 입력은 기기에 보관됩니다.',not_found:'자료를 찾을 수 없습니다.'}[code] || code)), {code});
+  const fail = (code, message) => Object.assign(Error(message || ({permission_denied:'이 자료의 저장 권한을 확인해주세요.',auth_changed:'로그인 계정이 변경되었습니다. 입력은 기기에 보관됩니다.',offline:'인터넷 연결 후 다시 저장해주세요. 입력은 기기에 보관됩니다.',conflict:'다른 곳에서 변경된 내용을 확인하고 있습니다.',connection_pending:'저장 연결을 확인하지 못했습니다. 입력은 기기에 보관됩니다.',network:'저장 확인이 지연되고 있습니다. 입력은 기기에 보관됩니다.',not_found:'자료를 찾을 수 없습니다.',usp_duplicate:'이미 등록된 USP입니다.',invalid_usp:'USP는 500자 이내로 입력해주세요.',usp_missing:'목록을 다시 열어 USP를 확인해주세요.',usp_capacity:'USP는 최대 500개까지 등록할 수 있습니다.',revision_conflict:'다른 곳에서 목록을 수정했습니다. 목록을 다시 열어주세요.'}[code] || code)), {code});
   const current = () => window.AiselAuth?.currentUser?.();
   function stable(value) { if (Array.isArray(value)) return value.map(stable); if(value && typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])); return value; }
   const list = value => value == null ? [] : Array.isArray(value) ? value : Object.keys(value).sort((a,b)=>Number(a)-Number(b)).map(key=>value[key]);
@@ -378,6 +378,10 @@
     const data=await functionRequest(ctx,{action,...(action==='listDesigners'?{}:{name:payload.name}),...(action==='deleteDesigner'||payload.restore===true?{expectedRevision:payload.expectedRevision}:{}),...(payload.restore===true?{restore:true}:{})});
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
+  async function referenceUspRequest(change={}) {
+    const ctx=await context('references');if(change.operation&&ctx.role!=='owner')throw fail('permission_denied');
+    const data=await functionRequest(ctx,{...change,action:'referenceUspCatalog'});assert(ctx);return data;
+  }
   async function referenceCategoryRequest(action,payload={}) {
     if(!['listReferenceCategories','upsertReferenceCategory','deleteReferenceCategory'].includes(action))throw fail('invalid');
     const ctx=await context('references');
@@ -392,5 +396,5 @@
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,conversionStore,listDeletedMeetings,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,conversionStore,listDeletedMeetings,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest,referenceUspRequest});
 })();
