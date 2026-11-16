@@ -203,7 +203,7 @@
       <div class="rc-detail-actions"><span id="rcAuthor" hidden></span></div>
       <section id="rcAIExtra" class="rc-review" aria-label="판별 결과" hidden><section id="rcAnalysis" class="rc-analysis" aria-live="polite"></section></section>
       <dialog id="rcDialog"><form method="dialog"><div id="rcDialogBody"></div><div class="rc-dialog-actions"><button type="button" id="rcDialogCancel">취소</button><button type="button" id="rcDialogConfirm">확인</button></div></form></dialog></div>`;
-    document.body.append(pane);pane.append($('#rcDialog'));
+    document.body.append(pane);pane.append($('#rcDialog'));setupQuickAdd();
     const detailWait=document.createElement('div');detailWait.id='rcDetailLoading';detailWait.className='rc-detail-loading';detailWait.hidden=true;detailWait.innerHTML='<p id="rcDetailProgress" role="status" aria-live="polite">자료를 불러오는 중…</p><section id="rcReadPreview" aria-label="레퍼런스 미리보기" hidden></section><button type="button" id="rcDetailCancel">목록으로</button>';pane.append(detailWait);$('#rcDetailCancel').onclick=cancelDetailLoad;
     dateFilterPicker=window.AiselDateFilter.mount($('.rc-date-filter'),{inputId:'rcDateFilter',labelId:'rcDateFilterText',label:'레퍼런스 날짜 필터',format:shortDate,onChange:()=>{gallerySignature='';renderList();rememberList();ensureListFilterCoverage();}});
     bindGalleryIndex();bindNoteCategories();bindDesigners();bindReferenceCategories();
@@ -243,8 +243,8 @@
     $('#rcPhotoInput').onchange=async e=>{await receive(e.target.files);e.target.value='';await save();};$('#rcCameraInput').onchange=async e=>{await receive(e.target.files);e.target.value='';await save();};
     pane.addEventListener('compositionstart',e=>{if(e.target.matches('input,textarea')){composing.add(e.target);clearTimeout(autoSaveTimer);}});pane.addEventListener('compositionend',e=>{composing.delete(e.target);if(e.target.id==='rcLinkInput'&&document.activeElement!==e.target){const editor=linkEditor;setTimeout(()=>{if(editor&&linkEditor===editor&&active?.id===editor.id&&!isComposing())finishLinkEditor();},0);}if(dirty)scheduleSave();});
     pane.addEventListener('dragover',e=>{if(active&&!$('#rcDetail').hidden&&e.dataTransfer?.types.includes('Files'))e.preventDefault();});pane.addEventListener('drop',e=>{if(active&&!$('#rcDetail').hidden&&e.dataTransfer?.files.length){e.preventDefault();receive(e.dataTransfer.files);}});
-    document.addEventListener('paste',e=>{if(!visible||!active||$('#rcDetail').hidden||e.target.closest('input,textarea'))return;const files=[...(e.clipboardData?.items||[])].filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile());if(files.length){e.preventDefault();receive(files);}});
-    window.addEventListener('beforeunload',e=>{if(dirty||pendingFiles.length){persistDraft().catch(()=>{});e.preventDefault();e.returnValue='';}});
+    document.addEventListener('paste',e=>{if($('#rcQuick')?.open)return;if(!visible||!active||$('#rcDetail').hidden||e.target.closest('input,textarea'))return;const files=[...(e.clipboardData?.items||[])].filter(x=>x.type.startsWith('image/')).map(x=>x.getAsFile());if(files.length){e.preventDefault();receive(files);}});
+    window.addEventListener('beforeunload',e=>{if(quickBusy||quick?.files.length||quick?.record.sourceUrl||dirty||pendingFiles.length){void quickPersist().catch(()=>{});persistDraft().catch(()=>{});e.preventDefault();e.returnValue='';}});
     return pane;
   }
   function bindReferenceCategories(){
@@ -586,7 +586,7 @@
     const finished=await Promise.race([save(),new Promise(resolve=>{timeout=setTimeout(()=>resolve(false),15000);})]);clearTimeout(timeout);
     if(!finished||active?.id!==id||editRevision!==revision){if(!finished&&saveFlight)message('저장 확인이 늦어지고 있습니다. 입력은 유지됩니다. 잠시 후 다시 이동해주세요.',true);return false;}return !options.isCurrent||options.isCurrent();
   }
-  async function leave(options={}){if(!await canLeave(options)||options.isCurrent&&!options.isCurrent())return false;showEpoch++;closePhotoPreview(false);finishDetailLoad();referenceCategoryPicker?.close();designerPicker?.close();designerFilterPicker?.close();categoryFilterPicker?.close();dateFilterPicker?.close();pane.hidden=true;visible=false;lifecycle?.stop();return true;}
+  async function leave(options={}){if(quickBusy)return false;if(quick){quickCapture();await quickPersist();$('#rcQuick')?.close();}if(!await canLeave(options)||options.isCurrent&&!options.isCurrent())return false;showEpoch++;closePhotoPreview(false);finishDetailLoad();referenceCategoryPicker?.close();designerPicker?.close();designerFilterPicker?.close();categoryFilterPicker?.close();dateFilterPicker?.close();pane.hidden=true;visible=false;lifecycle?.stop();return true;}
   const lifecycle=window.AiselReferenceLifecycle;let lifeFilter='active',listLimit=20,listFilterKey='',restoredLimit=null,lifeUndoTimer;
   function summary(record){const {id,version,title,date,designer,category,contentType,creator,createdAt,updatedAt,archivedAt,permissions:recordPermissions,analysis,analysisSignature,analysisState,analysisReceipt,reviewedAt,categoryMode}=record;return {id,version,title,date,designer,category,contentType,creator,createdAt,updatedAt,archivedAt,analysis,analysisSignature,analysisState,analysisReceipt,reviewedAt,categoryMode,permissions:recordPermissions,...noteCategorySummary(record),thumbnail:record.thumbnail||record.photos?.[0]?.thumb||''};}
   async function refresh(more=false,prefetch=null,options={}){
@@ -964,6 +964,99 @@
     }catch(e){if(['auth_changed','session_changed'].includes(e.code)){if(detailLoading===selection&&epoch===showEpoch){await resetAuth();if(visible&&!pane.hidden)showList();}return false;}if(stillVisible())return failed(e);return false;}
     finally{if(detailLoading===selection&&!stillVisible()){finishDetailLoad(selection);if(epoch===showEpoch&&visible&&!pane.hidden)showList();}}
   }
+  // Quick capture owns a separate record; the open editor and route never change.
+  let quick=null,quickBusy=false,quickCount=0;
+  function quickEnabled(){try{return localStorage.getItem('aisel:reference-quick-add:disabled')!=='1';}catch(_){return true;}}
+  function quickMessage(text,error=false){const el=$('#rcQuickStatus');el.textContent=text;el.classList.toggle('rc-error',error);}
+  function quickNew(){const choice=active||initialReferenceCategory()||{};return {id:'ref_'+crypto.randomUUID().replace(/-/g,''),version:0,title:'',date:today(),designer:choice.designer||'',category:choice.category||'product',contentType:choice.contentType||'',categoryMode:'manual',sourceLinks:[],sourceUrl:'',photos:[],notes:'',noteEntries:[]};}
+  function quickSetBusy(value){quickBusy=value;$('#rcQuick').setAttribute('aria-busy',String(value));$('#rcQuick').querySelectorAll('button,input').forEach(el=>el.disabled=value||!!quick?.attempt&&!['rcQuickSubmit','rcQuickClose'].includes(el.id));$('#rcQuickSubmit').textContent=value?'추가 중…':'추가';}
+  function quickRender(){
+    const box=$('#rcQuickPreview');box.replaceChildren();if(!quick)return;
+    for(const file of quick.files){const image=document.createElement('img');image.alt='새 레퍼런스 사진';const url=URL.createObjectURL(file);image.src=url;image.onload=image.onerror=()=>URL.revokeObjectURL(url);box.append(image);}
+    $('#rcQuickTitle').value=quick.record.title;$('#rcQuickLink').value=quick.record.sourceUrl;
+    $('#rcQuickMeta').textContent=[categoryLabel(quick.record),quick.record.designer,shortDate(quick.record.date)].filter(Boolean).join(' · ');
+  }
+  async function quickPersist(item=quick){
+    if(!item||!item.files.length&&!item.record.sourceUrl&&!item.record.title)return;
+    const key=item.account+'|'+item.record.id;
+    const record=clone(item.record),attempt=item.attempt?clone(item.attempt):null,files=[...item.files];
+    const write=(item.writes||Promise.resolve()).catch(()=>{}).then(async()=>{
+      const fileKeys=await Promise.all(files.map(file=>preserveFile(file,key)));
+      await storage('put',{key,account:item.account,id:record.id,record,baseRecord:null,pendingSave:attempt,at:Date.now(),fileKeys});
+    });item.writes=write;await write;
+  }
+  function quickCapture(){if(!quick||quickBusy||quick.attempt)return;quick.record.title=$('#rcQuickTitle').value;quick.record.sourceUrl=$('#rcQuickLink').value.trim();quick.record.sourceLinks=quick.record.sourceUrl?[quick.record.sourceUrl]:[];}
+  async function quickReceive(files){
+    if(!quick||quickBusy||quick.attempt)return;const selected=[...files];
+    if(!selected.length)return;
+    if(selected.some(file=>!/^image\/(jpeg|png|webp|gif)$/.test(file.type)||file.size>26214400)){quickMessage('JPG·PNG·WebP·GIF, 한 장 25MB 이하로 선택해주세요.',true);return;}
+    if(quick.files.length+selected.length>12){quickMessage('한 레퍼런스에는 사진 12장까지 넣을 수 있어요.',true);return;}
+    quickCapture();quick.files.push(...selected);quickRender();quickMessage('사진 '+quick.files.length+'장 · 추가를 누르면 새 레퍼런스로 저장돼요.');
+    try{await quickPersist();}catch(_){quickMessage('사진은 창에 남아 있어요. 창을 닫기 전에 추가를 눌러주세요.',true);}
+  }
+  async function quickSubmit(){
+    if(!quick||quickBusy)return;quickCapture();const item=quick,stamp=item.stamp,scope=item.account;
+    const check=()=>{assertAuth(stamp);if(quick!==item||account!==scope||!permissions.canCreate)throw Error('로그인과 등록 권한을 다시 확인해주세요.');};
+    const record=item.record;
+    if(!item.files.length&&!record.sourceUrl){quickMessage('사진이나 링크를 넣어주세요.',true);return;}
+    if(record.sourceUrl&&!http(record.sourceUrl)){quickMessage('링크는 https:// 또는 http://로 시작하는 주소를 넣어주세요.',true);return;}
+    quickSetBusy(true);quickMessage('사진과 레퍼런스를 저장하고 있어요…');
+    try{
+      check();if(localOnly)throw Error('저장 연결을 확인해주세요. 사진은 그대로 남아 있어요.');
+      await quickPersist(item);check();
+      // Retry the same ID and patch after an uncertain response, never a new ID.
+      let saved;
+      if(item.attempt){
+        try{const writer=collectionWriter(),remote=writer?(await writer.getReference(record.id)).record:await remoteDetail(record.id,null,true);check();if(remote&&Object.keys(SaveCore.patch(remote,item.attempt.snapshot)).length===0)saved=remote;else if(remote)throw Error('등록된 자료가 변경됐어요. 목록에서 확인해주세요.');}
+        catch(error){if(!['not_found','reference_not_found'].includes(error.code))throw error;}
+      }
+      if(!saved){
+        if(!item.attempt){
+          for(let index=record.photos.length;index<item.files.length;index++){
+            check();const file=item.files[index],pair=await AiselPhoto.preparePair(file,'collection');check();
+            const prepared=pair.prepared,thumb=pair.thumb,hash=await digest(prepared.blob);check();
+            const writer=collectionWriter();let uploaded;
+            if(writer)uploaded=await writer.uploadPhotos('references',{id:record.id,hash,original:prepared.blob,thumb:thumb.blob});
+            else uploaded={original:(await call('refUpload',{id:record.id,hash,kind:'original',mime:prepared.blob.type,data:await encode(prepared.blob)})).photo?.url,thumb:(await call('refUpload',{id:record.id,hash,kind:'thumb.jpg',mime:'image/jpeg',data:await encode(thumb.blob)})).photo?.url};
+            check();if(!http(uploaded?.original)||!http(uploaded?.thumb))throw Error('사진 저장을 확인하지 못했어요. 다시 추가를 눌러주세요.');
+            record.photos.push({hash,original:uploaded.original,thumb:uploaded.thumb,width:thumb.width,height:thumb.height,bytes:prepared.bytes,thumbBytes:thumb.blob.size});
+            await quickPersist(item);check();
+          }
+          item.attempt={base:null,snapshot:clone(record),patch:SaveCore.patch(null,record)};
+          await quickPersist(item);check();
+        }
+        const result=await referenceRequest('refSave',{id:record.id,version:0,patch:item.attempt.patch});check();
+        if(!result.record||result.record.id!==record.id||result.record.version<1)throw Error('저장을 확인하지 못했어요. 사진은 남겨두었어요.');
+        saved=result.record;
+      }
+      rememberRecord(saved,true);gallerySignature='';renderList();
+      // Confirmed server success must not become another upload on local cleanup failure.
+      try{await storage('delete',scope+'|'+record.id);draftRows.delete(record.id);}catch(_){}
+      check();quickCount++;quick={record:quickNew(),files:[],stamp,account:scope,attempt:null};quickRender();
+      quickMessage('추가 완료 · '+quickCount+'개 등록했어요. 다음 사진을 넣어주세요.');
+    }catch(error){if(quick===item){quickMessage(error.message||'저장하지 못했어요. 입력은 그대로 남아 있어요.',true);try{await quickPersist(item);}catch(_){}}}
+    finally{if(quick===item||quick?.account===scope)quickSetBusy(false);}
+  }
+  function quickClose(){if(quickBusy)return;quickCapture();void quickPersist().catch(()=>{});$('#rcQuick').close();$('#rcQuickOpen').focus({preventScroll:true});}
+  function quickOpen(){
+    if(!permissions.canCreate||!active||!quickEnabled())return;
+    if(!quick||quick.account!==account)quick={record:quickNew(),files:[],stamp:authStamp(),account,attempt:null};
+    quickRender();quickSetBusy(false);quickMessage('사진만 넣어도 등록돼요. 제목과 링크는 선택이에요.');$('#rcQuick').showModal();
+  }
+  function setupQuickAdd(){
+    const bar=document.createElement('div');bar.className='rc-quick-bar';bar.innerHTML='<button type="button" id="rcQuickOpen">＋ 새 레퍼런스</button>';$('#rcDetail').append(bar);
+    const modal=document.createElement('dialog');modal.id='rcQuick';modal.setAttribute('aria-labelledby','rcQuickHeading');
+    modal.innerHTML='<div class="rc-quick-heading"><strong id="rcQuickHeading">새 레퍼런스</strong><button type="button" id="rcQuickClose" aria-label="추가창 닫기">닫기</button></div><p id="rcQuickMeta"></p><div id="rcQuickPreview"></div><div class="rc-quick-photo-actions"><button type="button" id="rcQuickPhoto">＋ 사진 선택</button><button type="button" id="rcQuickPaste">붙여넣기</button></div><input id="rcQuickFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden><input id="rcQuickTitle" type="text" maxlength="160" placeholder="제목 (선택)" aria-label="새 레퍼런스 제목"><input id="rcQuickLink" type="url" placeholder="링크 붙여넣기 (선택)" aria-label="새 레퍼런스 링크"><p id="rcQuickStatus" role="status" aria-live="polite"></p><button type="button" id="rcQuickSubmit">추가</button>';
+    pane.append(modal);$('#rcQuickOpen').onclick=quickOpen;$('#rcQuickClose').onclick=quickClose;
+    modal.oncancel=event=>{event.preventDefault();quickClose();};
+    $('#rcQuickPhoto').onclick=()=>$('#rcQuickFiles').click();$('#rcQuickFiles').onchange=event=>{void quickReceive(event.target.files);event.target.value='';};
+    for(const id of ['rcQuickTitle','rcQuickLink'])$('#'+id).oninput=quickCapture;
+    $('#rcQuickSubmit').onclick=quickSubmit;
+    $('#rcQuickPaste').onclick=async()=>{if(quickBusy||quick?.attempt)return;const item=quick;try{if(!navigator.clipboard?.read)throw Error();const items=await navigator.clipboard.read(),files=[];if(quick!==item)return;for(const item of items){const type=item.types.find(type=>type.startsWith('image/'));if(type)files.push(new File([await item.getType(type)],'pasted.png',{type}));else if(item.types.includes('text/plain')){$('#rcQuickLink').value=await (await item.getType('text/plain')).text();quickCapture();}}if(files.length)await quickReceive(files);else quickMessage('링크를 붙여넣었어요.');}catch(_){quickMessage('사진은 사진 선택으로, 링크는 입력칸을 길게 눌러 붙여넣어 주세요.');}};
+    modal.addEventListener('paste',event=>{const files=[...(event.clipboardData?.items||[])].filter(item=>item.type.startsWith('image/')).map(item=>item.getAsFile()).filter(Boolean);event.stopPropagation();if(files.length){event.preventDefault();void quickReceive(files);}});
+    modal.ondragover=event=>event.preventDefault();modal.ondrop=event=>{event.preventDefault();event.stopPropagation();void quickReceive(event.dataTransfer.files);};
+  }
+
   async function createEntry(){
     if(createFlight||!visible||pane.hidden)return;const epoch=showEpoch,selection=++openEpoch,stillHere=()=>selection===openEpoch&&epoch===showEpoch&&visible&&!pane.hidden;
     if(isComposing()){void persistDraft();return;}
@@ -983,7 +1076,7 @@
     dialog('삭제할 링크',box=>links.forEach((url,index)=>{const button=document.createElement('button');button.type='button';button.className='rc-link-delete-item';button.textContent=url;button.onclick=()=>remove(index);box.append(button);}));
   }
   async function create(epoch=showEpoch,selection=openEpoch){const stamp=authStamp();if(!permissions.canCreate||!await save())return;assertAuth(stamp);if(selection!==openEpoch||epoch!==showEpoch||!visible||pane.hidden)return;captureList();const choice=initialReferenceCategory();active={id:'ref_'+crypto.randomUUID().replace(/-/g,''),version:0,title:'',date:today(),designer:'',category:choice?.category||'',contentType:choice?.contentType||'',noteEntries:[{id:'note_'+crypto.randomUUID(),date:today(),text:''}],sourceLinks:[],notes:'',sourceUrl:'',categoryMode:'manual',photos:[],permissions:{canEdit:true,canArchive:false}};activeBase=null;pendingSave=null;saveConflict=null;pendingFiles=[];linkEditor=null;dirty=true;revision++;finishDetailLoad(selection);$('#rcList').hidden=true;$('#rcDetail').hidden=false;renderDetail();setRoute(active.id);await persistDraft();message('');return true;}
-  function renderDetail(){normalizeDetail(active);$('.rc-detail-actions').before($('#rcNotices'));$('#rcLatest').hidden=!saveConflict;$('#rcSaveCopy').hidden=!saveConflict||!permissions.canCreate;$('#rcSave').disabled=!!saveFlight||!canEdit();fields.forEach(k=>{const input=$('[data-rc-field="'+k+'"]');if(input.dataset.recordId!==active.id||document.activeElement!==input&&!composing.has(input)&&input.value!==(active[k]||''))input.value=active[k]||'';input.dataset.recordId=active.id;input.disabled=!canEdit();});$('#rcSave').hidden=!canEdit();$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcDelete').disabled=!!saveFlight;$('#rcCategory').disabled=!canEdit();$('#rcDate').value=active.date||'';$('#rcDate').disabled=!canEdit();$('#rcDateText').textContent=shortDate(active.date);renderReferenceCategory();renderDesigner();updateSource();renderPhotos();renderRating();renderNotes();renderAnalysis();$('[data-rc-field="title"]').placeholder=AI.title(active);}
+  function renderDetail(){normalizeDetail(active);$('#rcQuickOpen').parentElement.hidden=!permissions.canCreate||!quickEnabled();$('.rc-detail-actions').before($('#rcNotices'));$('#rcLatest').hidden=!saveConflict;$('#rcSaveCopy').hidden=!saveConflict||!permissions.canCreate;$('#rcSave').disabled=!!saveFlight||!canEdit();fields.forEach(k=>{const input=$('[data-rc-field="'+k+'"]');if(input.dataset.recordId!==active.id||document.activeElement!==input&&!composing.has(input)&&input.value!==(active[k]||''))input.value=active[k]||'';input.dataset.recordId=active.id;input.disabled=!canEdit();});$('#rcSave').hidden=!canEdit();$('#rcDelete').hidden=!canEdit()||!(active.version===0||active.permissions?.canArchive);$('#rcDelete').disabled=!!saveFlight;$('#rcCategory').disabled=!canEdit();$('#rcDate').value=active.date||'';$('#rcDate').disabled=!canEdit();$('#rcDateText').textContent=shortDate(active.date);renderReferenceCategory();renderDesigner();updateSource();renderPhotos();renderRating();renderNotes();renderAnalysis();$('[data-rc-field="title"]').placeholder=AI.title(active);}
   function updateSource(){
     const editing=linkEditor?.id===active?.id,tools=$('.rc-link-tools');tools.classList.toggle('is-editing',editing);$('#rcLinkEditor').hidden=!editing;
     for(const id of ['rcSourceOpen','rcLinkEdit','rcLinkDelete'])$('#'+id).hidden=editing;
@@ -1245,6 +1338,7 @@
   }
   window.addEventListener('popstate',async e=>{if(!pane||!visible)return;const match=location.hash.match(/^#reference=(.+)$/);if(match){await open(decodeURIComponent(match[1]),{history:false});return;}if(location.hash==='#references'){if(!await canLeave()){setRoute(active?.id,true);return;}active=null;dirty=false;pendingFiles=[];restoreList(e.state?.aiselReference);showList();return;}if(!await leave()){setRoute(active?.id,true);return;}config.onExit?.();});
   async function resetAuth(){
+    if(quick){quickCapture();void quickPersist().catch(()=>{});quick=null;quickBusy=false;$('#rcQuick')?.close();}
     clearTimeout(lifeUndoTimer);$('#rcLifeToast')?.remove();lifecycle?.reset();lifeFilter='active';listLimit=20;listFilterKey='';if(pane)$('#rcLifeFilter').value='active';const epoch=++authEpoch;referenceCategoryPicker?.destroy();referenceCategoryPicker=null;referenceCategoryIdentity='';dateFilterPicker?.close();designerPicker?.destroy();designerPicker=null;designerPickerIdentity='';designerFilterPicker?.destroy();designerFilterPicker=null;categoryFilterPicker?.destroy();categoryFilterPicker=null;for(const picker of notePickers.values())picker.destroy();notePickers.clear();noteRenderId='';saveStatuses.clear();galleryEpoch++;galleryState=null;galleryOwned=false;preloadFlight=null;categoryCoverageErrors.clear();categoryCoverageFlight=null;reviewSourceKeys.clear();productReviews.clear();openEpoch++;authorizedStamp=null;accessAt=0;accessFlight=null;listFlight=null;detailCache.clear();detailFlights.clear();listReadAt=0;draftRead++;role=null;permissions={};loading=false;if(!pane)return true;finishDetailLoad();$('#rcCreate').disabled=true;$('#rcSave').disabled=true;$('#rcDelete').disabled=true;$('#rcWorkorder').disabled=true;$('#rcWorkorder').hidden=true;$('#rcCategory').disabled=true;$('#rcDesigner').disabled=true;fields.forEach(k=>$('[data-rc-field="'+k+'"]').disabled=true);$('#rcPhotos').querySelectorAll('button').forEach(button=>button.disabled=true);
     // The common shell saves before a user-driven identity change. Preserve any
     // remaining input locally before clearing the previous account's view.

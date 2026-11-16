@@ -417,3 +417,24 @@
 @media screen {
  html:root body #referenceCollectionView #rcLifeFilter option#rcRestore{width:auto;min-width:0;height:auto!important;min-height:0!important;padding:0 18px!important;border:0;border-radius:0;font:inherit!important;text-align:center!important;text-align-last:center!important}
 }
+
+/* Quick capture: independent sheet, original reference remains mounted. */
+@media screen {
+ #referenceCollectionView .rc-quick-bar{position:fixed;left:50%;transform:translateX(-50%);width:min(calc(100% - 24px),382px);bottom:calc(8px + env(safe-area-inset-bottom));z-index:20;display:flex;justify-content:flex-end;pointer-events:none}
+ #referenceCollectionView #rcQuickOpen{pointer-events:auto;background:#34383C;color:#fff;border-color:#34383C;height:32px;padding:0 12px}
+ #referenceCollectionView #rcQuick{position:fixed;inset:auto 0 0;width:min(100%,480px);max-width:100vw;max-height:85dvh;margin:0 auto;padding:12px 12px calc(12px + env(safe-area-inset-bottom));overflow:auto;overscroll-behavior:contain;border:1px solid #E3E5E7;border-radius:10px 10px 0 0;background:#fff;color:#34383C}
+ #referenceCollectionView #rcQuick::backdrop{background:#34383C66}
+ #referenceCollectionView #rcQuick[open]{display:flex;flex-direction:column;gap:6px}
+ #referenceCollectionView .rc-quick-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
+ #referenceCollectionView .rc-quick-heading strong{font-size:14px;line-height:20px}
+ #referenceCollectionView #rcQuick p{margin:0;font-size:12px;line-height:18px;overflow-wrap:anywhere}
+ #referenceCollectionView #rcQuickMeta{color:#6C727C}
+ #referenceCollectionView #rcQuickPreview{display:flex;gap:6px;overflow-x:auto;max-width:100%;min-height:0}
+ #referenceCollectionView #rcQuickPreview:empty{display:none}
+ #referenceCollectionView #rcQuickPreview img{display:block;width:90px;height:120px;flex:none;object-fit:contain;background:#F1F3F6;border:1px solid #E3E5E7;border-radius:3px}
+ #referenceCollectionView .rc-quick-photo-actions{display:flex;gap:6px}
+ #referenceCollectionView .rc-quick-photo-actions button{flex:1;width:0}
+ #referenceCollectionView #rcQuickSubmit{width:100%;background:#34383C;color:#fff;border-color:#34383C;height:32px}
+ #referenceCollectionView #rcQuick button:disabled{opacity:.55}
+}
+@media print{#rcQuick,.rc-quick-bar{display:none!important}}
