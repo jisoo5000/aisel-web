@@ -511,7 +511,7 @@
    const config=await response.json();assertSession(stamp,uid);
    const sheet=googleResource(config.sheet,'spreadsheets'),materials=googleResource(config.materials,'spreadsheets');if(!sheet)throw Error('회의 기록 주소를 확인해주세요.');
    const tools=el('div',undefined,'amm-record-tools'),external=link(sheet,'새 창에서 열기');external.className='amm-resource-link';tools.append(external);
-   for(const [key,label] of [['tuesday','화요일 · 장은영'],['thursday','목요일 · 강혜주']]){
+   for(const [key,label] of [['tuesday','이전 장은영 발표자료'],['thursday','이전 강혜주 발표자료']]){
     const url=googleResource(config[key],'presentation')||materials;if(url){const a=link(url,label);a.className='amm-resource-link';tools.append(a);}
    }
    const note=el('p','사진·판단·회의 기록은 같은 Google 시트에 저장합니다.','amm-record-note');
