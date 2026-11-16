@@ -60,9 +60,9 @@
  }
  function suggestPreparation(){
   const date=$('.amm-preparation-date'),person=$('.amm-preparation-designer');
-  if(date.value||person.value||preparationSelected.size)return false;
+  if((date.value||person.value||preparationSelected.size)&&preparationAutoContext!==date.value+'|'+person.value)return false;
   const group=preparationGroups(preparationItems)[0];if(!group)return false;
-  date.value=group.date;person.value=group.designer;
+  date.value=group.date;person.value=group.designer;preparationAutoContext=group.date+'|'+group.designer;
   preparationSelected=new Set(group.items.map(row=>row.id));
   return true;
  }
@@ -78,7 +78,7 @@
  function selectionHash(date,designer,ids){
   return '#design-meeting-presentation?'+new URLSearchParams({date,designer,ids:ids.join(',')});
  }
- let preparation=false,preparationPage=0,preparationItems=[],preparationSelected=new Set(),preparationBusy=false,preparationLoading=false,presentationMode=false,presentationIds=[];
+ let preparation=false,preparationPage=0,preparationItems=[],preparationSelected=new Set(),preparationBusy=false,preparationLoading=false,preparationAutoContext='',presentationMode=false,presentationIds=[];
  function prepareStatus(value,failed=false){$('.amm-preparation-status').textContent=value;$('.amm-preparation-status').classList.toggle('error',failed);}
  function ensurePreparation(){
   if($('.amm-preparation'))return;
@@ -88,7 +88,8 @@
   person.className='amm-preparation-designer';person.setAttribute('aria-label','회의 담당자');
   const first=el('option','담당자 선택');first.value='';person.append(first);
   for(const name of [...new Set([...PEOPLE,...(root.AiselDesigners?.list?.()||[])].filter(Boolean))]){const o=el('option',name);o.value=name;person.append(o);}
-  person.addEventListener('change',()=>{preparationPage=0;renderPreparation();prepareStatus('선택 '+preparationSelected.size+'개');});
+  date.addEventListener('change',()=>{preparationAutoContext='';});
+  person.addEventListener('change',()=>{preparationAutoContext='';preparationPage=0;renderPreparation();prepareStatus('선택 '+preparationSelected.size+'개');});
   const transfer=button('디자인회의 슬라이드',()=>transferPreparation());transfer.className='amm-preparation-transfer';
   tools.append(date,person,transfer);
   const info=el('p','제품 레퍼런스 · 아네트 패턴과 스테디셀러 디벨롭 우선','amm-preparation-note');
@@ -120,6 +121,7 @@
    const item=el('label',undefined,'amm-preparation-row'),check=el('input');check.type='checkbox';check.value=row.id;
    check.checked=preparationSelected.has(row.id);check.disabled=preparationBusy||preparationLoading;check.setAttribute('aria-label',(row.title||'제목 없음')+' 회의 선택');
    check.addEventListener('change',()=>{
+    preparationAutoContext='';
     if(check.checked)preparationSelected.add(row.id);else preparationSelected.delete(row.id);
     item.classList.toggle('selected',check.checked);prepareStatus('선택 '+preparationSelected.size+'개');
    });
@@ -588,7 +590,7 @@
  }
  root.addEventListener('beforeunload',event=>{if(planningPending()){event.preventDefault();event.returnValue='';}});
  root.addEventListener('afterprint',()=>{document.body.classList.remove('aisel-meeting-print');document.getElementById('aiselMeetingPrintRoot')?.remove();});
- root.addEventListener('aisel-session-change',()=>{preparationItems=[];preparationSelected.clear();preparationBusy=false;preparationPage=0;presentationIds=[];hide({discard:true});if(pane){$('.amm-preparation-date')&&( $('.amm-preparation-date').value='');$('.amm-preparation-designer')&&( $('.amm-preparation-designer').value='');$('.amm-preparation-list')?.replaceChildren();}});
+ root.addEventListener('aisel-session-change',()=>{preparationItems=[];preparationSelected.clear();preparationAutoContext='';preparationBusy=false;preparationPage=0;presentationIds=[];hide({discard:true});if(pane){$('.amm-preparation-date')&&( $('.amm-preparation-date').value='');$('.amm-preparation-designer')&&( $('.amm-preparation-designer').value='');$('.amm-preparation-list')?.replaceChildren();}});
  root.addEventListener('aisel-access-change',()=>{if(root.AiselAccess?.allowed('designmeeting')!==true)hide({discard:true});});
  root.AiselMeetingMaterials={show,hide,canLeave,openSelection,exportPptx,ready:()=>readyFlight,get visible(){return visible;}};
 })(window);
