@@ -51,7 +51,13 @@
   $('gallerySearchRow').after(row);$('galleryTrashBtn').textContent='복원';
   const category=$('galleryCategoryFilter'),designer=$('galleryDesignerFilter');
   const change=patch=>galleryFilters.set({...galleryFilters.snapshot(),...patch});
-  const date=window.AiselDateFilter.mount(row.firstElementChild,{inputId:'galleryDateFilter',labelId:'galleryDateFilterLabel',label:'작업지시서 날짜 필터',emptyLabel:'날짜',format:value=>value.slice(2).replaceAll('-','. '),onChange:value=>change({date:value})});
+  const weekLabel=value=>{
+   const week=galleryFilters.weekRange?.(value);if(!week)return value.slice(2).replaceAll('-','. ');
+   const short=day=>day.slice(5).replace('-','.');
+   return short(week.start)+' ~ '+short(week.end);
+  };
+  const date=window.AiselDateFilter.mount(row.firstElementChild,{inputId:'galleryDateFilter',labelId:'galleryDateFilterLabel',label:'작업지시서 주차 필터 · 월요일부터 일요일',emptyLabel:'날짜',format:weekLabel,onChange:value=>change({date:value})});
+  date.input.title='날짜를 선택하면 그 주 월요일~일요일 작지를 함께 봅니다. 지우면 전체 기간입니다.';
   category.onchange=()=>change({category:category.value});
   const designerManager=document.createElement('div');designerManager.id='galleryDesignerManager';row.after(designerManager);
   const designerPicker=window.AiselDesigners?.mountPicker(designer,{mode:'filter',value:galleryFilters.snapshot().designer,placeholder:'담당자',emptyOptions:[['__unassigned__','미지정']],managerHost:designerManager,onChange:value=>change({designer:value}),onError:error=>{notice.textContent=error.message;}});

@@ -250,7 +250,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=sales-comparison-20261116">
+<link rel="preload" as="script" href="unified-app.js?v=weekly-filter-20261116">
 <link rel="preload" as="script" href="design-meeting.js?v=app-speed-20261116">
 <link rel="preload" as="script" href="reference-collection.js?v=reference-ink-gap-20261116g">
 <link rel="preload" as="style" href="workorder-screen.css?v=20261112-cost-typography">
@@ -11418,11 +11418,22 @@
     const at=sortKeyForOrder_(st);if(!at)return '';
     const date=modificationDateParts_(at);return [date.myy,date.mmm,date.mdd].map((v,i)=>String(v).padStart(i?2:4,'0')).join('-');
   }
+  // Calendar dates are KST civil dates; UTC arithmetic avoids host timezone/DST drift.
+  function galleryWeekRange_(value){
+    const valid=validDateInput_(value);if(!valid)return null;
+    const day=new Date(valid+'T00:00:00Z'),offset=(day.getUTCDay()+6)%7;
+    day.setUTCDate(day.getUTCDate()-offset);
+    const start=day.toISOString().slice(0,10);
+    day.setUTCDate(day.getUTCDate()+6);
+    return {start,end:day.toISOString().slice(0,10)};
+  }
   function matchesGalleryOrganization_(code,st){
     const f=galleryOrganization_,designer=String(st.designer??st.currentAssigneeName??'').trim();
-    return (!f.date||galleryDate_(st)===f.date)&&(!f.category||galleryCategory_(code,st)?.code===f.category)&&(!f.designer||(f.designer==='__unassigned__'?!designer:designer===f.designer));
+    const week=galleryWeekRange_(f.date),date=galleryDate_(st);
+    return (!f.date||!!week&&!!date&&date>=week.start&&date<=week.end)&&(!f.category||galleryCategory_(code,st)?.code===f.category)&&(!f.designer||(f.designer==='__unassigned__'?!designer:designer===f.designer));
   }
   window.AiselWorkorderListFilters={
+    weekRange:galleryWeekRange_,
     snapshot:()=>({...galleryOrganization_}),
     options:()=>{
       const categories=new Map(),designers=new Set();
@@ -18051,7 +18062,7 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=leave-navigation-20261112"></script>
-<script src="unified-app.js?v=sales-comparison-20261116"></script>
+<script src="unified-app.js?v=weekly-filter-20261116"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-management-20261112" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261112-cost-typography" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=title-navigation-20261112">
