@@ -492,7 +492,7 @@
 /* Card metadata: date, reference category, then owner; compact adjacent chevrons. */
 .rc-card-picker-label,.rc-card-picker-arrow{display:none}
 @media screen {
- html:root body #referenceCollectionView #rcList .rc-card-picker{position:relative;display:inline-flex;align-items:center;justify-content:center;justify-self:end;gap:6px;width:max-content;min-width:0;max-width:100%;height:28px;color:#6C727C;font-size:11px;line-height:16px;font-weight:400}
+ html:root body #referenceCollectionView #rcList .rc-card-picker{position:relative;display:inline-flex;align-items:center;justify-content:center;justify-self:end;gap:4px;width:max-content;min-width:0;max-width:100%;height:28px;color:#6C727C;font-size:11px;line-height:16px;font-weight:400}
  html:root body #referenceCollectionView #rcList .rc-card-picker-label{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;pointer-events:none}
  html:root body #referenceCollectionView #rcList .rc-card-picker-arrow{display:block;flex:0 0 12px;width:12px;height:12px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%236C727C' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:12px 12px;pointer-events:none}
  html:root body #referenceCollectionView #rcList .rc-card-meta :is(.rc-card-category,.rc-card-designer){position:absolute;inset:0;box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:28px;margin:0;padding:0!important;opacity:0;cursor:pointer}
