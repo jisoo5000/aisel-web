@@ -707,7 +707,7 @@
       button.setAttribute('aria-pressed',String(rating>=score-.5));
     });
     card.classList.toggle('is-modified',!!edit);
-    if(edit){let notice=card.querySelector('.rc-card-edit-state');if(!notice){notice=document.createElement('p');notice.className='rc-card-edit-state';card.append(notice);}notice.textContent=edit.error||'저장 전';notice.classList.toggle('rc-error',!!edit.error);}
+    renderCardEditError(card,edit);
     renderListControls();
   }
   async function stageSelection(field,value){
@@ -725,6 +725,19 @@
     }
   }
   function cancelListEdits(){if(listSaving||listStaging)return;listEdits.clear();listSelected.clear();gallerySignature='';renderList();message('변경을 취소했습니다.');}
+  function cardPicker(select){
+    const field=document.createElement('span');field.className='rc-card-picker';
+    const text=document.createElement('span');text.className='rc-card-picker-label';text.setAttribute('aria-hidden','true');
+    const arrow=document.createElement('span');arrow.className='rc-card-picker-arrow';arrow.setAttribute('aria-hidden','true');
+    const sync=()=>{text.textContent=select.selectedOptions[0]?.textContent||'';field.title=text.textContent;};
+    sync();select.addEventListener('input',sync);select.addEventListener('change',sync);field.append(text,arrow,select);return field;
+  }
+  function renderCardEditError(card,edit){
+    let notice=card.querySelector('.rc-card-edit-state');
+    if(!edit?.error){notice?.remove();return;}
+    if(!notice){notice=document.createElement('p');notice.className='rc-card-edit-state rc-error';card.append(notice);}
+    notice.textContent=edit.error;
+  }
   function renderCardEditors(card,row,stars,meta){
     const edit=listEdits.get(row.id),data={...row,...edit?.content},rating=edit?.life.rating??ratingValue(row.id),disabled=!listEditable(row)||listSaving||listStaging;
     stars.replaceChildren();stars.setAttribute('aria-label','레퍼런스 평점 '+rating*2+'점 / 10점');
@@ -740,11 +753,11 @@
     const date=document.createElement('label');date.className='rc-card-date';const dateText=document.createElement('span');dateText.textContent=shortDate(data.date)||'날짜';
     const dateInput=document.createElement('input');dateInput.type='date';dateInput.value=data.date||'';dateInput.disabled=disabled;dateInput.setAttribute('aria-label',(row.title||'자료')+' 날짜 수정');dateInput.onchange=()=>void stageCard(row.id,'date',dateInput.value);date.append(dateText,dateInput);
     const designer=document.createElement('select');designer.className='rc-card-designer';designer.disabled=disabled;designer.setAttribute('aria-label',(row.title||'자료')+' 담당자 수정');
-    const names=[...new Set([...designerNames(),data.designer].filter(Boolean))];selectOptions(designer,[['','미지정'],...names.map(name=>[name,name])],data.designer||'');designer.onchange=()=>void stageCard(row.id,'designer',designer.value);meta.replaceChildren(date,category,designer);
+    const names=[...new Set([...designerNames(),data.designer].filter(Boolean))];selectOptions(designer,[['','미지정'],...names.map(name=>[name,name])],data.designer||'');designer.onchange=()=>void stageCard(row.id,'designer',designer.value);meta.replaceChildren(date,cardPicker(category),cardPicker(designer));
     const usp=edit?.life.usp??String(lifecycle.get(row.id).usp||'');
     if(usp){const text=document.createElement('p');text.className='rc-card-usp';text.textContent=usp;text.title=usp;ratingLine.after(text);}
     card.classList.toggle('is-selected',listSelected.has(row.id));card.classList.toggle('is-modified',!!edit);
-    if(edit){const notice=document.createElement('p');notice.className='rc-card-edit-state';notice.textContent=edit.error||((edit.life.status?'상태: '+lifecycle.labels[edit.life.status]+' · ':'')+(edit.content.noteEntries?'카테고리 변경 · ':'')+(edit.content.category?'분류: '+categoryLabel(data)+' · ':'')+'저장 전');if(edit.error)notice.classList.add('rc-error');card.append(notice);}
+    renderCardEditError(card,edit);
   }
   async function saveListEdits(){
     if(listSaving||listStaging||!listEdits.size)return false;
