@@ -8,7 +8,7 @@
   const ENDPOINT = 'https://asia-southeast1-aisel-workorder.cloudfunctions.net/collectionsV214';
   const EDITABLE = new Set(['title','designer','date','category','categoryMode','contentType','sourceLinks','sourceUrl','photos','noteEntries','notes']);
   const clone = value => value == null ? value : JSON.parse(JSON.stringify(value));
-  const fail = (code, message) => Object.assign(Error(message || ({permission_denied:'이 자료의 저장 권한을 확인해주세요.',auth_changed:'로그인 계정이 변경되었습니다. 입력은 기기에 보관됩니다.',offline:'인터넷 연결 후 다시 저장해주세요. 입력은 기기에 보관됩니다.',conflict:'다른 곳에서 변경된 내용을 확인하고 있습니다.',connection_pending:'저장 연결을 확인하지 못했습니다. 입력은 기기에 보관됩니다.',network:'저장 확인이 지연되고 있습니다. 입력은 기기에 보관됩니다.',not_found:'자료를 찾을 수 없습니다.'}[code] || code)), {code});
+  const fail = (code, message) => Object.assign(Error(message || ({permission_denied:'이 자료의 저장 권한을 확인해주세요.',auth_changed:'로그인 계정이 변경되었습니다. 입력은 기기에 보관됩니다.',offline:'인터넷 연결 후 다시 저장해주세요. 입력은 기기에 보관됩니다.',conflict:'다른 곳에서 변경된 내용을 확인하고 있습니다.',connection_pending:'저장 연결을 확인하지 못했습니다. 입력은 기기에 보관됩니다.',network:'저장 확인이 지연되고 있습니다. 입력은 기기에 보관됩니다.',not_found:'자료를 찾을 수 없습니다.',usp_duplicate:'이미 등록된 USP입니다.',invalid_usp:'USP는 500자 이내로 입력해주세요.',usp_missing:'목록을 다시 열어 USP를 확인해주세요.',usp_capacity:'USP는 최대 500개까지 등록할 수 있습니다.',revision_conflict:'다른 곳에서 목록을 수정했습니다. 목록을 다시 열어주세요.'}[code] || code)), {code});
   const current = () => window.AiselAuth?.currentUser?.();
   function stable(value) { if (Array.isArray(value)) return value.map(stable); if(value && typeof value==='object')return Object.fromEntries(Object.keys(value).sort().map(key=>[key,stable(value[key])])); return value; }
   const list = value => value == null ? [] : Array.isArray(value) ? value : Object.keys(value).sort((a,b)=>Number(a)-Number(b)).map(key=>value[key]);
@@ -378,6 +378,72 @@
     const data=await functionRequest(ctx,{action,...(action==='listDesigners'?{}:{name:payload.name}),...(action==='deleteDesigner'||payload.restore===true?{expectedRevision:payload.expectedRevision}:{}),...(payload.restore===true?{restore:true}:{})});
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
+  // Shared phrase configuration uses the app's existing wordLists permissions:
+  // active staff read, owner writes. One isolated string leaf keeps the legacy
+  // dictionary shape and never changes a card's already-applied USP text.
+  const USP_PATH='wordLists/aisel_reference_usp_v1/catalog';
+  function uspName(value) {
+    if(typeof value!=='string')throw fail('invalid_usp');
+    const name=value.normalize('NFKC').trim().replace(/\s+/g,' ');
+    if(!name||name.length>500||/[\u0000-\u001f\u007f]/.test(name))throw fail('invalid_usp');return name;
+  }
+  function uspCatalog(value) {
+    if(value===null)return {revision:0,entries:[]};
+    let raw;try{raw=typeof value==='string'?JSON.parse(value):null;}catch(_){}
+    if(!raw||!Number.isSafeInteger(raw.revision)||raw.revision<0||!Array.isArray(raw.entries)||raw.entries.length>500)throw fail('invalid_usp_catalog');
+    if(new Set(raw.entries.map(row=>row?.id)).size!==raw.entries.length)throw fail('invalid_usp_catalog');
+    for(const row of raw.entries)if(!row||!/^usp_[a-f0-9]{32}$/.test(row.id)||uspName(row.name)!==row.name||typeof row.hidden!=='boolean')throw fail('invalid_usp_catalog');
+    return {revision:raw.revision,entries:raw.entries.map(({id,name,hidden})=>({id,name,hidden})),lastMutationId:raw.lastMutationId};
+  }
+  async function referenceUspRequest(change={}) {
+    const ctx=await context('references');
+    if(!change||typeof change!=='object'||Array.isArray(change)||Object.keys(change).some(key=>!['operation','id','name','hidden','direction','expectedRevision'].includes(key)))throw fail('invalid_usp_request');
+    const {operation,id,expectedRevision}=change;
+    const allowed=operation?['operation','expectedRevision',...(operation==='add'?['name']:operation==='rename'?['id','name']:operation==='hide'?['id','hidden']:['id','direction'])]:[];
+    if(Object.keys(change).some(key=>!allowed.includes(key)))throw fail('invalid_usp_request');
+    if(operation&&ctx.role!=='owner')throw fail('permission_denied');
+    if(operation&&(!['add','rename','hide','move'].includes(operation)||!Number.isSafeInteger(expectedRevision)||expectedRevision<0))throw fail('invalid_usp_request');
+    const name=['add','rename'].includes(operation)?uspName(change.name):null;
+    if(operation&&operation!=='add'&&!/^usp_[a-f0-9]{32}$/.test(id||''))throw fail('invalid_usp_request');
+    if(operation==='hide'&&typeof change.hidden!=='boolean'||operation==='move'&&![1,-1].includes(change.direction))throw fail('invalid_usp_request');
+    async function request(method='GET',value,etag) {
+      assert(ctx);const token=await current().getIdToken();assert(ctx);
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+      try{
+        const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/'+USP_PATH+'.json?auth='+encodeURIComponent(token),{
+          method,cache:'no-store',credentials:'omit',signal:controller.signal,
+          headers:{Accept:'application/json',...(method==='GET'?{'X-Firebase-ETag':'true'}:{'Content-Type':'application/json','If-Match':etag})},
+          ...(method==='GET'?{}:{body:JSON.stringify(value)})
+        });
+        assert(ctx);if([401,403].includes(response.status))throw fail('permission_denied');
+        if(response.status===412)throw fail('revision_conflict');if(!response.ok)throw fail('network');
+        const raw=await response.json();assert(ctx);return {raw,etag:response.headers?.get('etag')};
+      }catch(error){assert(ctx);if(error.code)throw error;throw fail('network');}finally{clearTimeout(timer);}
+    }
+    const result=raw=>{const {revision,entries}=uspCatalog(raw);return {ok:true,revision,entries,canManage:ctx.role==='owner'};};
+    const before=await request(),catalog=uspCatalog(before.raw);assert(ctx);
+    if(!operation)return result(before.raw);
+    // A deterministic receipt also reconciles a retry after a lost HTTP response.
+    const mutation=await digest(JSON.stringify(stable({path:USP_PATH,uid:ctx.uid,operation,expectedRevision,...(id?{id}:{}),...(name?{name}:{}),...(operation==='hide'?{hidden:change.hidden}:{}),...(operation==='move'?{direction:change.direction}:{})})));assert(ctx);
+    if(catalog.revision===expectedRevision+1&&catalog.lastMutationId===mutation)return result(before.raw);
+    if(catalog.revision!==expectedRevision)throw fail('revision_conflict');
+    if(!before.etag)throw fail('network');
+    const rows=catalog.entries,index=rows.findIndex(row=>row.id===id);
+    if(operation!=='add'&&index<0)throw fail('usp_missing');
+    if(name&&rows.some(row=>row.id!==id&&row.name.toLocaleLowerCase()===name.toLocaleLowerCase()))throw fail('usp_duplicate');
+    if(operation==='add'){if(rows.length>=500)throw fail('usp_capacity');rows.push({id:'usp_'+mutation.slice(0,32),name,hidden:false});}
+    if(operation==='rename')rows[index].name=name;
+    if(operation==='hide')rows[index].hidden=change.hidden;
+    if(operation==='move'){const next=Math.max(0,Math.min(rows.length-1,index+change.direction));[rows[index],rows[next]]=[rows[next],rows[index]];}
+    const encoded=JSON.stringify({revision:catalog.revision+1,entries:rows,lastMutationId:mutation});
+    try{const saved=await request('PUT',encoded,before.etag);if(saved.raw!==encoded)throw fail('network');return result(saved.raw);}
+    catch(error){
+      if(error.code!=='network')throw error;
+      // No blind replay: a fresh canonical read must match the complete write.
+      let proof;try{proof=await request();}catch(_){assert(ctx);throw error;}
+      if(proof.raw===encoded)return result(proof.raw);throw error;
+    }
+  }
   async function referenceCategoryRequest(action,payload={}) {
     if(!['listReferenceCategories','upsertReferenceCategory','deleteReferenceCategory'].includes(action))throw fail('invalid');
     const ctx=await context('references');
@@ -392,5 +458,5 @@
     assert(ctx);return {...data,canManage:ctx.role==='owner'};
   }
   window.addEventListener('aisel-session-change',()=>{configCache=null;confirmed.clear();});
-  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,conversionStore,listDeletedMeetings,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest});
+  window.AiselCollectionWrites=Object.freeze({enabled,authorize,normalizeReference,getReference,listReferences,saveReference,archiveReference,getMeeting,mutateMeeting,conversionStore,listDeletedMeetings,uploadPhotos,catalogOrderRequest,lookCategoryRequest,categoryRequest,designerRequest,referenceCategoryRequest,referenceUspRequest});
 })();
