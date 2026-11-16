@@ -427,14 +427,14 @@
  html:root body #referenceCollectionView .rc-list-calendar{position:relative;display:flex;align-items:center;justify-content:center}
  html:root body #referenceCollectionView :is(.rc-list-calendar,.rc-card-date) input[type=date]{position:absolute!important;inset:0;width:100%!important;height:100%!important;min-width:0;opacity:0;cursor:pointer;padding:0!important}
  html:root body #referenceCollectionView #rcSearch{outline-color:#6C727C;box-shadow:none!important;border-color:#E3E5E7!important;background:#fff!important}
- html:root body #referenceCollectionView .rc-selection-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin:6px 0;flex-wrap:wrap;font-size:12px;color:#6C727C}
+ html:root body #referenceCollectionView .rc-selection-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin:0;flex-wrap:nowrap;font-size:12px;color:#6C727C}
  html:root body #referenceCollectionView .rc-selection-toolbar button{height:28px;min-height:28px;font:400 12px/18px var(--aisel-font,sans-serif);padding:0 8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C}
  html:root body #referenceCollectionView #rcSelectionCount{margin-right:auto}
  html:root body #referenceCollectionView #rcListSave:not(:disabled){background:#34383C;color:#fff}
  html:root body #referenceCollectionView .rc-card-info{display:block;padding:8px;min-width:0}
  html:root body #referenceCollectionView .rc-card-title{display:block;width:100%;height:auto;min-height:18px;max-height:none;padding:0;margin:0 0 2px;border:0;background:transparent;box-shadow:none;text-align:left;font-size:12px!important;line-height:18px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#34383C}
- html:root body #referenceCollectionView .rc-card-rating{pointer-events:auto;height:28px;gap:0;width:100%;justify-content:flex-start}
- html:root body #referenceCollectionView .rc-card-rating button{display:flex;align-items:center;justify-content:center;flex:0 1 28px;min-width:0;width:20%;height:28px;min-height:28px;padding:2px;border:0;background:transparent;margin:0}
+ html:root body #referenceCollectionView .rc-card-rating{pointer-events:auto;display:flex;flex:0 0 90px;height:28px;gap:0;width:90px;margin:0;justify-content:flex-start}
+ html:root body #referenceCollectionView .rc-card-rating button{display:flex;align-items:center;justify-content:center;flex:0 0 18px;min-width:18px;width:18px;height:28px;min-height:28px;padding:0;border:0;background:transparent;margin:0}
  html:root body #referenceCollectionView .rc-card-rating button svg{width:17px;height:17px}
  html:root body #referenceCollectionView .rc-card-meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px;min-width:0}
  html:root body #referenceCollectionView .rc-card-date{display:flex;position:relative;align-items:center;min-width:0;height:28px;font-size:11px;line-height:16px;color:#6C727C;white-space:nowrap}
@@ -478,3 +478,13 @@
 #referenceCollectionView #rcPhotos img[hidden]{display:none!important}
 #referenceCollectionView #rcPhotos figure:has(.rc-photo-nav) .rc-photo-hint{bottom:42px}
 #rcPhotoPreview .rc-preview-size{flex:none;margin:0;color:var(--aisel-muted);font:400 12px/18px var(--aisel-font,sans-serif)}
+
+/* 2026-11-16: list actions share the first date row; compact stars and card classification. */
+@media screen {
+ html:root body #referenceCollectionView .rc-selection-status{margin:6px 0;font-size:12px;line-height:18px;color:#6C727C}
+ html:root body #referenceCollectionView .rc-list-heading{display:flex;align-items:center;justify-content:space-between;gap:4px;min-height:28px;margin:0 0 8px}
+ html:root body #referenceCollectionView .rc-list-heading #rcListDate{margin:0;white-space:nowrap}
+ html:root body #referenceCollectionView #rcUspPicker{padding-left:18px!important;padding-right:18px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%236C727C' stroke-width='1.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 5px center!important;background-size:12px 12px!important}
+ html:root body #referenceCollectionView .rc-card-rating-line{display:flex;align-items:center;flex-wrap:wrap;gap:0 4px;min-width:0;margin:0 0 2px}
+ html:root body #referenceCollectionView .rc-card-category{flex:1 0 70px;width:70px;max-width:100%;min-width:70px;height:28px!important;min-height:28px!important;margin:0;border:0;border-radius:3px;background-color:transparent;font-size:11px!important;font-weight:400;line-height:16px!important;color:#6C727C;text-align:center;text-align-last:center}
+}

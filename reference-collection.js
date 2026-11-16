@@ -188,11 +188,11 @@
     if(pane)return pane;
     pane=document.createElement('section');pane.id='referenceCollectionView';pane.className='noprint';pane.hidden=true;pane.setAttribute('aria-label','레퍼런스 수집');
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
-      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><label class="rc-list-calendar rc-date-filter"><span id="rcDateFilterText">날짜</span><input id="rcDateFilter" type="date" aria-label="조회 날짜"></label><label class="rc-list-calendar rc-bulk-control" hidden><span id="rcBulkDateText">날짜 변경</span><input id="rcBulkDate" type="date" aria-label="선택한 자료 날짜 변경"></label><select id="rcLifeFilter" aria-label="활용 상태"><option value="active">사용 전</option><option value="used">활용 완료</option><option value="stored">보관</option><option value="all">전체 기록</option><option id="rcRestore" value="__restore__" hidden disabled>삭제한 자료 복원</option></select><select id="rcBulkStatus" class="rc-bulk-control" aria-label="선택한 자료 사용 상태 변경" hidden><option value="">상태 변경 안 함</option><option value="active">사용 전</option><option value="used">활용 완료</option><option value="stored">보관</option></select></div><p id="rcSourcingStatus" class="rc-filter-status" role="status" hidden></p>
-      <div class="rc-collection-filters"><button type="button" id="rcUspPicker" aria-haspopup="dialog">USP ▾</button><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 담당자 필터"><option value="">담당자</option></select></div>
-      <div class="rc-bulk-fields" hidden><select id="rcBulkCategory" aria-label="선택한 자료 첫 참고 카테고리 변경"><option value="">카테고리 변경 안 함</option></select><select id="rcBulkDesigner" aria-label="선택한 자료 담당자 변경"><option value="">담당자 변경 안 함</option></select></div><div id="rcListTaxonomyManager"></div><div class="rc-selection-toolbar"><span id="rcSelectionCount" role="status">0개 선택</span><button type="button" id="rcSelectAll">전체 선택</button><button type="button" id="rcListCancel" hidden>변경 취소</button><button type="button" id="rcListSave" disabled>저장</button></div><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
+      <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><label class="rc-list-calendar rc-date-filter"><span id="rcDateFilterText">날짜</span><input id="rcDateFilter" type="date" aria-label="조회 날짜"></label><label class="rc-list-calendar rc-bulk-control" hidden><span id="rcBulkDateText">날짜</span><input id="rcBulkDate" type="date" aria-label="선택한 자료 날짜 변경"></label><select id="rcLifeFilter" aria-label="활용 상태"><option value="active">사용 전</option><option value="used">활용 완료</option><option value="stored">보관</option><option value="all">전체 기록</option><option id="rcRestore" value="__restore__" hidden disabled>삭제한 자료 복원</option></select><select id="rcBulkStatus" class="rc-bulk-control" aria-label="선택한 자료 사용 상태 변경" hidden><option value="">상태</option><option value="active">사용 전</option><option value="used">활용 완료</option><option value="stored">보관</option></select></div><p id="rcSourcingStatus" class="rc-filter-status" role="status" hidden></p>
+      <div class="rc-collection-filters"><button type="button" id="rcUspPicker" aria-haspopup="dialog">USP</button><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 담당자 필터"><option value="">담당자</option></select></div>
+      <div class="rc-bulk-fields" hidden><select id="rcBulkCategory" aria-label="선택한 자료 첫 참고 카테고리 변경"><option value="">카테고리</option></select><select id="rcBulkDesigner" aria-label="선택한 자료 담당자 변경"><option value="">담당자</option></select></div><div id="rcListTaxonomyManager"></div><div class="rc-selection-status"><span id="rcSelectionCount" role="status">0개 선택</span></div><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
       <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
-      <div id="rcGrid" class="rc-grid"><button type="button" id="rcCreate" class="rc-card rc-create-card" aria-label="레퍼런스 추가">＋ 추가</button></div><p id="rcEmpty" hidden>등록된 콘텐츠 레퍼런스가 없습니다.</p><button type="button" id="rcMore" hidden>더 보기</button></div>
+      <div class="rc-list-heading"><p id="rcListDate" class="rc-date-group"></p><div class="rc-selection-toolbar"><button type="button" id="rcSelectAll">전체 선택</button><button type="button" id="rcListCancel" hidden>변경 취소</button><button type="button" id="rcListSave" disabled>저장</button></div></div><div id="rcGrid" class="rc-grid"><button type="button" id="rcCreate" class="rc-card rc-create-card" aria-label="레퍼런스 추가">＋ 추가</button></div><p id="rcEmpty" hidden>등록된 콘텐츠 레퍼런스가 없습니다.</p><button type="button" id="rcMore" hidden>더 보기</button></div>
       <div id="rcDetail" hidden><div class="rc-detail-create"><button type="button" id="rcCreateNext">＋ 새 링크 추가</button></div>
       <div class="rc-title-row"><label class="rc-field rc-title"><span class="rc-sr-only">제목</span><input data-rc-field="title" type="text" maxlength="160" placeholder="레퍼런스 제목" aria-label="레퍼런스 제목"></label><div class="rc-title-actions"><button type="button" id="rcWorkorder" hidden>작업지시서</button><button type="button" id="rcSave">저장</button><button type="button" id="rcDelete">삭제</button></div></div>
       <div class="rc-metadata"><label class="rc-date"><span id="rcDateText"></span><input id="rcDate" type="date" aria-label="레퍼런스 날짜"></label><select id="rcCategory" aria-label="카테고리"><option value="">카테고리</option></select><label class="rc-designer-field"><span id="rcDesignerText" aria-hidden="true">담당자</span><select id="rcDesigner" aria-label="담당자"><option value="">담당자</option></select></label><div id="rcCategoryManager"></div><div id="rcDesignerManager"></div><div class="rc-link-tools"><button type="button" id="rcSourceOpen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg><span>링크</span></button><button type="button" id="rcLinkEdit" aria-label="링크 수정"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 16 12-12 4 4-12 12-5 1Z M13 7l4 4"/></svg></button><button type="button" id="rcLinkDelete" aria-label="링크 삭제"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 10v7m4-7v7"/></svg></button><div id="rcLinkEditor" hidden><input id="rcLinkInput" type="url" inputmode="url" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="참고 링크" placeholder="https://"></div><p id="rcLinkError" role="alert" hidden></p></div></div>
@@ -635,10 +635,10 @@
     $('.rc-filters').querySelectorAll('button').forEach(button=>button.disabled=busy||mode||!!listEdits.size);
     for(const id of ['rcBulkDate','rcBulkStatus','rcBulkCategory','rcBulkDesigner'])$('#'+id).disabled=busy;
     $('#rcUspPicker').disabled=busy||!mode&&!!listEdits.size;
-    $('#rcUspPicker').textContent=mode?'USP ▾':listUspFilter?'USP · '+listUspFilter:'USP ▾';
+    $('#rcUspPicker').textContent=mode?'USP':listUspFilter?'USP · '+listUspFilter:'USP';
     $('#rcUspPicker').title=mode?'선택한 자료 USP 변경':listUspFilter||'USP';
-    selectOptions($('#rcBulkDesigner'),[['','담당자 변경 안 함'],['__clear__','미지정'],...designerNames().map(name=>[name,name])],$('#rcBulkDesigner').value);
-    selectOptions($('#rcBulkCategory'),[['','카테고리 변경 안 함'],['__clear__','미지정'],...(window.AiselNoteCategories?.list()||[]).map(row=>[row.id,row.name])],$('#rcBulkCategory').value);
+    selectOptions($('#rcBulkDesigner'),[['','담당자'],['__clear__','미지정'],...designerNames().map(name=>[name,name])],$('#rcBulkDesigner').value);
+    selectOptions($('#rcBulkCategory'),[['','카테고리'],['__clear__','미지정'],...(window.AiselNoteCategories?.list()||[]).map(row=>[row.id,row.name])],$('#rcBulkCategory').value);
     $('#rcCreate').disabled=busy||!!listEdits.size||!!authorizedStamp&&permissions.canCreate!==true;
   }
   async function selectAllCards(){
@@ -660,7 +660,7 @@
     if(draftRows.has(id)||active?.id===id&&(dirty||saveFlight||uspDraft(id)))throw Error('작성 중인 상세 내용을 먼저 저장해주세요.');
     const base=normalizeDetail(clone(await remoteDetail(id,null,true)));assertAuth(stamp);
     if(!listEditable(base))throw Error('자료 수정 권한을 다시 확인해주세요.');
-    if(!listEdits.has(id))listEdits.set(id,{base,lifeBase:lifecycle.get(id),content:{},life:{},error:''});
+    if(!listEdits.has(id))listEdits.set(id,{base,originCategory:row.category,lifeBase:lifecycle.get(id),content:{},life:{},error:''});
     return listEdits.get(id);
   }
   function updateListEdit(edit,field,value){
@@ -670,6 +670,12 @@
       const notes=clone(edit.content.noteEntries||edit.base.noteEntries);
       if(!notes.length)notes.push({id:'note_'+crypto.randomUUID(),date:edit.base.date||today(),text:''});
       notes[0].categoryId=value;edit.content.noteEntries=notes;edit.content.notes=notes.map(n=>'['+n.date+'] '+n.text).join('\n\n');return;
+    }
+    if(field==='referenceCategory'){
+      const current={...edit.base,...edit.content},entries=referenceCategoryEntries();
+      const entry=entries.find(row=>row.category===value&&(value!=='content'||row.contentType===(current.contentType||'image')))||entries.find(row=>row.category===value);
+      if(!entry||entry.deletedAt)throw Error('다른 분류를 선택해주세요.');
+      edit.content.category=entry.category;edit.content.contentType=entry.contentType;edit.content.categoryMode='manual';return;
     }
     edit.content[field]=value;
   }
@@ -701,14 +707,19 @@
       const button=document.createElement('button');button.type='button';button.dataset.cardRating=score;button.innerHTML=ratingStar(Math.max(0,Math.min(1,rating-score+1)));button.disabled=disabled;
       button.setAttribute('aria-label',(row.title||'자료')+' 별점 '+nextRating(rating,score)*2+'점 선택');button.setAttribute('aria-pressed',String(rating>=score-.5));button.onclick=()=>void stageCard(row.id,'ratingStar',score);stars.append(button);
     }
+    const category=document.createElement('select');category.className='rc-card-category';category.disabled=disabled;category.setAttribute('aria-label',(row.title||'자료')+' 분류');
+    const choices=new Map();for(const entry of referenceCategoryEntries())if(!choices.has(entry.category))choices.set(entry.category,entry.category==='content'?'콘텐츠':entry.name);
+    if(!choices.has(data.category))choices.set(data.category,categoryLabel(data));
+    selectOptions(category,[...choices],data.category);category.title=choices.get(data.category)||'분류';category.onchange=()=>void stageCard(row.id,'referenceCategory',category.value);
+    const ratingLine=document.createElement('div');ratingLine.className='rc-card-rating-line';stars.before(ratingLine);ratingLine.append(stars,category);
     const date=document.createElement('label');date.className='rc-card-date';const dateText=document.createElement('span');dateText.textContent=shortDate(data.date)||'날짜';
     const dateInput=document.createElement('input');dateInput.type='date';dateInput.value=data.date||'';dateInput.disabled=disabled;dateInput.setAttribute('aria-label',(row.title||'자료')+' 날짜 수정');dateInput.onchange=()=>void stageCard(row.id,'date',dateInput.value);date.append(dateText,dateInput);
     const designer=document.createElement('select');designer.className='rc-card-designer';designer.disabled=disabled;designer.setAttribute('aria-label',(row.title||'자료')+' 담당자 수정');
     const names=[...new Set([...designerNames(),data.designer].filter(Boolean))];selectOptions(designer,[['','미지정'],...names.map(name=>[name,name])],data.designer||'');designer.onchange=()=>void stageCard(row.id,'designer',designer.value);meta.replaceChildren(date,designer);
     const usp=edit?.life.usp??String(lifecycle.get(row.id).usp||'');
-    if(usp){const text=document.createElement('p');text.className='rc-card-usp';text.textContent=usp;text.title=usp;stars.after(text);}
+    if(usp){const text=document.createElement('p');text.className='rc-card-usp';text.textContent=usp;text.title=usp;ratingLine.after(text);}
     card.classList.toggle('is-selected',listSelected.has(row.id));card.classList.toggle('is-modified',!!edit);
-    if(edit){const notice=document.createElement('p');notice.className='rc-card-edit-state';notice.textContent=edit.error||((edit.life.status?'상태: '+lifecycle.labels[edit.life.status]+' · ':'')+(edit.content.noteEntries?'카테고리 변경 · ':'')+'저장 전');if(edit.error)notice.classList.add('rc-error');card.append(notice);}
+    if(edit){const notice=document.createElement('p');notice.className='rc-card-edit-state';notice.textContent=edit.error||((edit.life.status?'상태: '+lifecycle.labels[edit.life.status]+' · ':'')+(edit.content.noteEntries?'카테고리 변경 · ':'')+(edit.content.category?'분류: '+categoryLabel(data)+' · ':'')+'저장 전');if(edit.error)notice.classList.add('rc-error');card.append(notice);}
   }
   async function saveListEdits(){
     if(listSaving||listStaging||!listEdits.size)return false;
@@ -808,7 +819,7 @@
     renderReferenceCategoryTabs();const category=selectedCategory(),search=$('#rcSearch').value.trim().toLocaleLowerCase(),noteCategory=$('#rcNoteCategoryFilter').value,dateFilter=$('#rcDateFilter').value,designerFilter=$('#rcDesignerFilter').value;
     const merged=new Map(records);for(const [id,draft]of draftRows)merged.set(id,{...draft.record,id,_draft:true,thumbnail:draft.record.thumbnail||draft.record.photos?.[0]?.thumb||draft.preview||''});
     const filterKey=JSON.stringify([category,search,noteCategory,dateFilter,designerFilter,lifeFilter,listUspFilter]);if(filterKey!==listFilterKey){listFilterKey=filterKey;listLimit=restoredLimit||20;restoredLimit=null;}
-    const available=[...merged.values()].filter(r=>!r.archivedAt&&r.category===category&&(lifeFilter==='all'||(lifecycle?.status(r.id)||'active')===lifeFilter));renderCollectionFilters(available);
+    const available=[...merged.values()].filter(r=>!r.archivedAt&&(listEdits.get(r.id)?.originCategory||r.category)===category&&(lifeFilter==='all'||(lifecycle?.status(r.id)||'active')===lifeFilter));renderCollectionFilters(available);
     const candidates=available.filter(r=>(!listUspFilter||String(lifecycle?.get(r.id).usp||'')===listUspFilter)&&(!search||[r.title,r.sourceUrl,lifecycle?.get(r.id).note,lifecycle?.get(r.id).resultUrl].filter(Boolean).join(' ').toLocaleLowerCase().includes(search))&&(!dateFilter||(dateFilter==='__undated__'?!referenceDateKey(r):referenceDateKey(r)===dateFilter))&&(!designerFilter||(designerFilter==='__unassigned__'?!r.designer:r.designer===designerFilter)));
     const unknown=noteCategory?candidates.filter(r=>!noteCategorySummary(r).noteCategoryCoverage):[];
     const list=candidates.filter(r=>!noteCategory||!noteCategorySummary(r).noteCategoryCoverage||noteCategorySummary(r).noteCategoryIds.includes(noteCategory)).sort((a,b)=>referenceDateKey(b).localeCompare(referenceDateKey(a))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))||b.id.localeCompare(a.id));
@@ -818,7 +829,7 @@
       gallerySignature=sig;const frag=document.createDocumentFragment(),add=$('#rcCreate');
       add.hidden=false;add.disabled=createFlight||!!authorizedStamp&&permissions.canCreate!==true;
       let group;const heading=value=>{const label=document.createElement('p');label.className='rc-date-group';label.textContent=value?shortDate(value):'날짜 없음';frag.append(label);};
-      if(list.length){group=referenceDateKey(list[0]);heading(group);}frag.append(add);
+      group=list.length?referenceDateKey(list[0]):today();$('#rcListDate').textContent=group?shortDate(group):'날짜 없음';frag.append(add);
       for(const [index,r]of shown.entries()){
         const dateGroup=referenceDateKey(r);if(dateGroup!==group){group=dateGroup;heading(group);}
         const button=document.createElement('button');button.type='button';button.className='rc-card';button.dataset.id=r.id;button.setAttribute('aria-label',(r.title||'제목 없음')+(r._draft?' 이어서 작성':' 상세 보기'));button.onclick=()=>open(r.id);
