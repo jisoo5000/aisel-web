@@ -38,7 +38,7 @@
  const samples=document.createElement('button');samples.type='button';samples.className='maintab';samples.dataset.main='samples';samples.textContent='샘플현황';
  const refs=main.querySelector('[data-main="references"]')||document.createElement('button');refs.type='button';refs.className='maintab';refs.dataset.main='references';refs.textContent='레퍼런스';
  const boards=main.querySelector('[data-main="meetingmaterials"]')||document.createElement('button');boards.type='button';boards.className='maintab';boards.dataset.main='meetingmaterials';boards.textContent='회의자료 준비';
- const sales=main.querySelector('[data-main="sales"]');sales.textContent='판매성과';
+ const sales=main.querySelector('[data-main="sales"]');sales.textContent='신상품 판매 성과';
  main.append(sales,products,samples,refs,boards,main.querySelector('[data-main="designmeeting"]'),orders);
  const operationsTab=document.createElement('button');operationsTab.type='button';operationsTab.className='maintab';operationsTab.dataset.main='operations';operationsTab.textContent='업무 연결';operationsTab.hidden=true;main.append(operationsTab);
  const staffTab=document.createElement('button');staffTab.type='button';staffTab.className='maintab';staffTab.dataset.main='staff';staffTab.textContent='직원·권한 관리';staffTab.hidden=true;main.append(staffTab);
@@ -233,7 +233,7 @@
  function select(view,{keepMaterials=false}={}){
   current=view;home.hidden=view!=='home';if(view==='home'){renderHome();$('aiselHomeStatus').textContent='';}
   document.getElementById('aiselStartupNotice')?.remove();
-  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({home:'로그인',sales:'판매성과',products:'출고현황',samples:'샘플현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료 준비',orders:'작업지시서',editor:'작업지시서',staff:'직원·권한 관리',permissionaudit:'권한 점검',operations:'업무 연결'})[view]||companyView(view)?.label||'작업지시서';
+  $('appBrandHeader').hidden=false;$('appPageTitle').textContent=({home:'로그인',sales:'신상품 판매 성과',products:'출고현황',samples:'샘플현황',references:'레퍼런스',designmeeting:'디자인회의',moodboards:'무드보드',meetingmaterials:'회의자료 준비',orders:'작업지시서',editor:'작업지시서',staff:'직원·권한 관리',permissionaudit:'권한 점검',operations:'업무 연결'})[view]||companyView(view)?.label||'작업지시서';
   for(const b of main.querySelectorAll('.maintab')){const on=b.dataset.main===(view==='editor'?'orders':view);b.classList.toggle('active',on);b.setAttribute('aria-pressed',String(on));}
   const active=main.querySelector('.maintab.active');if(active){const a=active.getBoundingClientRect(),n=main.getBoundingClientRect();if(a.left<n.left)main.scrollLeft+=a.left-n.left;else if(a.right>n.right)main.scrollLeft+=a.right-n.right;}
   if(!['products','samples'].includes(view))unmount();pane.hidden=!['products','samples'].includes(view);

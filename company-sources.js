@@ -15,18 +15,37 @@
  function table(ctx,headers,rows,label){const {el}=ctx,wrap=el('div','ce-table-scroll'),table=el('table','ce-table'),head=el('thead'),tr=el('tr'),body=el('tbody');wrap.tabIndex=0;wrap.setAttribute('role','region');wrap.setAttribute('aria-label',label);headers.forEach(h=>tr.append(el('th','',h)));head.append(tr);table.append(head);rows.forEach(row=>{const tr=el('tr');row.forEach(v=>tr.append(el('td','',v??'—')));body.append(tr);});table.append(body);wrap.append(table);return wrap;}
  function link(ctx,label,url){const safe=root.AiselCompanyDomain.safeUrl(url);if(!safe)return null;const a=ctx.el('a','ce-link',label);a.href=safe;a.target='_blank';a.rel='noopener noreferrer';return a;}
  function finance(ctx){
-  const {host,el,button}=ctx,header=el('div','ce-section-heading'),title=el('div');title.append(el('h2','','매출·광고·수익'),el('p','ce-muted','기존 수집 자료를 재사용합니다. 기간 변경과 합계 계산에 외부 API를 호출하지 않습니다.'));header.append(title);host.append(header);
-  const filters=el('div','ce-filters'),select=el('select');select.setAttribute('aria-label','매출·수익 조회 기간');[1,2,3].forEach(n=>{const o=el('option','',n+'개월 · 최근 '+(n*30)+'일');o.value=n;select.append(o);});select.value=months;filters.append(select,button('저장된 자료 다시 확인',()=>load(ctx,'finance',draw,true)));host.append(filters);const body=el('div');host.append(body);let data=cache.get(identity()+':finance')?.data;select.addEventListener('change',()=>{months=Number(select.value);draw(data);});draw(data);load(ctx,'finance',draw);
-  function draw(result){data=result;if(!body.isConnected)return;body.replaceChildren();const s=result?.snapshot;if(!s){body.append(el('p','ce-muted',result?.status?.status==='needs_attention'?'매출 원본 연결을 확인해야 합니다. 기존 값을 0으로 표시하지 않습니다.':'저장된 매출 자료를 확인하고 있습니다.'));return;}
-   if(result.status?.status==='needs_attention')body.append(el('p','ce-error','최근 원본 연결에 문제가 있어 마지막으로 확인한 자료입니다.'));
-   const today=new Date(Date.now()+32400000).toISOString().slice(0,10),start=new Date(Date.parse(today+'T00:00:00Z')-(months*30-1)*86400000).toISOString().slice(0,10),rows=(s.rows||[]).filter(r=>r.date>=start&&r.date<=today),rev=sum(rows,'orderRevenue'),spend=sum(rows,'adSpend'),profit=sum(rows,'estimatedProfit');
-   body.append(el('p','ce-muted',start+' ~ '+today+' · '+rows.length+'/'+(months*30)+'일 자료 · 오늘은 수집 시각까지 누적'),el('p','ce-muted','원본 표 확인 '+new Date(s.readAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})+(s.collectorAt?' · 최신 수집 '+new Date(s.collectorAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}):'')));
-   const stats=el('div','ce-stats');for(const [label,value]of [['주문 매출액',money(rev)+'원'],['광고비',money(spend)+'원'],['통합 ROAS',rev!==null&&spend>0?rate(rev/spend):'—'],['예상 순익 · 가정값',money(profit)+'원']]){const card=el('div','ce-stat');card.append(el('span','ce-muted',label),el('strong','',value));stats.append(card);}body.append(stats,el('p','ce-muted',s.revenueBasis),el('p','ce-muted',s.profitBasis),el('p','ce-muted','실제 결제·환불·원가·수수료·운임·고정비의 확정 원장이 연결되기 전 실제 순익은 미확인입니다.'));
-   if(rows.length<months*30)body.append(el('p','ce-muted','누락 날짜가 있습니다. 위 합계는 표시된 날짜의 소계입니다.'));
-   const groups=new Map();for(const r of rows){const key=r.date.slice(0,7);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(r);}body.append(el('h3','ce-table-heading','월별 소계 · 선택 기간에 포함된 날짜'));
-   body.append(table(ctx,['월','자료 일수','주문 매출액','광고비','통합 ROAS','예상 순익'],[...groups].map(([month,v])=>{const a=sum(v,'orderRevenue'),b=sum(v,'adSpend');return [month,v.length+'일',money(a),money(b),a!==null&&b>0?rate(a/b):'—',money(sum(v,'estimatedProfit'))];}),'매출 월별 소계'));
-   body.append(el('h3','ce-table-heading','일별 매출·광고비'),table(ctx,['날짜','주문 매출액','주문수','광고비','통합 ROAS','예상 순익','집계시각'],rows.map(r=>{const times=(r.sourceTimes||[]).filter(Number.isFinite);return [r.date+(r.partial?' · 당일 누적':''),money(r.orderRevenue),money(r.orders),money(r.adSpend),rate(r.roas),money(r.estimatedProfit),times.length===3?new Date(Math.min(...times)).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}):'미확인'];}),'매출 일별 표'));
-   const a=link(ctx,'매출·광고 원본 시트',s.sourceUrl);if(a)body.append(a);body.append(el('p','ce-muted',s.coverage));
+  const {host,el,button}=ctx,header=el('div','ce-section-heading'),title=el('div');
+  title.append(el('h2','','광고 성과'),el('p','ce-muted','저장된 매출·광고 자료를 한눈에 확인합니다.'));header.append(title);host.append(header);
+  let days=7,data=cache.get(identity()+':finance')?.data;
+  const filters=el('div','ce-filters sp-finance-filters'),select=el('select');select.setAttribute('aria-label','광고 성과 조회 기간');
+  [[1,'어제'],[7,'최근 7일'],[30,'최근 30일']].forEach(([v,label])=>{const o=el('option','',label);o.value=v;select.append(o);});select.value=days;
+  filters.append(select,button('저장 자료 확인',()=>load(ctx,'finance',draw,true)));host.append(filters);
+  const body=el('div','sp-finance');host.append(body);select.addEventListener('change',()=>{days=Number(select.value);draw(data);});draw(data);load(ctx,'finance',draw);
+  function card(label,value,note){const c=el('div','ce-stat sp-finance-stat');c.append(el('span','ce-muted',label),el('strong','',value));if(note)c.append(el('small','ce-muted',note));return c;}
+  function draw(result){
+   data=result;if(!body.isConnected)return;body.replaceChildren();
+   const s=result?.snapshot;if(!s){body.append(el('p','ce-muted','저장된 광고 자료를 확인하고 있습니다.'));return;}
+   if(result.status?.status==='needs_attention')body.append(el('p','ce-error','갱신 확인 필요 · 마지막으로 저장된 자료입니다.'));
+   const today=new Date(Date.now()+32400000).toISOString().slice(0,10),end=new Date(Date.parse(today+'T00:00:00Z')-86400000).toISOString().slice(0,10),start=new Date(Date.parse(end+'T00:00:00Z')-(days-1)*86400000).toISOString().slice(0,10);
+   const rows=(s.rows||[]).filter(r=>r.date>=start&&r.date<=end),complete=rows.length===days,spend=sum(rows,'adSpend'),rev=sum(rows,'orderRevenue'),orders=sum(rows,'orders');
+   body.append(el('p','ce-muted',start+' ~ '+end+' · '+rows.length+'/'+days+'일 자료'),el('p','ce-muted','마지막 갱신 '+new Date(s.collectorAt||s.readAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})));
+   if(!complete)body.append(el('p','ce-muted','누락 날짜가 있어 확인된 날짜의 소계만 표시합니다.'));
+   const stats=el('div','sp-finance-stats');
+   stats.append(card('총 광고비',money(spend)+'원'),card('자사몰 주문 매출',money(rev)+'원'),card('매출 / 광고비',rev!==null&&spend>0?(rev/spend).toFixed(2)+'배':'—','전체 주문 매출 기준'),card('자사몰 주문수',money(orders)+'건'));body.append(stats);
+   const accounts=el('div','sp-finance-accounts');
+   for(const [prefix,name]of [['aisel','에이슬'],['loveu','러브유']]){
+    const cost=sum(rows,prefix+'Spend'),valid=rows.length&&rows.every(r=>typeof r[prefix+'Spend']==='number'&&Number.isFinite(r[prefix+'Spend'])&&typeof r[prefix+'Roas']==='number'&&Number.isFinite(r[prefix+'Roas']));
+    const attributed=valid?rows.reduce((a,r)=>a+r[prefix+'Spend']*r[prefix+'Roas'],0):null;
+    const account=el('section','sp-finance-account');account.append(el('h3','',name));
+    const d=el('dl','sp-finance-definition');[['광고비',money(cost)+'원'],['ROAS',attributed!==null&&cost>0?(attributed/cost).toFixed(2)+'배':'미연결']].forEach(([a,b])=>d.append(el('dt','',a),el('dd','',b)));
+    account.append(d,el('p','ce-muted','계정 ROAS는 광고비로 가중 합산'));accounts.append(account);
+   }body.append(accounts);
+   const detail=el('details','sp-finance-detail');detail.append(el('summary','','날짜별 자세히 보기'));
+   const dates=el('div','sp-finance-dates');
+   for(const r of rows){const c=el('section','sp-finance-date');c.append(el('strong','',r.date));const dl=el('dl','sp-finance-definition');[['주문 매출',money(r.orderRevenue)+'원'],['광고비',money(r.adSpend)+'원'],['주문수',money(r.orders)+'건']].forEach(([a,b])=>dl.append(el('dt','',a),el('dd','',b)));c.append(dl);dates.append(c);}detail.append(dates);body.append(detail);
+   const basis=el('details','sp-finance-detail');basis.append(el('summary','','집계 기준'),el('p','ce-muted',s.revenueBasis||''),el('p','ce-muted','자사몰 전체 주문 매출과 광고 기여 매출은 집계 기준이 다릅니다.'));
+   const a=link(ctx,'원본 시트 보기',s.sourceUrl);if(a)basis.append(a);body.append(basis);
   }
  }
  function hr(ctx){
