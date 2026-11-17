@@ -328,7 +328,8 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cur
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label>span {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
  html:root body #aiselMeetingMaterialsView .amm-slide-editor textarea,
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label:last-child textarea {height:28px;min-height:28px;padding:4px;line-height:18px;}
- html:root body #aiselMeetingMaterialsView .amm-slide-editor textarea:focus {height:64px;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor textarea:focus,
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label:last-child textarea:focus {height:64px;}
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells textarea::placeholder {font-size:11px;}
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-planning-fields label {gap:4px;}
 }

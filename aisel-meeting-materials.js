@@ -483,7 +483,7 @@
    box.dataset.saving='true';fields.disabled=true;save.disabled=true;status.textContent='저장 중…';
    try{
     const grant=await root.AiselGalleryIndex.authorize('meetings');assertSession(stamp,uid);if(!['owner','designer'].includes(grant.role)||keys.some(k=>['decision','decisionReason'].includes(k))&&grant.role!=='owner')throw Error('수정 권한을 확인해주세요.');
-    for(const key of keys){const limit=key==='uspValue'?4000:20000;if(submitted[key].length>limit)throw Error('입력은 '+limit.toLocaleString()+'자 이내로 적어주세요.');if(PLANNING_CHOICES[key]&&submitted[key]&&!PLANNING_CHOICES[key].some(([v])=>v===submitted[key]))throw Error('선택값을 확인해주세요.');}
+    for(const key of keys){const limit=key==='uspValue'?4000:key==='uspKeywordsJson'?2048:20000;if(submitted[key].length>limit)throw Error('입력은 '+limit.toLocaleString()+'자 이내로 적어주세요.');if(PLANNING_CHOICES[key]&&submitted[key]&&!PLANNING_CHOICES[key].some(([v])=>v===submitted[key]))throw Error('선택값을 확인해주세요.');}
     if(keys.includes('decision')&&!Object.hasOwn(DECISIONS,submitted.decision))throw Error('회의 결정을 선택해주세요.');
     if(keys.includes('development')&&[...sampleRows.children].some(row=>!row.querySelector('[data-sample="name"]').value.trim()))throw Error('추가한 확인 항목의 이름을 적어주세요.');
     // Keep sheet links in the canonical memo even though their URL is not printed.
