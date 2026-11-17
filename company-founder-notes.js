@@ -74,7 +74,7 @@
    });
   }
   function detail(r){
-   const top=heading('사장학과의 개론');top.append(btn('목록으로',()=>{selected='';draw();}));wrap.append(top,el('h3','fn-detail-title',r.project.title));
+   const top=heading('사장학 개론');top.append(btn('목록으로',()=>{selected='';draw();}));wrap.append(top,el('h3','fn-detail-title',r.project.title));
    wrap.append(el('p','fn-subtle','순서 '+r.order+(r.checked?' · 다시 볼 원칙':'')+' · 작성 '+new Date(r.project.createdAt).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul'})));
    wrap.append(el('p','fn-reference',r.project.goal||'참고사항을 적어보세요.'));
    const actions=el('div','fn-actions'),edit=btn('원칙 수정',()=>editPrinciple(r)),memo=btn('메모 추가',()=>editMemo(r));edit.disabled=memo.disabled=!!r.project.archived;actions.append(edit,memo);
@@ -85,7 +85,7 @@
    for(const m of memos){const card=el('article','fn-memo'),h=el('div','fn-memo-head');const time=el('time','',m.date);time.dateTime=m.date;h.append(time);if(!r.project.archived)h.append(btn('수정',()=>editMemo(r,m)));card.append(h,el('p','fn-body',m.body));wrap.append(card);}
   }
   if(selected){const r=rows().find(r=>r.type==='principle'&&r.project.id===selected);if(r){detail(r);return;}selected='';}
-  const top=heading('사장학과의 개론'),add=btn('새 원칙',()=>editPrinciple());add.disabled=!ctx.ready();top.append(add);wrap.append(top);
+  const top=heading('사장학 개론'),add=btn('새 원칙',()=>editPrinciple());add.disabled=!ctx.ready();top.append(add);wrap.append(top);
   wrap.append(el('p','fn-subtle','원칙을 적고, 제목을 눌러 발전된 생각을 날짜별로 쌓아보세요.'));
   const toolbar=el('div','fn-toolbar'),search=el('input','fn-search');search.type='search';search.value=query;search.placeholder='제목·참고사항·메모 검색';search.setAttribute('aria-label','원칙 검색');
   const archive=el('select');archive.setAttribute('aria-label','원칙 보관 상태');for(const [value,label]of [['live','전체 원칙'],['archive','보관함']]){const o=el('option','',label);o.value=value;archive.append(o);}archive.value=showArchive?'archive':'live';
