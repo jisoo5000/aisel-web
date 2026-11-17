@@ -259,3 +259,27 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-groups button[aria-pr
 html:root body #aiselMeetingMaterialsView .amm-preparation-summary {margin:6px 0;font:400 12px/18px var(--aisel-font,sans-serif);color:#315B88;}
 html:root body #aiselMeetingMaterialsView .amm-preparation-analysis {border:1px solid #E3E5E7;border-radius:3px;padding:6px;min-width:0;overflow-wrap:anywhere;font:400 12px/18px var(--aisel-font,sans-serif);}
 html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cursor:pointer;color:#315B88;}
+
+/* Date/designer covers and continuous meeting reading; screen only. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck {max-width:1000px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-directory {grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:start;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-meeting-card {max-width:320px;margin:0;justify-self:start;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-meeting-card img {height:200px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-pages {gap:18px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-grid {grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;gap:12px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-photos {height:400px;max-height:400px;overflow:hidden;align-content:center;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-photos img {height:388px;max-height:388px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-right {align-content:start;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-editing {border:1px solid #E3E5E7;border-radius:3px;padding:6px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-editing summary {cursor:pointer;font-size:12px;color:#315B88;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-editing[open] summary {margin-bottom:6px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-reading-note .amm-value {line-height:1.7;}
+}
+@media screen and (max-width:767px){
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-directory {grid-template-columns:repeat(2,minmax(0,1fr));}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-meeting-card img {height:160px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-grid {grid-template-columns:minmax(0,1fr);}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-photos {height:320px;max-height:320px;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-photos img {height:308px;max-height:308px;}
+}

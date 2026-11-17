@@ -106,13 +106,13 @@
   const styleReady=new Promise((resolve,reject)=>{
    let css=document.getElementById('meetingMaterialsCss');
    if(css?.sheet){resolve();return;}
-   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=preparation-flow-20261113';}
+   if(!css){css=document.createElement('link');css.id='meetingMaterialsCss';css.rel='stylesheet';css.href='aisel-meeting-materials.css?v=meeting-cover-scroll-20261117';}
    css.addEventListener('load',()=>resolve(),{once:true});
    css.addEventListener('error',()=>{css.remove();reject(Error('회의자료 화면을 불러오지 못했습니다. 다시 열어주세요.'));},{once:true});
    if(!css.isConnected)document.head.append(css);
   });
   const moduleReady=window.AiselMeetingMaterials?Promise.resolve(window.AiselMeetingMaterials):new Promise((resolve,reject)=>{
-   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=preparation-flow-20261113';
+   const script=document.createElement('script');script.src='aisel-meeting-materials.js?v=meeting-cover-scroll-20261117';
    script.onload=()=>window.AiselMeetingMaterials?resolve(window.AiselMeetingMaterials):reject(Error('회의자료를 다시 열어주세요.'));
    script.onerror=()=>{script.remove();reject(Error('회의자료를 불러오지 못했습니다. 다시 열어주세요.'));};
    document.head.append(script);
@@ -308,13 +308,14 @@
   busy=true;let completed=false,openingEditor=false;
   try{
    // Returning to a list must also respect the detail pane's own save guard.
-   if(home&&current==='meetingmaterials'&&window.AiselMeetingMaterials?.canLeave()===false)return false;
+   if(home&&window.AiselMeetingMaterials?.visible&&window.AiselMeetingMaterials?.canLeave()===false)return false;
    if(!await navigationWait(guard(view,intent),intent)||intent!==navigationRevision)return false;
    if((['staff','permissionaudit'].includes(view)||['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-evaluation','company-apiUsage'].includes(view))&&(!window.AiselManagement||!await window.AiselManagement.require()))return false;
    if(intent!==navigationRevision||!allowedView(view))return false;info();if(view!=='editor')returnToProducts=false;
    if(view==='references'){if(await RC.show({history:writeHistory,background:true,preserveDetail:!!id,...(id?{id}:{})})===false)return false;select(view);completed=true;return true;}
    if(view==='designmeeting'){
-    if(typeof id==='string'&&id.startsWith('#design-meeting-presentation?')){
+    if(home||id===null||typeof id==='string'&&id.startsWith('#design-meeting-presentation?')){
+     id=home||id===null?'#design-meeting-presentation?list=1':id;
      const materials=await navigationWait(meetingMaterials(),intent);if(intent!==navigationRevision||!allowedView(view))return false;
      A.hide();select(view,{keepMaterials:true});$('designMeetingView').hidden=true;
      await materials.show({hash:id,present:true,background:true});document.body.dataset.aiselListView='designmeeting';
@@ -392,7 +393,7 @@
   if(!await guard('references'))return false;A.hide();select('references');$('appBrandHeader').hidden=false;$('appPageTitle').textContent='레퍼런스';document.body.dataset.aiselListView='references';return true;
  }});
  // Capture before the existing tab handlers so only one navigation runs.
- main.addEventListener('click',e=>{const b=e.target.closest('.maintab[data-main]');if(!b)return;landingOpen=false;e.preventDefault();e.stopImmediatePropagation();show(b.dataset.main);},true);
+ main.addEventListener('click',e=>{const b=e.target.closest('.maintab[data-main]');if(!b)return;landingOpen=false;e.preventDefault();e.stopImmediatePropagation();show(b.dataset.main,{home:b.dataset.main==='designmeeting'});},true);
  // The shared heading returns to the current menu's list through the same
  // permission checks, save guards and queued navigation as the sidebar.
  let titleNavigation=0;
