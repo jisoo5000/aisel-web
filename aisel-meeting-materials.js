@@ -18,7 +18,7 @@
  function select(rows,date,designer){return rows.filter(row=>row.date===date&&(!designer||row.designer===designer));}
  function route(date,designer){const u=new URL(root.location.href);u.hash=(presentationMode?'design-meeting-presentation?':'meeting-materials?')+new URLSearchParams({date,designer,...(presentationMode&&presentationIds.length?{ids:presentationIds.join(',')}:{})});return u.href;}
  function routeSelection(hash=root.location.hash){const match=hash.match(/^#meeting-materials(?:\?(.*))?$/);const p=new URLSearchParams(match?.[1]||'');return {date:validDate(p.get('date'))?p.get('date'):'',designer:p.get('designer')||'',list:p.get('list')==='1',sheet:p.get('sheet')==='1'};}
- root.AiselMeetingMaterialsCore=Object.freeze({samplePlan,sampleText,cleanMeetingMemo,selectionLinks,preparationPlan,preparationGroups,preparationSummary,preparationTarget,designerForDate,preparationRank,preparationRows,selectionHash,candidateId,entries,select,rank,routeSelection,groupRows,dateLabel,reviewSignature,reviewModel,materialFields,documentChunks,wrapLines,googleResource});
+ root.AiselMeetingMaterialsCore=Object.freeze({meetingPriority,samplePlan,sampleText,cleanMeetingMemo,selectionLinks,preparationPlan,preparationGroups,preparationSummary,preparationTarget,designerForDate,preparationRank,preparationRows,selectionHash,candidateId,entries,select,rank,routeSelection,groupRows,dateLabel,reviewSignature,reviewModel,materialFields,documentChunks,wrapLines,googleResource});
  let pane,visible=false,epoch=0,rows=[],loaded=[],stops=[],loading=false,planningRole='';
  let readyFlight=Promise.resolve(true);let directory=true,recordsMode=false,archived=false,detailCache=new Map(),exportFlight=null,presenting=false,presentIndex=0,presentFocus=null;
  // Match gallery-projection.reviewSignature exactly: this is the saved-review wire format.
@@ -441,6 +441,24 @@
   for(const prefix of [date+' '+row.designer+' 회의',short+' '+row.designer+' 회의'])if(result.startsWith(prefix))result=result.slice(prefix.length).replace(/^\s*[·:：-]?\s*/,'');
   return result.replace(/(?:전체\s*)?선정표\s*[:：]?\s*https:\/\/docs\.google\.com\/spreadsheets\/[^\s<>]+/g,'').trim();
  }
+
+ // Reuse saved meeting preparation labels; platform ranking is not meeting priority.
+ function meetingPriority(record={},reference=null,row={}){
+  const choices={confirmed:['대표 확정','대표가 확정한 디자인'],first:['1순위 · 우선','이번 회의에서 먼저 검토'],second:['2순위 · 비교','우선 후보와 비교할 소재·핏·기존 샘플'],third:['3순위 · 예비','우선 후보 검토 후 여력이 있을 때 검토'],unassigned:['미지정','저장된 우선순위가 없는 자료'],held:['보류','저장된 회의 결정'],excluded:['제외','저장된 회의 결정']};
+  const result=key=>({key,label:choices[key][0],description:choices[key][1]});
+  if(['held','excluded'].includes(record.decision))return result(record.decision);
+  const title=text(reference?.title)||text(record.title)||text(row.title);
+  if(/(?:^|[·\s])대표\s*확정(?:$|\s)/.test(title))return result('confirmed');
+  const notes=[cleanMeetingMemo(record.meetingMemo,{date:record.meetingDate||row.date||'',designer:record.designer||row.designer||''}),record.memo,...Object.values(record.referenceNotes||{}).map(n=>n?.text),...Object.values(reference?.referenceNotes||{}).map(n=>n?.text)].filter(Boolean);
+  for(const note of notes){
+   const match=text(note).match(/^(?:\d{1,2}\/\d{1,2}\s+)?(대표\s*확정|우선(?:\s*검토)?|(?:기존\s*샘플|소재|구조)\s*(?:비교|검토)|비교|추가(?:\s*후보)?|예비)(?=\s|[·.:：]|$)/);
+   if(match){const value=match[1];return result(/대표/.test(value)?'confirmed':/우선/.test(value)?'first':/예비/.test(value)?'third':'second');}
+  }
+  const preparation=reference?preparationPlan(reference):null;
+  if(preparation&&preparation.meetingDate===(record.meetingDate||row.date)&&preparation.designer===(record.designer||row.designer)&&typeof preparation.shortlist==='boolean')return result(preparation.shortlist?'first':'second');
+  return result('unassigned');
+ }
+
  function slideEditor(item,article){
   const box=el('section',undefined,'amm-planning-editor amm-slide-editor noprint'),fields=el('fieldset',undefined,'amm-planning-fields'),status=el('p','','amm-planning-status');
   box.setAttribute('aria-label','회의 내용 입력');status.setAttribute('role','status');box.dataset.dirty='false';box.dataset.saving='false';
@@ -516,6 +534,7 @@
   if(!item.photos.length)photos.append(el('p','등록된 사진이 없습니다.'));
   const sources=[...(reference?.sourceLinks||[]),reference?.sourceUrl,record.link,...(record.links||[])].map(http).filter(Boolean);
   const product=field('상품','', 'amm-title');product.querySelector('.amm-value').append(sources[0]?link(sources[0],row.title||'상품'):el('span',row.title||'상품'));
+  if(presentationMode){const priority=meetingPriority(record,reference,row),badge=el('span',priority.label,'amm-priority-badge');badge.dataset.priority=priority.key;badge.title=priority.description;badge.setAttribute('aria-label','우선순위: '+priority.label);product.querySelector('.amm-value').prepend(badge);}
   left.append(photos,product);
   const right=el('div',undefined,'amm-right');
   if(presentationMode){

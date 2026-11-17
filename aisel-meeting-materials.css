@@ -341,3 +341,10 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cur
  html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-directory .amm-meeting-meta strong {flex:0 0 auto;text-align:right;}
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-workorder-open {flex:0 0 auto;min-width:72px;height:28px;min-height:28px;margin:0;}
 }
+
+/* Saved meeting priority beside product names; no new requests or source writes. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge {display:inline-block;vertical-align:middle;margin:0 6px 2px 0;padding:1px 5px;border:1px solid #DCE0E5;border-radius:3px;background:#F5F6F8;color:#626B76;font:500 11px/18px var(--aisel-font,sans-serif);white-space:nowrap;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="first"] {background:#EAF1FA;border-color:#C4D6EB;color:#315B88;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="confirmed"] {background:#EDF4F1;border-color:#CFDFD7;color:#3D6653;}
+}
