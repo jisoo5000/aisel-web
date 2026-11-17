@@ -456,11 +456,11 @@
   const keywordValue=el('input');keywordValue.type='hidden';keywordValue.value=text(baseline.uspKeywordsJson);inputs.uspKeywordsJson=keywordValue;initial.uspKeywordsJson=keywordValue.value;
   let keywordBaseline=JSON.stringify(uspWords(baseline));
   const syncKeywords=()=>{const words=[...keywords.map(n=>n.value),...uspWords(baseline).slice(5)];while(words.length&&!words.at(-1))words.pop();keywordValue.value=JSON.stringify(words)===keywordBaseline?text(baseline.uspKeywordsJson):JSON.stringify(words);};
-  for(let i=0;i<5;i++){const node=el('input');node.type='text';node.value=uspWords(baseline)[i]||'';node.placeholder='키워드 '+(i+1);node.setAttribute('aria-label','USP 키워드 '+(i+1));node.dataset.uspKeyword=String(i);keywords.push(node);for(const event of ['input','change','compositionend'])node.addEventListener(event,syncKeywords);watch(node);keywordGrid.append(node);}
+  for(let i=0;i<5;i++){const node=el('input');node.type='text';node.value=uspWords(baseline)[i]||'';node.placeholder=String(i+1);node.setAttribute('aria-label','USP 키워드 '+(i+1));node.dataset.uspKeyword=String(i);keywords.push(node);for(const event of ['input','change','compositionend'])node.addEventListener(event,syncKeywords);watch(node);keywordGrid.append(node);}
   keywordField.append(el('span','USP · 이 제품의 차별점'),keywordGrid,keywordValue);fields.append(keywordField);
   const choices=el('div',undefined,'amm-market-buttons');
   function paintChoice(key){for(const b of choices.querySelectorAll('[data-choice-field="'+key+'"]'))b.setAttribute('aria-pressed',String(b.dataset.choiceValue===inputs[key].value));}
-  for(const [key,title]of [['marketDemand','수요'],['substituteSupply','대체상품 공급'],['engagementLevel','반응도']]){const group=el('div',undefined,'amm-market-row'),options=el('div',undefined,'amm-market-options'),node=el('input');node.type='hidden';node.value=text(baseline[key]);node.dataset.planningField=key;inputs[key]=node;initial[key]=node.value;options.setAttribute('role','group');options.setAttribute('aria-label',title);for(const [value,label]of PLANNING_CHOICES[key]){const option=button(label,()=>{node.value=node.value===value?'':value;paintChoice(key);mark();});option.dataset.choiceField=key;option.dataset.choiceValue=value;options.append(option);}group.append(el('span',title),options,node);choices.append(group);paintChoice(key);}fields.append(choices);
+  for(const [key,title]of [['marketDemand','수요'],['substituteSupply','대체상품 공급'],['engagementLevel','반응도']]){const group=el('div',undefined,'amm-market-row'),options=el('div',undefined,'amm-market-options'),node=el('input');node.type='hidden';node.value=text(baseline[key]);node.dataset.planningField=key;inputs[key]=node;initial[key]=node.value;options.setAttribute('role','group');options.setAttribute('aria-label',title);for(const [value,label]of PLANNING_CHOICES[key].filter(([value])=>value!=='unknown')){const option=button(label,()=>{node.value=node.value===value?'':value;paintChoice(key);mark();});option.dataset.choiceField=key;option.dataset.choiceValue=value;options.append(option);}group.append(el('span',title),options,node);choices.append(group);paintChoice(key);}fields.append(choices);
   const samples=el('section',undefined,'amm-samples');samples.append(el('h3','샘플 확인사항'));const sampleHead=el('div',undefined,'amm-sample-columns');for(const name of ['항목','바꿀 점','확인할 점','확인 결과'])sampleHead.append(el('span',name));samples.append(sampleHead);
   function addRow(value,index){
    const row=el('div',undefined,'amm-sample-row'),name=el('input');name.type='text';name.value=value.name;name.maxLength=40;name.dataset.sample='name';name.setAttribute('aria-label','확인 항목 '+(index+1));watch(name,true);
@@ -523,8 +523,9 @@
    if(urls.length){const links=el('div',undefined,'amm-selection-links');for(const [i,url]of urls.entries())links.append(link(url,'선정표'+(urls.length>1?' '+(i+1):'')));left.append(links);}
    if(!archived&&['owner','designer'].includes(planningRole))right.append(slideEditor(item,article));
    else{right.append(field('USP · 이 제품의 차별점',record.uspValue||usp(record)),field('샘플 확인사항',record.development),judgment(item),field('회의 메모',cleanMeetingMemo(record.meetingMemo,row)),field('회의 결정',[decisionLabel(record.decision),record.decisionReason].filter(Boolean).join('\n')));}
-   const actions=el('div',undefined,'amm-actions noprint');actions.append(button('작업지시서 · 상세 수정',async()=>{if(await root.AiselUnified.show('designmeeting',{id:record.id}))await root.AiselDesignMeeting.open(record.id);}));
-   grid.append(left,right);article.append(grid,actions);return article;
+   const workorder=button('작업지시서',async()=>{if(await root.AiselUnified.show('designmeeting',{id:record.id}))await root.AiselDesignMeeting.open(record.id);});workorder.className='amm-workorder-open';
+   const editorActions=right.querySelector('.amm-planning-actions');grid.append(left,right);article.append(grid);
+   if(editorActions)editorActions.insertBefore(workorder,editorActions.querySelector('.amm-planning-save'));else{const actions=el('div',undefined,'amm-actions noprint');actions.append(workorder);article.append(actions);}return article;
   }
   if(!archived&&['owner','designer'].includes(planningRole)){
    if(presentationMode){
@@ -649,7 +650,7 @@
     const card=button('',()=>openGroup(group));card.className='amm-meeting-card';const photoRow=group.items.find(row=>http(row.thumbnail));
     if(photoRow){const img=el('img');img.alt=group.designer+' '+dateLabel(group.date)+' 대표 사진';meetingImage(img,'meetings',photoRow.id,photoRow.thumbnail,position<2);card.append(img);}else card.append(el('span','사진 없음','amm-empty-photo'));
     const meta=el('div',undefined,'amm-meeting-meta');meta.append(el('time',dateLabel(group.date)),el('strong',group.designer||'담당자 미지정'));
-    card.append(meta,el('span','디자인회의 · '+group.items.length+'개 자료','amm-cover-title'),el('small','열어서 아래로 보기'));box.append(card);
+    card.append(meta);box.append(card);
    }
    $('.amm-count').textContent='';message(groups.length?'표지를 누르면 해당 회의 사진과 검토 내용이 아래로 이어집니다.':archived?'보관한 회의가 없습니다.':'등록된 회의가 없습니다.');return;
   }

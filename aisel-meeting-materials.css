@@ -333,3 +333,11 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cur
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells textarea::placeholder {font-size:11px;}
  html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-planning-fields label {gap:4px;}
 }
+
+/* 2026-11-18: minimal cover captions and aligned meeting actions. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-directory .amm-meeting-meta {display:flex;flex-direction:row;align-items:center;justify-content:space-between;width:100%;gap:6px;text-align:left;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-directory .amm-meeting-meta time {flex:1;white-space:nowrap;text-align:left;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-directory .amm-meeting-meta strong {flex:0 0 auto;text-align:right;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-workorder-open {flex:0 0 auto;min-width:72px;height:28px;min-height:28px;margin:0;}
+}
