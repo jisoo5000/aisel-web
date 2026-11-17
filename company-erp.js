@@ -44,7 +44,7 @@
   if(dirty)drafts.set(section,{nodes:[...content.childNodes],selectedId,notice:notice.textContent,error:notice.classList.contains('ce-error')});
   return true;
  }
- function hide(){if(drafts.has(section))dirty=false;panel.hidden=true;content.querySelector('.ce-usage-panel')?.remove();content.querySelectorAll('.ce-replenishment-frame, .ce-recruitment-frame, .ce-production-frame, .ce-usage-frame').forEach(frame=>frame.remove());}
+ function hide(){if(drafts.has(section))dirty=false;panel.hidden=true;content.querySelector('.ce-usage-panel')?.remove();content.querySelectorAll('.ce-replenishment-frame, .ce-recruitment-frame, .ce-production-frame, .ce-usage-frame, .gp-growth-note-frame').forEach(frame=>frame.remove());}
  function close(){return root.AiselUnified?.show('orders');}
  function open(next=owner()?'overview':'attendance'){return root.AiselUnified?.show('company-'+next);}
  function show(next){if(!canView(next)||['recruitmentReferences','apiUsage'].includes(next)&&!root.AiselManagement?.unlocked)return false;if(drafts.has(section))dirty=false;section=next;selectedId='';notice.textContent='';panel.hidden=false;panel.setAttribute('aria-label',tabs[next]);panel.dataset.section=next;const draft=drafts.get(next);if(draft){drafts.delete(next);content.replaceChildren(...draft.nodes);root.AiselCompanyPeople?.refreshLeaveForm?.(content);selectedId=draft.selectedId;dirty=true;message(draft.notice||'작성 중인 내용을 유지했습니다.',draft.error);return true;}render();if(next==='leave')loadPeopleStaff();else if(!['links','recruitmentReferences','myLeave','apiUsage'].includes(next)&&(next!=='replenishment'||replenishmentView==='tasks')&&(next!=='product'||productionView==='tasks'))load();return true;}
@@ -259,7 +259,7 @@
 /* Growth-profit workspace. Records use the existing owner-authorized project service. */
 (function(root){
  'use strict';
- const schema='aisel-growth-profit-v1',prefix='growth-',tabs={summary:'요약',product:'월간 바지',traffic:'유입·전환',customer:'객단가·재구매',experiment:'실행·검증'};
+ const schema='aisel-growth-profit-v1',prefix='growth-',tabs={summary:'요약',notes:'성장노트',product:'월간 바지',traffic:'유입·전환',customer:'객단가·재구매',experiment:'실행·검증'};
  const states=['미확인','검토 중','확인','보완 필요','해당 없음'],statuses=['대기','진행 중','확인 필요','완료','보류'];
  const checks=[['reason','구매 이유'],['fit','핏·사이즈'],['fabric','소재·세탁'],['styling','코디·옵션 재고'],['profit','원가·재고 부담'],['content','사진·상세·광고'],['stock','입고·출시 준비']];
  const periodFields=[['periodStart','시작일','date'],['periodEnd','종료일','date']];
@@ -325,6 +325,15 @@
   const jump=(label,key)=>button(label,()=>root.AiselUnified?.show('company-'+key),'ce-link');
   const selected=records().filter(r=>r.month===month&&!r.project.archived);
   function stats(items,target=body){const grid=el('div','gp-stats');for(const [label,value]of items){const c=el('div','gp-stat');c.append(el('span','ce-muted',label),el('strong','',value));grid.append(c);}target.append(grid);}
+  function growthNotes(){
+   bar.hidden=true;
+   const panel=el('section','gp-panel');
+   const source=el('a','ce-link','구글 문서 열기');source.href='https://docs.google.com/document/d/1t4wNV6CUiEOL7itUsps3Abo8TiR3x2VIJRIVfF_FBq4/edit';source.target='_blank';source.rel='noopener noreferrer';
+   const actions=el('div','ce-actions');actions.append(source);
+   panel.append(heading('성장노트'),note('주간 방향과 매일의 실행을 같은 구글 문서에서 읽고 기록합니다.'),actions);
+   const frame=el('iframe','gp-growth-note-frame');frame.title='에이슬 성장노트 · 주간·일일 구글 문서';frame.src='https://docs.google.com/document/d/1t4wNV6CUiEOL7itUsps3Abo8TiR3x2VIJRIVfF_FBq4/preview';frame.loading='lazy';frame.referrerPolicy='strict-origin-when-cross-origin';frame.style.cssText='display:block;width:100%;height:70vh;min-height:480px;border:1px solid #e3e5e7;margin-top:6px';
+   panel.append(frame,note('문서가 보이지 않으면 위의 구글 문서 열기를 눌러주세요.'));body.append(panel);
+  }
   function financePanel(){
    const panel=el('section','gp-panel'),p=period(),t=totals(finance?.snapshot,p);body.append(panel);
    panel.append(heading('매출과 수익'),note(p.end>=p.start&&!p.future?p.start+' ~ '+p.end+' · 완료된 날짜 기준':'이 달의 완료된 날짜가 아직 없습니다.'));
@@ -404,7 +413,9 @@
    }catch(e){if(requestAccount===identity()&&run===revision)ctx.message(e.message==='version_conflict'?'다른 곳에서 먼저 수정했습니다. 입력 내용을 보관한 뒤 취소하고 최신 기록을 다시 확인해주세요.':e.message||'저장 결과를 확인하지 못했습니다.',true);return false;}
    finally{if(requestAccount===identity()&&run===revision)ctx.setWriting(false);}
   }
-  if(tab==='summary'){
+  if(tab==='notes'){growthNotes();}
+  else if(tab==='summary'){
+   const reading=el('div','ce-actions');reading.append(button('성장노트 읽기',()=>{tab='notes';ctx.redraw();},'ce-link'));body.append(reading);
    financePanel();body.append(heading('이번 달 먼저 확인할 일'));
    const focus=selected.filter(r=>r.type!=='closing'&&!['완료','보류'].includes(r.status)).sort((a,b)=>(a.status==='확인 필요'?-1:0)-(b.status==='확인 필요'?-1:0)||(a.project.dueDate||'9999').localeCompare(b.project.dueDate||'9999'));
    if(!focus.length)body.append(note('월간 바지 계획이나 성장 과제를 추가하면 다음 행동이 여기에 표시됩니다.'));
