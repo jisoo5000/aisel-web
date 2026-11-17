@@ -18,7 +18,7 @@
  function select(rows,date,designer){return rows.filter(row=>row.date===date&&(!designer||row.designer===designer));}
  function route(date,designer){const u=new URL(root.location.href);u.hash=(presentationMode?'design-meeting-presentation?':'meeting-materials?')+new URLSearchParams({date,designer,...(presentationMode&&presentationIds.length?{ids:presentationIds.join(',')}:{})});return u.href;}
  function routeSelection(hash=root.location.hash){const match=hash.match(/^#meeting-materials(?:\?(.*))?$/);const p=new URLSearchParams(match?.[1]||'');return {date:validDate(p.get('date'))?p.get('date'):'',designer:p.get('designer')||'',list:p.get('list')==='1',sheet:p.get('sheet')==='1'};}
- root.AiselMeetingMaterialsCore=Object.freeze({preparationPlan,preparationGroups,preparationSummary,preparationTarget,designerForDate,preparationRank,preparationRows,selectionHash,candidateId,entries,select,rank,routeSelection,groupRows,dateLabel,reviewSignature,reviewModel,materialFields,documentChunks,wrapLines,googleResource});
+ root.AiselMeetingMaterialsCore=Object.freeze({samplePlan,sampleText,cleanMeetingMemo,selectionLinks,preparationPlan,preparationGroups,preparationSummary,preparationTarget,designerForDate,preparationRank,preparationRows,selectionHash,candidateId,entries,select,rank,routeSelection,groupRows,dateLabel,reviewSignature,reviewModel,materialFields,documentChunks,wrapLines,googleResource});
  let pane,visible=false,epoch=0,rows=[],loaded=[],stops=[],loading=false,planningRole='';
  let readyFlight=Promise.resolve(true);let directory=true,recordsMode=false,archived=false,detailCache=new Map(),exportFlight=null,presenting=false,presentIndex=0,presentFocus=null;
  // Match gallery-projection.reviewSignature exactly: this is the saved-review wire format.
@@ -404,7 +404,9 @@
   img.src=root.AiselGalleryIndex.imageSource?.(kind,id,source)||source;
  }
  function judgment(item){
-  const review=item.review||reviewModel(item.record),section=el('section',undefined,'amm-judgment');section.dataset.state=review.state;section.append(el('h3',review.label));
+  const review=item.review||reviewModel(item.record),section=el('section',undefined,'amm-judgment');section.dataset.state=review.state;
+  if(presentationMode){section.hidden=review.state!=='done';if(section.hidden)return section;section.append(el('h3','GPT 의견'));const wanted=[['살 이유 · USP','구매 이유'],['실패할 이유','실패할 이유'],['제품 디벨롭 제안','디자인 수정 제안'],['다음 검증','다음 확인사항']];let count=0;for(const [source,label]of wanted){const value=review.fields.find(([key])=>key===source)?.[1];if(value&&value!=='미확인'){section.append(field(label,value));count++;}}if(!count)for(const [label,value]of review.fields.slice(0,4))section.append(field(label,value));return section;}
+  section.append(el('h3',review.label));
   if(review.fields.length){
    if(review.brief&&text(review.brief.conclusion)){section.append(field('결론',text(review.brief.conclusion)));if(text(review.brief.check))section.append(field('확인할 점',text(review.brief.check)));}
    else for(const [label,value]of review.fields.slice(0,2))section.append(field(label,value));
@@ -412,9 +414,96 @@
    for(const [label,value]of review.fields)details.append(field(label,value));section.append(details);
   }else section.append(el('p',review.state==='unavailable'?'저장된 판단을 불러오지 못했습니다. 회의 열기로 다시 확인할 수 있습니다.':'현재 입력에 맞는 저장된 판단이 확인되면 표시합니다.','amm-hint'));return section;
  }
+ // Editable meeting slides use the existing development text field. The readable
+ // format survives legacy workorders/exports; only explicit sample edits serialize it.
+ const SAMPLE_LABELS=['핏','원단','컬러','기장'];
+ const SAMPLE_START='[샘플 확인사항 v1]';
+ function samplePlan(record){
+  const raw=text(record.development),blank=()=>SAMPLE_LABELS.map(name=>({name,change:'',check:'',result:''}));
+  if(raw.startsWith(SAMPLE_START+'\n')){
+   const parts=raw.slice(SAMPLE_START.length+1).split('\n[기존 수정 방향]\n'),lines=parts[0].split('\n'),items=[];let current,key,seen=false;
+   for(const line of lines){
+    if(line.startsWith('항목: ')){current={name:line.slice(4),change:'',check:'',result:''};items.push(current);key='';}
+    else if(current&&['변경:','확인:','결과:'].includes(line)){key={'변경:':'change','확인:':'check','결과:':'result'}[line];seen=false;}
+    else if(current&&key&&line.startsWith('  ')){current[key]+=(seen?'\n':'')+line.slice(2);seen=true;}
+    else if(line!=='')return {items:blank(),legacy:raw};
+   }
+   if(items.length&&items.length<=20)return {items,legacy:parts.slice(1).join('\n[기존 수정 방향]\n')};
+  }
+  const items=blank(),source=[raw,record.memo,record.meetingMemo].filter(Boolean).join('\n');
+  for(const item of items){const match=source.match(new RegExp('(?:^|\\n)\\s*'+item.name+'\\s*[:：]\\s*([^\\n]+)'));if(match)item.change=match[1].trim();}
+  return {items,legacy:raw};
+ }
+ function sampleText(plan){return SAMPLE_START+'\n'+plan.items.map(row=>'항목: '+row.name+'\n'+[['change','변경'],['check','확인'],['result','결과']].map(([key,label])=>label+':\n'+text(row[key]).split('\n').map(line=>'  '+line).join('\n')).join('\n')).join('\n')+(plan.legacy?'\n[기존 수정 방향]\n'+plan.legacy:'');}
+ function selectionLinks(value){return [...new Set((text(value).match(/https:\/\/docs\.google\.com\/spreadsheets\/[^\s<>]+/g)||[]).map(http).filter(Boolean))];}
+ function cleanMeetingMemo(value,row){
+  let result=text(value);const date=text(row.date).slice(5).replace('-','/'),short=date.replace(/^0/,'').replace('/0','/');
+  for(const prefix of [date+' '+row.designer+' 회의',short+' '+row.designer+' 회의'])if(result.startsWith(prefix))result=result.slice(prefix.length).replace(/^\s*[·:：-]?\s*/,'');
+  return result.replace(/(?:전체\s*)?선정표\s*[:：]?\s*https:\/\/docs\.google\.com\/spreadsheets\/[^\s<>]+/g,'').trim();
+ }
+ function slideEditor(item,article){
+  const box=el('section',undefined,'amm-planning-editor amm-slide-editor noprint'),fields=el('fieldset',undefined,'amm-planning-fields'),status=el('p','','amm-planning-status');
+  box.setAttribute('aria-label','회의 내용 입력');status.setAttribute('role','status');box.dataset.dirty='false';box.dataset.saving='false';
+  const stamp=epoch,uid=account()?.uid,owner=planningRole==='owner',inputs={},composing=new Set();let baseline={...item.record},plan=samplePlan(item.record),sampleChanged=false;
+  const initial={},sampleRows=el('div',undefined,'amm-sample-rows'),save=button('저장',()=>commit());save.className='amm-planning-save';save.disabled=true;
+  const wrap=(title,node)=>{const label=el('label');label.append(el('span',title),node);return label;};
+  const values=()=>({...Object.fromEntries(Object.entries(inputs).map(([key,node])=>[key,node.value])),development:sampleChanged?sampleText({items:[...sampleRows.children].map(row=>Object.fromEntries(['name','change','check','result'].map(key=>[key,row.querySelector('[data-sample="'+key+'"]').value]))),legacy:plan.legacy}):text(baseline.development)});
+  const changes=()=>{const v=values();return Object.keys(v).filter(key=>key==='development'?v[key]!==text(baseline[key]):v[key]!==initial[key]);};
+  function mark(){box.dataset.dirty=String(changes().length>0);save.disabled=box.dataset.dirty!=='true'||box.dataset.saving==='true';status.textContent=box.dataset.dirty==='true'?'미저장':'';}
+  function watch(node,sample=false){node.addEventListener('compositionstart',()=>composing.add(node));node.addEventListener('compositionend',()=>{composing.delete(node);if(sample)sampleChanged=true;mark();});for(const event of ['input','change'])node.addEventListener(event,()=>{if(sample)sampleChanged=true;mark();});}
+  function area(key,title,value,hint=''){const node=el('textarea');node.value=value;node.placeholder=hint;node.rows=2;node.setAttribute('aria-label',title);node.dataset.planningField=key;inputs[key]=node;initial[key]=value;watch(node);return wrap(title,node);}
+  fields.append(area('uspValue','USP · 이 제품의 차별점',text(baseline.uspValue)||uspWords(baseline).filter(Boolean).join(' · '),'예: 출근할 때 단정하고, 오래 앉아 있어도 허리가 편한 팬츠'));
+  const samples=el('section',undefined,'amm-samples');samples.append(el('h3','샘플 확인사항'));
+  function addRow(value,index){
+   const row=el('div',undefined,'amm-sample-row'),name=el('input');name.type='text';name.value=value.name;name.maxLength=40;name.dataset.sample='name';name.setAttribute('aria-label','확인 항목 '+(index+1));watch(name,true);
+   const heading=el('div',undefined,'amm-sample-heading');heading.append(name);
+   if(index>=4){const remove=button('삭제',()=>{row.remove();sampleChanged=true;mark();});remove.setAttribute('aria-label',value.name+' 항목 삭제');heading.append(remove);}row.append(heading);
+   const cells=el('div',undefined,'amm-sample-cells');for(const [key,title,hint]of [['change','바꿀 점','예: 테리 플리스'],['check','확인할 점','예: 두께·늘어남·착용감'],['result','확인 결과','샘플을 본 뒤 입력']]){const node=el('textarea');node.value=text(value[key]);node.rows=2;node.dataset.sample=key;node.setAttribute('aria-label',value.name+' '+title);node.placeholder=key==='change'&&value.name!=='원단'?'원하는 방향':hint;watch(node,true);cells.append(wrap(title,node));}row.append(cells);sampleRows.append(row);
+  }
+  plan.items.forEach(addRow);const add=button('＋ 항목 추가',()=>{if(sampleRows.children.length>=20){status.textContent='확인 항목은 20개까지 추가할 수 있습니다.';return;}addRow({name:'추가 항목',change:'',check:'',result:''},sampleRows.children.length);sampleChanged=true;mark();sampleRows.lastElementChild.querySelector('input').focus();});add.className='amm-sample-add';
+  samples.append(sampleRows,add,el('p','추가 예: 착용감 · 세탁/관리 · 디테일 · 코디/용도','amm-hint'));fields.append(samples);
+  const legacy=[plan.legacy,text(baseline.hypothesis),text(baseline.validationMethod),text(baseline.successCriteria),text(baseline.validationResult),text(baseline.memo)].filter(Boolean).join('\n');
+  if(legacy){const details=el('details',undefined,'amm-existing-notes');details.append(el('summary','기존 기획 메모'),field('기록',legacy));fields.append(details);}
+  fields.append(judgment(item));
+  const memoValue=cleanMeetingMemo(baseline.meetingMemo,item.row);fields.append(area('meetingMemo','회의 메모',memoValue,'회의에서 나온 내용을 적어주세요.'));
+  const refs=Object.values(baseline.referenceNotes||{}).map(note=>cleanMeetingMemo(note?.text,item.row)).filter(Boolean);if(refs.length){const notes=el('details',undefined,'amm-existing-notes');notes.append(el('summary','참고 메모'),field('참고',refs.join('\n')));fields.append(notes);}
+  if(owner){const select=el('select');for(const [value,label]of Object.entries(DECISIONS)){const option=el('option',label);option.value=value;select.append(option);}select.value=text(baseline.decision)||'unselected';select.dataset.planningField='decision';select.setAttribute('aria-label','회의 결정');inputs.decision=select;initial.decision=select.value;watch(select);fields.append(wrap('회의 결정',select),area('decisionReason','결정 이유',text(baseline.decisionReason),'필요할 때 한 줄로'));
+  }else fields.append(field('회의 결정',[decisionLabel(baseline.decision),baseline.decisionReason].filter(Boolean).join('\n')));
+  const market=el('details',undefined,'amm-existing-notes');market.append(el('summary','수요 · 공급 · 반응도'));const choices=el('div',undefined,'amm-planning-choices');
+  for(const [key,title]of [['marketDemand','수요'],['substituteSupply','대체상품 공급'],['engagementLevel','반응도']]){const node=el('select');for(const [value,label]of [['','선택'],...PLANNING_CHOICES[key]]){const option=el('option',label);option.value=value;node.append(option);}if(baseline[key]&&!PLANNING_CHOICES[key].some(([v])=>v===baseline[key])){const option=el('option',baseline[key]);option.value=baseline[key];node.append(option);}node.value=text(baseline[key]);node.dataset.planningField=key;node.setAttribute('aria-label',title);inputs[key]=node;initial[key]=node.value;watch(node);choices.append(wrap(title,node));}market.append(choices);fields.append(market);
+  const actions=el('div',undefined,'amm-planning-actions');actions.append(status,save);box.append(fields,actions);
+  async function commit(){
+   if(box.dataset.saving==='true')return;if(composing.size){status.textContent='글자 입력을 마친 뒤 저장해주세요.';return;}const keys=changes(),submitted=values();if(!keys.length)return;
+   box.dataset.saving='true';fields.disabled=true;save.disabled=true;status.textContent='저장 중…';
+   try{
+    const grant=await root.AiselGalleryIndex.authorize('meetings');assertSession(stamp,uid);if(!['owner','designer'].includes(grant.role)||keys.some(k=>['decision','decisionReason'].includes(k))&&grant.role!=='owner')throw Error('수정 권한을 확인해주세요.');
+    for(const key of keys){const limit=key==='uspValue'?4000:20000;if(submitted[key].length>limit)throw Error('입력은 '+limit.toLocaleString()+'자 이내로 적어주세요.');if(PLANNING_CHOICES[key]&&submitted[key]&&!PLANNING_CHOICES[key].some(([v])=>v===submitted[key]))throw Error('선택값을 확인해주세요.');}
+    if(keys.includes('decision')&&!Object.hasOwn(DECISIONS,submitted.decision))throw Error('회의 결정을 선택해주세요.');
+    if(keys.includes('development')&&[...sampleRows.children].some(row=>!row.querySelector('[data-sample="name"]').value.trim()))throw Error('추가한 확인 항목의 이름을 적어주세요.');
+    // Keep sheet links in the canonical memo even though their URL is not printed.
+    if(keys.includes('meetingMemo'))for(const url of selectionLinks(baseline.meetingMemo))if(!submitted.meetingMemo.includes(url))submitted.meetingMemo+='\n선정표: '+url;
+    const result=await root.AiselCollectionWrites.mutateMeeting(item.record.id,current=>{
+     assertSession(stamp,uid);if(!current||current.designMeeting!==true||current.designMeetingDeletedAt||current.meetingDate!==item.row.date||current.designer!==item.row.designer||current.conversion?.state==='running')throw Error('회의 상태가 변경되었습니다. 입력은 남겨두었습니다.');
+     for(const key of keys)if(text(current[key])!==text(baseline[key])&&text(current[key])!==submitted[key])throw Error('같은 항목을 다른 곳에서 수정했습니다. 입력은 남겨두었습니다.');
+     const patch=Object.fromEntries(keys.filter(k=>text(current[k])!==submitted[k]).map(k=>[k,submitted[k]]));if(!Object.keys(patch).length)return current;
+     const planning=Object.keys(patch).some(k=>!['decision','decisionReason','meetingMemo'].includes(k));
+     return {...current,...patch,...(planning?{inputVersion:(Number(current.inputVersion)||1)+1,reviewState:current.reviewRequestedVersion?'stale':'idle'}:{}),updatedAt:Date.now()};
+    });assertSession(stamp,uid);if(!result.committed)throw Error('저장을 확인하지 못했습니다. 입력은 그대로 남아 있습니다.');
+    const saved=result.snapshot.val();if(keys.some(k=>text(saved[k])!==submitted[k]))throw Error('저장된 내용과 입력이 다릅니다. 입력은 남겨두었습니다.');
+    const oldVersion=item.record.inputVersion;item.record=saved;baseline={...saved};plan=samplePlan(saved);sampleChanged=false;sampleRows.replaceChildren();plan.items.forEach(addRow);
+    for(const [key,node]of Object.entries(inputs)){node.value=key==='meetingMemo'?cleanMeetingMemo(saved[key],item.row):key==='uspValue'?text(saved[key])||uspWords(saved).join(' · '):key==='decision'?text(saved[key])||'unselected':text(saved[key]);initial[key]=node.value;}
+    if(saved.inputVersion!==oldVersion){item.review=reviewModel(saved);article.querySelector('.amm-judgment')?.replaceWith(judgment(item));}
+    detailCache.delete(saved.id);item.row={...item.row,version:saved.inputVersion,updatedAt:saved.updatedAt,decision:saved.decision};root.AiselGalleryIndex.remember('meetings',item.row);
+    box.dataset.dirty='false';status.textContent='저장 완료';
+   }catch(error){if(stamp===epoch&&account()?.uid===uid)status.textContent=error.message||'저장하지 못했습니다. 입력은 그대로 남아 있습니다.';}
+   finally{box.dataset.saving='false';fields.disabled=false;save.disabled=box.dataset.dirty!=='true';}
+  }
+  return box;
+ }
+
  function page(item,index,total){
   const {record,reference,row}=item,article=el('article',undefined,'amm-page'),head=el('header',undefined,'amm-page-head');
-  const meta=el('div',undefined,'amm-meeting-meta');meta.append(el('time',dateLabel(row.date)),el('strong',row.designer||'담당자 미지정'));head.append(meta,el('span',String(index+1).padStart(2,'0')+' / '+total));article.append(head);
+  const meta=el('div',undefined,'amm-meeting-meta');meta.append(el('time',dateLabel(row.date)));if(!presentationMode)meta.append(el('strong',row.designer||'담당자 미지정'));head.append(meta,el('span',String(index+1).padStart(2,'0')+' / '+total));article.append(head);
   const grid=el('div',undefined,'amm-grid'),left=el('div',undefined,'amm-left'),photos=el('div',undefined,'amm-photos');
   for(const [i,p] of item.photos.slice(0,1).entries()){const img=el('img');img.alt=(row.title||'회의 레퍼런스')+' 사진 '+(i+1);img.dataset.original=p.original;meetingImage(img,row.reference?'references':'meetings',row.reference?row.refId:row.id,p.thumb,index<3);photos.append(img);}
   if(!item.photos.length)photos.append(el('p','등록된 사진이 없습니다.'));
@@ -422,6 +511,14 @@
   const product=field('상품','', 'amm-title');product.querySelector('.amm-value').append(sources[0]?link(sources[0],row.title||'상품'):el('span',row.title||'상품'));
   left.append(photos,product);
   const right=el('div',undefined,'amm-right');
+  if(presentationMode){
+   const urls=selectionLinks([record.meetingMemo,record.memo,...Object.values(record.referenceNotes||{}).map(n=>n?.text)].filter(Boolean).join('\n'));
+   if(urls.length){const links=el('div',undefined,'amm-selection-links');for(const [i,url]of urls.entries())links.append(link(url,'선정표'+(urls.length>1?' '+(i+1):'')));left.append(links);}
+   if(!archived&&['owner','designer'].includes(planningRole))right.append(slideEditor(item,article));
+   else{right.append(field('USP · 이 제품의 차별점',record.uspValue||usp(record)),field('샘플 확인사항',record.development),judgment(item),field('회의 메모',cleanMeetingMemo(record.meetingMemo,row)),field('회의 결정',[decisionLabel(record.decision),record.decisionReason].filter(Boolean).join('\n')));}
+   const actions=el('div',undefined,'amm-actions noprint');actions.append(button('작업지시서 · 상세 수정',async()=>{if(await root.AiselUnified.show('designmeeting',{id:record.id}))await root.AiselDesignMeeting.open(record.id);}));
+   grid.append(left,right);article.append(grid,actions);return article;
+  }
   if(!archived&&['owner','designer'].includes(planningRole)){
    if(presentationMode){
     right.append(field('검토 포인트',[record.development,record.memo,usp(record)].filter(Boolean).join('\n'),'amm-reading-note'));
@@ -497,7 +594,7 @@
    for(let n=0;n<results.length;n++)previews[n].querySelector('.amm-judgment').replaceWith(judgment(results[n]));
    $('.amm-count').textContent=date+' · '+(designer||'전체 디자이너')+' · '+loaded.length+'개';
    const mismatches=loaded.filter(x=>x.reference&&x.record.meetingDate&&x.reference.date!==x.record.meetingDate).length;
-   message(!loaded.length?'해당 날짜의 디자인회의가 없습니다.':mismatches?'디자인회의에 지정된 회의일 기준입니다. 원본 레퍼런스 날짜와 다른 '+mismatches+'개는 원본 기록을 함께 확인해주세요.':'전체 '+selectionTotal+'개');
+   message(!loaded.length?'해당 날짜의 디자인회의가 없습니다.':presentationMode?'':mismatches?'디자인회의에 지정된 회의일 기준입니다. 원본 레퍼런스 날짜와 다른 '+mismatches+'개는 원본 기록을 함께 확인해주세요.':'전체 '+selectionTotal+'개');
    history.replaceState({aiselUnified:true,view:presentationMode?'designmeeting':'meetingmaterials',id:presentationMode?new URL(route(date,designer)).hash:undefined},'',route(date,designer));
   }catch(error){if(stamp===epoch){epoch++;loaded=[];$('.amm-pages').replaceChildren();if($('.amm-more'))$('.amm-more').hidden=true;message(error.message||'회의자료를 불러오지 못했습니다.',true);busy(false);}}
   finally{if(stamp===epoch)busy(false);}
@@ -661,6 +758,7 @@
  root.addEventListener('aisel-access-change',()=>{if(root.AiselAccess?.allowed('designmeeting')!==true)hide({discard:true});});
  root.AiselMeetingMaterials={show,hide,canLeave,openSelection,exportPptx,ready:()=>readyFlight,get visible(){return visible;}};
 })(window);
+
 
 
 
