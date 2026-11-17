@@ -344,7 +344,7 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cur
 
 /* Saved meeting priority beside product names; no new requests or source writes. */
 @media screen {
- html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge {display:inline-block;vertical-align:middle;margin:0 6px 2px 0;padding:1px 5px;border:1px solid #DCE0E5;border-radius:3px;background:#F5F6F8;color:#626B76;font:500 11px/18px var(--aisel-font,sans-serif);white-space:nowrap;}
- html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="first"] {background:#EAF1FA;border-color:#C4D6EB;color:#315B88;}
- html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="confirmed"] {background:#EDF4F1;border-color:#CFDFD7;color:#3D6653;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge {display:inline-block;vertical-align:middle;margin:0 6px 2px 0;padding:1px 5px;border:1px solid #DCE0E5;border-radius:3px;background:#F3F4F6;color:#596477;font:500 11px/18px var(--aisel-font,sans-serif);white-space:nowrap;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="first"] {background:#E8ECF2;border-color:#B9C3D1;color:#2F3B52;}
+ html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="confirmed"] {background:#2F3B52;border-color:#2F3B52;color:#FFFFFF;}
 }
