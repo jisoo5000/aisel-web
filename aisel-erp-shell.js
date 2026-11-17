@@ -55,13 +55,14 @@
   let menuRole, groupScope;
   function arrange(){
     const session=window.AiselAccess?.session,role=session?.role||'pending';
-    subtitle.textContent=session?.displayName?[session.displayName,({designer:'디자이너',logistics:'물류',md:'MD',owner:'대표'})[role]].filter(Boolean).join(' · '):'업무 관리';
+    subtitle.textContent=session?.displayName?[session.displayName,({designer:'디자이너',logistics:'물류',cs:'CS',md:'MD',owner:'대표'})[role]].filter(Boolean).join(' · '):'업무 관리';
     const scope=(session?.uid||'')+':'+role;
     if(scope!==groupScope){expandedGroups.clear();groupScope=scope;menuRole=null;}
     if(role===menuRole)return;menuRole=role;
     for(const {caption}of labels)caption.remove();labels.length=0;
     for(const button of main.querySelectorAll('.maintab'))delete button.dataset.erpGroupCollapsed;
     const groups=role==='designer'?[['내 작업',['references','designmeeting','orders']],['판매',['sales']]]
+      :role==='cs'?[['고객지원',['products','samples']]]
       :role==='logistics'?[['물류',['products','samples']],['기타',['references','meetingmaterials','designmeeting','orders','sales']]]
       :role==='md'?[['판매',['sales']],['상품',['references','meetingmaterials','designmeeting','orders']],['물류',['products','samples']]]
       :[['상품·제작',['references','meetingmaterials','designmeeting','orders']],['판매',['sales']],['물류',['products','samples']]];

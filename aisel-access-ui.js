@@ -7,8 +7,8 @@
  const button=(text,action)=>{const node=el('button',text,{type:'button'});node.addEventListener('click',action);return node;};
  const id=()=>crypto.randomUUID();
  let staff=[],manager=null,detailCode='',metaEpoch=0,staffEpoch=0;
- const roleLabels={owner:'대표',designer:'디자이너',md:'MD',logistics:'물류'};
- const startLabels={owner:'작업지시서',designer:'작업지시서',md:'판매성과',logistics:'출고현황'};
+ const roleLabels={owner:'대표',designer:'디자이너',md:'MD',logistics:'물류',cs:'CS'};
+ const startLabels={owner:'작업지시서',designer:'작업지시서',md:'출고현황',logistics:'출고현황',cs:'출고현황'};
  function modal(title){const dialog=el('dialog',null,{class:'aisel-access-dialog noprint'}),heading=el('div',null,{class:'access-heading'}),body=el('div',null,{class:'access-content'}),status=el('p','',{role:'status','aria-live':'polite'});heading.append(el('h2',title),button('닫기',()=>dialog.close()));dialog.append(heading,body,status);document.body.append(dialog);dialog.addEventListener('close',()=>dialog.remove());dialog.showModal();return {dialog,body,status};}
  const permitted=()=>access.isOwner&&window.AiselManagement?.unlocked===true;
  async function refreshStaff(){window.dispatchEvent(new CustomEvent('aisel-staff-changed'));await loadStaff();}
@@ -20,20 +20,15 @@
   if(!permitted())return false;
   const view=modal('직원 추가'),form=el('form');view.body.append(form);
   const name=field(form,'이름'),login=field(form,'아이디'),roleWrap=el('label',null,{class:'access-field'}),role=el('select',null,{'aria-label':'업무 권한'});
-  name.value=prefill.displayName||'';name.required=true;name.maxLength=80;login.autocomplete='off';login.pattern='[a-z][a-z0-9_]{3,31}';
-  for(const [value,label]of [['designer','디자이너'],['md','MD'],['logistics','물류']])role.append(new Option(label,value));
+  name.value=prefill.displayName||'';name.required=true;name.maxLength=80;login.required=true;login.autocomplete='off';login.pattern='[a-z][a-z0-9_]{3,31}';
+  for(const [value,label]of [['designer','디자이너'],['md','MD'],['logistics','물류'],['cs','CS']])role.append(new Option(label,value));
   roleWrap.append(el('span','업무 권한'),role);form.append(roleWrap);
-  const email=field(form,'로그인 이메일','email'),password=field(form,'초기 비밀번호','password');password.minLength=12;password.maxLength=128;password.autocomplete='new-password';
-  const hint=el('p','',{class:'access-hint'}),submit=el('button','직원 추가',{type:'submit'});form.append(hint,submit);
-  const update=()=>{const designer=role.value==='designer';login.closest('label').hidden=!designer;login.required=designer;email.closest('label').hidden=designer;password.closest('label').hidden=designer;email.required=password.required=!designer;hint.textContent=designer?'아이디 등록 후 비밀번호를 설정합니다.':'이메일과 초기 비밀번호로 로그인합니다. 회사 재무·관리 권한은 부여되지 않습니다.';};role.addEventListener('change',update);update();
-  let requestId='';form.addEventListener('input',()=>requestId='');
-  view.dialog.addEventListener('close',()=>password.value='',{once:true});
+  form.append(el('p','아이디 등록 후 비밀번호를 설정합니다.',{class:'access-hint'}),el('button','직원 추가',{type:'submit'}));
   form.addEventListener('submit',event=>{event.preventDefault();if(!form.reportValidity())return;run(view,async()=>{
-   const designer=role.value==='designer';requestId=requestId||id();
-   const result=await access.request(designer?'provisionStaffLogin':'createStaff',designer?{displayName:name.value.trim(),loginId:login.value.trim()}:{displayName:name.value.trim(),email:email.value.trim(),role:role.value,password:password.value,requestId});
-   password.value='';if(!view.dialog.open||!permitted())return;
-   form.replaceChildren();view.status.textContent=designer?'아이디를 등록했습니다. 비밀번호를 설정해주세요.':'직원을 등록했습니다.';
-   if(designer)form.append(button('비밀번호 설정',()=>issuePassword({uid:result.uid,displayName:name.value.trim(),loginId:result.loginId,active:true})));
+   const result=await access.request('provisionStaffLogin',{displayName:name.value.trim(),loginId:login.value.trim(),role:role.value});
+   if(!view.dialog.open||!permitted())return;
+   form.replaceChildren();view.status.textContent='아이디를 등록했습니다. 비밀번호를 설정해주세요.';
+   form.append(button('비밀번호 설정',()=>issuePassword({uid:result.uid,displayName:name.value.trim(),loginId:result.loginId,active:true})));
    await refreshStaff();
   });});return true;
  }
@@ -215,7 +210,7 @@
  const pane=el('section',undefined,'permission-audit noprint');pane.id='aiselPermissionAudit';pane.hidden=true;pane.setAttribute('aria-label','권한 점검');
  const toolbar=el('div',undefined,'permission-audit-toolbar'),refresh=el('button','다시 확인'),status=el('p',''),body=el('div');
  refresh.type='button';status.setAttribute('role','status');status.setAttribute('aria-live','polite');const toolbarActions=el('div',undefined,'permission-audit-actions'),add=el('button','+ 직원 추가');add.type='button';add.addEventListener('click',()=>root.AiselStaffDirectory?.create());toolbarActions.append(add,refresh);toolbar.append(el('h2','직원별 접근 범위'),toolbarActions);pane.append(toolbar,status,body);document.body.append(pane);
- const roles={owner:'대표',designer:'디자이너',md:'MD',logistics:'물류'};
+ const roles={owner:'대표',designer:'디자이너',md:'MD',logistics:'물류',cs:'CS'};
  const columns=[['이름·아이디',null],['계정 상태',null],['레퍼런스','references'],['디자인회의','designmeeting'],['판매성과','sales'],['작업지시서','orders'],['판매표·매출·광고·수익','finance'],['관리','actions']];
  let epoch=0,identity='';
  const key=()=>[access.session?.uid,access.session?.role,access.session?.credentialVersion,root.AiselAuth?.generation].join(':');
