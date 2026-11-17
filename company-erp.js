@@ -4,7 +4,7 @@
  const D=root.AiselCompanyDomain,nav=document.getElementById('aiselErpNavigation');
  if(!D||!nav||document.getElementById('aiselCompanyWorkspace'))return;
  const access=()=>root.AiselAccess,session=()=>access()?.session;
- const allowed=()=>session()?.active===true&&['owner','designer','md','logistics'].includes(session()?.role)&&!!session()?.uid&&!session()?.legacy&&!session()?.passwordChangeRequired;
+ const allowed=()=>session()?.active===true&&['owner','designer','md','logistics','cs'].includes(session()?.role)&&!!session()?.uid&&!session()?.legacy&&!session()?.passwordChangeRequired;
  const owner=()=>session()?.role==='owner';
  const endpoint='https://asia-southeast1-aisel-workorder.cloudfunctions.net/companyErpV1';
  const el=(tag,cls,txt)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;};

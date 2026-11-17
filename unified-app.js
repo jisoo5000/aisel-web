@@ -82,8 +82,8 @@
    if(document.hidden){galleryWarmKey='';return;}
    if(window.AiselGalleryIndex?.enabled){window.AiselGalleryIndex.start().catch(()=>{});return;}
    const calls=[];
-   if(knownRole!=='logistics'&&RC.preloadGallery)calls.push(Promise.resolve().then(()=>RC.preloadGallery()));
-   if(!['md','logistics'].includes(knownRole)&&DM.preloadGallery)calls.push(Promise.resolve().then(()=>DM.preloadGallery()));
+   if(!['logistics','cs'].includes(knownRole)&&RC.preloadGallery)calls.push(Promise.resolve().then(()=>RC.preloadGallery()));
+   if(!['md','logistics','cs'].includes(knownRole)&&DM.preloadGallery)calls.push(Promise.resolve().then(()=>DM.preloadGallery()));
    Promise.allSettled(calls).catch(()=>{});
   };
   // Small authenticated indexes can start alongside the work-order index.
@@ -127,7 +127,7 @@
  function applyRole(){
   const awaitingAccess=!window.AiselAccess?.session;
   for(const button of main.querySelectorAll('[data-main]')){
-   const preferred=role()==='designer'?['references','designmeeting','sales','orders']:role()==='logistics'?['products','samples','operations']:null;
+   const preferred=role()==='designer'?['references','designmeeting','sales','orders']:role()==='logistics'?['products','samples','operations']:role()==='cs'?['products','samples']:null;
    button.hidden=button.dataset.main.startsWith('company-')?!allowedView(button.dataset.main):['staff','permissionaudit','operations'].includes(button.dataset.main)?!allowedView(button.dataset.main):!awaitingAccess&&(!allowedView(button.dataset.main)||preferred&&!preferred.includes(button.dataset.main));
    button.disabled=awaitingAccess&&!['products','samples'].includes(button.dataset.main);
   }
@@ -161,14 +161,15 @@
   scheduleGalleryWarm();scheduleMaterialsWarm();
  });
  // A tiny account-scoped preference selects a landing page only. It never grants access.
- const landingKey='aisel.unified.landing.v1',validRoles=['owner','designer','md','logistics'];
+ const landingKey='aisel.unified.landing.v1',validRoles=['owner','designer','md','logistics','cs'];
  function memberUser(){if(window.AiselAuth)return window.AiselAuth.currentUser();try{return (window.firebase?.apps||[]).map(app=>app.auth().currentUser).find(u=>u?.emailVerified&&String(u.email||'').toLowerCase()==='sooana1214@gmail.com')||(window.firebase?.apps||[]).find(app=>app.name==='aiselDesignMeeting')?.auth().currentUser;}catch(_){return null;}}
  function rememberRole(value){const user=memberUser();if(!user?.emailVerified||!user.uid||!validRoles.includes(value))return;try{localStorage.setItem(landingKey,JSON.stringify({uid:user.uid,role:value,checkedAt:Date.now()}));}catch(_){} }
  function landingRole(){const verified=role();if(validRoles.includes(verified))return verified;const user=memberUser();if(!user?.emailVerified||!user.uid)return null;try{const hint=JSON.parse(localStorage.getItem(landingKey));const age=Date.now()-hint?.checkedAt;if(hint?.uid===user.uid&&age>=0&&age<86400000&&validRoles.includes(hint.role))return hint.role;}catch(_){}return null;}
  // Staff start with their primary task, including legacy-compatible sessions.
- const staffLandingViews=Object.freeze({designer:'orders',logistics:'products'});
+ const staffLandingViews=Object.freeze({designer:'orders',logistics:'products',cs:'products'});
  function landingView(){
   const value=landingRole();
+  if(value==='md'&&window.AiselAccess?.allowed?.('sales')===false)return 'products';
   if(Object.prototype.hasOwnProperty.call(staffLandingViews,value))return staffLandingViews[value];
   if(window.AiselAccess?.legacy)return 'orders';
   return value==='md'?'sales':'orders';
