@@ -444,10 +444,10 @@
  function slideEditor(item,article){
   const box=el('section',undefined,'amm-planning-editor amm-slide-editor noprint'),fields=el('fieldset',undefined,'amm-planning-fields'),status=el('p','','amm-planning-status');
   box.setAttribute('aria-label','회의 내용 입력');status.setAttribute('role','status');box.dataset.dirty='false';box.dataset.saving='false';
-  const stamp=epoch,uid=account()?.uid,owner=planningRole==='owner',inputs={},composing=new Set();let baseline={...item.record},plan=samplePlan(item.record),sampleChanged=false;
+  const stamp=epoch,uid=account()?.uid,owner=planningRole==='owner',inputs={},composing=new Set();let baseline={...item.record},plan=samplePlan(item.record),sampleChanged=false,sampleBaseline=JSON.stringify(plan.items);
   const initial={},sampleRows=el('div',undefined,'amm-sample-rows'),save=button('저장',()=>commit());save.className='amm-planning-save';save.disabled=true;
   const wrap=(title,node)=>{const label=el('label');label.append(el('span',title),node);return label;};
-  const values=()=>({...Object.fromEntries(Object.entries(inputs).map(([key,node])=>[key,node.value])),development:sampleChanged?sampleText({items:[...sampleRows.children].map(row=>Object.fromEntries(['name','change','check','result'].map(key=>[key,row.querySelector('[data-sample="'+key+'"]').value]))),legacy:plan.legacy}):text(baseline.development)});
+  const values=()=>{const items=[...sampleRows.children].map(row=>Object.fromEntries(['name','change','check','result'].map(key=>[key,row.querySelector('[data-sample="'+key+'"]').value])));return {...Object.fromEntries(Object.entries(inputs).map(([key,node])=>[key,node.value])),development:sampleChanged&&JSON.stringify(items)!==sampleBaseline?sampleText({items,legacy:plan.legacy}):text(baseline.development)};};
   const changes=()=>{const v=values();return Object.keys(v).filter(key=>key==='development'?v[key]!==text(baseline[key]):v[key]!==initial[key]);};
   function mark(){box.dataset.dirty=String(changes().length>0);save.disabled=box.dataset.dirty!=='true'||box.dataset.saving==='true';status.textContent=box.dataset.dirty==='true'?'미저장':'';}
   function watch(node,sample=false){node.addEventListener('compositionstart',()=>composing.add(node));node.addEventListener('compositionend',()=>{composing.delete(node);if(sample)sampleChanged=true;mark();});for(const event of ['input','change'])node.addEventListener(event,()=>{if(sample)sampleChanged=true;mark();});}
@@ -490,7 +490,7 @@
      return {...current,...patch,...(planning?{inputVersion:(Number(current.inputVersion)||1)+1,reviewState:current.reviewRequestedVersion?'stale':'idle'}:{}),updatedAt:Date.now()};
     });assertSession(stamp,uid);if(!result.committed)throw Error('저장을 확인하지 못했습니다. 입력은 그대로 남아 있습니다.');
     const saved=result.snapshot.val();if(keys.some(k=>text(saved[k])!==submitted[k]))throw Error('저장된 내용과 입력이 다릅니다. 입력은 남겨두었습니다.');
-    const oldVersion=item.record.inputVersion;item.record=saved;baseline={...saved};plan=samplePlan(saved);sampleChanged=false;sampleRows.replaceChildren();plan.items.forEach(addRow);
+    const oldVersion=item.record.inputVersion;item.record=saved;baseline={...saved};plan=samplePlan(saved);sampleChanged=false;sampleBaseline=JSON.stringify(plan.items);sampleRows.replaceChildren();plan.items.forEach(addRow);
     for(const [key,node]of Object.entries(inputs)){node.value=key==='meetingMemo'?cleanMeetingMemo(saved[key],item.row):key==='uspValue'?text(saved[key])||uspWords(saved).join(' · '):key==='decision'?text(saved[key])||'unselected':text(saved[key]);initial[key]=node.value;}
     if(saved.inputVersion!==oldVersion){item.review=reviewModel(saved);article.querySelector('.amm-judgment')?.replaceWith(judgment(item));}
     detailCache.delete(saved.id);item.row={...item.row,version:saved.inputVersion,updatedAt:saved.updatedAt,decision:saved.decision};root.AiselGalleryIndex.remember('meetings',item.row);
