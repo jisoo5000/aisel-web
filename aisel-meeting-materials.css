@@ -309,3 +309,27 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cur
  html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-photos img {height:308px;max-height:308px;}
 }
 
+
+/* 2026-11-18: compact meeting input, five USP slots and direct market buttons. */
+@media screen {
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-planning-fields {gap:6px;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor input[type="hidden"] {display:none;}
+ html:root body #aiselMeetingMaterialsView .amm-market-buttons {display:grid;gap:4px;}
+ html:root body #aiselMeetingMaterialsView .amm-market-row {display:grid;grid-template-columns:76px minmax(0,1fr);gap:6px;align-items:center;font-size:12px;}
+ html:root body #aiselMeetingMaterialsView .amm-market-options {display:flex;gap:4px;min-width:0;}
+ html:root body #aiselMeetingMaterialsView .amm-market-options button {flex:1;min-width:0;padding:0 3px;height:28px;min-height:28px;white-space:nowrap;font-size:12px;}
+ html:root body #aiselMeetingMaterialsView .amm-market-options button[aria-pressed="true"] {background:#EAF1FA;color:#315B88;border-color:#94A8C4;}
+ html:root body #aiselMeetingMaterialsView .amm-sample-columns {display:grid;grid-template-columns:52px repeat(3,minmax(0,1fr));gap:4px;margin-bottom:4px;font:400 11px/18px var(--aisel-font,sans-serif);color:#6C727C;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-row {display:grid;grid-template-columns:52px minmax(0,1fr);gap:4px;padding:0;border:0;align-items:start;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-heading {display:grid;gap:4px;margin:0;min-width:0;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-heading input {padding:3px;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells {grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label:last-child {grid-column:auto;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label>span {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor textarea,
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label:last-child textarea {height:28px;min-height:28px;padding:4px;line-height:18px;overflow:hidden;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor textarea:focus,
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells label:last-child textarea:focus {height:64px;overflow:auto;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-sample-cells textarea::placeholder {font-size:11px;}
+ html:root body #aiselMeetingMaterialsView .amm-slide-editor .amm-planning-fields label {gap:4px;}
+}
