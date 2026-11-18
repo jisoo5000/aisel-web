@@ -519,3 +519,11 @@
  #referenceCollectionView #rcQuick .rc-quick-photo-actions button{height:34px}
 }
 
+
+#referenceCollectionView .rc-author-badge{
+  position:absolute;bottom:6px;left:6px;max-width:calc(100% - 12px);box-sizing:border-box;
+  padding:3px 7px;border-radius:5px;background:rgba(29,32,37,.76);color:#fff;
+  font-size:11px;font-weight:500;line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;
+}
+#referenceCollectionView #rcDetail:not([hidden]) + #rcList:not([hidden]){margin-top:18px}
+#referenceCollectionView .rc-create-card[hidden]{display:none}
