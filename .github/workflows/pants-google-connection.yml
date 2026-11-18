@@ -25,3 +25,6 @@ jobs:
           except urllib.error.HTTPError as error:
               print('::error::' + str(json.load(error).get('error', {}).get('message','Google provider check failed')))
               raise SystemExit(1)
+          config = json.load(urllib.request.urlopen('https://identitytoolkit.googleapis.com/v1/projects?key='+key, timeout=20))
+          assert 'jisoo5000.github.io' in config.get('authorizedDomains', []), 'Add jisoo5000.github.io to Firebase authorized domains'
+          print('ERP origin authorized for sign-in.')
