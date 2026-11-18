@@ -539,3 +539,33 @@
   .sp-finance-stat strong{font-size:18px;line-height:26px}
  }
 }
+
+/* 바지 왕국 */
+.ce-pants-board{width:100%;max-width:720px;margin:0 auto 0 0;color:#21354a;font-size:14px;box-sizing:border-box;min-width:0}
+.ce-pants-board *{box-sizing:border-box}
+.ce-pants-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:4px 0 10px}
+.ce-pants-title{margin:0;font-weight:700;font-size:17px;line-height:1.4;color:inherit}
+.ce-pants-date,.ce-pants-hint,.ce-pants-status{font-size:12px;color:#52677c}
+.ce-pants-status:empty{display:none}
+.ce-pants-options{display:flex;gap:4px;align-items:center;margin:0 0 10px;flex-wrap:wrap}
+.ce-pants-filter,.ce-pants-refresh,.ce-pants-back,.ce-pants-count{font:inherit;font-size:12px;border:1px solid #d8e2ec;background:white;color:#385169;border-radius:4px;padding:5px 8px;cursor:pointer}
+.ce-pants-filter[aria-pressed=true]{background:#e8f1fb;color:#224c77;border-color:#b9cee3;font-weight:700}
+.ce-pants-refresh{margin-left:auto}
+.ce-pants-table{width:100%;table-layout:fixed;border-collapse:collapse}
+.ce-pants-table th,.ce-pants-table td{padding:7px 4px;text-align:left;border-bottom:1px solid #dfe6ed;vertical-align:middle;background:white;color:inherit}
+.ce-pants-table th{font-size:12px;color:#52677c;background:#f2f6fa}
+.ce-pants-table th:first-child,.ce-pants-table td:first-child{width:38px;text-align:center}
+.ce-pants-table th:last-child,.ce-pants-table td:last-child{width:42px;text-align:center}
+.ce-pants-product{display:block;width:100%;font:inherit;font-weight:700;text-align:left;background:none;border:0;color:#254968;padding:3px 0;cursor:pointer;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere}
+.ce-pants-action,.ce-pants-task-line{display:flex;align-items:baseline;gap:6px}
+.ce-pants-action{font-size:12px;line-height:1.4;color:#506278;margin-top:2px}
+.ce-pants-tier{white-space:nowrap;color:#496685;font-weight:600}
+.ce-pants-count{padding:4px;font-variant-numeric:tabular-nums}
+#aiselCompanyWorkspace input.ce-pants-check{padding:0;margin:0;min-height:18px;width:18px;height:18px;vertical-align:middle;accent-color:#4c759c}
+.ce-pants-back{flex-basis:100%;width:fit-content;background:none;border:0;text-align:left;padding:3px 0;color:#456887}
+.ce-pants-task{padding:10px 0;border-bottom:1px solid #dfe6ed}
+.ce-pants-task-line{align-items:center;font-weight:600}.ce-pants-task-line input{margin-left:auto;flex-shrink:0}
+.ce-pants-task p,.ce-pants-details dd{white-space:pre-line;overflow-wrap:anywhere;line-height:1.55}
+.ce-pants-task p{font-size:13px;color:#506278;margin:6px 0 0}
+.ce-pants-sub,.ce-pants-details dt{font-size:13px;font-weight:700;line-height:1.5;margin:14px 0 3px}
+.ce-pants-details dd{margin:0;font-size:14px}

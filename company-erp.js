@@ -16,7 +16,7 @@
  let peopleStaffAt=0,peopleStaffFlight=null;
  let replenishmentView='summary',recruitmentReferenceView='summary',productionView='planning';
  let workflowCatalog=null,catalogFlight=null,catalogFilter='',catalogGroup='all';
- let bodyKingdomObserver=null;
+
  const drafts=new Map();
  const controllers=new Set(),tabs={founderNotes:'사장학 개론',links:'업무 바로가기',overview:'전체 업무흐름',catalog:'전체 업무목록',operation:'운영 업무',product:'상품·제작',content:'콘텐츠·광고',replenishment:'판매·재고',salesTable:'판매표',finance:'광고 성과',growth:'매출·순익',bodyKingdom:'바지 왕국',hiring:'채용·인력',recruitmentReferences:'채용 레퍼런스',attendance:'출퇴근',leave:'휴가 관리',myLeave:'휴가 관리',automation:'자동화·연결'};
  const notices={invalid_record_field:'기록 항목을 확인해주세요.',invalid_record_text:'입력 내용의 길이와 형식을 확인해주세요.',invalid_number:'숫자 입력을 확인해주세요.',invalid_period:'시작일과 종료일을 확인해주세요.',invalid_record_option:'선택한 상태를 확인해주세요.',decision_evidence_required:'판단 근거와 확인한 결과를 기록해주세요.',review_evidence_required:'합의한 기준·근거·본인 의견·다음 확인일을 기록해주세요.',management_login_required:'관리 영역에 다시 로그인해주세요.',sheets_not_enabled:'시트 연결 설정을 확인해야 합니다.',service_unavailable:'저장 서버 연결을 확인해야 합니다.',sync_cooldown:'방금 연결을 확인했습니다. 15분 뒤 다시 갱신할 수 있습니다.',sheets_access_required:'시트 접근 권한을 확인해야 합니다.',permission_denied:'이 계정에서 회사 ERP를 이용할 권한이 없습니다.',unauthenticated:'로그인 상태를 다시 확인해 주세요.',version_conflict:'다른 곳에서 먼저 수정했습니다. 최신 기록을 다시 불러온 뒤 변경해 주세요.',completion_evidence_required:'완료 결과나 확인 근거를 입력해 주세요.',prior_step_incomplete:'이 업무에 먼저 필요한 결과를 확인해 주세요.',invalid_assignee:'담당자 계정이 변경되었습니다. 직원 목록을 새로 확인해 주세요.',completed_step_immutable:'이미 완료한 단계입니다. 후속 수정은 메모와 다음 업무에 기록해 주세요.'};
@@ -45,7 +45,7 @@
   if(dirty)drafts.set(section,{nodes:[...content.childNodes],selectedId,notice:notice.textContent,error:notice.classList.contains('ce-error')});
   return true;
  }
- function hide(){releaseBodyKingdom();if(drafts.has(section))dirty=false;panel.hidden=true;content.querySelector('.ce-usage-panel')?.remove();content.querySelectorAll('.ce-body-kingdom-frame, .ce-replenishment-frame, .ce-recruitment-frame, .ce-production-frame, .ce-usage-frame, .gp-growth-note-frame').forEach(frame=>frame.remove());}
+ function hide(){releaseBodyKingdom();if(drafts.has(section))dirty=false;panel.hidden=true;content.querySelector('.ce-usage-panel')?.remove();content.querySelectorAll('.ce-pants-board, .ce-replenishment-frame, .ce-recruitment-frame, .ce-production-frame, .ce-usage-frame, .gp-growth-note-frame').forEach(frame=>frame.remove());}
  function close(){return root.AiselUnified?.show('orders');}
  function open(next=owner()?'overview':'attendance'){return root.AiselUnified?.show('company-'+next);}
  function show(next){if(!canView(next)||['recruitmentReferences','apiUsage'].includes(next)&&!root.AiselManagement?.unlocked)return false;if(drafts.has(section))dirty=false;section=next;selectedId='';notice.textContent='';panel.hidden=false;panel.setAttribute('aria-label',tabs[next]);panel.dataset.section=next;const draft=drafts.get(next);if(draft){drafts.delete(next);content.replaceChildren(...draft.nodes);root.AiselCompanyPeople?.refreshLeaveForm?.(content);selectedId=draft.selectedId;dirty=true;message(draft.notice||'작성 중인 내용을 유지했습니다.',draft.error);return true;}render();if(next==='leave')loadPeopleStaff();else if(!['links','bodyKingdom','recruitmentReferences','myLeave','apiUsage'].includes(next)&&(next!=='replenishment'||replenishmentView==='tasks')&&(next!=='product'||productionView==='tasks'))load();return true;}
@@ -139,38 +139,217 @@
   content.append(bar,frame,help);choose(recruitmentReferenceView);
  }
 
- function bodyKingdomBoard(){
-  const viewport=el('div','ce-body-kingdom-viewport');
-  viewport.style.cssText='position:relative;width:100%;max-width:540px;height:75vh;height:75dvh;min-height:300px;box-sizing:border-box;overflow:hidden;overflow:clip;border:1px solid #dce3eb;border-radius:6px;background:white';
-  const frame=el('iframe','ce-body-kingdom-frame');
-  frame.title='바지 왕국 · 제품별 PDP와 후기 점검';
-  frame.referrerPolicy='strict-origin-when-cross-origin';
-  frame.src='https://docs.google.com/spreadsheets/d/1uV5fwvRQHZhF1k54C1xlA-bfG07xouIQpr7EMFwo6KM/edit?rm=minimal&gid=2026111906#gid=2026111906&range=A1';
-  frame.style.cssText='position:absolute;display:block;top:0;max-width:none;min-width:0;box-sizing:border-box;border:0;transform-origin:top left;background:white';
-  viewport.append(frame);
-  content.append(groupTitle('바지 왕국'),viewport);
-  // Keep the editable sheet and its right-hand scroll track. The sheet's row
-  // labels sit outside the left edge and its horizontal track and tabs below.
-  const sheetColumnsWidth=296, verticalScrollbarAndPadding=20, rowLabelsWidth=44, bottomControlsHeight=64;
-  const fit=()=>{
-   const width=viewport.clientWidth, height=viewport.clientHeight;
-   if(!width||!height)return;
-   const scale=width/(sheetColumnsWidth+verticalScrollbarAndPadding);
-   frame.style.width=(width/scale+rowLabelsWidth)+'px';
-   frame.style.height=(height/scale+bottomControlsHeight)+'px';
-   frame.style.left=(-rowLabelsWidth*scale)+'px';
-   frame.style.transform='scale('+scale+')';
-  };
-  fit();
-  if(root.ResizeObserver){
-   bodyKingdomObserver=new root.ResizeObserver(fit);
-   bodyKingdomObserver.observe(viewport);
-  }
- }
-
+ const pantsBook='1uV5fwvRQHZhF1k54C1xlA-bfG07xouIQpr7EMFwo6KM';
+ const pantsRange="'바지 왕국'!A:T", pantsChecks="'바지 왕국 확인기록'!A:B";
+ const pantsApi='https://sheets.googleapis.com/v4/spreadsheets/'+pantsBook;
+ let pantsGrant=null,pantsView=null;
  function releaseBodyKingdom(){
-  bodyKingdomObserver?.disconnect();
-  bodyKingdomObserver=null;
+  pantsView?.abort();
+  pantsView=null;
+ }
+ function resetPantsGrant(){pantsGrant=null;}
+ function pantsProductName(value){
+  return String(value||'').replace(/컴포트\s*팬츠/g,'CP').replace(/컴포트\s*스커트/g,'CS');
+ }
+ function pantsProducts(rows,log){
+  const products=new Map(),checked=new Map(),metadata=new Map();
+  for(const [id,value] of log||[])if(id)checked.set(id,value===true||value==='TRUE');
+  for(const row of rows){
+   if(row[18])metadata.set(row[18],row[19]);
+   const rank=row[12],code=row[13],amount=row[15];
+   if(!Number.isInteger(rank)||rank<1||!code||!Number.isFinite(amount))continue;
+   products.set(code,{code,sourceRank:rank,name:pantsProductName(row[14]),amount,tasks:[],detail:[]});
+  }
+  const sorted=[...products.values()].sort((a,b)=>b.amount-a.amount||a.sourceRank-b.sourceRank||a.code.localeCompare(b.code));
+  sorted.forEach((p,i)=>{p.rank=i+1;});
+  const monitored=[];
+  for(let i=0;i<rows.length;i++){
+   const row=rows[i];
+   if(typeof row[5]==='string'&&row[4]&&[1,2,3].includes(row[10])){
+    let item=products.get(row[4]);
+    if(!item){
+     item={code:row[4],name:pantsProductName(row[0]),rank:null,tasks:[],detail:[]};
+     products.set(item.code,item);monitored.push(item);
+    }
+    item.name=pantsProductName(row[0]||item.name);
+    item.tasks.push({id:row[5],tier:row[10],label:rows[i+1]?.[2]||row[7],note:row[8]||'',checked:checked.has(row[5])?checked.get(row[5]):row[3]===true});
+   }
+   if(row[7]==='상품 상세'&&products.has(row[6])){
+    const item=products.get(row[6]);
+    for(let j=i+1;j<Math.min(rows.length,i+8);j++){
+     const [label,,value]=rows[j];
+     if(label&&value)item.detail.push([String(label),String(value)]);
+     else if(label&&/지난 개편/.test(label))item.detail.push(['지난 개편',String(label)]);
+    }
+   }
+  }
+  for(const p of products.values())p.tasks.sort((a,b)=>a.tier-b.tier);
+  if(!sorted.length)throw Error('매출 집계가 아직 없습니다.');
+  return {sorted,monitored,metadata};
+ }
+ async function pantsGoogleGrant(){
+  const account=session()?.uid,run=epoch,fb=root.firebase;
+  if(!fb?.auth?.GoogleAuthProvider)throw Error('앱을 새로고침한 뒤 Google 계정을 연결해 주세요.');
+  const isolated=fb.apps.find(app=>app.name==='pantsSheetView')||fb.initializeApp(fb.app().options,'pantsSheetView');
+  const auth=isolated.auth(),provider=new fb.auth.GoogleAuthProvider();
+  provider.addScope('https://www.googleapis.com/auth/spreadsheets');
+  const result=await auth.signInWithPopup(provider);
+  const token=result.credential?.accessToken;
+  await auth.signOut();
+  if(!token||!valid(run,account)||!canView('bodyKingdom'))throw Error('계정 연결을 다시 확인해 주세요.');
+  pantsGrant={account,token,expires:Date.now()+50*60000};
+ }
+ function bodyKingdomBoard(){
+  const lifecycle=new AbortController(),account=session()?.uid,run=epoch;
+  pantsView=lifecycle;
+  const host=el('div','ce-pants-board'),head=el('div','ce-pants-head'),body=el('div');
+  const status=el('p','ce-pants-status');
+  status.setAttribute('role','status');
+  host.append(head,status,body);content.append(host);
+  const active=()=>!lifecycle.signal.aborted&&valid(run,account)&&canView('bodyKingdom');
+  let model=null,filter='week',detail='',scrollY=0,saving=false,reading=false;
+  const grant=()=>pantsGrant?.account===account&&pantsGrant.expires>Date.now()?pantsGrant.token:'';
+  const setStatus=s=>{if(active())status.textContent=s;};
+  function fitNames(){
+   const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d');
+   if(!ctx)return;
+   for(const label of body.querySelectorAll('.ce-pants-product')){
+    label.style.fontSize='';const style=root.getComputedStyle(label);
+    ctx.font=style.fontWeight+' '+style.fontSize+' '+style.fontFamily;
+    const natural=ctx.measureText(label.textContent).width,available=label.clientWidth;
+    if(available>0&&natural>available-1)label.style.fontSize=Math.max(11,Math.floor(parseFloat(style.fontSize)*(available-1)/natural))+'px';
+   }
+  }
+  if(root.ResizeObserver){
+   let lastWidth=0;
+   const observer=new root.ResizeObserver(([entry])=>{if(entry.contentRect.width!==lastWidth){lastWidth=entry.contentRect.width;fitNames();}});
+   observer.observe(host);lifecycle.signal.addEventListener('abort',()=>observer.disconnect(),{once:true});
+  }
+  async function api(url,options={}){
+   const token=grant();if(!token)throw Error('google_connect');
+   const response=await fetch(url,{...options,signal:lifecycle.signal,cache:'no-store',credentials:'omit',headers:{Authorization:'Bearer '+token,...options.headers}});
+   if(response.status===401){resetPantsGrant();throw Error('google_connect');}
+   if(!response.ok)throw Error(response.status===403?'이 Google 계정의 시트 접근 권한을 확인해 주세요.':'시트 응답을 확인하지 못했습니다. 다시 불러와 주세요.');
+   return response.json();
+  }
+  function openProduct(p){
+   scrollY=root.scrollY;detail=p.code;
+   if(root.location.hash==='#company-bodyKingdom')root.history.pushState({...root.history.state,pantsProduct:p.code},'');
+   draw();head.querySelector('button')?.focus({preventScroll:true});
+  }
+  function showList(code){
+   detail='';draw();body.querySelector('[data-pants-product="'+CSS.escape(code)+'"]')?.focus({preventScroll:true});root.scrollTo(0,scrollY);
+  }
+  root.addEventListener('popstate',event=>{
+   if(!active()||root.location.hash!=='#company-bodyKingdom')return;
+   if(event.state?.pantsProduct){detail=event.state.pantsProduct;draw();}
+   else if(detail)showList(detail);
+  },{signal:lifecycle.signal});
+  function listButton(p){
+   const b=button(p.name,()=>openProduct(p),'ce-pants-product');
+   b.dataset.pantsProduct=p.code;
+   b.setAttribute('aria-label',p.name+' 상세 보기');return b;
+  }
+  function tier(p){return el('span','ce-pants-tier',p?.tier?p.tier+'순위':'');}
+  function heading(title,right){
+   head.replaceChildren(el('h2','ce-pants-title',title),el('span','ce-pants-date',right||''));
+  }
+  function list(){
+   const m=model.metadata;
+   const short=d=>String(d||'').slice(5).replace('-','.');
+   heading('매출 순위','최근 7일 '+short(m.get('집계 시작'))+'–'+short(m.get('집계 종료')));
+   const options=el('div','ce-pants-options');
+   const daily=Number(m.get('80% 도달 품목 수'))||model.sorted.length;
+   const week=Number(m.get('85% 도달 품목 수'))||model.sorted.length;
+   for(const [key,title] of [['daily','집중 '+daily+'개'],['week','주간 '+week+'개'],['all','전체']]){
+    const b=button(title,()=>{filter=key;draw();},'ce-pants-filter');
+    b.setAttribute('aria-pressed',String(filter===key));options.append(b);
+   }
+   options.append(button('새로고침',()=>loadBoard(),'ce-pants-refresh'));
+   const table=el('table','ce-pants-table'),thead=table.createTHead(),tr=thead.insertRow();
+   for(const label of ['순위','제품명 · 이번 개선','확인']){const th=el('th','',label);th.scope='col';tr.append(th);}
+   const tbody=table.createTBody();
+   const selection=filter==='all'?model.sorted.concat(model.monitored):model.sorted.slice(0,filter==='daily'?daily:week);
+   for(const p of selection){
+    const row=tbody.insertRow(),rank=row.insertCell(),name=row.insertCell(),check=row.insertCell();
+    rank.textContent=p.rank?p.rank+'위':'–';name.append(listButton(p));
+    const next=p.tasks.find(t=>!t.checked)||p.tasks[0];
+    if(next){
+     const line=el('div','ce-pants-action');line.append(tier(next),el('span','',next.label));name.append(line);
+     if(p.tasks.length===1)check.append(checkBox(p,next));
+     else {
+      const count=p.tasks.filter(t=>t.checked).length;
+      const b=button(count+'/'+p.tasks.length,()=>openProduct(p),'ce-pants-count');
+      b.setAttribute('aria-label',p.name+' 확인 '+count+'개, 할 일 '+p.tasks.length+'개');check.append(b);
+     }
+    }
+   }
+   body.append(options,table);fitNames();
+  }
+  function checkBox(p,task){
+   const box=el('input','ce-pants-check');box.type='checkbox';box.checked=task.checked;box.disabled=saving||reading;
+   box.setAttribute('aria-label',p.name+' '+task.label+' 확인');
+   box.onchange=()=>saveCheck(task,box.checked);
+   return box;
+  }
+  function detailView(p){
+   heading(p.name,p.rank?'매출 '+p.rank+'위':'관리 상품');
+   const back=button('‹ 매출 순위',()=>{if(root.history.state?.pantsProduct===p.code)root.history.back();else showList(p.code);},'ce-pants-back');
+   head.prepend(back);
+   if(p.tasks.length){
+    body.append(el('h3','ce-pants-sub','이번 개선'));
+    for(const t of p.tasks){
+     const block=el('div','ce-pants-task'),line=el('label','ce-pants-task-line');
+     line.append(tier(t),el('span','',t.label),checkBox(p,t));block.append(line);
+     if(t.note)block.append(el('p','',t.note));body.append(block);
+    }
+    body.append(el('p','ce-pants-hint','체크하면 이 할 일을 확인한 것으로 기록해요.'));
+   }
+   if(p.detail.length){
+    const dl=el('dl','ce-pants-details');
+    for(const [label,value] of p.detail)dl.append(el('dt','',label),el('dd','',value));body.append(dl);
+   }else body.append(el('p','ce-pants-hint','아직 등록된 실험 결과가 없습니다.'));
+  }
+  function draw(){
+   if(!active()||!model)return;
+   body.replaceChildren();const p=detail&&model.sorted.concat(model.monitored).find(x=>x.code===detail);
+   if(p)detailView(p);else{detail='';list();}
+  }
+  async function loadBoard(){
+   if(!active()||saving||reading)return;
+   if(!grant()){connectView();return;}
+   reading=true;setStatus('불러오는 중…');if(model)draw();
+   try{
+    const qs=new URLSearchParams({valueRenderOption:'UNFORMATTED_VALUE'});qs.append('ranges',pantsRange);qs.append('ranges',pantsChecks);
+    const r=await api(pantsApi+'/values:batchGet?'+qs);
+    if(!active())return;model=pantsProducts(r.valueRanges[0]?.values||[],r.valueRanges[1]?.values||[]);
+    reading=false;setStatus('');draw();
+   }catch(e){if(!active())return;if(e.message==='google_connect')connectView();else{setStatus(e.message);if(!model){body.replaceChildren(button('다시 불러오기',loadBoard),button('계정 변경',connectView));}else{reading=false;draw();}}}finally{reading=false;}
+  }
+  async function saveCheck(task,desired){
+   if(saving||reading||!active())return;
+   if(!grant()){connectView();return;}
+   saving=true;setStatus('저장 중…');draw();
+   try{
+    const saved=await api(pantsApi+'/values/'+encodeURIComponent(pantsChecks)+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[[task.id,desired]]})});
+    if(saved.updates?.updatedRows!==1)throw Error('save_unconfirmed');
+    if(!active())return;task.checked=desired;setStatus(desired?'확인 기록을 저장했어요.':'확인 표시를 해제했어요.');
+   }catch(e){if(active()){if(e.message==='google_connect'){connectView();return;}setStatus('저장 여부를 확인하지 못했어요. 새로고침해 주세요.');}}
+   finally{saving=false;if(active()&&grant())draw();}
+  }
+  function connectView(){
+   heading('매출 순위','최근 7일');setStatus('');body.replaceChildren();
+   const msg=el('p','ce-pants-hint','바지 왕국 시트를 사용하는 Google 계정으로 연결해 주세요.');
+   const b=button('Google 계정 연결',async()=>{
+    b.disabled=true;
+    try{await pantsGoogleGrant();if(active())await loadBoard();}
+    catch(e){if(active())setStatus(e.code==='auth/popup-closed-by-user'?'계정 선택을 닫았어요.':e.code==='auth/popup-blocked'?'팝업을 허용한 뒤 다시 연결해 주세요.':e.code==='auth/operation-not-allowed'||e.code==='auth/unauthorized-domain'?'앱의 Google 로그인 설정을 확인해야 합니다.':'Google 연결을 마치지 못했어요. 다시 시도해 주세요.');}
+    finally{b.disabled=false;}
+   });
+   body.append(msg,b);
+  }
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&model&&grant()&&active())loadBoard();},{signal:lifecycle.signal});
+  heading('매출 순위','최근 7일');loadBoard();
  }
 
  function productionBoard(){
@@ -279,8 +458,8 @@
    const current=()=>ticket===moduleWaiter&&section===next&&epoch===run&&!panel.hidden&&canView(next);
    loadSectionModule(key).then(()=>{if(current())render();}).catch(error=>{if(current())content.replaceChildren(el('p','ce-error',error.message),button('다시 불러오기',()=>render()));});return true;
  }
- function render(){if(dirty)return;if(section==='bodyKingdom'&&content.querySelector('.ce-body-kingdom-frame'))return;releaseBodyKingdom();if(waitForSectionModule())return;if(section==='apiUsage'&&content.querySelector('.ce-usage-panel'))return;if(section==='product'&&productionView==='planning'&&content.querySelector('.ce-production-frame'))return;content.classList.toggle('cl-host',['leave','myLeave'].includes(section));if(section==='recruitmentReferences'&&content.querySelector('.ce-recruitment-frame'))return;buildNav();content.replaceChildren();if(section==='founderNotes'&&root.AiselFounderNotes){root.AiselFounderNotes.render({host:content,el,button,request,message,redraw:render,projects:()=>founderProjects,ready:()=>loaded&&!loading,refresh:()=>load(true),isWriting:()=>writing,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},upsert:item=>{founderProjects=[...founderProjects.filter(p=>p.id!==item.id),item];loadedAt=Date.now();}});return;}if(section==='bodyKingdom'){bodyKingdomBoard();return;}if(section==='links'){workLinks();return;}if(section==='recruitmentReferences'){recruitmentReferences();return;}if(section==='growth'&&root.AiselGrowthProfit){root.AiselGrowthProfit.render({host:content,el,button,request,message,redraw:render,projects:()=>projects,staff:()=>staff,ready:()=>loaded&&!loading,dirty:()=>dirty,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},upsert:item=>{projects=[...projects.filter(p=>p.id!==item.id),item];selectedId='';loadedAt=Date.now();}});return;}if(root.AiselWorkflows&&(section==='apiUsage'||root.AiselWorkflowDomain?.specs[section])){root.AiselWorkflows.render(section,{host:content,el,button,request,message,redraw:render,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;}});return;}if(selectedId){const p=projects.find(p=>p.id===selectedId);if(p){projectDetail(p);return;}selectedId='';}if(section==='product'){productionBoard();return;}if(section==='replenishment'){replenishmentBoard();return;}if(['attendance','leave','myLeave'].includes(section)&&root.AiselCompanyPeople){root.AiselCompanyPeople.render(section,{host:content,el,button,owner,staff:()=>staff,request,message,redraw:render,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},isWriting:()=>writing});return;}if(section==='finance'&&root.AiselCompanySources){root.AiselCompanySources.finance({host:content,el,button,request,message});return;}if(section==='salesTable'&&root.AiselCompanySales){root.AiselCompanySales.render({host:content,el,button,request,message});return;}if(section==='overview')overview();else if(section==='catalog')catalogView();else if(section==='automation')connections();else projectList();}
- function identityChanged(){const next=[session()?.uid,session()?.role,session()?.credentialVersion||0].join(':'),ok=allowed();for(const [key]of navigation){const entry=nav.querySelector('[data-main="company-'+key+'"]');if(entry)entry.hidden=!canView(key);}if(uid!==next||!ok){drafts.clear();uid=next;epoch++;for(const c of controllers)c.abort();controllers.clear();projects=[];founderProjects=[];staff=[];peopleStaffAt=0;peopleStaffFlight=null;workflowCatalog=null;catalogFlight=null;catalogFilter='';catalogGroup='all';loaded=false;loadedAt=0;loading=false;writing=false;dirty=false;selectedId='';root.AiselWorkflows?.reset();root.AiselCompanyPeople?.reset();root.AiselCompanySources?.reset();root.AiselGrowthProfit?.reset();root.AiselFounderNotes?.reset();section=owner()?'overview':'attendance';content.replaceChildren();notice.textContent='';hide();}}
+ function render(){if(dirty)return;if(section==='bodyKingdom'&&content.querySelector('.ce-pants-board'))return;releaseBodyKingdom();if(waitForSectionModule())return;if(section==='apiUsage'&&content.querySelector('.ce-usage-panel'))return;if(section==='product'&&productionView==='planning'&&content.querySelector('.ce-production-frame'))return;content.classList.toggle('cl-host',['leave','myLeave'].includes(section));if(section==='recruitmentReferences'&&content.querySelector('.ce-recruitment-frame'))return;buildNav();content.replaceChildren();if(section==='founderNotes'&&root.AiselFounderNotes){root.AiselFounderNotes.render({host:content,el,button,request,message,redraw:render,projects:()=>founderProjects,ready:()=>loaded&&!loading,refresh:()=>load(true),isWriting:()=>writing,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},upsert:item=>{founderProjects=[...founderProjects.filter(p=>p.id!==item.id),item];loadedAt=Date.now();}});return;}if(section==='bodyKingdom'){bodyKingdomBoard();return;}if(section==='links'){workLinks();return;}if(section==='recruitmentReferences'){recruitmentReferences();return;}if(section==='growth'&&root.AiselGrowthProfit){root.AiselGrowthProfit.render({host:content,el,button,request,message,redraw:render,projects:()=>projects,staff:()=>staff,ready:()=>loaded&&!loading,dirty:()=>dirty,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},upsert:item=>{projects=[...projects.filter(p=>p.id!==item.id),item];selectedId='';loadedAt=Date.now();}});return;}if(root.AiselWorkflows&&(section==='apiUsage'||root.AiselWorkflowDomain?.specs[section])){root.AiselWorkflows.render(section,{host:content,el,button,request,message,redraw:render,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;}});return;}if(selectedId){const p=projects.find(p=>p.id===selectedId);if(p){projectDetail(p);return;}selectedId='';}if(section==='product'){productionBoard();return;}if(section==='replenishment'){replenishmentBoard();return;}if(['attendance','leave','myLeave'].includes(section)&&root.AiselCompanyPeople){root.AiselCompanyPeople.render(section,{host:content,el,button,owner,staff:()=>staff,request,message,redraw:render,setDirty:value=>{dirty=value;},setWriting:value=>{writing=value;},isWriting:()=>writing});return;}if(section==='finance'&&root.AiselCompanySources){root.AiselCompanySources.finance({host:content,el,button,request,message});return;}if(section==='salesTable'&&root.AiselCompanySales){root.AiselCompanySales.render({host:content,el,button,request,message});return;}if(section==='overview')overview();else if(section==='catalog')catalogView();else if(section==='automation')connections();else projectList();}
+ function identityChanged(){const next=[session()?.uid,session()?.role,session()?.credentialVersion||0].join(':'),ok=allowed();for(const [key]of navigation){const entry=nav.querySelector('[data-main="company-'+key+'"]');if(entry)entry.hidden=!canView(key);}if(uid!==next||!ok){resetPantsGrant();drafts.clear();uid=next;epoch++;for(const c of controllers)c.abort();controllers.clear();projects=[];founderProjects=[];staff=[];peopleStaffAt=0;peopleStaffFlight=null;workflowCatalog=null;catalogFlight=null;catalogFilter='';catalogGroup='all';loaded=false;loadedAt=0;loading=false;writing=false;dirty=false;selectedId='';root.AiselWorkflows?.reset();root.AiselCompanyPeople?.reset();root.AiselCompanySources?.reset();root.AiselGrowthProfit?.reset();root.AiselFounderNotes?.reset();section=owner()?'overview':'attendance';content.replaceChildren();notice.textContent='';hide();}}
  root.addEventListener('aisel-management-unlocked',()=>{loaded=false;loadedAt=0;});
  root.addEventListener('aisel-management-locked',()=>{if(section==='links'&&!panel.hidden)render();for(const key of drafts.keys())if(key!=='myLeave')drafts.delete(key);projects=projects.filter(p=>p.kind!=='hiring');root.AiselWorkflows?.reset();root.AiselCompanyPeople?.resetManagement();root.AiselCompanySources?.reset();if(['hiring','recruitmentReferences','attendance','leave','automation','evaluation','apiUsage'].includes(section)){content.replaceChildren();hide();}});
  root.addEventListener('aisel-access-change',identityChanged);root.addEventListener('beforeunload',event=>{if(dirty||writing||drafts.size){event.preventDefault();event.returnValue='';}});
