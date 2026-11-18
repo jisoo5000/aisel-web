@@ -257,6 +257,7 @@
  };
  for(const key of ['overview','operation','content','growth'])registry['company-'+key]=source(book,696470300,'ERP 운영대장 / 업무대장');
  registry['company-product']=source(book,2026111201,'ERP 운영대장 / 제작기획 현황');
+ registry['company-bodyKingdom']=source('1uV5fwvRQHZhF1k54C1xlA-bfG07xouIQpr7EMFwo6KM',2026111906,'바디 왕국');
  registry['company-founderNotes']=source('1F8_WalerqgHVtrf84w6qL_x7CZHxcVSfifHUYh3jJmw',1711983686,'AISEL 경영 기록 / 사장학 개론');
  registry['company-links']=source('1F8_WalerqgHVtrf84w6qL_x7CZHxcVSfifHUYh3jJmw',1356783989,'AISEL 경영 기록 / 전체 메뉴');
  const management=new Set(['company-hiring','company-recruitmentReferences','company-attendance','company-leave','company-automation','company-apiUsage','company-evaluation']);
