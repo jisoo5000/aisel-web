@@ -1,0 +1,27 @@
+name: Pants board Google connection
+on:
+  push:
+    branches: ['qa/pants-google-connection']
+permissions:
+  contents: read
+jobs:
+  google-provider:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify the ERP's Google sign-in configuration
+        shell: python
+        run: |
+          import pathlib, re, urllib.request, urllib.error, json
+          html = pathlib.Path('work-order-5aa994e7.html').read_text()
+          key = re.search(r'const firebaseConfig\s*=\s*\{\s*apiKey:\s*"([^"]+)"', html).group(1)
+          url = 'https://identitytoolkit.googleapis.com/v1/accounts:createAuthUri?key=' + key
+          payload = json.dumps({'providerId':'google.com','continueUri':'https://jisoo5000.github.io/aisel-web/'}).encode()
+          req = urllib.request.Request(url, data=payload, headers={'Content-Type':'application/json','Referer':'https://jisoo5000.github.io/'})
+          try:
+              result = json.load(urllib.request.urlopen(req, timeout=20))
+              assert result.get('authUri', '').startswith('https://accounts.google.com/'), 'No Google consent URL'
+              print('Google provider resolved.')
+          except urllib.error.HTTPError as error:
+              print('::error::' + str(json.load(error).get('error', {}).get('message','Google provider check failed')))
+              raise SystemExit(1)
