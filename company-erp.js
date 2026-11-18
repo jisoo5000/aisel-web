@@ -38,7 +38,7 @@
  }
  const navigation=[['product','상품·제작','제작기획 현황'],['content','상품·제작','콘텐츠·광고'],['salesTable','판매','판매표'],['finance','판매','광고 성과'],['growth','판매','매출·순익'],['replenishment','판매','판매·재고'],['links','업무','업무 바로가기'],['overview','업무','전체 업무흐름'],['catalog','업무','전체 업무목록'],['operation','업무','운영 업무'],['founderNotes','업무','사장학 개론'],['hiring','관리','채용·인력'],['recruitmentReferences','관리','채용 레퍼런스'],['attendance','관리','출퇴근'],['leave','관리','휴가 관리'],['myLeave','근무·휴가','휴가 관리'],['automation','관리','자동화·연결']];
  for(const [key,spec]of Object.entries(root.AiselWorkflowDomain?.specs||{})){tabs[key]=spec.label;navigation.push([key,spec.group,spec.label]);}tabs.apiUsage='사용량·비용';navigation.push(['apiUsage','관리','사용량·비용']);
- const canView=key=>allowed()&&(key==='myLeave'||session()?.role!=='designer'&&(owner()||key==='attendance'));
+ const canView=key=>allowed()&&(!Array.isArray(session()?.permissions?.menuAllowlist)||session().permissions.menuAllowlist.includes('company-'+key))&&(key==='myLeave'||session()?.role!=='designer'&&(owner()||key==='attendance'));
  function canLeave(){
   if(writing){message('저장 결과를 확인하고 있습니다. 연결 오류가 나면 입력 내용을 유지한 채 이동할 수 있습니다.',true);return false;}
   if(dirty)drafts.set(section,{nodes:[...content.childNodes],selectedId,notice:notice.textContent,error:notice.classList.contains('ce-error')});

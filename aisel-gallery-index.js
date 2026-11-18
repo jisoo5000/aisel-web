@@ -654,7 +654,7 @@
   function detailGrant(kind) {
     if (!hasAuthority(kind)) throw error('permission_denied');
     return { uid, role: access.role, accountKey: email, email, generation: sessionGeneration,
-      permissions: { canCreate: true, canManage: access.role === 'owner', automaticReview: true,
+      permissions: { canCreate: !Array.isArray(window.AiselAccess?.session?.permissions?.menuAllowlist), canManage: access.role === 'owner', automaticReview: true,
         referenceDetailVersion: 196, referenceDesignerVersion: 212, noteCategoriesVersion: 203, referenceJudgmentVersion: 203 } };
   }
   async function authorize(kind) {

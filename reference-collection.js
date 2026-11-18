@@ -385,7 +385,7 @@
     for(const id of records.keys())if(!incoming.has(id)){records.delete(id);detailCache.delete(id);}
     for(const record of state.records||[])rememberRecord({...record,createdAt:galleryISO(record.createdAt),updatedAt:galleryISO(record.updatedAt),archivedAt:galleryISO(record.archivedAt)});
     galleryOwned=true;initialized=true;cursor=null;listReadAt=performance.now();
-    if(visible)void startLifecycle();if(state.role){permissions={...permissions,canCreate:['owner','md','designer'].includes(state.role),canManage:state.role==='owner'};setRestoreAvailability(state.role==='owner');}
+    if(visible)void startLifecycle();if(state.role){permissions={...permissions,canCreate:!Array.isArray(window.AiselAccess?.session?.permissions?.menuAllowlist)&&['owner','md','designer'].includes(state.role),canManage:state.role==='owner'};setRestoreAvailability(state.role==='owner');}
     // Lease and metadata checks also emit unchanged rows. Keep existing cards
     // and pointer/focus targets when the rendered data signature still matches.
     renderList();await renderDrafts();
@@ -531,8 +531,8 @@
     detailFlights.set(id,task);try{return await task;}catch(error){if(accessDenied(error))await invalidateAccess(error,stamp);throw error;}finally{if(detailFlights.get(id)===task)detailFlights.delete(id);}
   }
   function stampForLocal(){return authStamp();}
-  async function enableLocalDrafts(stamp){const user=window.AiselAuth?.currentUser?.();if(!user?.email||!user?.uid)return false;assertAuth(stamp);account=String(user.email).toLowerCase();localOnly=true;setRestoreAvailability(false);role=null;permissions={canCreate:true};authorizedStamp=stamp;$('#rcCreate').hidden=false;$('#rcCreate').disabled=false;$('#rcLogin').hidden=true;$('#rcRetry').hidden=false;renderList();await renderDrafts();message('시트 연결 대기 · 새 자료는 이 기기에 임시 보관됩니다.');return true;}
-  function canEdit(){if(!authorizedStamp||galleryEnabled()&&galleryState?.authorized===false)return false;try{assertAuth(authorizedStamp);}catch(_){return false;}return !!active&&(active.version===0?permissions.canCreate===true:active.permissions?.canEdit===true);}
+  async function enableLocalDrafts(stamp){if(Array.isArray(window.AiselAccess?.session?.permissions?.menuAllowlist))return false;const user=window.AiselAuth?.currentUser?.();if(!user?.email||!user?.uid)return false;assertAuth(stamp);account=String(user.email).toLowerCase();localOnly=true;setRestoreAvailability(false);role=null;permissions={canCreate:true};authorizedStamp=stamp;$('#rcCreate').hidden=false;$('#rcCreate').disabled=false;$('#rcLogin').hidden=true;$('#rcRetry').hidden=false;renderList();await renderDrafts();message('시트 연결 대기 · 새 자료는 이 기기에 임시 보관됩니다.');return true;}
+  function canEdit(){if(Array.isArray(window.AiselAccess?.session?.permissions?.menuAllowlist))return false;if(!authorizedStamp||galleryEnabled()&&galleryState?.authorized===false)return false;try{assertAuth(authorizedStamp);}catch(_){return false;}return !!active&&(active.version===0?permissions.canCreate===true:active.permissions?.canEdit===true);}
   function setRoute(id,replace=false){const hash=id?'#reference='+encodeURIComponent(id):'#references';history[replace?'replaceState':'pushState']({aiselReference:{id:id||null,scroll:galleryScroll,search:$('#rcSearch').value,category:selectedCategory(),noteCategory:$('#rcNoteCategoryFilter').value,dateFilter:$('#rcDateFilter').value,designerFilter:$('#rcDesignerFilter').value,lifeFilter,listLimit}},'',hash);}
   function selectedCategory(){return topCategory;}
   function rememberList(){if($('#rcDetail').hidden&&location.hash==='#references')history.replaceState({aiselReference:{id:null,scroll:window.scrollY,search:$('#rcSearch').value,category:selectedCategory(),noteCategory:$('#rcNoteCategoryFilter').value,dateFilter:$('#rcDateFilter').value,designerFilter:$('#rcDesignerFilter').value,uspFilter:listUspFilter,lifeFilter,listLimit}},'',location.href);}
@@ -922,7 +922,7 @@
   }
 
   async function startLifecycle(){if(!lifecycle)return;try{await lifecycle.start(()=>{$('#rcLifeRetry')?.remove();gallerySignature='';renderList();if(active)renderRating();},e=>message(e.message,true));}catch(e){message('활용 기록 연결을 확인해주세요. 자료는 그대로 유지됩니다.',true);if(!$('#rcLifeRetry')){const retry=document.createElement('button');retry.id='rcLifeRetry';retry.type='button';retry.textContent='활용 기록 다시 연결';retry.onclick=()=>startLifecycle();$('#rcNotices').append(retry);}}}
-  function lifeCanEdit(r){return lifecycle?.ready&&!lifecycle.isPending(r.id)&&(role==='owner'||galleryState?.role==='owner'||r.permissions?.canEdit===true||r.creator===account);}
+  function lifeCanEdit(r){if(Array.isArray(window.AiselAccess?.session?.permissions?.menuAllowlist))return false;return lifecycle?.ready&&!lifecycle.isPending(r.id)&&(role==='owner'||galleryState?.role==='owner'||r.permissions?.canEdit===true||r.creator===account);}
   function lifeTime(at){return at?new Date(at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';}
   function renderLifeActions(card,r){
     const value=lifecycle?.get(r.id)||{status:'active'},editable=lifeCanEdit(r);

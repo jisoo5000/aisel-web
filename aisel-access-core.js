@@ -81,9 +81,9 @@
  function collectionIdentity(account){
   if(!account?.uid||account.isAnonymous)return false;
   if(account.emailVerified===true)return true;
-  return account.uid===user()?.uid&&account.uid===session?.uid&&session.active===true&&session.role==='designer'&&
+  return account.uid===user()?.uid&&account.uid===session?.uid&&session.active===true&&(session.role==='designer'||session.permissions?.menuAllowlist?.includes('references'))&&
    session.credentialMode==='owner_managed'&&session.credentialState==='ready'&&!session.passwordChangeRequired&&
-   allowed('references')&&allowed('designmeeting');
+   allowed('references')&&(session.role!=='designer'||allowed('designmeeting'));
  }
  function defaultDesigner(){
   if(!session?.uid||session.uid!==user()?.uid||session.active!==true||!['designer','md','logistics'].includes(session.role)||session.passwordChangeRequired)return '';
