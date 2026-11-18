@@ -2806,7 +2806,7 @@
 }
 @media screen and (max-width: 600px) {
   #editorView .editor-mobile-head { position: relative; padding-right: 76px; }
-  #editorView .editor-mobile-head > #deleteBtn {
+  #editorView .editor-mobile-head > #generateNameBtn {
     position: absolute; top: 12px; right: 12px;
     display: inline-flex !important; align-items: center; justify-content: center;
     box-sizing: border-box; width: 52px; height: 40px; min-height: 40px;
@@ -2896,7 +2896,7 @@
   #sheet > .meta .designer > .k { color: #2F3B52; }
 }
 @media screen and (max-width: 600px) {
-  #editorView .editor-mobile-head > #deleteBtn { height: 36px; min-height: 36px; }
+  #editorView .editor-mobile-head > #generateNameBtn { height: 36px; min-height: 36px; }
 }
 @media screen and (max-width: 900px) {
   #sheet > .meta .designer {
@@ -3645,7 +3645,7 @@
        뜨는 다른 경고(setCodeChangeNotice_)가 이 자리를 그대로 씁니다. -->
   <div class="code-pending-hint" id="codePendingHint"></div>
   <div class="editor-mobile-head noprint">
-    <div class="editor-mobile-title"><span class="editor-identity-label">품명</span><strong id="mobileProductName" role="button" tabindex="0" aria-label="품명 수정">작업지시서</strong></div>
+    <div class="editor-mobile-title"><span class="editor-identity-label">품명</span><strong id="mobileProductName" role="button" tabindex="0" aria-label="품명 수정">작업지시서</strong><button type="button" id="deleteBtn" class="noprint ref-icon-btn" title="작업지시서 삭제" aria-label="작업지시서 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button></div>
   <section id="nameReviewPanel" class="noprint" aria-label="상품명 확정과 변경 이력" hidden></section>
     <div class="editor-mobile-caption"><span class="editor-identity-label">품번</span><span id="mobileProductCode" role="button" tabindex="0" aria-label="카테고리 수정"></span></div>
   </div>
@@ -3685,7 +3685,7 @@
 
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈와 수량을 확인해 발주">발주 요청</button>
-      <button class="btn ghost drop-btn mfold" id="deleteBtn">삭제</button>
+      <button type="button" class="btn ghost mfold" id="generateNameBtn" aria-haspopup="dialog">이름 생성</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle" hidden>저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
@@ -3770,13 +3770,15 @@
 
   <div class="predict-panel noprint" id="refPanel">
     <div class="ref-panel-heading"><div class="sec-title-np">레퍼런스</div><button type="button" id="refAddBtn" class="ref-icon-btn" title="링크 추가" aria-label="레퍼런스 링크 추가">+</button></div>
+    <!-- Shared icon markup for existing fabric-row controls. -->
+    <template id="refLinkDelBtn"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></template>
     <div id="refLinksList">
     <div class="predict-row single ref-link-row ref-actions-row" data-ref-index="0">
       <label for="refLink">링크</label>
       <input id="refLink" type="text" placeholder="https://... (붙여넣으면 클릭 가능한 링크로 바뀝니다)">
       <div class="ref-actions">
         <button type="button" id="refEditBtn" class="ref-icon-btn" title="수정" aria-label="링크 수정"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button>
-        <button type="button" id="refLinkDelBtn" class="ref-icon-btn danger" title="삭제" aria-label="링크 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
+
       </div>
     </div>
     <div class="predict-row single ref-link-row ref-actions-row" data-ref-index="1" hidden>
@@ -3784,7 +3786,7 @@
       <input id="refLink2" type="text" placeholder="https://... (레퍼런스 링크)">
       <div class="ref-actions">
         <button type="button" id="refEditBtn2" class="ref-icon-btn" title="수정" aria-label="링크 2 수정"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m15 5 4 4M4 16l-1 5 5-1L20 8a2.83 2.83 0 0 0-4-4Z"/></svg></button>
-        <button type="button" id="refLinkDelBtn2" class="ref-icon-btn danger" title="삭제" aria-label="링크 2 삭제"><svg class="ref-action-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg></button>
+
       </div>
     </div>
     </div>
@@ -6640,20 +6642,21 @@
   function clearRegistrationNotice_(id='cafe24RegistrationNotice'){
     document.getElementById(id)?.remove();
   }
+  function registrationStage_(status){return status==="order" || status==="pdp";}
   function syncOrderRegistrationNotice_(source,code){
     const notice=document.getElementById('cafe24RegistrationNotice');
-    if(notice&&(notice.dataset.code!==code||source?.status!=='order'||source?.cafe24Done||
+    if(notice&&(notice.dataset.code!==code||!registrationStage_(source?.status)||source?.cafe24Done||
       notice.dataset.fingerprint!==registrationFingerprint_(source)))clearRegistrationNotice_();
   }
   function registrationNotice_(message, ok, retry, options={}){
-    const id=options.order?'cafe24RegistrationNotice':'workorderActionNotice';
+    const id=options.order||options.pdp?'cafe24RegistrationNotice':'workorderActionNotice';
     let notice=document.getElementById(id);
     if(!notice){
       notice=document.createElement('div');notice.id=id;notice.className='noprint workorder-action-notice';
       notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');
-      if(options.order)document.getElementById('orderSizePanel').append(notice);
-      else document.querySelector('#editorView .toolbar').after(notice);
     }
+    if(options.order)document.getElementById('orderSizePanel').append(notice);
+    else document.querySelector('#editorView .toolbar').after(notice);
     notice.dataset.code=options.code||currentCode||'';
     notice.dataset.fingerprint=options.fingerprint||'';
     notice.dataset.ok=String(!!ok);notice.replaceChildren(document.createTextNode(message));
@@ -6676,7 +6679,7 @@
     if(!user?.emailVerified)throw Error('대표자 계정으로 로그인한 뒤 등록을 확인해주세요.');
     const token=await user.getIdToken();
     const marker=await fetch('https://aisel-workorder-default-rtdb.asia-southeast1.firebasedatabase.app/workorderRegistrationRequests/'+encodeURIComponent(code)+'.json?auth='+encodeURIComponent(token),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({requestedAt:{'.sv':'timestamp'}}),signal:AbortSignal.timeout(15000)});
-    if(!marker.ok)throw Error('등록 요청 권한을 확인하지 못했습니다. 발주 저장은 유지됩니다.');
+    if(!marker.ok)throw Error('카페24 등록 요청 권한을 확인하지 못했습니다.');
     const response = await fetch(CAFE24_REGISTRATION_URL, {
       method:"POST", mode:"cors", credentials:"omit", headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
       body:JSON.stringify({code}), signal:AbortSignal.timeout(90000)
@@ -6698,17 +6701,18 @@
     if(orderRegistrationFlights_.has(code))return orderRegistrationFlights_.get(code);
     const authEpoch=orderRegistrationAuthEpoch_;
     const task=(async()=>{
-      let fingerprint='';
+      let fingerprint='', stage=options.stage;
       const same=()=>currentCode===code&&woRef===ref&&!loading&&authEpoch===orderRegistrationAuthEpoch_;
       try{
         const source=(await ref.once('value')).val();
         if(!same())return false;
         syncOrderRegistrationNotice_(source,code);
-        if(source?.status!=='order'||source.cafe24Done)return true;
+        if(!registrationStage_(source?.status)||source.cafe24Done)return true;
         fingerprint=registrationFingerprint_(source);
-        const noticeOptions={order:true,code,fingerprint};
+        stage=source.status;
+        const noticeOptions={order:stage==='order',pdp:stage==='pdp',code,fingerprint};
         if(window.AiselUnifiedAdapter?.isOwner&&!window.AiselUnifiedAdapter.isOwner()){
-          registrationNotice_('발주 저장됨 · 카페24 등록은 대표자 계정에서 확인해주세요.',true,null,noticeOptions);return false;
+          registrationNotice_('카페24 등록은 대표자 계정에서 확인해주세요.',true,null,noticeOptions);return false;
         }
         // One attempt per unchanged input in this session. Explicit retry remains available.
         if(!options.force&&orderRegistrationAttempts_.get(code)===fingerprint)return false;
@@ -6716,12 +6720,12 @@
         const price=num(source.targetThreshold);
         if(!price||!source.priceConfirmed||!['manual','auto'].includes(source.priceSource)){
           const canConfirm=price>0&&priceAllowed_(price,totalCost_())&&num($('#targetThreshold').value)===price;
-          registrationNotice_('발주는 저장됐습니다. '+(canConfirm?'판매가를 한 번 확인해주세요.':'확정 판매가를 입력해주세요.'),false,
+          registrationNotice_('판매가 확인 필요 · '+(canConfirm?'판매가를 한 번 확인해주세요.':'확정 판매가를 입력해주세요.'),false,
             canConfirm?()=>confirmRegistrationPrice_(code,ref,price):null,
             {...noticeOptions,actionLabel:canConfirm?'판매가 '+price.toLocaleString('ko-KR')+'원 확인':undefined});
           return false;
         }
-        registrationNotice_('발주 저장됨 · 카페24 기본 상품 등록 중…',true,null,noticeOptions);
+        registrationNotice_('카페24 기본 상품 등록 중…',true,null,noticeOptions);
         const result=await registerOrderedWorkorder_(code);
         // Commit only to the originating workorder, even when navigation occurred.
         await ref.update({cafe24Done:true});
@@ -6734,8 +6738,8 @@
         }
         return true;
       }catch(error){
-        if(same())registrationNotice_('발주는 저장됐습니다. '+(error.message||'카페24 등록을 다시 확인해주세요.'),false,
-          ()=>requestOrderRegistration_(code,ref,{force:true}),{order:true,code,fingerprint});
+        if(same())registrationNotice_((error.message||'카페24 등록을 다시 확인해주세요.'),false,
+          ()=>requestOrderRegistration_(code,ref,{force:true,stage}),{order:stage!=='pdp',pdp:stage==='pdp',code,fingerprint});
         return false;
       }finally{orderRegistrationFlights_.delete(code);}
     })();orderRegistrationFlights_.set(code,task);return task;
@@ -7021,7 +7025,14 @@
   document.querySelectorAll(".status-btn").forEach(btn=>{
     btn.addEventListener("click", async ()=>{
       const next = btn.dataset.status === "sampling" && currentStatus === "sampling" ? "resampling" : btn.dataset.status;
-      if(statusChanging_ || next === currentStatus) return;
+      if(statusChanging_)return;
+      if(next===currentStatus){
+        if(next==='pdp' && !loading && woRef && currentCode && !codeConflictNow_()){
+          const code=currentCode,ref=woRef;
+          if(await settleEditorSave_() && currentCode===code && woRef===ref)await requestOrderRegistration_(code,ref,{force:true,stage:next});
+        }
+        return;
+      }
       if(loading || !woRef || !currentCode || codeConflictNow_()){
         alert("작지를 불러오는 중이거나 품번이 겹쳐 상태를 저장할 수 없습니다. 잠시 후 다시 시도해주세요.");
         return;
@@ -7062,7 +7073,7 @@
         updateStatusButtons();
         refreshCafe24Bar_();
         if(next === "sampling" || next === "resampling") ensureSampleMgmtRow_(code, pumInput.value.trim());
-        if(next === "order")void requestOrderRegistration_(code,woRef);
+        if(registrationStage_(next))void requestOrderRegistration_(code,woRef,{stage:next});
         // PDP 진입 시 기존 상세설명 생성 동작은 유지합니다.
         if(next === "pdp" && window.onPdpStageReached_) window.onPdpStageReached_();
       }catch(err){
@@ -8017,7 +8028,7 @@
       if(result===null)return; // The write and local draft remain pending; a late server acknowledgement still resolves them.
       originalSaved=result===true;
       if(!originalSaved || !isCurrentSaveState_(state)){if(isCurrentSaveState_(state)&&state.result!=='pending'&&!state.queued)rejectEditorSave_(state.blockReason||'저장 조건을 확인한 뒤 다시 저장해 주세요.');return;}
-      if(currentStatus==="order")void requestOrderRegistration_(currentCode,woRef);
+      if(registrationStage_(currentStatus))void requestOrderRegistration_(currentCode,woRef,{stage:currentStatus});
       // External transfers start only after this record's original write succeeded.
       if(window.saveFabricMaster_)Promise.resolve(window.saveFabricMaster_({
         supplier:$("#fabricSupplier").value,name:$("#fabricName").value,price:$("#fabricPrice").value,
@@ -8129,6 +8140,13 @@
     currentOrderCompleted_ = st.orderCompleted === true;
     currentStatus = normalizeWorkOrderStatus_(st.status);
     syncOrderRegistrationNotice_(st,currentCode);
+    if(st.status==='pdp'&&!st.cafe24Done&&!document.getElementById('cafe24RegistrationNotice')){
+      const code=currentCode,ref=woRef;
+      registrationNotice_('카페24 등록 대기',false,async()=>{
+        if(currentCode===code&&woRef===ref&&await settleEditorSave_()&&currentCode===code&&woRef===ref)
+          await requestOrderRegistration_(code,ref,{force:true,stage:'pdp'});
+      },{pdp:true,code,fingerprint:registrationFingerprint_(st),actionLabel:'등록 확인'});
+    }
     updateStatusButtons();
     photoStage_ = st.photoStage || "reference";
     renderPhotoStage_();
@@ -8232,7 +8250,7 @@
   function setupReferenceRow_(row,index){
     const suffix = index === 0 ? "" : String(index + 1);
     const input = row.querySelector("input"), label = row.querySelector("label");
-    const edit = row.querySelector(".ref-icon-btn:not(.danger)"), del = row.querySelector(".ref-icon-btn.danger");
+    const edit = row.querySelector(".ref-icon-btn");
     row.dataset.refIndex = String(index);
     row.classList.remove("is-editing");
     let shortLink = row.querySelector(".ref-short-link");
@@ -8258,15 +8276,9 @@
     input.id = "refLink" + suffix;
     label.textContent = index === 0 ? "링크" : "링크 " + (index + 1);
     label.htmlFor = input.id;
-    edit.id = "refEditBtn" + suffix; del.id = "refLinkDelBtn" + suffix;
+    edit.id = "refEditBtn" + suffix;
     edit.setAttribute("aria-label", label.textContent + " 수정");
-    del.setAttribute("aria-label", label.textContent + " 삭제");
-    setupRefLink_("#" + input.id, "#" + edit.id, "#" + del.id, ()=>{
-      const links = collectReferenceLinks_(true);
-      links.splice(index,1);
-      renderReferenceLinks_(links);
-      saveSoon();
-    });
+    setupRefLink_("#" + input.id, "#" + edit.id);
   }
   function renderReferenceLinks_(values, preserveFocused=false){
     const links = values.length ? Array.from(values) : [""];
@@ -8363,7 +8375,7 @@
     if(editBtn) editBtn.addEventListener("click", ()=>{
       openReferenceEditor_(input);
     });
-    const delBtn = $(delBtnSel);
+    const delBtn = delBtnSel ? $(delBtnSel) : null;
     if(delBtn) delBtn.addEventListener("click", ()=>{
       if(onDelete){ onDelete(); return; }
       input.value = "";
@@ -11120,8 +11132,7 @@
   }
   function orderDraftRequirement_(){
     if(!orderColors_().length)return "작지의 컬러를 먼저 선택해주세요.";
-    const factory=!!$("#factory").value.trim(),name=!!$("#pumMyeong").value.trim();
-    return !factory&&!name?"작지의 공장과 품명을 먼저 입력해주세요.":!factory?"작지의 공장을 먼저 입력해주세요.":!name?"작지의 품명을 먼저 입력해주세요.":"";
+    return $("#pumMyeong").value.trim() ? "" : "작지의 품명을 먼저 입력해주세요.";
   }
   function selectOrderPreset_(presetKey){
     if(statusChanging_||initialOrderLocked_()||!ORDER_SIZE_PRESETS_[presetKey]||!orderColors_().length)return;
@@ -11138,7 +11149,7 @@
     const date=new Intl.DateTimeFormat("sv-SE",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit"}).format(now);
     const items=colors.flatMap(color=>preset.sizes.map(size=>({
       orderType:"초기발주",orderCategory:"공장발주",styleCode:code,
-      factory:$("#factory").value.trim(),itemName:$("#pumMyeong").value.trim(),
+      factory:$("#factory").value.trim() || "공장 미지정",itemName:$("#pumMyeong").value.trim(),
       color,size,qty:quantities?quantities[orderQuantityKey_(color,size)]:20,unit:"장",orderDate:date,memo:""
     }))).filter(item=>item.qty>0);
     return {version:1,id:"initial-"+code,preset:presetKey,colors:colors.slice(),sizes:preset.sizes.slice(),
@@ -12853,9 +12864,7 @@
     if(mobileUnifiedReady_)renderHeaderNames_();
     renderNameReview_();
   }
-  nameReviewPanel_=window.AiselNames.mount({document,container:document.getElementById('nameReviewPanel'),
-    getDoc:()=>({pumMyeong:lastSavedState_?.pumMyeong||pumInput.value,nameReview:nameReviewState_}),
-    getActor:nameActor_,act:async(action,value)=>{
+  async function changeReviewedName_(action,value){
       if(loading||!woRef||!currentCode||statusChanging_)throw Error('작업지시서를 불러온 뒤 다시 눌러주세요.');
       if(!await waitForEditorComposition_())throw Error('한글 입력을 마쳐주세요.');
       const code=currentCode,ref=woRef,actor=nameActor_();
@@ -12875,7 +12884,40 @@
       if(await writeIndexIfChanged_(code,saved)===false)throw Error('이름은 저장됐습니다. 목록 반영을 다시 확인해주세요.');
       window.dispatchEvent(new CustomEvent('aisel-access-workorders-changed'));
       if(window.AiselSheetBridge)Promise.resolve(window.AiselSheetBridge.sync(code,at)).catch(()=>{});
-    }});
+  }
+  nameReviewPanel_=window.AiselNames.mount({document,container:document.getElementById('nameReviewPanel'),
+    getDoc:()=>({pumMyeong:lastSavedState_?.pumMyeong||pumInput.value,nameReview:nameReviewState_}),
+    getActor:nameActor_,act:changeReviewedName_});
+  const nameChoices=document.createElement('dialog');
+  nameChoices.id='workorderNameChoices';
+  nameChoices.setAttribute('aria-labelledby','nameChoicesTitle');
+  nameChoices.innerHTML='<h3 id="nameChoicesTitle">상품명 후보</h3><div class="name-options"></div><p role="status"></p><form method="dialog"><button class="btn" type="submit">닫기</button></form>';
+  document.body.append(nameChoices);
+  document.getElementById('generateNameBtn').addEventListener('click',()=>{
+    if(loading||!currentCode||!woRef){alert('작업지시서를 먼저 저장해주세요.');return;}
+    const code=currentCode,ref=woRef,initialName=pumInput.value.trim();
+    const options=nameChoices.querySelector('.name-options'),message=nameChoices.querySelector('[role="status"]');
+    const names=window.workorderNameCandidates_?.(initialName,allWorkOrders,code)||[];
+    message.textContent=names.length?'':'품명이나 품목을 입력한 뒤 다시 눌러주세요.';
+    options.replaceChildren();
+    const initialReview=JSON.parse(JSON.stringify(lastSavedState_||{}));
+    for(const name of names){
+      const button=document.createElement('button');
+      button.type='button';button.className='btn';button.textContent=name;
+      button.addEventListener('click',async()=>{
+        if(currentCode!==code||woRef!==ref||initialName!==pumInput.value.trim()||
+          !window.AiselNames.sameVersion(initialReview,lastSavedState_||{})){
+          message.textContent='작지가 변경됐습니다. 창을 닫고 후보를 다시 확인해주세요.';return;
+        }
+        options.inert=true;
+        try{await changeReviewedName_('edit',name);nameChoices.close();}
+        catch(error){message.textContent=error.message;}
+        finally{options.inert=false;}
+      });
+      options.append(button);
+    }
+    nameChoices.showModal();
+  });
   window.addEventListener('aisel-access-change',renderNameReview_);
   // Reuse the actual name input, including its IME/save listeners, only while editing.
   const mobileName=document.getElementById('mobileProductName');
@@ -12965,8 +13007,8 @@
   function codeAction_(){if(codePending_||newOrderMode_)openMobileCodeSettings_();else copySavedCode_();}
   for(const node of [codeView,headerCode]){node.title='저장된 품번 복사';node.addEventListener('click',codeAction_);node.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();codeAction_();}});}
   const newAction=document.getElementById('newBtn'),deleteAction=document.getElementById('deleteBtn');
-  const newHome=document.createComment('desktop new action'),deleteHome=document.createComment('desktop delete action');
-  newAction.before(newHome);deleteAction.before(deleteHome);
+  const newHome=document.createComment('desktop new action');
+  newAction.before(newHome);
   const headerReference=document.getElementById('refPanel'),referenceHome=document.createComment('desktop reference panel');
   headerReference.before(referenceHome);
   const mobileLayout=workOrderLayoutMedia_('(max-width:600px)');
@@ -13073,7 +13115,7 @@
     const date=document.createElement('input');date.type='date';date.setAttribute('aria-label','수정사항 날짜');
     date.value=record.date||'';field.append(date);heading.append(field);
     const remove=document.createElement('button');remove.type='button';remove.className='ref-icon-btn danger mobile-change-delete';remove.title='삭제';
-    remove.innerHTML=document.getElementById('refLinkDelBtn').innerHTML;heading.append(remove);
+    remove.innerHTML=document.getElementById('deleteBtn').innerHTML;heading.append(remove);
     const add=document.createElement('button');add.type='button';add.className='mobile-change-add';add.textContent='+';add.setAttribute('aria-label','수정사항 입력칸 추가');heading.append(add);card.append(heading);
     const textarea=document.createElement('textarea');textarea.rows=7;textarea.className='mobile-change-text';textarea.setAttribute('aria-label','수정사항');textarea.placeholder='수정할 내용 · 변경 기록';textarea.value=record.raw??record.changes??'';card.append(textarea);
     const showDate=()=>{dateLabel.textContent=date.value?date.value.replace(/-/g,'.'):'날짜 선택';};showDate();
@@ -13218,7 +13260,9 @@
     if(!mobileLayout.matches)finishMobileNameEdit_();
     // Factory save/print keeps its compact two-line label at every viewport.
     // The existing five action buttons stay in their original toolbar order.
-    newHome.after(newAction);deleteHome.after(deleteAction);
+    newHome.after(newAction);
+    const deleteHost=mobileLayout.matches ? document.querySelector('.editor-mobile-title') : nameHome.parentElement;
+    deleteHost.append(deleteAction);
     if(mobileLayout.matches)document.querySelector('.editor-mobile-head').appendChild(headerReference);
     else{if(!headerReference.closest('#desktopEditPanel'))referenceHome.after(headerReference);if(codeSettings.open)codeSettings.close();}
     updateRefLinkMode_();
@@ -13385,6 +13429,17 @@ let sel3 = null;
 // 셀링포인트·컬러·키워드와 같은 이유로 빠져 있었습니다. 작지를 저장한 적이 없으면
 // (그전에는 안 써서 몰랐다는 게 정확히 이 경우입니다) 화면에 남아 있던 이전 작지의
 // 고유명·원단·아이템명이 그대로 다음 작지 품명에 들어가 여러 작지 품명이 똑같아졌습니다.
+window.workorderNameCandidates_ = (current,index,code) => {
+  const roots=new Set(name1List);
+  const words=current.trim().split(/\s+/).filter(Boolean);
+  if(words.length>1&&(roots.has(words[0])||words[0]===sel1))words.shift();
+  const suffix=sel3 ? [...buildNameParts_(),sel3].filter(Boolean).join(' ') : words.join(' ');
+  if(!suffix)return [];
+  const used=new Set(Object.entries(index||{}).filter(([key])=>key!==code).map(([,item])=>String(item?.pumMyeong||'').trim().split(/\s+/)[0]));
+  const available=[...roots].filter(word=>word&&!used.has(word)&&word+' '+suffix!==current);
+  const offset=Math.floor(Math.random()*available.length);
+  return available.slice(offset).concat(available.slice(0,offset)).slice(0,3).map(word=>word+' '+suffix);
+};
 window.getNameParts_ = () => ({ sel1, sel2: sel2.slice(), sel3 });
 window.setNameParts_ = (v) => {
   sel1 = (v && v.sel1) || null;
@@ -16840,7 +16895,7 @@ AiselSheetSalesView.start();
  body #editorView .toolbar > .tb-row {order:1;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:40px;gap:6px;}
  body:not(.mfold-open) #editorView .tb-row > .btn,body.mfold-open #editorView .tb-row > .btn {display:inline-flex!important;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-width:0;height:40px;min-height:40px;max-height:40px;padding:4px 2px;font-size:11px;line-height:1.2;}
  body #editorView .tb-row > #newBtn {grid-row:1;grid-column:1;order:0;}
- body #editorView .tb-row > #deleteBtn {grid-row:1;grid-column:2;order:0;background:#7b3547;border-color:#7b3547;color:#fff;}
+ body #editorView .tb-row > #generateNameBtn {grid-row:1;grid-column:2;order:0;background:#7b3547;border-color:#7b3547;color:#fff;}
  body #editorView .tb-row > #mfoldToggle {grid-row:1;grid-column:3;order:0;}
  body #editorView .tb-row > #saveBtn {grid-row:2;grid-column:1;order:0;}
  body #editorView .tb-row > #factorySaveBtn {grid-row:2;grid-column:2;order:0;}
@@ -16880,7 +16935,7 @@ AiselSheetSalesView.start();
   #editorView .editor-mobile-head {min-height:72px;padding-right:142px;position:relative;}
   #mobileHeaderActions {display:flex;position:absolute;right:10px;top:18px;gap:5px;width:128px;}
   #editorView #mobileHeaderActions .btn {display:inline-flex!important;align-items:center;justify-content:center;width:61.5px;min-width:0;height:36px;min-height:36px;padding:3px 1px;font-size:11px;white-space:nowrap;}
-  #editorView #mobileHeaderActions #deleteBtn {background:#7b3547;border-color:#7b3547;color:#fff;}
+  #editorView #mobileHeaderActions #generateNameBtn {background:#7b3547;border-color:#7b3547;color:#fff;}
   #editorView .editor-mobile-title {display:flex;flex-wrap:wrap;gap:4px;min-width:0;}
   #editorView .editor-mobile-title strong {white-space:normal;overflow-wrap:anywhere;}
   #editorView .statusbar {display:grid!important;}
@@ -16950,7 +17005,7 @@ AiselSheetSalesView.start();
  #editorView .editor-mobile-head #refPanel .ref-action-icon {width:16px;height:16px;flex:0 0 16px;}
  body #editorView .toolbar > .tb-row {grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:48px;gap:4px;}
  body #editorView .tb-row > #newBtn {grid-column:1;grid-row:1;}
- body #editorView .tb-row > #deleteBtn {grid-column:2;grid-row:1;}
+ body #editorView .tb-row > #generateNameBtn {grid-column:2;grid-row:1;}
  body #editorView .tb-row > #saveBtn {grid-column:3;grid-row:1;}
  body #editorView .tb-row > #factorySaveBtn {grid-column:4;grid-row:1;}
  body #editorView .tb-row > #printBtn {grid-column:5;grid-row:1;}
@@ -16971,14 +17026,14 @@ AiselSheetSalesView.start();
   width:max-content;min-width:0;justify-self:start;padding:0 10px;font-size:14px;
  }
  body #editorView .toolbar > .tb-row {grid-auto-rows:60px;}
- body #editorView .toolbar .tb-row > :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn) {
+ body #editorView .toolbar .tb-row > :is(#newBtn,#generateNameBtn,#saveBtn,#factorySaveBtn,#printBtn) {
   height:60px;min-height:60px;max-height:60px;font-size:14px;font-weight:600;
   line-height:1.2;border:1px solid #2F3B52;word-break:keep-all;overflow-wrap:anywhere;
  }
- body #editorView .tb-row > #deleteBtn {
+ body #editorView .tb-row > #generateNameBtn {
   background:#F6EEF1;color:#7D3C4D;border-color:#DCC8CF;
  }
- body #editorView .tb-row > #deleteBtn:hover {background:#EFE1E7;}
+ body #editorView .tb-row > #generateNameBtn:hover {background:#EFE1E7;}
  #editorView #productColors #selectedColors .copygen-color-chip,
  #editorView #productColors #variantPanel .copygen-color-chip {
   background:var(--workorder-color-bg,#F3F6FA)!important;
@@ -17114,7 +17169,7 @@ AiselSheetSalesView.start();
  body #editorView .toolbar,body.mfold-open #editorView .toolbar {padding:8px 6px 4px;}
  body #editorView .toolbar > .tb-row {grid-auto-rows:40px;gap:4px;}
  #editorView #statusBar {padding:4px 6px 8px;gap:4px;border-top:0;}
- body #editorView .toolbar .tb-row > :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn),
+ body #editorView .toolbar .tb-row > :is(#newBtn,#generateNameBtn,#saveBtn,#factorySaveBtn,#printBtn),
  #editorView #statusBar .status-btn {
   box-sizing:border-box;width:100%;min-width:0;height:40px;min-height:40px;max-height:40px;
   padding:4px 2px;border:1px solid #BAC2CF;border-radius:4px;
@@ -17122,7 +17177,7 @@ AiselSheetSalesView.start();
   color:#2F3B52;background:#fff;white-space:normal;word-break:keep-all;overflow-wrap:normal;
  }
  #editorView #statusBar .status-btn.active {background:#2F3B52;border-color:#2F3B52;color:#fff;}
- body #editorView .tb-row > #deleteBtn:hover {background:#F3F6FA;}
+ body #editorView .tb-row > #generateNameBtn:hover {background:#F3F6FA;}
  body #editorView .editor-mobile-head #refPanel {grid-template-columns:max-content auto 32px;gap:6px;}
  #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {
   width:100%;height:32px;min-height:32px;padding:0 6px;
@@ -17155,7 +17210,7 @@ AiselSheetSalesView.start();
  #editorView #sheet :is(#designer,#phone,#factory,#factoryPhone,#fabricSupplierField,#fabricNameField,#blend) {color:var(--ink)!important;}
  #editorView #sheet .sec-title {font-size:18px;line-height:1.4;letter-spacing:0;color:var(--ink);}
  #editorView #metaAccordionHead,#editorView #productColors h2 {color:var(--ink);}
- body #editorView .toolbar .tb-row > :is(#newBtn,#deleteBtn,#saveBtn,#factorySaveBtn,#printBtn),
+ body #editorView .toolbar .tb-row > :is(#newBtn,#generateNameBtn,#saveBtn,#factorySaveBtn,#printBtn),
  #editorView #statusBar .status-btn:not(.active),
  #editorView .editor-mobile-head #refPanel .ref-link-row > .ref-short-link {color:var(--ink);}
  #galleryView > .gallery-head h2 {font-size:18px;color:var(--ink);}
@@ -18136,4 +18191,16 @@ window.AiselUnifiedAdapter={
 
 <script src="company-erp.js?v=staff-menu-scope-20261118"></script>
 <link rel="stylesheet" href="aisel-select.css?v=20261113" media="screen">
+<style media="screen">
+ html:root body #editorView .editor-mobile-head .editor-mobile-title:has(#deleteBtn) {grid-template-columns:var(--aisel-identity-label-width,24px) minmax(0,1fr) auto;align-items:center}
+ html:root body #editorView #deleteBtn {display:inline-flex;position:static;align-items:center;justify-content:center;flex:0 0 30px;width:30px;min-width:30px;height:32px;min-height:32px;padding:0;border:1px solid #dfe1e4;border-radius:4px;background:white;color:inherit}
+ html:root body #editorView #deleteBtn svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+ html:root body #editorView .editor-mobile-head #refPanel {width:max-content}
+ html:root body #editorView .toolbar .tb-row #generateNameBtn {color:var(--aisel-ink);background:white;border-color:var(--aisel-line);padding:0 2px;font-size:12px!important;line-height:16px}
+ #workorderNameChoices {width:min(340px,calc(100vw - 24px));box-sizing:border-box;padding:16px;border:1px solid #ddd;border-radius:6px;color:#34383c}
+ #workorderNameChoices::backdrop {background:#0005}
+ #workorderNameChoices h3 {font-size:16px;margin:0 0 10px}
+ #workorderNameChoices button {margin:3px 0;min-height:34px}
+ #workorderNameChoices .name-options {display:grid;gap:2px}
+ </style>
 <script src="aisel-select.js?v=20261113"></script>
