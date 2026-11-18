@@ -28,3 +28,13 @@ jobs:
           config = json.load(urllib.request.urlopen('https://identitytoolkit.googleapis.com/v1/projects?key='+key, timeout=20))
           assert 'jisoo5000.github.io' in config.get('authorizedDomains', []), 'Add jisoo5000.github.io to Firebase authorized domains'
           print('ERP origin authorized for sign-in.')
+          endpoint = 'https://sheets.googleapis.com/v4/spreadsheets/1uV5fwvRQHZhF1k54C1xlA-bfG07xouIQpr7EMFwo6KM?fields=spreadsheetId&key=' + key
+          req = urllib.request.Request(endpoint, headers={'Referer':'https://jisoo5000.github.io/'})
+          try:
+              urllib.request.urlopen(req, timeout=20)
+              raise AssertionError('The workbook unexpectedly allowed a public lookup')
+          except urllib.error.HTTPError as error:
+              info = json.load(error).get('error', {})
+              reasons = [d.get('reason','') for d in info.get('details', [])]
+              print('Private Sheets request status:', error.code, reasons, info.get('status',''))
+              assert 'SERVICE_DISABLED' not in reasons, 'Sheets API disabled for the login project'
