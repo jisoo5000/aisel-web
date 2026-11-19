@@ -149,11 +149,19 @@
   const status=el('p','후보를 불러오는 중입니다.','amm-short-status');status.setAttribute('role','status');host.append(bar,status);
   try{
    const data=await shortlistApi('companySourceSnapshot',{kind:'meeting'},stamp,uid);
-   const contextTable=Object.values(data.snapshot?.tables||{})[0];
-   const share=Object.values(contextTable?.rows||{}).find(r=>r?.[0]==='스테디셀러 매출 비중');
-   if(share?.[1]&&/^\d+(\.\d+)?%$/.test(share[2])&&/^\d+(\.\d+)?%$/.test(share[3])){
-    const summary=el('p',share[1]+' · 상위 5개 '+share[2]+' · 상위 7개 '+share[3],'amm-short-sales');
-    summary.append(el('small','　'+String(share[4]||'')));bar.after(summary);
+   const tables=Object.values(data.snapshot?.tables||{});
+   const share=tables.flatMap(t=>Object.values(t?.rows||{})).find(r=>r?.[0]==='스테디셀러 매출 비중');
+   if(share?.[1]){
+    const parts=[];
+    if(String(share[2]||'').includes('개')&&String(share[3]||'').includes('개')){
+     for(const [idx,label] of [[2,'상위 80%'],[3,'상위 85%'],[7,'상위 90%'],[6,'상위 10개 실제 비중']])if(share[idx])parts.push(label+' '+share[idx]);
+    }else{
+     for(const [idx,label] of [[2,'상위 5개'],[3,'상위 7개']])if(/^\d+(\.\d+)?%$/.test(share[idx]))parts.push(label+' '+share[idx]);
+    }
+    if(parts.length){
+     const summary=el('p',share[1]+' · '+parts.join(' · '),'amm-short-sales');
+     summary.append(el('small','　'+String(share[4]||'')));bar.after(summary);
+    }
    }
    const rows=shortlistRows(data.snapshot);
    if(!rows.length){status.textContent='앱의 첫 동기화를 기다리고 있습니다. 연결 시트에서 후보를 볼 수 있습니다.';return;}

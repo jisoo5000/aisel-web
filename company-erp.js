@@ -142,12 +142,16 @@
  const pantsBook='1uV5fwvRQHZhF1k54C1xlA-bfG07xouIQpr7EMFwo6KM';
  const pantsRange="'바지 왕국'!A:T", pantsChecks="'바지 왕국 확인기록'!A:B";
  const pantsApi='https://sheets.googleapis.com/v4/spreadsheets/'+pantsBook;
- let pantsGrant=null,pantsView=null;
+ const newSalesBook='1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0';
+ const photoQueueBook='151CNUkfF4Xwt7SrCT3aOnmR1xQqcvyWv75RJhVL06_8';
+ let pantsGrant=null,pantsView=null,pantsCache=null,newSheetCache={};
+ // The daily sheet cutover is 03:45 in Seoul (UTC+9).
+ const pantsDay=()=>new Date(Date.now()+(9*60-225)*60000).toISOString().slice(0,10);
  function releaseBodyKingdom(){
   pantsView?.abort();
   pantsView=null;
  }
- function resetPantsGrant(){pantsGrant=null;}
+ function resetPantsGrant(){pantsGrant=null;pantsCache=null;newSheetCache={};}
  function pantsProductName(value){
   return String(value||'').replace(/컴포트\s*팬츠/g,'CP').replace(/컴포트\s*스커트/g,'CS');
  }
@@ -185,7 +189,17 @@
   }
   for(const p of products.values())p.tasks.sort((a,b)=>a.tier-b.tier);
   if(!sorted.length)throw Error('매출 집계가 아직 없습니다.');
-  return {sorted,monitored,metadata};
+  const total=metadata.get('정상 결제 상품금액');
+  const rankedTotal=sorted.reduce((sum,p)=>sum+p.amount,0);
+  const complete=Number.isSafeInteger(total)&&total>0&&rankedTotal===total&&metadata.get('판매 상품 수')===sorted.length;
+  const coverage=new Map();let sum=0;
+  if(complete)for(const p of sorted){
+   sum+=p.amount;
+   for(const target of [80,85,90])if(!coverage.has(target)&&sum*100>=total*target)coverage.set(target,{count:p.rank,share:sum/total});
+  }
+  const topCount=Math.min(10,sorted.length);
+  const topShare=complete?sorted.slice(0,topCount).reduce((value,p)=>value+p.amount,0)/total:null;
+  return {sorted,monitored,metadata,coverage,topCount,topShare};
  }
  async function pantsGoogleGrant(){
   const account=session()?.uid,run=epoch,fb=root.firebase;
@@ -197,7 +211,7 @@
   const token=result.credential?.accessToken;
   await auth.signOut();
   if(!token||!valid(run,account)||!canView('bodyKingdom'))throw Error('계정 연결을 다시 확인해 주세요.');
-  pantsGrant={account,token,expires:Date.now()+50*60000};
+  resetPantsGrant();pantsGrant={account,token,expires:Date.now()+50*60000};
  }
  function bodyKingdomBoard(){
   const lifecycle=new AbortController(),account=session()?.uid,run=epoch;
@@ -207,7 +221,8 @@
   status.setAttribute('role','status');
   host.append(head,status,body);content.append(host);
   const active=()=>!lifecycle.signal.aborted&&valid(run,account)&&canView('bodyKingdom');
-  let model=null,filter='week',detail='',scrollY=0,saving=false,reading=false;
+  let model=null,filter='90',detail='',scrollY=0,saving=false,reading=false,newLoading=false;
+  let newErrors={};
   const grant=()=>pantsGrant?.account===account&&pantsGrant.expires>Date.now()?pantsGrant.token:'';
   const setStatus=s=>{if(active())status.textContent=s;};
   function fitNames(){
@@ -229,7 +244,7 @@
    const token=grant();if(!token)throw Error('google_connect');
    const response=await fetch(url,{...options,signal:lifecycle.signal,cache:'no-store',credentials:'omit',headers:{Authorization:'Bearer '+token,...options.headers}});
    if(response.status===401){resetPantsGrant();throw Error('google_connect');}
-   if(!response.ok)throw Error(response.status===403?'이 Google 계정의 시트 접근 권한을 확인해 주세요.':'시트 응답을 확인하지 못했습니다. 다시 불러와 주세요.');
+   if(!response.ok)throw Object.assign(Error(response.status===403?'이 Google 계정의 시트 접근 권한을 확인해 주세요.':'시트 응답을 확인하지 못했습니다. 다시 불러와 주세요.'),{status:response.status});
    return response.json();
   }
   function openProduct(p){
@@ -259,17 +274,33 @@
    const short=d=>String(d||'').slice(5).replace('-','.');
    heading('매출 순위','최근 7일 '+short(m.get('집계 시작'))+'–'+short(m.get('집계 종료')));
    const options=el('div','ce-pants-options');
-   const daily=Number(m.get('80% 도달 품목 수'))||model.sorted.length;
-   const week=Number(m.get('85% 도달 품목 수'))||model.sorted.length;
-   for(const [key,title] of [['daily','집중 '+daily+'개'],['week','주간 '+week+'개'],['all','전체']]){
-    const b=button(title,()=>{filter=key;draw();},'ce-pants-filter');
+   const pct=v=>(100*v).toFixed(2)+'%';
+   for(const target of [80,85,90]){
+    const entry=model.coverage.get(target),key=String(target);
+    const label='상위 '+key+'%'+(entry?' · '+entry.count+'개':'');
+    const b=button(label,()=>{filter=key;draw();},'ce-pants-filter');
     b.setAttribute('aria-pressed',String(filter===key));options.append(b);
    }
-   options.append(button('새로고침',()=>loadBoard(),'ce-pants-refresh'));
+   for(const [key,title] of [['all','전체'],['new','신상']]){
+    const b=button(title,()=>{filter=key;draw();if(key==='new')loadNew();},'ce-pants-filter');
+    b.setAttribute('aria-pressed',String(filter===key));options.append(b);
+   }
+   const refresh=button('시트 새로고침',()=>filter==='new'?loadNew(true):loadBoard(true),'ce-pants-refresh');
+   refresh.disabled=reading||newLoading;options.append(refresh);body.append(options);
+   if(filter==='new'){heading('신상','판매 성과 · 사진 합성');newView();return;}
+   if(model.topShare===null)body.append(el('p','ce-pants-hint','원본 판매 상품 수와 합계 확인 중'));
+   else {
+    const text='상위 '+model.topCount+'개 실제 비중 '+pct(model.topShare);
+    const cutoff=model.coverage.get(90);
+    body.append(el('p','ce-pants-summary',text+' · '+(model.topShare>=0.9?'90% 도달':'90%까지 '+cutoff.count+'개')));
+    const entry=model.coverage.get(Number(filter));
+    if(entry)body.append(el('p','ce-pants-hint','선택 구간 누적 '+entry.count+'개 · 실제 '+pct(entry.share)));
+   }
+   body.append(el('p','ce-pants-hint','스테디셀러 상세페이지 · 매주 개선 후보 1~2개 검토 · 분기별 시즌 교체'));
    const table=el('table','ce-pants-table'),thead=table.createTHead(),tr=thead.insertRow();
    for(const label of ['순위','제품명 · 이번 개선','확인']){const th=el('th','',label);th.scope='col';tr.append(th);}
    const tbody=table.createTBody();
-   const selection=filter==='all'?model.sorted.concat(model.monitored):model.sorted.slice(0,filter==='daily'?daily:week);
+   const selection=filter==='all'?model.sorted.concat(model.monitored):model.sorted.slice(0,model.coverage.get(Number(filter))?.count||0);
    for(const p of selection){
     const row=tbody.insertRow(),rank=row.insertCell(),name=row.insertCell(),check=row.insertCell();
     rank.textContent=p.rank?p.rank+'위':'–';name.append(listButton(p));
@@ -284,7 +315,56 @@
      }
     }
    }
-   body.append(options,table);fitNames();
+   body.append(table);fitNames();
+  }
+  function newView(){
+   function section(key,title,book,gid,headers){
+    const block=el('section','ce-pants-new'),bar=el('div','ce-pants-head'),link=el('a','ce-link','원본 시트');
+    link.href='https://docs.google.com/spreadsheets/d/'+book+'/edit#gid='+gid;link.target='_blank';link.rel='noopener noreferrer';
+    bar.append(el('h3','ce-pants-sub',title),link);block.append(bar);body.append(block);
+    const entry=newSheetCache[key];
+    if(newErrors[key])block.append(el('p','ce-pants-hint',newErrors[key]));
+    if(entry&&newErrors[key])block.append(el('p','ce-pants-hint','마지막으로 읽은 자료를 표시합니다.'));
+    if(!entry){if(!newErrors[key])block.append(el('p','ce-pants-hint','시트 연결 중…'));return;}
+    if(entry.note)block.append(el('p','ce-pants-hint',entry.note));
+    if(!entry.rows.length){block.append(el('p','ce-pants-hint','등록된 항목이 없습니다.'));return;}
+    const t=el('table','ce-pants-new-table'),head=t.createTHead().insertRow();
+    for(const label of headers){const th=el('th','',label);th.scope='col';head.append(th);}
+    const tbody=t.createTBody();for(const cells of entry.rows){const row=tbody.insertRow();for(const v of cells)row.insertCell().textContent=v;}
+    block.append(t);
+   }
+   section('sales','신상 판매',newSalesBook,'2026100512',['상품명','판매수량']);
+   section('photo','신상 사진 합성',photoQueueBook,'1357086492',['상품명','작업 상태']);
+  }
+  async function loadNew(force=false){
+   if(!active()||newLoading)return;
+   if(!grant()){connectView();return;}
+   const day=pantsDay(),token=grant();
+   const read=async(key,book,range)=>{
+    if(!force&&newSheetCache[key]?.day===day)return;
+    try{
+     const url='https://sheets.googleapis.com/v4/spreadsheets/'+book+'/values/'+encodeURIComponent(range)+'?valueRenderOption='+(key==='sales'?'UNFORMATTED_VALUE':'FORMATTED_VALUE');
+     const {values=[]}=await api(url);if(!active()||grant()!==token)return;
+     let rows,note;
+     if(key==='photo'){
+      const i=values.findIndex(r=>r[0]==='합성할 상품'&&r[1]==='작업 상태');
+      if(i<0)throw Error('합성표 양식을 확인해 주세요.');
+      rows=values.slice(i+1).filter(r=>r[0]&&r[1]).map(r=>[r[0],r[1]]);
+      note=[String(values[2]?.[0]||'').split('|')[0].trim(),values[1]?.[0]].filter(Boolean).join(' · ');
+     }else{
+      const i=values.findIndex(r=>r[0]==='상품명'&&r[4]==='판매수량'),end=values.findIndex((r,n)=>n>i&&r[0]==='합계');
+      if(i<0||end<0)throw Error('신상 성과표 집계 범위를 확인해 주세요.');
+      const current=values.slice(i+1,end).filter(r=>r[0]&&!(r[4]>0&&r[6]===0));
+      current.sort((a,b)=>(Number.isFinite(b[4])?b[4]:-1)-(Number.isFinite(a[4])?a[4]:-1));
+      rows=current.map(r=>[r[0],Number.isFinite(r[4])?r[4]+'장':'미확인']);
+      note=String(values[1]?.[0]||'').split('\n')[0];
+     }
+     newSheetCache[key]={day,rows,note};delete newErrors[key];
+    }catch(e){if(!active())return;if(e.message==='google_connect'){connectView();return;}if(e.status===403)delete newSheetCache[key];newErrors[key]=e.message;}
+   };
+   newLoading=true;if(filter==='new')draw();
+   try{await Promise.all([read('sales',newSalesBook,"'🌱 신상_성과'!A:G"),read('photo',photoQueueBook,"'사진 합성 대기'!A:C")]);}
+   finally{newLoading=false;if(active()&&grant()&&filter==='new')draw();}
   }
   function checkBox(p,task){
    const box=el('input','ce-pants-check');box.type='checkbox';box.checked=task.checked;box.disabled=saving||reading;
@@ -315,15 +395,16 @@
    body.replaceChildren();const p=detail&&model.sorted.concat(model.monitored).find(x=>x.code===detail);
    if(p)detailView(p);else{detail='';list();}
   }
-  async function loadBoard(){
+  async function loadBoard(force=false){
    if(!active()||saving||reading)return;
    if(!grant()){connectView();return;}
+   if(!force&&pantsCache?.day===pantsDay()){model=pantsCache.model;setStatus('');draw();return;}
    reading=true;setStatus('불러오는 중…');if(model)draw();
    try{
     const qs=new URLSearchParams({valueRenderOption:'UNFORMATTED_VALUE'});qs.append('ranges',pantsRange);qs.append('ranges',pantsChecks);
     const r=await api(pantsApi+'/values:batchGet?'+qs);
     if(!active())return;model=pantsProducts(r.valueRanges[0]?.values||[],r.valueRanges[1]?.values||[]);
-    reading=false;setStatus('');draw();
+    pantsCache={day:pantsDay(),model};reading=false;setStatus('');draw();
    }catch(e){if(!active())return;if(e.message==='google_connect')connectView();else{setStatus(e.message);if(!model){body.replaceChildren(button('다시 불러오기',loadBoard),button('계정 변경',connectView));}else{reading=false;draw();}}}finally{reading=false;}
   }
   async function saveCheck(task,desired){
@@ -348,7 +429,10 @@
    });
    body.append(msg,b);
   }
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&model&&grant()&&active())loadBoard();},{signal:lifecycle.signal});
+  document.addEventListener('visibilitychange',()=>{
+   if(document.hidden||!model||!grant()||!active())return;
+   if(filter==='new')loadNew();else if(pantsCache?.day!==pantsDay())loadBoard();
+  },{signal:lifecycle.signal});
   heading('매출 순위','최근 7일');loadBoard();
  }
 

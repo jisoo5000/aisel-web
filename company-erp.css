@@ -569,3 +569,7 @@
 .ce-pants-task p{font-size:13px;color:#506278;margin:6px 0 0}
 .ce-pants-sub,.ce-pants-details dt{font-size:13px;font-weight:700;line-height:1.5;margin:14px 0 3px}
 .ce-pants-details dd{margin:0;font-size:14px}
+
+.ce-pants-summary{margin:8px 0;font-weight:700;font-variant-numeric:tabular-nums}
+.ce-pants-new{margin:14px 0 20px}.ce-pants-new .ce-pants-head{align-items:center}.ce-pants-new .ce-pants-sub{margin:0}
+.ce-pants-new-table{width:100%;border-collapse:collapse}.ce-pants-new-table th,.ce-pants-new-table td{text-align:left;padding:7px 5px;border-bottom:1px solid #dfe6ed;overflow-wrap:anywhere}.ce-pants-new-table th{background:#f2f6fa}.ce-pants-new-table :is(td,th):last-child{white-space:nowrap;text-align:right}
