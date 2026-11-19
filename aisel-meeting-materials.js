@@ -133,6 +133,7 @@
   try{
    const res=await fetch('https://asia-southeast1-aisel-workorder.cloudfunctions.net/companyErpV1',{method:'POST',credentials:'omit',cache:'no-store',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({action,...payload}),signal:ctrl.signal});
    const data=await res.json();assertSession(stamp,uid);
+   if(root.AiselAccess?.isOwner!==true)throw Error('대표 계정에서 확인해 주세요.');
    if(!res.ok||data?.ok!==true){const error=Error('앱 자료를 읽거나 저장하지 못했습니다.');error.code=data?.error||data?.code;throw error;}
    return data;
   }finally{clearTimeout(timer);}
@@ -736,8 +737,8 @@
     const url=googleResource(config[key],'presentation')||materials;if(url){const a=link(url,label);a.className='amm-resource-link';tools.append(a);}
    }
    const note=el('p','사진·판단·회의 기록은 같은 Google 시트에 저장합니다.','amm-record-note');
-   box.append(tools,note);
-   if(root.AiselAccess?.isOwner===true){const result=await shortlistApi('companySourceSnapshot',{kind:'meeting'},stamp,uid);for(const block of Object.values(result.snapshot?.tables||{})){if(String(block.range).includes(shortlistTab))continue;const records=Object.values(block.rows||{});if(!records.length)continue;const group=el('details',undefined,'amm-private-records');group.append(el('summary',String(block.range).split('!')[0].replaceAll("'",'')));const {table,body}=shortlistTable(Object.values(records[0]));for(const row of records.slice(1)){if(row?.[0]===shortlistHeader[0])break;const tr=el('tr');for(let i=0;i<Object.values(records[0]).length;i++)tr.append(el('td',String(row?.[i]??'')));body.append(tr);}group.append(table);box.append(group);}}
+   const frame=el('iframe');frame.title='디자인회의 기록';frame.className='amm-record-frame';frame.referrerPolicy='strict-origin-when-cross-origin';
+   const embed=new URL(sheet);embed.searchParams.set('rm','minimal');frame.src=embed.href;box.append(tools,note,frame);
    message('');const url=new URL(root.location.href);url.hash='meeting-materials?sheet=1';history.replaceState({aiselUnified:true,view:'meetingmaterials'},'',url);
    return true;
   }catch(error){if(stamp===epoch){box.replaceChildren();message(error.name==='AbortError'?'회의 자료 연결이 지연되고 있습니다. 다시 열어주세요.':error.message,true);}return false;}
