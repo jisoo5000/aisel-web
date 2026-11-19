@@ -348,3 +348,13 @@ html:root body #aiselMeetingMaterialsView .amm-preparation-analysis summary {cur
  html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="first"] {background:#EAF1FA;border-color:#C4D6EB;color:#315B88;}
  html:root body #aiselMeetingMaterialsView.amm-meeting-deck .amm-priority-badge[data-priority="confirmed"] {background:#EDF4F1;border-color:#CFDFD7;color:#3D6653;}
 }
+
+.amm-winter-shortlist:not(:empty){margin:0 0 20px;padding:12px 0;border-bottom:1px solid #ddd}
+.amm-short-bar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.amm-short-bar h3{margin:0;font-size:16px}.amm-short-bar a,.amm-short-table a{font-size:13px;text-decoration:underline;color:inherit}
+.amm-short-status,.amm-short-table small{font-size:12px;color:#555}.amm-short-status{margin:7px 0}
+.amm-short-table{width:100%;border-collapse:collapse;font:inherit;font-size:13px;table-layout:fixed}
+.amm-short-table th,.amm-short-table td{padding:8px 5px;border-bottom:1px solid #e2e4e6;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+.amm-winter-shortlist .amm-short-table th:first-child{width:36px}.amm-short-table th{background:#f3f4f4}.amm-short-table small,.amm-short-table a{display:block;margin-top:3px}
+.amm-short-table summary,.amm-private-records summary{cursor:pointer}.amm-short-table input{width:16px;height:16px}.amm-short-table details p{margin:5px 0}
+@media(max-width:720px){.amm-winter-shortlist .amm-short-table,.amm-winter-shortlist .amm-short-table tbody{display:block}.amm-winter-shortlist .amm-short-table thead{position:absolute;clip-path:inset(100%);width:1px;height:1px;overflow:hidden}.amm-winter-shortlist .amm-short-table tr{display:grid;grid-template-columns:25px 1fr;gap:4px 8px;padding:10px 0;border-bottom:1px solid #ddd}.amm-winter-shortlist .amm-short-table td{border:0;padding:0}.amm-winter-shortlist .amm-short-table td:nth-child(n+3){grid-column:2}.amm-winter-shortlist .amm-short-table td:nth-child(4)::before{content:"수요·공급　";color:#555}.amm-winter-shortlist .amm-short-table td:nth-child(5)::before{content:"USP　";color:#555}.amm-private-records{max-width:100%;overflow:auto}.amm-private-records table{min-width:600px}}
