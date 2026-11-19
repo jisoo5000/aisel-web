@@ -189,7 +189,7 @@
     pane=document.createElement('section');pane.id='referenceCollectionView';pane.className='noprint';pane.hidden=true;pane.setAttribute('aria-label','레퍼런스 수집');
     pane.innerHTML=`<div id="rcList"><div class="rc-filters" role="group" aria-label="레퍼런스 분류"><button type="button" data-category="content" aria-pressed="true">콘텐츠</button><button type="button" data-category="product" aria-pressed="false">제품</button></div>
       <div class="rc-list-tools"><label class="rc-search"><span class="rc-sr-only">검색</span><svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.5"/><path d="m16 16 4.5 4.5"/></svg><input id="rcSearch" type="search" placeholder="검색" autocomplete="off"></label><label class="rc-list-calendar rc-date-filter"><span id="rcDateFilterText">날짜</span><input id="rcDateFilter" type="date" aria-label="조회 날짜"></label><label class="rc-list-calendar rc-bulk-control" hidden><span id="rcBulkDateText">날짜</span><input id="rcBulkDate" type="date" aria-label="선택한 자료 날짜 변경"></label><select id="rcLifeFilter" aria-label="활용 상태"><option value="active">사용 전</option><option value="used">활용 완료</option><option value="stored">보관</option><option value="all">전체 기록</option><option id="rcRestore" value="__restore__" hidden disabled>삭제한 자료 복원</option></select><select id="rcBulkStatus" class="rc-bulk-control" aria-label="선택한 자료 사용 상태 변경" hidden><option value="">상태</option><option value="active">사용 전</option><option value="used">활용 완료</option><option value="stored">보관</option></select></div><p id="rcSourcingStatus" class="rc-filter-status" role="status" hidden></p>
-      <div class="rc-collection-filters"><button type="button" id="rcUspPicker" aria-haspopup="dialog">USP</button><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 작성자 필터"><option value="">담당자</option></select></div>
+      <div class="rc-collection-filters"><button type="button" id="rcUspPicker" aria-haspopup="dialog">USP</button><select id="rcNoteCategoryFilter" aria-label="참고 카테고리 선택"><option value="" aria-label="전체 참고 카테고리">카테고리</option></select><select id="rcDesignerFilter" aria-label="레퍼런스 작성자 필터"><option value="">작성자</option></select></div><p id="rcAuthorSummary" class="rc-filter-status" role="status" hidden></p>
       <div class="rc-bulk-fields" hidden><select id="rcBulkCategory" aria-label="선택한 자료 첫 참고 카테고리 변경"><option value="">카테고리</option></select></div><div id="rcListTaxonomyManager"></div><p id="rcCategoryCoverage" class="rc-filter-status" role="status" hidden></p>
       <div id="rcNotices"><p id="rcStatus" role="status" aria-live="polite"></p><div class="rc-notice-actions"><button type="button" id="rcLogin">로그인</button><button type="button" id="rcRetry" hidden>연결 다시 확인</button><button type="button" id="rcLatest" hidden>저장된 내용 보기</button><button type="button" id="rcSaveCopy" hidden>내 입력 별도 저장</button><button type="button" id="rcSetup" hidden>시트 연결 준비</button></div></div>
       <div class="rc-list-heading"><p id="rcListDate" class="rc-date-group"></p><div class="rc-selection-toolbar"><button type="button" id="rcSelectAll">전체 선택</button><button type="button" id="rcListCancel" hidden>변경 취소</button><button type="button" id="rcListSave" disabled>저장</button></div></div><div id="rcGrid" class="rc-grid"><button type="button" id="rcCreate" class="rc-card rc-create-card" aria-label="레퍼런스 추가">＋ 추가</button></div><p id="rcEmpty" hidden>등록된 콘텐츠 레퍼런스가 없습니다.</p><button type="button" id="rcMore" hidden>더 보기</button></div>
@@ -526,7 +526,7 @@
   function setRoute(id,replace=false){const hash=id?'#reference='+encodeURIComponent(id):'#references';history[replace?'replaceState':'pushState']({aiselReference:{id:id||null,scroll:galleryScroll,search:$('#rcSearch').value,category:selectedCategory(),noteCategory:$('#rcNoteCategoryFilter').value,dateFilter:$('#rcDateFilter').value,designerFilter:$('#rcDesignerFilter').value,lifeFilter,listLimit}},'',hash);}
   function selectedCategory(){return topCategory;}
   function rememberList(){if($('#rcDetail').hidden&&location.hash==='#references')history.replaceState({aiselReference:{id:null,scroll:window.scrollY,search:$('#rcSearch').value,category:selectedCategory(),noteCategory:$('#rcNoteCategoryFilter').value,dateFilter:$('#rcDateFilter').value,designerFilter:$('#rcDesignerFilter').value,uspFilter:listUspFilter,lifeFilter,listLimit}},'',location.href);}
-  function restoreList(state){if(!state)return;listUspFilter=state.uspFilter||'';lifeFilter=['active','used','stored','all'].includes(state.lifeFilter)?state.lifeFilter:'active';$('#rcLifeFilter').value=lifeFilter;listLimit=Math.max(20,Number(state.listLimit)||20);restoredLimit=listLimit;galleryScroll=window.AiselReloadStartup?.skipRestore?0:state.scroll||0;$('#rcSearch').value=state.search||'';renderCategoryFilter(state.noteCategory||'');renderDateFilter(state.dateFilter||'');if(designerFilterPicker)designerFilterPicker.refresh({value:state.designerFilter||''});else selectOptions($('#rcDesignerFilter'),[['','담당자']],state.designerFilter||'');topCategory=/^(?:content|product|marketing|idea|rcat_[a-f0-9]{64})$/.test(state.category||'')?state.category:'content';renderReferenceCategoryTabs();gallerySignature='';}
+  function restoreList(state){if(!state)return;listUspFilter=state.uspFilter||'';lifeFilter=['active','used','stored','all'].includes(state.lifeFilter)?state.lifeFilter:'active';$('#rcLifeFilter').value=lifeFilter;listLimit=Math.max(20,Number(state.listLimit)||20);restoredLimit=listLimit;galleryScroll=window.AiselReloadStartup?.skipRestore?0:state.scroll||0;$('#rcSearch').value=state.search||'';renderCategoryFilter(state.noteCategory||'');renderDateFilter(state.dateFilter||'');if(designerFilterPicker)designerFilterPicker.refresh({value:state.designerFilter||''});else selectOptions($('#rcDesignerFilter'),[['','작성자']],state.designerFilter||'');topCategory=/^(?:content|product|marketing|idea|rcat_[a-f0-9]{64})$/.test(state.category||'')?state.category:'content';renderReferenceCategoryTabs();gallerySignature='';}
   async function show(options={}){
     viewStartedAt=performance.now();measuredViewPhases.clear();delete timings.firstCardsMs;delete timings.firstPreviewMs;
     ensure();bindGalleryIndex();bindDesigners();window.AiselReferenceCategories?.load().catch(()=>{});if(authorizedStamp){try{assertAuth(authorizedStamp);}catch(_){if(!await resetAuth())return false;}}
@@ -789,11 +789,11 @@
     ['보통',['보통','average']],['나쁨',['나쁨','poor']],
     ['판단 대기',['판단 대기','pending']],['노출 못 받음',['노출 못 받음','pending']],
     ['광고 연결 · 결과 대기',['판단 대기','pending']],['집행 확인 · 결과 대기',['판단 대기','pending']],
-    ['제작 확인 · 집행 미확인',['제작 확인','pending']],['소재별 결과 확인',['소재별 결과','mixed']]
+    ['소재별 결과 확인',['소재별 결과','mixed']]
   ]);
   function updatePerformanceBadge(line,row){
     const feedback=lifecycle?.get(row.id).cardFeedback;
-    const state=performanceLabels.get(feedback?.result);
+    const state=feedback?.date&&performanceLabels.get(feedback.result);
     const previous=line.querySelector('.rc-performance');
     if(!state){previous?.remove();return;}
     const date=feedback.date||'';
@@ -933,6 +933,14 @@
     const candidates=available.filter(r=>(!listUspFilter||String(lifecycle?.get(r.id).usp||'')===listUspFilter)&&(!search||[r.title,r.sourceUrl,lifecycle?.get(r.id).note,lifecycle?.get(r.id).resultUrl].filter(Boolean).join(' ').toLocaleLowerCase().includes(search))&&(!dateFilter||(dateFilter==='__undated__'?!referenceDateKey(r):referenceDateKey(r)===dateFilter))&&(!designerFilter||(referenceAuthor(r)===designerFilter)));
     const unknown=noteCategory?candidates.filter(r=>!noteCategorySummary(r).noteCategoryCoverage):[];
     const list=candidates.filter(r=>!noteCategory||!noteCategorySummary(r).noteCategoryCoverage||noteCategorySummary(r).noteCategoryIds.includes(noteCategory)).sort((a,b)=>referenceDateKey(b).localeCompare(referenceDateKey(a))||String(b.createdAt||'').localeCompare(String(a.createdAt||''))||b.id.localeCompare(a.id));
+    const authorSummary=$('#rcAuthorSummary');
+    authorSummary.hidden=!designerFilter;
+    if(designerFilter){
+      const paid=list.map(row=>lifecycle?.get(row.id).cardFeedback).filter(f=>f?.date&&performanceLabels.has(f.result));
+      const good=paid.filter(f=>f.result==='좋음'||f.result==='승격 기준 충족').length;
+      const countText=(cursor||galleryState?.hasMore?'불러온 자료 ':'현재 목록 ')+list.length+'건';
+      authorSummary.textContent=designerFilter+' · '+countText+(lifecycle?.ready?' · 광고 사용 '+paid.length+'건 · 좋음 '+good+'건':' · 광고 결과 불러오는 중');
+    }
     listVisibleRows=list;renderListControls();
     const shown=list;const sig=JSON.stringify([[...listSelected],Array.from(listEdits,([id,e])=>[id,e.content,e.life,e.error]),listSaving,listStaging,shown.map(r=>[r,lifecycle?.get(r.id),lifecycle?.isPending(r.id)]),lifeFilter,listLimit,lifecycle?.ready,noteCategory,dateFilter,designerFilter,permissions.canCreate,!!authorizedStamp]);
     if(sig!==gallerySignature){
@@ -1729,7 +1737,7 @@
     // remaining input locally before clearing the previous account's view.
     if((dirty||pendingFiles.length)&&!await persistDraft())return false;
     if(epoch!==authEpoch)return false;
-    localOnly=false;clearTimeout(autoSaveTimer);renderCategoryFilter('');renderDateFilter('');selectOptions($('#rcDesignerFilter'),[['','담당자']],'');role=null;permissions={};account='';active=null;activeBase=null;pendingSave=null;saveConflict=null;linkEditor=null;dirty=false;pendingFiles=[];records.clear();draftRows.clear();detailCache.clear();detailFlights.clear();listReadAt=0;initialized=false;checkedAt='';cursor=null;gallerySignature='';releasePreviews(true);$('#rcLogin').hidden=!!window.AiselAuth;$('#rcCreate').disabled=true;$('#rcDetail').hidden=true;$('#rcList').hidden=false;draftRows.clear();renderList();if(visible)message('로그인 후 레퍼런스를 확인해주세요.');return true;
+    localOnly=false;clearTimeout(autoSaveTimer);renderCategoryFilter('');renderDateFilter('');selectOptions($('#rcDesignerFilter'),[['','작성자']],'');role=null;permissions={};account='';active=null;activeBase=null;pendingSave=null;saveConflict=null;linkEditor=null;dirty=false;pendingFiles=[];records.clear();draftRows.clear();detailCache.clear();detailFlights.clear();listReadAt=0;initialized=false;checkedAt='';cursor=null;gallerySignature='';releasePreviews(true);$('#rcLogin').hidden=!!window.AiselAuth;$('#rcCreate').disabled=true;$('#rcDetail').hidden=true;$('#rcList').hidden=false;draftRows.clear();renderList();if(visible)message('로그인 후 레퍼런스를 확인해주세요.');return true;
   }
   window.addEventListener('aisel-owner-auth-change',()=>{if(!window.AiselAuth)resetAuth();});
   window.addEventListener('aisel-session-change',async()=>{if(!await resetAuth())return;if(visible&&window.AiselAuth?.currentUser()?.uid){const match=location.hash.match(/^#reference=(.+)$/);await show({id:match?decodeURIComponent(match[1]):undefined,history:false});}});
