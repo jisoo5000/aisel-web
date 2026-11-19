@@ -522,9 +522,29 @@
 @media screen {
  html:root body #referenceCollectionView #rcList .rc-card-info{padding:4px 8px}
  html:root body #referenceCollectionView #rcList .rc-card-title{margin:0;min-height:17px;line-height:17px}
- html:root body #referenceCollectionView #rcList .rc-card-rating-line{margin:0;justify-content:space-between;gap:0 2px}
+ html:root body #referenceCollectionView #rcList .rc-card-rating-line{margin:0;justify-content:flex-start;gap:2px 5px}
  html:root body #referenceCollectionView #rcList :is(.rc-card-rating,.rc-card-rating button,.rc-card-date,.rc-card-picker,.rc-card-category){height:20px!important;min-height:20px!important}
  html:root body #referenceCollectionView #rcList .rc-card-author{justify-self:end;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#566170;font:inherit;font-size:11px}
- html:root body #referenceCollectionView #rcList button.rc-performance{margin:0;padding:0 4px;width:auto;min-width:0;height:18px;min-height:18px;border:1px solid #c9dcc9;border-radius:3px;background:#eef6ec;color:#3d6046;font:500 10px/16px var(--aisel-font,sans-serif)}
- html:root body #referenceCollectionView #rcList button.rc-performance:disabled{color:#6c727c;border-color:#e3e5e7;background:#fafafa;opacity:1}
+ html:root body #referenceCollectionView :is(#rcList,#rcRating) button.rc-performance{
+   display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:auto;min-width:0;
+   height:20px;min-height:20px;max-width:100%;margin:0;padding:0 6px;
+   border:1px solid var(--rc-badge-border,#cbd5df);border-radius:999px;
+   background:var(--rc-badge-bg,#f1f4f7);color:var(--rc-badge-fg,#435160);
+   font:600 11px/1.2 var(--aisel-font,sans-serif);white-space:nowrap;cursor:pointer;
+ }
+ #referenceCollectionView .rc-performance[data-tone="good"]{--rc-badge-bg:#e7f4eb;--rc-badge-fg:#225536;--rc-badge-border:#aacdb1}
+ #referenceCollectionView .rc-performance[data-tone="average"]{--rc-badge-bg:#fff3da;--rc-badge-fg:#745018;--rc-badge-border:#dfc795}
+ #referenceCollectionView .rc-performance[data-tone="poor"]{--rc-badge-bg:#fbecee;--rc-badge-fg:#842e3c;--rc-badge-border:#e7bdc4}
+ #referenceCollectionView .rc-performance[data-tone="mixed"]{--rc-badge-bg:#f3eef8;--rc-badge-fg:#59486a;--rc-badge-border:#d3c7de}
+ html:root body #referenceCollectionView #rcList .rc-card-rating-line:has(.rc-performance){flex-wrap:nowrap}
+ html:root body #referenceCollectionView #rcList .rc-card-rating-line:has(.rc-performance) .rc-card-rating{flex:0 1 90px;min-width:65px}
+ html:root body #referenceCollectionView #rcList .rc-card-rating-line .rc-performance{flex:0 0 auto;box-sizing:border-box;max-width:calc(100% - 70px);white-space:normal;word-break:keep-all;height:auto;min-height:20px;padding:2px 5px}
+ html:root body #referenceCollectionView #rcList .rc-card-rating button svg{max-width:100%}
+ html:root body #referenceCollectionView #rcList .rc-card-rating-line:has(.rc-performance) .rc-card-rating button{flex:1 1 18px;min-width:13px}
+ #referenceCollectionView .rc-performance:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+ html:root body #referenceCollectionView .rc-detail-rating-group{display:flex;align-items:center;flex-wrap:wrap;gap:3px 5px;min-width:0}
+ html:root body #referenceCollectionView .rc-detail-rating-group .rc-rating-buttons{flex:0 1 auto;width:auto;max-width:100%}
+ html:root body #referenceCollectionView .rc-detail-rating-group .rc-rating-buttons button{width:28px}
+ html:root body #referenceCollectionView #rcRating:has(.rc-performance){grid-template-columns:minmax(0,max-content) minmax(65px,1fr)}
+
 }

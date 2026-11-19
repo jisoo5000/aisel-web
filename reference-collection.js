@@ -784,21 +784,31 @@
     if(label.textContent)label.title='작성자 '+label.textContent;
     return label;
   }
-  function performanceButton(row){
+  const performanceLabels=new Map([
+    ['좋음',['좋음','good']],['승격 기준 충족',['승격 기준 충족','good']],
+    ['보통',['보통','average']],['나쁨',['나쁨','poor']],
+    ['판단 대기',['판단 대기','pending']],['노출 못 받음',['노출 못 받음','pending']],
+    ['광고 연결 · 결과 대기',['판단 대기','pending']],['집행 확인 · 결과 대기',['판단 대기','pending']],
+    ['제작 확인 · 집행 미확인',['제작 확인','pending']],['소재별 결과 확인',['소재별 결과','mixed']]
+  ]);
+  function updatePerformanceBadge(line,row){
     const feedback=lifecycle?.get(row.id).cardFeedback;
-    const button=document.createElement('button');
-    button.type='button';
-    button.className='rc-performance';
-    button.textContent=feedback?.result||'평가 대기';
-    button.disabled=!feedback?.result;
-    button.setAttribute('aria-label','광고 성과 · '+button.textContent);
-    if(!button.disabled)button.onclick=()=>dialog('광고 성과',box=>{
+    const state=performanceLabels.get(feedback?.result);
+    const previous=line.querySelector('.rc-performance');
+    if(!state){previous?.remove();return;}
+    const date=feedback.date||'';
+    if(previous?.dataset.result===feedback.result&&previous.dataset.date===date)return;
+    const [label,tone]=state,button=document.createElement('button');
+    button.type='button';button.className='rc-performance';button.dataset.tone=tone;
+    button.dataset.result=feedback.result;button.dataset.date=date;button.textContent=label;
+    button.title='광고 성과 · '+feedback.result;
+    button.setAttribute('aria-label',button.title+' 상세 보기');
+    button.onclick=()=>dialog('광고 성과',box=>{
       const summary=document.createElement('p');
-      summary.textContent='메타 컨셉보드 테스트 결과 · '+feedback.result;
-      box.append(summary);
-      if(feedback.date){const date=document.createElement('p');date.textContent='최초 집행일 '+feedback.date;box.append(date);}
+      summary.textContent='메타 컨셉보드 테스트 결과 · '+feedback.result;box.append(summary);
+      if(date){const info=document.createElement('p');info.textContent='최초 집행일 '+date;box.append(info);}
     });
-    return button;
+    if(previous)previous.replaceWith(button);else line.append(button);
   }
   function renderCardEditors(card,row,stars,meta){
     const edit=listEdits.get(row.id),data={...row,...edit?.content},rating=edit?.life.rating??ratingValue(row.id),disabled=!listEditable(row)||listSaving||listStaging;
@@ -815,7 +825,7 @@
     const date=document.createElement('label');date.className='rc-card-date';const dateText=document.createElement('span');dateText.textContent=shortDate(data.date)||'날짜';
     const dateInput=document.createElement('input');dateInput.type='date';dateInput.value=data.date||'';dateInput.disabled=disabled;dateInput.setAttribute('aria-label',(row.title||'자료')+' 날짜 수정');dateInput.onchange=()=>void stageCard(row.id,'date',dateInput.value);date.append(dateText,dateInput);
     meta.replaceChildren(date,cardPicker(category),authorLabel(row));
-    ratingLine.append(performanceButton(row));
+    updatePerformanceBadge(ratingLine,row);
     const usp=edit?.life.usp??String(lifecycle.get(row.id).usp||'');
     if(usp){const text=document.createElement('p');text.className='rc-card-usp';text.textContent=usp;text.title=usp;ratingLine.after(text);}
     card.classList.toggle('is-selected',listSelected.has(row.id));card.classList.toggle('is-modified',!!edit);
@@ -1018,8 +1028,10 @@
         const button=document.createElement('button');button.type='button';button.dataset.rating=score;
         button.onclick=()=>setRating(id,score);stars.append(button);
       }
-      box.append(stars,input);
+      const group=document.createElement('span');group.className='rc-detail-rating-group';
+      group.append(stars);box.append(group,input);
     }
+    updatePerformanceBadge(box.querySelector('.rc-detail-rating-group'),active);
     box.setAttribute('aria-busy',String(!!busy));
     const input=box.querySelector('.rc-usp-input'),draft=uspDraft(id);const valueText=draft?draft.value:String(lifecycle.get(id).usp||'');
     const choices=[['','USP'],...(uspCatalog?.entries||[]).filter(row=>!row.hidden).map(row=>[row.name,row.name])];
