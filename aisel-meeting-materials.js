@@ -149,6 +149,12 @@
   const status=el('p','후보를 불러오는 중입니다.','amm-short-status');status.setAttribute('role','status');host.append(bar,status);
   try{
    const data=await shortlistApi('companySourceSnapshot',{kind:'meeting'},stamp,uid);
+   const contextTable=Object.values(data.snapshot?.tables||{})[0];
+   const share=Object.values(contextTable?.rows||{}).find(r=>r?.[0]==='스테디셀러 매출 비중');
+   if(share?.[1]&&/^\d+(\.\d+)?%$/.test(share[2])&&/^\d+(\.\d+)?%$/.test(share[3])){
+    const summary=el('p',share[1]+' · 상위 5개 '+share[2]+' · 상위 7개 '+share[3],'amm-short-sales');
+    summary.append(el('small','　'+String(share[4]||'')));bar.after(summary);
+   }
    const rows=shortlistRows(data.snapshot);
    if(!rows.length){status.textContent='앱의 첫 동기화를 기다리고 있습니다. 연결 시트에서 후보를 볼 수 있습니다.';return;}
    const date=rows.map(r=>r[1]).sort().at(-1);
@@ -161,7 +167,7 @@
    const checks=()=>{if(!project)return {};const val=JSON.parse(project.notes);if(val.schema!=='meeting-shortlist-checks-v1')throw Error('저장된 체크 형식을 확인해 주세요.');return val.checked||{};};
    const updated=new Date(data.snapshot.readAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
    const normal=rows.length+'개 · 시트 반영 '+updated;
-   const {table,body}=shortlistTable(['검토','날짜 · 후보','반응도','수요·공급','차별성 · USP','참고']);
+   const {table,body}=shortlistTable(['검토','날짜 · 후보','반응도','수요·공급','차별성 · USP','참고·창고']);
    const inputs=new Map();
    function repaint(){const saved=checks();for(const [id,input]of inputs)input.checked=saved[id]===true;}
    async function toggle(id,value){
