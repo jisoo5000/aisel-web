@@ -143,6 +143,7 @@
  const pantsRange="'바지 왕국'!A:T", pantsChecks="'바지 왕국 확인기록'!A:B";
  const pantsApi='https://sheets.googleapis.com/v4/spreadsheets/'+pantsBook;
  const newSalesBook='1lgJpmwHFRQYT0XqXyZOdTiMswaPOmUj2e_36cFQrit0';
+ const patternBook='1zkd_VXxnqw27LArmZ7lNfOhwQnTDjDGqnYrJrvRs-Xg';
  const photoQueueBook='151CNUkfF4Xwt7SrCT3aOnmR1xQqcvyWv75RJhVL06_8';
  let pantsGrant=null,pantsView=null,pantsCache=null,newSheetCache={};
  // The daily sheet cutover is 03:45 in Seoul (UTC+9).
@@ -222,7 +223,7 @@
   host.append(head,status,body);content.append(host);
   const active=()=>!lifecycle.signal.aborted&&valid(run,account)&&canView('bodyKingdom');
   let model=null,filter='90',detail='',scrollY=0,saving=false,reading=false,newLoading=false;
-  let newErrors={};
+  const newErrors={},expanded=new Set();
   const grant=()=>pantsGrant?.account===account&&pantsGrant.expires>Date.now()?pantsGrant.token:'';
   const setStatus=s=>{if(active())status.textContent=s;};
   function fitNames(){
@@ -281,13 +282,10 @@
     const b=button(label,()=>{filter=key;draw();},'ce-pants-filter');
     b.setAttribute('aria-pressed',String(filter===key));options.append(b);
    }
-   for(const [key,title] of [['all','전체'],['new','신상']]){
-    const b=button(title,()=>{filter=key;draw();if(key==='new')loadNew();},'ce-pants-filter');
-    b.setAttribute('aria-pressed',String(filter===key));options.append(b);
-   }
-   const refresh=button('시트 새로고침',()=>filter==='new'?loadNew(true):loadBoard(true),'ce-pants-refresh');
+   const all=button('전체',()=>{filter='all';draw();},'ce-pants-filter');
+   all.setAttribute('aria-pressed',String(filter==='all'));options.append(all);
+   const refresh=button('시트 새로고침',()=>loadBoard(true),'ce-pants-refresh');
    refresh.disabled=reading||newLoading;options.append(refresh);body.append(options);
-   if(filter==='new'){heading('신상','판매 성과 · 사진 합성');newView();return;}
    if(model.topShare===null)body.append(el('p','ce-pants-hint','원본 판매 상품 수와 합계 확인 중'));
    else {
     const text='상위 '+model.topCount+'개 실제 비중 '+pct(model.topShare);
@@ -315,10 +313,10 @@
      }
     }
    }
-   body.append(table);fitNames();
+   body.append(table);newView();fitNames();
   }
   function newView(){
-   function section(key,title,book,gid,headers){
+   function section(key,title,book,gid,headers,limit){
     const block=el('section','ce-pants-new'),bar=el('div','ce-pants-head'),link=el('a','ce-link','원본 시트');
     link.href='https://docs.google.com/spreadsheets/d/'+book+'/edit#gid='+gid;link.target='_blank';link.rel='noopener noreferrer';
     bar.append(el('h3','ce-pants-sub',title),link);block.append(bar);body.append(block);
@@ -330,23 +328,65 @@
     if(!entry.rows.length){block.append(el('p','ce-pants-hint','등록된 항목이 없습니다.'));return;}
     const t=el('table','ce-pants-new-table'),head=t.createTHead().insertRow();
     for(const label of headers){const th=el('th','',label);th.scope='col';head.append(th);}
-    const tbody=t.createTBody();for(const cells of entry.rows){const row=tbody.insertRow();for(const v of cells)row.insertCell().textContent=v;}
+    const tbody=t.createTBody();
+    const visible=expanded.has(key)?entry.rows:entry.rows.slice(0,limit);
+    for(const cells of visible){
+     const row=tbody.insertRow();
+     for(const value of cells){
+      const cell=row.insertCell();
+      if(typeof value==='string'){cell.textContent=value;continue;}
+      const details=el('details');details.append(el('summary','',value.stage));
+      for(const item of value.items)details.append(el('p','ce-pants-hint',item));
+      cell.append(details);
+     }
+    }
     block.append(t);
+    if(entry.rows.length>limit){
+     const more=button(expanded.has(key)?'접기':title+' '+entry.rows.length+'개 모두 보기',()=>{
+      if(expanded.has(key))expanded.delete(key);else expanded.add(key);
+      draw();body.querySelector('[data-expand="'+key+'"]')?.focus({preventScroll:true});
+     },'ce-pants-filter');
+     more.dataset.expand=key;more.setAttribute('aria-expanded',String(expanded.has(key)));block.append(more);
+    }
    }
-   section('sales','신상 판매',newSalesBook,'2026100512',['상품명','판매수량']);
-   section('photo','신상 사진 합성',photoQueueBook,'1357086492',['상품명','작업 상태']);
+   section('sales','신상 판매',newSalesBook,'2026100512',['상품명','판매수량'],5);
+   section('photo','신상 사진 합성',photoQueueBook,'1357086492',['상품명','작업 상태'],3);
+   section('pattern','원형별 겨울 개발',patternBook,'2026111201',['검토 순서 · 원형','소재 조합','진행 · 확인 사항'],5);
   }
   async function loadNew(force=false){
    if(!active()||newLoading)return;
    if(!grant()){connectView();return;}
    const day=pantsDay(),token=grant();
+   if(!force&&['sales','photo','pattern'].every(key=>newSheetCache[key]?.day===day))return;
    const read=async(key,book,range)=>{
     if(!force&&newSheetCache[key]?.day===day)return;
     try{
      const url='https://sheets.googleapis.com/v4/spreadsheets/'+book+'/values/'+encodeURIComponent(range)+'?valueRenderOption='+(key==='sales'?'UNFORMATTED_VALUE':'FORMATTED_VALUE');
      const {values=[]}=await api(url);if(!active()||grant()!==token)return;
      let rows,note;
-     if(key==='photo'){
+     if(key==='pattern'){
+      const h=values[0]||[],pos=label=>h.indexOf(label);
+      const cols=['패턴명','핏','원단 변경','컬러추가','진행 단계','우선순위','참고'].map(pos);
+      if(cols.some(i=>i<0))throw Error('제작기획표의 패턴·진행 단계 열을 확인해 주세요.');
+      const groups=new Map();
+      for(const record of values.slice(1)){
+       const [base,fit,fabric,color,stage,priority,check]=cols.map(i=>String(record[i]||'').trim());
+       if(!base||!fabric||!stage)continue;
+       const name=[base,fit].filter(Boolean).join(' '),material=[color,fabric].filter(Boolean).join(' ');
+       const order=Number(priority.match(/\d+/)?.[0])||Infinity;
+       if(!groups.has(name))groups.set(name,{name,order,materials:new Map()});
+       const group=groups.get(name);group.order=Math.min(group.order,order);
+       group.materials.set(material,{material,stage,check});
+      }
+      rows=Array.from(groups.values()).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'ko')).map(group=>{
+       const items=Array.from(group.materials.values()),stages=Array.from(new Set(items.map(item=>item.stage)));
+       return [(Number.isFinite(group.order)?'제안 '+group.order+' · ':'')+group.name,
+        items.length+'종 · '+items.map(item=>item.material).join(' / '),
+        {stage:stages.join(' · '),items:items.map(item=>item.material+' · '+item.stage+(item.check?' · '+item.check:''))}];
+      });
+      const count=Array.from(groups.values()).reduce((total,group)=>total+group.materials.size,0);
+      note='원형 '+groups.size+'개 · 소재 조합 '+count+'개';
+     }else if(key==='photo'){
       const i=values.findIndex(r=>r[0]==='합성할 상품'&&r[1]==='작업 상태');
       if(i<0)throw Error('합성표 양식을 확인해 주세요.');
       rows=values.slice(i+1).filter(r=>r[0]&&r[1]).map(r=>[r[0],r[1]]);
@@ -362,9 +402,9 @@
      newSheetCache[key]={day,rows,note};delete newErrors[key];
     }catch(e){if(!active())return;if(e.message==='google_connect'){connectView();return;}if(e.status===403)delete newSheetCache[key];newErrors[key]=e.message;}
    };
-   newLoading=true;if(filter==='new')draw();
-   try{await Promise.all([read('sales',newSalesBook,"'🌱 신상_성과'!A:G"),read('photo',photoQueueBook,"'사진 합성 대기'!A:C")]);}
-   finally{newLoading=false;if(active()&&grant()&&filter==='new')draw();}
+   newLoading=true;if(!detail)draw();
+   try{await Promise.all([read('sales',newSalesBook,"'🌱 신상_성과'!A:G"),read('photo',photoQueueBook,"'사진 합성 대기'!A:C"),read('pattern',patternBook,"'제작기획 현황'!B:J")]);}
+   finally{newLoading=false;if(active()&&grant()&&!detail)draw();}
   }
   function checkBox(p,task){
    const box=el('input','ce-pants-check');box.type='checkbox';box.checked=task.checked;box.disabled=saving||reading;
@@ -398,8 +438,8 @@
   async function loadBoard(force=false){
    if(!active()||saving||reading)return;
    if(!grant()){connectView();return;}
-   if(!force&&pantsCache?.day===pantsDay()){model=pantsCache.model;setStatus('');draw();return;}
-   reading=true;setStatus('불러오는 중…');if(model)draw();
+   if(!force&&pantsCache?.day===pantsDay()){model=pantsCache.model;setStatus('');draw();loadNew();return;}
+   reading=true;setStatus('불러오는 중…');if(model)draw();loadNew(force);
    try{
     const qs=new URLSearchParams({valueRenderOption:'UNFORMATTED_VALUE'});qs.append('ranges',pantsRange);qs.append('ranges',pantsChecks);
     const r=await api(pantsApi+'/values:batchGet?'+qs);
@@ -431,7 +471,7 @@
   }
   document.addEventListener('visibilitychange',()=>{
    if(document.hidden||!model||!grant()||!active())return;
-   if(filter==='new')loadNew();else if(pantsCache?.day!==pantsDay())loadBoard();
+   if(pantsCache?.day!==pantsDay())loadBoard();
   },{signal:lifecycle.signal});
   heading('매출 순위','최근 7일');loadBoard();
  }
