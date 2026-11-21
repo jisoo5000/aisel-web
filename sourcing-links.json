@@ -1,7 +1,11 @@
 {
   "version": 1,
-  "latest_date": "2026-11-20",
+  "latest_date": "2026-11-21",
   "dates": [
+    {
+      "date": "2026-11-21",
+      "url": "https://docs.google.com/presentation/d/1sfjYP5JImXIxGhDv8sPzvIRWhP1MsniXv8QSq3qvOB0/edit"
+    },
     {
       "date": "2026-11-20",
       "url": "https://docs.google.com/presentation/d/1NtjiFW8V4EPhPmWAyw9BxobCpIFOPXzt8c3t4WhuSvU/edit"
