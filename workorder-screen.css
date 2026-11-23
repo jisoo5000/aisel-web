@@ -912,3 +912,10 @@
     -webkit-text-fill-color: currentColor;
   }
 }
+
+/* In production stages, keep measured parts and rows the editor just added. */
+#editorView:has(#statusBar :is([data-status="order"], [data-status="pdp"], [data-status="sale"])[aria-pressed="true"])
+  #sizeSpecRows:has(.ss-val:not(:placeholder-shown))
+  tr:has(.ss-part[value]:not([value=""])):not(:has(.ss-val:not(:placeholder-shown))):not(:focus-within) {
+  display: none;
+}
