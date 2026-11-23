@@ -83,7 +83,10 @@
    '.ce-production-month th:last-child{width:5.6em}.ce-production-month input[type=checkbox]{width:1.15rem;height:1.15rem;margin:0;vertical-align:middle;cursor:pointer}' +
    '.ce-production-month .ce-extra td{background:#e0f4e5;color:#173e28}' +
    '.ce-production-month .ce-order-link{font:inherit;background:none;border:0;padding:0;text-align:left;text-decoration:underline;cursor:pointer;color:inherit}' +
-   '.ce-production-month .ce-assignee{display:block;font-size:.8rem;color:#52616a;margin-top:.1rem}';
+   '.ce-production-month .ce-designer-tabs{display:flex;gap:.4rem;flex-wrap:wrap;margin:.75rem 0}' +
+   '.ce-designer-tabs button{font:inherit;border:1px solid #b6c6d0;border-radius:.35rem;background:white;color:#263746;padding:.35rem .65rem;cursor:pointer}' +
+   '.ce-designer-tabs button[aria-pressed=true]{background:#dfedf7;border-color:#729cb7;font-weight:650}' +
+   '.ce-production-month tbody th.ce-week{background:#eaf2f7;text-align:left;padding:.45rem .55rem;width:auto}';
   const label = el('label','','조회 월');
   const month = el('input');
   month.type = 'month';
@@ -94,14 +97,15 @@
   content.append(host);
   let lastIndex, lastReady, rows, shownMonth = '';
   const viewer=session().uid;
+  let selectedDesigner='강혜주';
   const readPrefix='aisel:production-read:'+encodeURIComponent(viewer)+':';
   const progress=new Map();
   const stateLabels = {sampling:'샘플 중',planned:'샘플 중',samplemgmt:'샘플 중',resampling:'재샘플 중',
    order:'발주·생산',pdp:'상세페이지',sale:'판매 중',drop:'드롭'};
   function draw() {
-   if (!canView('monthlyProduction') || panel.hidden || !host.isConnected) return;
+   if (session()?.uid!==viewer || !canView('monthlyProduction') || panel.hidden || !host.isConnected) return;
    const personal = session()?.role==='designer';
-   const readIndex = personal ? root.getPersonalProductionOrders_ : root.getAllWorkOrders_;
+   const readIndex = owner() ? root.getAllWorkOrders_ : root.getPersonalProductionOrders_;
    if (typeof readIndex !== 'function') {
     if (!result.childElementCount) result.append(el('p','','작업지시서 목록 연결을 기다리고 있습니다.'));
     return;
@@ -116,16 +120,34 @@
    if (!ready) { result.append(el('p','','작업지시서 목록을 불러오는 중입니다.')); return; }
    if (!shownMonth) { result.append(el('p','','조회할 월을 선택해 주세요.')); return; }
 
-   const items = rows.dated.filter(row=>row.day.startsWith(shownMonth+'-'));
+   const monthItems=rows.dated.filter(row=>row.day.startsWith(shownMonth+'-'));
+   if (owner()) {
+    const counts=new Map([['강혜주',0],['장은영',0]]);
+    for (const row of monthItems) counts.set(row.designer,(counts.get(row.designer)||0)+1);
+    if (!counts.has(selectedDesigner)) selectedDesigner='강혜주';
+    const tabs=el('div','ce-designer-tabs');
+    tabs.setAttribute('role','group');tabs.setAttribute('aria-label','담당자 선택');
+    for (const [name,count] of counts) {
+     const tab=button(name+' '+count+'건',()=>{
+      if (!owner() || session()?.uid!==viewer) return;
+      selectedDesigner=name;lastReady=undefined;draw();
+      [...result.querySelectorAll('.ce-designer-tabs button')].find(b=>b.getAttribute('aria-pressed')==='true')?.focus();
+     });
+     tab.setAttribute('aria-pressed',String(selectedDesigner===name));
+     tabs.append(tab);
+    }
+    result.append(tabs);
+   }
+   const items=personal?monthItems:monthItems.filter(row=>row.designer===selectedDesigner);
    const total = items.length;
    const summary = el('p'); result.append(summary);
    const checks = new Map();
    function updateCount() {
     const read = [...checks.values()].filter(box=>box.checked).length;
-    summary.textContent = (personal?'내 담당 ':'작성 ')+total+'건 · 읽음 '+read+'건';
+    summary.textContent = (personal?'내 담당 ':selectedDesigner+' 담당 ')+total+'건 · 읽음 '+read+'건';
    }
    updateCount();
-   if (rows.undated) result.append(el('p','','작성일 미확인 '+rows.undated+'건은 월별 합계에서 제외됩니다.'));
+   if (rows.undated) result.append(el('p','','날짜가 없는 '+(personal?'본인':'전체')+' 작지 '+rows.undated+'건은 월별 합계에서 제외됩니다.'));
    if (!total) {result.append(el('p','','이 달에 작성된 작업지시서가 없습니다.'));return;}
    const feedback = el('span');feedback.setAttribute('role','status');result.append(feedback);
    const table = el('table');table.setAttribute('aria-label','월별 생산 현황');
@@ -133,42 +155,64 @@
    for (const title of ['읽음','번호','제품명','현재 상태']) {
     const th = el('th','',title);th.scope='col';headers.append(th);
    }
-   const body = table.createTBody();result.append(table);
-   for (const [position,row] of items.entries()) {
-    const {code,order,designer,number}=row;
-    const name = order.pumMyeong || order.nameFinal || code;
-    const tr = body.insertRow();
-    if (designer==='장은영' && number>=6) tr.className='ce-extra';
-    const box = el('input');
-    box.type='checkbox';box.setAttribute('aria-label',name+' 읽음');
-    const key = readPrefix+encodeURIComponent(code);
-    try {box.checked=root.localStorage.getItem(key)==='1';} catch {}
-    checks.set(key,box);
-    box.addEventListener('change',()=>{
-     if (session()?.uid!==viewer || !canView('monthlyProduction')) return;
-     try {
-      if (box.checked) root.localStorage.setItem(key,'1');
-      else root.localStorage.removeItem(key);
-      feedback.textContent='';
-     } catch {
-      box.checked=!box.checked;
-      feedback.textContent='이 브라우저에 읽음 표시를 저장할 수 없습니다.';
-     }
-     updateCount();
-    });
-    tr.insertCell().append(box);
-    tr.insertCell().textContent=position+1;
-    const product=tr.insertCell();
-    product.append(button(name,()=>root.openWorkOrderByCode_(code),'ce-order-link'));
-    if (!personal) product.append(el('small','ce-assignee',designer));
-    const cell=tr.insertCell();
-    cell.textContent=stateLabels[order.status] || order.status || '샘플 중';
-    if (order.status==='order' && typeof root.getProductionOrderProgress_==='function') {
-     const cacheKey=code+'/'+(order.updatedAt||'');
-     if (!progress.has(cacheKey)) progress.set(cacheKey,root.getProductionOrderProgress_(code).catch(()=> ''));
-     progress.get(cacheKey).then(label=>{
-      if (label && cell.isConnected && session()?.uid===viewer && canView('monthlyProduction')) cell.textContent=label;
+   result.append(table);
+   const monthStart=shownMonth+'-01';
+   const monthEnd=new Date(Date.UTC(Number(shownMonth.slice(0,4)),Number(shownMonth.slice(5)),0)).toISOString().slice(0,10);
+   const firstWeek=Date.parse(productionWeekStart(monthStart)+'T00:00:00Z');
+   const today=new Date(Date.now()+9*3600000).toISOString().slice(0,10);
+   const latest=items[items.length-1].day;
+   const through=[today>latest?today:latest,monthEnd].sort()[0];
+   const lastWeek=Date.parse(productionWeekStart(through)+'T00:00:00Z');
+   const weekMs=7*86400000;
+   const byWeek=new Map();
+   for (const row of items) {
+    if (!byWeek.has(row.week)) byWeek.set(row.week,[]);
+    byWeek.get(row.week).push(row);
+   }
+   for (let at=lastWeek;at>=firstWeek;at-=weekMs) {
+    const start=new Date(at).toISOString().slice(0,10);
+    const end=new Date(at+6*86400000).toISOString().slice(0,10);
+    const period=day=>day.slice(5).replace('-','/');
+    const weekItems=byWeek.get(start)||[];
+    const body=table.createTBody();
+    const title=(1+(at-firstWeek)/weekMs)+'주차 · '+period(start<monthStart?monthStart:start)+'~'+period(end>monthEnd?monthEnd:end)+' · '+weekItems.length+'건';
+    const heading=el('th','ce-week',title);heading.scope='rowgroup';heading.colSpan=4;
+    body.insertRow().append(heading);
+    for (const row of weekItems) {
+     const {code,order,designer,number}=row;
+     const name = order.pumMyeong || order.nameFinal || code;
+     const tr = body.insertRow();
+     if (designer==='장은영' && number>=6) tr.className='ce-extra';
+     const box = el('input');
+     box.type='checkbox';box.setAttribute('aria-label',name+' 읽음');
+     const key = readPrefix+encodeURIComponent(code);
+     try {box.checked=root.localStorage.getItem(key)==='1';} catch {}
+     checks.set(key,box);
+     box.addEventListener('change',()=>{
+      if (session()?.uid!==viewer || !canView('monthlyProduction')) return;
+      try {
+       if (box.checked) root.localStorage.setItem(key,'1');
+       else root.localStorage.removeItem(key);
+       feedback.textContent='';
+      } catch {
+       box.checked=!box.checked;
+       feedback.textContent='이 브라우저에 읽음 표시를 저장할 수 없습니다.';
+      }
+      updateCount();
      });
+     tr.insertCell().append(box);
+     tr.insertCell().textContent=number;
+     const product=tr.insertCell();
+     product.append(button(name,()=>root.openWorkOrderByCode_(code),'ce-order-link'));
+     const cell=tr.insertCell();
+     cell.textContent=stateLabels[order.status] || order.status || '샘플 중';
+     if (order.status==='order' && typeof root.getProductionOrderProgress_==='function') {
+      const cacheKey=code+'/'+(order.updatedAt||'');
+      if (!progress.has(cacheKey)) progress.set(cacheKey,root.getProductionOrderProgress_(code).catch(()=> ''));
+      progress.get(cacheKey).then(label=>{
+       if (label && cell.isConnected && session()?.uid===viewer && canView('monthlyProduction')) cell.textContent=label;
+      });
+     }
     }
    }
    updateCount();
