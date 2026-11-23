@@ -456,22 +456,24 @@
 @media screen {
  #referenceCollectionView .rc-quick-bar{position:fixed;left:50%;transform:translateX(-50%);width:min(calc(100% - 24px),382px);bottom:calc(8px + env(safe-area-inset-bottom));z-index:20;display:flex;justify-content:flex-end;pointer-events:none}
  #referenceCollectionView #rcQuickOpen{pointer-events:auto;background:#34383C;color:#fff;border-color:#34383C;height:32px;padding:0 12px}
- #referenceCollectionView #rcQuick{box-sizing:border-box;position:fixed;inset:0;width:min(700px,calc(100% - 24px));height:min(680px,80dvh);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);margin:auto;padding:12px;overflow:hidden;overscroll-behavior:contain;border:1px solid #E3E5E7;border-radius:6px;background:#fff;color:#34383C}
- #referenceCollectionView #rcQuick::backdrop{background:#34383C66}
- #referenceCollectionView #rcQuick[open]{display:flex;flex-direction:column;gap:6px}
- #referenceCollectionView .rc-quick-heading{display:flex;align-items:center;justify-content:space-between;gap:6px}
- #referenceCollectionView .rc-quick-heading strong{font-size:14px;line-height:20px}
- #referenceCollectionView #rcQuick p{margin:0;font-size:12px;line-height:18px;overflow-wrap:anywhere}
- #referenceCollectionView #rcQuickMeta{color:#6C727C}
- #referenceCollectionView #rcQuickPreview{display:flex;gap:6px;overflow-x:auto;max-width:100%;min-height:0}
- #referenceCollectionView #rcQuickPreview:empty{display:none}
- #referenceCollectionView #rcQuickPreview img{display:block;width:90px;height:120px;flex:none;object-fit:contain;background:#F1F3F6;border:1px solid #E3E5E7;border-radius:3px}
- #referenceCollectionView .rc-quick-photo-actions{display:flex;gap:6px}
- #referenceCollectionView .rc-quick-photo-actions button{flex:1;width:0}
- #referenceCollectionView #rcQuickSubmit{width:100%;background:#34383C;color:#fff;border-color:#34383C;height:32px}
- #referenceCollectionView #rcQuick button:disabled{opacity:.55}
+ #referenceCollectionView #rcInline{box-sizing:border-box;display:grid;gap:10px;margin:8px 0;padding:12px;border:1px solid #d9dcdf;border-radius:4px;background:white}
+ #referenceCollectionView #rcInline [hidden],#referenceCollectionView #rcInline[hidden],#referenceCollectionView .rc-capturing #rcCreate{display:none!important}
+ #rcInline .rc-quick-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
+ #rcInline fieldset{border:0;padding:0;margin:0;display:grid;gap:9px;min-width:0}
+ #rcInline label{display:grid;gap:3px}
+ #rcInline input:not([hidden]){box-sizing:border-box;width:100%;min-height:38px;font-size:16px}
+ #referenceCollectionView #rcQuickPhoto{width:100%;height:auto;min-height:76px;display:flex;gap:4px;align-items:center;justify-content:center;flex-wrap:wrap;border:1px dashed #adb2b8;background:#fafafb;font-size:24px}
+ #rcQuickPhoto img{width:68px;height:82px;object-fit:contain}
+ #rcQuickStars{display:flex;align-items:center}
+ #referenceCollectionView #rcQuickStars button{width:40px;height:40px;padding:7px;background:none;border:0}
+ #rcQuickStars svg{width:24px;height:24px}
+ #rcQuickPrevious{display:flex;align-items:center;gap:6px;color:#555;border-top:1px solid #eee;padding-top:6px}
+ #rcQuickPrevious span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #rcQuickPrevious img{width:32px;height:36px;object-fit:cover}
+ #rcQuickStatus{flex:1;font-size:13px}
+ #referenceCollectionView #rcQuickNext{background:#34383c;color:white;min-height:36px}
 }
-@media print{#rcQuick,.rc-quick-bar{display:none!important}}
+@media print{#rcInline,.rc-quick-bar{display:none!important}}
 
 /* Lightweight preview hints do not change the photo frame height. */
 #referenceCollectionView #rcPhotos .rc-photo-hint{position:absolute;left:6px;bottom:6px;max-width:calc(100% - 12px);padding:3px 6px;background:rgba(255,255,255,.94);color:var(--aisel-muted);font:400 11px/16px var(--aisel-font,sans-serif);pointer-events:none}
@@ -504,19 +506,7 @@
  html:root body #referenceCollectionView #rcList .rc-card-picker:has(.rc-card-category){justify-self:start}
 }
 
-/* Keep photo entry visible while the centered dialog body scrolls. */
-@media screen{
- #referenceCollectionView #rcQuick .rc-quick-body{display:flex;flex:1;min-height:0;flex-direction:column;gap:10px;overflow:auto;overscroll-behavior:contain}
- #referenceCollectionView #rcQuick .rc-quick-heading,#referenceCollectionView #rcQuickMeta,#referenceCollectionView #rcQuick .rc-quick-footer{flex:none}
- #referenceCollectionView #rcQuick .rc-quick-photo-area{display:flex;flex-direction:column;justify-content:center;gap:10px;flex:1 0 200px;padding:12px;border:1px dashed #BBC3CD;border-radius:3px;background:#F8F9FB}
- #referenceCollectionView #rcQuick .rc-quick-photo-hint{text-align:center;color:#6C727C;font-size:12px}
- #referenceCollectionView #rcQuickPreview{justify-content:center;flex-wrap:wrap;overflow:visible}
- #referenceCollectionView #rcQuickPreview img{width:105px;height:140px}
- #referenceCollectionView #rcQuick .rc-quick-field{display:flex;flex-direction:column;gap:4px;font-size:12px;color:#6C727C}
- #referenceCollectionView #rcQuick .rc-quick-field input{width:100%;min-width:0;box-sizing:border-box}
- #referenceCollectionView #rcQuick .rc-quick-footer{display:flex;flex-direction:column;gap:6px;border-top:1px solid #E3E5E7;padding-top:8px;background:#fff}
- #referenceCollectionView #rcQuick .rc-quick-photo-actions button{height:34px}
-}
+
 
 
 @media screen {
