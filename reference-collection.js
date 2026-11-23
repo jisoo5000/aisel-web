@@ -1360,24 +1360,33 @@
   function quickHasInput(item){
     return !!(item.record.sourceUrl||item.files.length||item.record.title.trim()||item.rating);
   }
+  async function quickLocal(task){
+    // Safari may stall IndexedDB after backgrounding. Local recovery must not
+    // block the actual server save or keep an acknowledged save spinning.
+    let timer;
+    try{return await Promise.race([task.then(()=>true,()=>false),new Promise(resolve=>{timer=setTimeout(()=>resolve(false),1500);})]);}
+    finally{clearTimeout(timer);}
+  }
   async function quickPersist(item=quick){
     if(!item||!quickHasInput(item)&&!item.base)return;
     const record=clone(item.record),baseRecord=clone(item.base),pendingSave=clone(item.attempt);
     const files=item.files.slice(record.photos.length),key=item.account+'|'+record.id;
-    const write=(item.writes||Promise.resolve()).catch(()=>{}).then(async()=>{
+    const write=draftWrites.catch(()=>{}).then(async()=>{
       const fileKeys=await Promise.all(files.map(file=>preserveFile(file,key)));
       await storage('put',{key,account:item.account,id:record.id,record,baseRecord,pendingSave,fileKeys,at:Date.now()});
     });
-    item.writes=write;await write;
+    item.writes=write;draftWrites=write;trackDraftWrite(key,write);await write;
   }
   async function quickUpload(item){
     const record=item.record;
     while(record.photos.length<item.files.length){
       const file=item.files[record.photos.length];
+      quickMessage('사진 준비 중… '+(record.photos.length+1)+'/'+item.files.length);
       const {prepared,thumb}=await AiselPhoto.preparePair(file,'collection','referenceThumb');
       const hash=await digest(prepared.blob);quickCheck(item);
       const writer=collectionWriter();
       let uploaded;
+      quickMessage('사진 저장 중… '+(record.photos.length+1)+'/'+item.files.length);
       if(writer)uploaded=await writer.uploadPhotos('references',{id:record.id,hash,original:prepared.blob,thumb:thumb.blob});
       else{
         const original=await call('refUpload',{id:record.id,hash,kind:'original',mime:prepared.blob.type,data:await encode(prepared.blob)});
@@ -1395,8 +1404,8 @@
     const record=item.record;
     if(record.sourceUrl&&(!http(record.sourceUrl)||record.sourceUrl.length>2048||/\s/.test(record.sourceUrl)))throw Error('전체 링크를 붙여넣어 주세요.');
     if(!item.base&&!record.sourceUrl&&!item.files.length)throw Error('링크 또는 사진을 먼저 넣어주세요.');
-    await quickPersist(item);quickCheck(item);
-    if(localOnly)throw Error('이 기기에 보관했어요. 연결 후 다시 시도해주세요.');
+    const backedUp=await quickLocal(quickPersist(item));quickCheck(item);
+    if(localOnly)throw Error(backedUp?'이 기기에 보관했어요. 연결 후 다시 시도해주세요.':'입력을 유지했어요. 창을 닫지 말고 연결 후 다시 시도해주세요.');
     await quickUpload(item);quickCheck(item);
     // A lost acknowledgement is retried with the original snapshot and version.
     // Later typing remains on record until the next pass.
@@ -1405,7 +1414,7 @@
       if(!item.attempt&&!Object.keys(patch).length)break;
       item.attempt||={base:clone(item.base),snapshot:clone(record),patch};
       const attempt=item.attempt,version=attempt.base?.version||0;
-      await quickPersist(item);quickCheck(item);
+      await quickLocal(quickPersist(item));quickCheck(item);quickMessage('저장 확인 중…');
       let saved;
       try{
         saved=(await referenceRequest('refSave',{id:record.id,version,patch:attempt.patch})).record;
@@ -1441,11 +1450,11 @@
           const revision=item.revision;
           quickMessage('저장 중…');await quickWrite(item);quickCheck(item);
           item.done=revision;
-          if(item.done===item.revision){await removeDraft(item.record.id);quickCheck(item);}
+          if(item.done===item.revision){await quickLocal(removeDraft(item.record.id));quickCheck(item);}
         }while(item.done!==item.revision);
         quickMessage('✓ 저장됨');return true;
       }catch(error){
-        if(quick===item){item.done=-1;quickMessage(error.message||'다시 시도해주세요.',true);await quickPersist(item).catch(()=>{});}
+        if(quick===item){item.done=-1;quickMessage(error.message||'다시 시도해주세요.',true);await quickLocal(quickPersist(item));}
         return false;
       }finally{item.flight=null;}
     })();

@@ -456,11 +456,12 @@
 @media screen {
  #referenceCollectionView .rc-quick-bar{position:fixed;left:50%;transform:translateX(-50%);width:min(calc(100% - 24px),382px);bottom:calc(8px + env(safe-area-inset-bottom));z-index:20;display:flex;justify-content:flex-end;pointer-events:none}
  #referenceCollectionView #rcQuickOpen{pointer-events:auto;background:#34383C;color:#fff;border-color:#34383C;height:32px;padding:0 12px}
- #referenceCollectionView #rcInline{box-sizing:border-box;display:grid;gap:10px;margin:8px 0;padding:12px;border:1px solid #d9dcdf;border-radius:4px;background:white}
+ #referenceCollectionView #rcInline{box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr);min-width:0;max-width:100%;gap:10px;margin:8px 0;padding:12px;border:1px solid #d9dcdf;border-radius:4px;background:white}
+ #referenceCollectionView #rcInline>*{min-width:0;max-width:100%}
  #referenceCollectionView #rcInline [hidden],#referenceCollectionView #rcInline[hidden],#referenceCollectionView .rc-capturing #rcCreate{display:none!important}
  #rcInline .rc-quick-heading{display:flex;align-items:center;justify-content:space-between;gap:8px}
- #rcInline fieldset{border:0;padding:0;margin:0;display:grid;gap:9px;min-width:0}
- #rcInline label{display:grid;gap:3px}
+ #rcInline fieldset{border:0;padding:0;margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:9px;min-width:0}
+ #rcInline label{display:grid;grid-template-columns:minmax(0,1fr);min-width:0;gap:3px}
  #rcInline input:not([hidden]){box-sizing:border-box;width:100%;min-height:38px;font-size:16px}
  #referenceCollectionView #rcQuickPhoto{width:100%;height:auto;min-height:76px;display:flex;gap:4px;align-items:center;justify-content:center;flex-wrap:wrap;border:1px dashed #adb2b8;background:#fafafb;font-size:24px}
  #rcQuickPhoto img{width:68px;height:82px;object-fit:contain}
@@ -468,9 +469,9 @@
  #referenceCollectionView #rcQuickStars button{width:40px;height:40px;padding:7px;background:none;border:0}
  #rcQuickStars svg{width:24px;height:24px}
  #rcQuickPrevious{display:flex;align-items:center;gap:6px;color:#555;border-top:1px solid #eee;padding-top:6px}
- #rcQuickPrevious span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- #rcQuickPrevious img{width:32px;height:36px;object-fit:cover}
- #rcQuickStatus{flex:1;font-size:13px}
+ #rcQuickPrevious span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #rcQuickPrevious img{flex:none;width:32px;height:36px;object-fit:cover}
+ #rcQuickStatus{flex:1;min-width:0;font-size:13px;overflow-wrap:anywhere}
  #referenceCollectionView #rcQuickNext{background:#34383c;color:white;min-height:36px}
 }
 @media print{#rcInline,.rc-quick-bar{display:none!important}}

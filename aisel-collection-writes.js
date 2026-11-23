@@ -98,6 +98,19 @@
     if(patch.sourceUrl!==undefined&&!Object.prototype.hasOwnProperty.call(patch,'sourceLinks')&&old?.sourceLinks?.length&&patch.sourceUrl!==old.sourceUrl){patch.sourceLinks=patch.sourceUrl?[patch.sourceUrl,...old.sourceLinks.slice(1).filter(link=>link!==patch.sourceUrl)]:old.sourceLinks.slice(1);patch.sourceUrl=patch.sourceLinks[0]||'';}
     return patch;
   }
+  // The REST PATCH has the same atomic validation as SDK update(), but a mobile
+  // connection cannot leave it queued indefinitely after the tab is suspended.
+  async function referenceCommit(path,outgoing,ctx) {
+    assert(ctx);const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+    try{
+      const token=await Promise.race([current().getIdToken(),new Promise((_,reject)=>controller.signal.addEventListener('abort',()=>reject(fail('network')),{once:true}))]);assert(ctx);
+      const response=await fetch(ctx.app.options.databaseURL.replace(/\/$/,'')+'/'+ROOT+'/'+path+'.json?auth='+encodeURIComponent(token),{method:'PATCH',cache:'no-store',credentials:'omit',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(outgoing)});
+      assert(ctx);if([401,403].includes(response.status))throw fail('permission_denied');if(!response.ok)throw fail('network');
+      const committed=await response.json();assert(ctx);
+      if(committed?.version!==outgoing.version||committed?.lastMutationId!==outgoing.lastMutationId)throw fail('network');
+      return committed;
+    }catch(error){assert(ctx);if(error.code)throw error;throw fail('network');}finally{clearTimeout(timer);}
+  }
   async function writeReference({id,version,patch,archived},archive=false) {
     idCheck(id);if(!Number.isSafeInteger(version)||version<0)throw fail('invalid');
     const ctx=await context('references'),path='referenceRecords/'+id;
@@ -122,25 +135,24 @@
     const outgoing=initial?{...changes}:{...desired};
     if(!initial||source(base)!==source(desired))Object.assign(outgoing,{analysisSignature:await digest(source(desired)),analysisState:'queued',analysis:null,reviewedAt:'',analysisReceipt:''});
     assert(ctx);Object.assign(outgoing,{version:version+1,updatedAt:at,committedAt:window.firebase.database.ServerValue.TIMESTAMP,lastMutationId:mutationId});
-    try{await ctx.app.database().ref(ROOT+'/'+path).update(outgoing);assert(ctx);}
+    let committed;
+    try{committed=await referenceCommit(path,outgoing,ctx);assert(ctx);}
     catch(error){
       assert(ctx);
       confirmed.delete(key);
-      if(/permission[_-]denied/i.test(error.code||error.message||'')){
+      if(error.code==='network'||/permission[_-]denied/i.test(error.code||error.message||'')){
         const latestCtx=await context('references'),latest=await read(path,latestCtx);assert(ctx);
         if(latest?.lastMutationId===mutationId&&latest.version>version)return {ok:true,record:await normalizeReference(latest,id,latestCtx)};
         if((latest?.version||0)!==version)throw fail('conflict');
-        throw fail('permission_denied');
+        throw fail(error.code==='network'?'network':'permission_denied');
       }
       throw fail('network');
     }
-    // Firebase update() resolves only after the server commits the write. A
-    // second download is not another commit receipt and must not delay save UI.
-    // Do not invent the resolved ServerValue timestamp: the next canonical read
-    // supplies committedAt; this response explicitly identifies its SDK ACK.
-    const saved={...clone(base),...clone(outgoing)};delete saved.committedAt;
+    // A successful PATCH response is the server receipt; no extra GET on success.
+    // Only an uncertain acknowledgement needs the canonical readback above.
+    const saved={...clone(base),...clone(committed)};
     const value=await verifiedRecord(saved,id,ctx);assert(ctx);remember(saved,id,ctx);
-    return {ok:true,record:value,receipt:{kind:'firebase-sdk-ack',version:version+1,mutationId}};
+    return {ok:true,record:value,receipt:{kind:'firebase-rest-ack',version:version+1,mutationId}};
   }
   const saveReference=options=>writeReference(options);
   const archiveReference=options=>writeReference(options,true);
