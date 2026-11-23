@@ -426,7 +426,7 @@
  html:root body #referenceCollectionView #rcList :is(.rc-list-calendar,#rcBulkStatus,#rcBulkCategory,#rcBulkDesigner,#rcUspPicker){height:28px!important;min-height:28px!important;margin:0;width:100%;font-size:12px!important;font-weight:400;line-height:18px!important;color:#6C727C;background:#fff;border:1px solid #E3E5E7;border-radius:3px;text-align:center;text-align-last:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  html:root body #referenceCollectionView .rc-list-calendar{position:relative;display:flex;align-items:center;justify-content:center}
  html:root body #referenceCollectionView :is(.rc-list-calendar,.rc-card-date) input[type=date]{position:absolute!important;inset:0;width:100%!important;height:100%!important;min-width:0;opacity:0;cursor:pointer;padding:0!important}
- html:root body #referenceCollectionView #rcList .rc-search > #rcSearch{background:transparent;box-shadow:none!important;outline:none}
+ html:root body #referenceCollectionView #rcList .rc-search > #rcSearch{background:transparent;box-shadow:none!important;outline:none;text-align:center!important;padding-inline:20px!important}
  html:root body #referenceCollectionView #rcList .rc-search:has(> input:focus-visible){outline:2px solid #6C727C;outline-offset:1px}
  html:root body #referenceCollectionView .rc-selection-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin:0;flex-wrap:nowrap;font-size:12px;color:#6C727C}
  html:root body #referenceCollectionView .rc-selection-toolbar button{height:28px;min-height:28px;font:400 12px/18px var(--aisel-font,sans-serif);padding:0 8px;border:1px solid #E3E5E7;border-radius:3px;background:#fff;color:#6C727C}
