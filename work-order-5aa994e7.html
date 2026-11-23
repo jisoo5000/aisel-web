@@ -11939,6 +11939,19 @@
     return account?.active && account.role==='designer' && account.uid===productionAssigneeUid_
       ? personalProductionOrders_ : null;
   };
+
+  window.getProductionOrderProgress_ = async code => {
+    const account=window.AiselAccess.session;
+    if (!account?.active || account.legacy || account.passwordChangeRequired || !account.uid) return '';
+    const visible=account.role==='owner'?allWorkOrders:window.getPersonalProductionOrders_();
+    if (!visible || !Object.hasOwn(visible,code) || visible[code].status!=='order') return '';
+    const record=woRoot.child(code);
+    const stage=(await record.child('initialOrder/transport').once('value')).val();
+    const labels={registered:'발주 요청',sending:'발주 전송 중',unconfirmed:'발주 확인 필요',confirmed:'발주 완료'};
+    if (Object.hasOwn(labels,stage)) return labels[stage];
+    const done=(await record.child('orderCompleted').once('value')).val();
+    return done===true?'발주 완료':'발주·생산';
+  };
   function acceptAuthorizedWorkorderIndex_(snapshot){
     authorizedIndexRecords_=snapshot.val()||{};
     allWorkOrders=window.AiselAccess.projectWorkorders(authorizedIndexRecords_,workorderAssignments_);
@@ -18205,7 +18218,7 @@ window.AiselUnifiedAdapter={
 
 <script src="company-workflow-domain.js?v=20261111-glowny1"></script>
 
-<script src="company-erp.js?v=personal-production-20261123"></script>
+<script src="company-erp.js?v=production-grid-20261123"></script>
 <link rel="stylesheet" href="aisel-select.css?v=20261113" media="screen">
 <style media="screen">
  html:root body #editorView .editor-mobile-head .editor-mobile-title:has(#deleteBtn) {grid-template-columns:var(--aisel-identity-label-width,24px) minmax(0,1fr) auto;align-items:center}

@@ -76,15 +76,14 @@
    '.ce-production-month{max-width:64rem;margin:auto;color:inherit;font:inherit}' +
    '.ce-production-month h2{font:inherit;font-size:1.45rem;font-weight:700;margin:0 0 .8rem}' +
    '.ce-production-month label{display:inline-flex;align-items:center;gap:.5rem}' +
-   '.ce-production-month input{font:inherit;max-width:100%;padding:.35rem}' +
-   '.ce-production-month details{border-top:1px solid #dce3e8;padding:.7rem 0}' +
-   '.ce-production-month summary{cursor:pointer;font-weight:650}' +
-   '.ce-production-month table{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:.85rem;font-size:.9rem}' +
-   '.ce-production-month caption{text-align:left;font-weight:650;padding:.65rem 0 .25rem}' +
-   '.ce-production-month th,.ce-production-month td{text-align:left;padding:.45rem .3rem;overflow-wrap:anywhere;border-bottom:1px solid #e1e6e9}' +
-   '.ce-production-month th:first-child{width:2.6em}.ce-production-month th:last-child{width:4.4em}' +
+   '.ce-production-month input[type=month]{font:inherit;max-width:100%;padding:.35rem}' +
+   '.ce-production-month table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:.9rem}' +
+   '.ce-production-month th,.ce-production-month td{padding:.45rem .3rem;overflow-wrap:anywhere;border:1px solid #c8d2d9;text-align:left}' +
+   '.ce-production-month th{background:#f2f6f8}.ce-production-month th:nth-child(-n+2),.ce-production-month td:nth-child(-n+2){width:2.6em;text-align:center}' +
+   '.ce-production-month th:last-child{width:5.6em}.ce-production-month input[type=checkbox]{width:1.15rem;height:1.15rem;margin:0;vertical-align:middle;cursor:pointer}' +
    '.ce-production-month .ce-extra td{background:#e0f4e5;color:#173e28}' +
-   '.ce-production-month .ce-order-link{font:inherit;background:none;border:0;padding:0;text-align:left;text-decoration:underline;cursor:pointer;color:inherit}';
+   '.ce-production-month .ce-order-link{font:inherit;background:none;border:0;padding:0;text-align:left;text-decoration:underline;cursor:pointer;color:inherit}' +
+   '.ce-production-month .ce-assignee{display:block;font-size:.8rem;color:#52616a;margin-top:.1rem}';
   const label = el('label','','조회 월');
   const month = el('input');
   month.type = 'month';
@@ -94,7 +93,9 @@
   host.append(style, el('h2','','월별 생산 현황'), label, result);
   content.append(host);
   let lastIndex, lastReady, rows, shownMonth = '';
-  const opened = new Map();
+  const viewer=session().uid;
+  const readPrefix='aisel:production-read:'+encodeURIComponent(viewer)+':';
+  const progress=new Map();
   const stateLabels = {sampling:'샘플 중',planned:'샘플 중',samplemgmt:'샘플 중',resampling:'재샘플 중',
    order:'발주·생산',pdp:'상세페이지',sale:'판매 중',drop:'드롭'};
   function draw() {
@@ -109,70 +110,81 @@
    const ready = personal ? index != null : !!(Object.keys(index).length || (typeof liveIndexDelivered_ !== 'undefined' && liveIndexDelivered_) ||
     (typeof assignmentRefreshedAt_ !== 'undefined' && assignmentRefreshedAt_));
    if (lastIndex === index && ready === lastReady && month.value === shownMonth) return;
-   if (month.value !== shownMonth) opened.clear();
-   else for (const details of result.querySelectorAll('details')) opened.set(details.dataset.week, details.open);
    if (index !== lastIndex || !rows) rows = productionRows(index || {});
    lastIndex = index; lastReady = ready; shownMonth = month.value;
    result.replaceChildren();
    if (!ready) { result.append(el('p','','작업지시서 목록을 불러오는 중입니다.')); return; }
    if (!shownMonth) { result.append(el('p','','조회할 월을 선택해 주세요.')); return; }
-   const groups = new Map();
-   let total = 0;
-   for (const row of rows.dated) {
-    if (!row.day.startsWith(shownMonth + '-')) continue;
-    if (!groups.has(row.week)) groups.set(row.week, new Map());
-    const designers = groups.get(row.week);
-    if (!designers.has(row.designer)) designers.set(row.designer, []);
-    designers.get(row.designer).push(row);
-    total++;
+
+   const items = rows.dated.filter(row=>row.day.startsWith(shownMonth+'-'));
+   const total = items.length;
+   const summary = el('p'); result.append(summary);
+   const checks = new Map();
+   function updateCount() {
+    const read = [...checks.values()].filter(box=>box.checked).length;
+    summary.textContent = (personal?'내 담당 ':'작성 ')+total+'건 · 읽음 '+read+'건';
    }
-   result.append(el('p','','작성 '+total+'건'));
+   updateCount();
    if (rows.undated) result.append(el('p','','작성일 미확인 '+rows.undated+'건은 월별 합계에서 제외됩니다.'));
-   if (!total) { result.append(el('p','','이 달에 작성된 작업지시서가 없습니다.')); return; }
-   const monthStart=shownMonth+'-01';
-   const monthEnd=new Date(Date.UTC(Number(shownMonth.slice(0,4)),Number(shownMonth.slice(5)),0)).toISOString().slice(0,10);
-   const firstWeek=Date.parse(productionWeekStart(monthStart)+'T00:00:00Z');
-   for (const [week,designers] of [...groups].reverse()) {
-    const details = el('details');
-    details.dataset.week = week;
-    details.open = opened.get(week) ?? true;
-    const end = new Date(Date.parse(week+'T00:00:00Z') + 6*86400000).toISOString().slice(0,10);
-    const period = value => value.slice(5).replace('-', '/');
-    const weekNumber=1+(Date.parse(week+'T00:00:00Z')-firstWeek)/604800000;
-    const heading = weekNumber+'주차';
-    const count = [...designers.values()].reduce((sum,items)=>sum+items.length,0);
-    details.append(el('summary','',heading+' · '+period(week<monthStart?monthStart:week)+'–'+period(end>monthEnd?monthEnd:end)+' · '+count+'건'));
-    for (const [designer,items] of [...designers].sort(([a],[b])=>a.localeCompare(b,'ko'))) {
-     const table = el('table');
-     table.append(el('caption','',designer+' · '+items.length+'건'));
-     const head = table.createTHead().insertRow();
-     for (const title of ['번호','제품명','소재·컬러','현재 상태']) {
-      const th = el('th','',title); th.scope = 'col'; head.append(th);
-     }
-     const body = table.createTBody();
-     for (const {code,order,number} of items) {
-      const tr = body.insertRow();
-      if (designer==='장은영' && number>=6) tr.className='ce-extra';
-      tr.insertCell().textContent=number;
-      const link = button(order.pumMyeong || order.nameFinal || code,()=>root.openWorkOrderByCode_(code),'ce-order-link');
-      tr.insertCell().append(link);
-      const colors = root.colorNames_(Array.isArray(order.selectedColors) ? order.selectedColors : []);
-      const fabric = order.fabricNameField || order.fabricName || order.blend || '소재 미입력';
-      tr.insertCell().textContent=fabric+' · '+(colors.join(' / ') || '컬러 미입력');
-      tr.insertCell().textContent=stateLabels[order.status] || order.status || '샘플 중';
-     }
-     details.append(table);
-    }
-    result.append(details);
+   if (!total) {result.append(el('p','','이 달에 작성된 작업지시서가 없습니다.'));return;}
+   const feedback = el('span');feedback.setAttribute('role','status');result.append(feedback);
+   const table = el('table');table.setAttribute('aria-label','월별 생산 현황');
+   const headers = table.createTHead().insertRow();
+   for (const title of ['읽음','번호','제품명','현재 상태']) {
+    const th = el('th','',title);th.scope='col';headers.append(th);
    }
+   const body = table.createTBody();result.append(table);
+   for (const [position,row] of items.entries()) {
+    const {code,order,designer,number}=row;
+    const name = order.pumMyeong || order.nameFinal || code;
+    const tr = body.insertRow();
+    if (designer==='장은영' && number>=6) tr.className='ce-extra';
+    const box = el('input');
+    box.type='checkbox';box.setAttribute('aria-label',name+' 읽음');
+    const key = readPrefix+encodeURIComponent(code);
+    try {box.checked=root.localStorage.getItem(key)==='1';} catch {}
+    checks.set(key,box);
+    box.addEventListener('change',()=>{
+     if (session()?.uid!==viewer || !canView('monthlyProduction')) return;
+     try {
+      if (box.checked) root.localStorage.setItem(key,'1');
+      else root.localStorage.removeItem(key);
+      feedback.textContent='';
+     } catch {
+      box.checked=!box.checked;
+      feedback.textContent='이 브라우저에 읽음 표시를 저장할 수 없습니다.';
+     }
+     updateCount();
+    });
+    tr.insertCell().append(box);
+    tr.insertCell().textContent=position+1;
+    const product=tr.insertCell();
+    product.append(button(name,()=>root.openWorkOrderByCode_(code),'ce-order-link'));
+    if (!personal) product.append(el('small','ce-assignee',designer));
+    const cell=tr.insertCell();
+    cell.textContent=stateLabels[order.status] || order.status || '샘플 중';
+    if (order.status==='order' && typeof root.getProductionOrderProgress_==='function') {
+     const cacheKey=code+'/'+(order.updatedAt||'');
+     if (!progress.has(cacheKey)) progress.set(cacheKey,root.getProductionOrderProgress_(code).catch(()=> ''));
+     progress.get(cacheKey).then(label=>{
+      if (label && cell.isConnected && session()?.uid===viewer && canView('monthlyProduction')) cell.textContent=label;
+     });
+    }
+   }
+   updateCount();
+
   }
+  function syncRead(event) {
+   if (event.key===null || event.key.startsWith(readPrefix)) {lastReady=undefined;draw();}
+  }
+  root.addEventListener('storage',syncRead);
   month.addEventListener('input',draw);
   month.addEventListener('change',draw);
   draw();
   // Reuse the gallery's in-memory subscription while this menu is visible.
   const timer = root.setInterval(()=>{
-   if (!canView('monthlyProduction')) {host.remove();root.clearInterval(timer);return;}
-   if (!host.isConnected || panel.hidden) {root.clearInterval(timer);return;}
+   if (session()?.uid!==viewer || !canView('monthlyProduction')) host.remove();
+   if (!host.isConnected || panel.hidden) {root.removeEventListener('storage',syncRead);root.clearInterval(timer);return;}
    if (!document.hidden) draw();
   },1500);
  }
