@@ -253,7 +253,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=personal-production-20261123">
 <link rel="preload" as="script" href="design-meeting.js?v=app-speed-20261116">
 <link rel="preload" as="script" href="reference-collection.js?v=inline-reference-261124">
-<link rel="preload" as="style" href="workorder-screen.css?v=20261112-cost-typography">
+<link rel="preload" as="style" href="workorder-screen.css?v=20261124-final-sizes">
 <link rel="preload" as="style" href="unified-app.css?v=title-navigation-20261112">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=nav-lines-20261111b">
 <script id="aisel-ipad-layout-mode">
@@ -6172,6 +6172,7 @@
     row.querySelectorAll("input").forEach(inp=> inp.addEventListener("input", save));
     row.querySelector(".row-del").addEventListener("click", ()=>{ row.remove(); save(); });
     sizeSpecRows.appendChild(row);
+    return row;
   }
 
   function clearSizeSpecTable(){
@@ -6190,7 +6191,12 @@
     SIZESPEC_DEFAULT.cols.forEach(c=> addSizeSpecColumn(c));
     SIZESPEC_DEFAULT.parts.forEach(p=> makeSizeSpecRow(p, []));
   }
-  $("#addSizeSpecRow").addEventListener("click", ()=>{ makeSizeSpecRow("", []); save(); });
+  $("#addSizeSpecRow").addEventListener("click", ()=>{
+    const row = makeSizeSpecRow("", []);
+    row.dataset.newSizeRow = "true";
+    row.querySelector(".ss-part").focus();
+    save();
+  });
   $("#addSizeSpecCol").addEventListener("click", ()=>{ addSizeSpecColumn(""); save(); });
 
   // ---------- SIZE SPEC cm/인치 변환 ----------
@@ -18149,7 +18155,7 @@ window.AiselUnifiedAdapter={
 <script src="erp-operations.js?v=leave-navigation-20261112"></script>
 <script src="unified-app.js?v=personal-production-20261123"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-management-20261112" media="screen">
-<link rel="stylesheet" href="workorder-screen.css?v=20261112-cost-typography" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=20261124-final-sizes" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=title-navigation-20261112">
 <link rel="stylesheet" href="aisel-list-controls.css?v=nav-lines-20261111b" media="screen">
 
