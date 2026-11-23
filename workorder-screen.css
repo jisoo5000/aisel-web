@@ -899,3 +899,16 @@
 @media screen and (max-width:359px) {
  html:root body #editorView #sheet #costCell {--aisel-cost-value-font:12px;}
 }
+
+@media screen {
+  html:root body #editorView #sheet .sizespec :is(.ss-colname, .ss-part, .ss-val) {
+    color: #272b30 !important;
+    -webkit-text-fill-color: currentColor;
+    font-size: 14px;
+  }
+  html:root body #editorView #sheet .sizespec :is(.ss-colname, .ss-part, .ss-val)::placeholder {
+    color: #646a72;
+    opacity: 1;
+    -webkit-text-fill-color: currentColor;
+  }
+}
