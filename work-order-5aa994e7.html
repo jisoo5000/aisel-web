@@ -250,7 +250,7 @@
 <script>window.addEventListener('popstate',function(event){window.AiselUnifiedNavigationPreflight?.(event);},true);</script>
 <meta charset="utf-8">
 <!-- v267: parallel downloads without changing script execution order -->
-<link rel="preload" as="script" href="unified-app.js?v=staff-menu-scope-20261118">
+<link rel="preload" as="script" href="unified-app.js?v=personal-production-20261123">
 <link rel="preload" as="script" href="design-meeting.js?v=app-speed-20261116">
 <link rel="preload" as="script" href="reference-collection.js?v=reference-paid-only-20261120">
 <link rel="preload" as="style" href="workorder-screen.css?v=20261112-cost-typography">
@@ -11931,6 +11931,14 @@
   let sheetLinkedCode_ = new URLSearchParams(location.search).get("code");
   if(sheetLinkedCode_ && !/^AS-[A-Z0-9-]+$/.test(sheetLinkedCode_)) sheetLinkedCode_ = null;
   let authorizedIndexRecords_={},workorderAssignments_={};
+  // This projection uses primary assignments from the authenticated list response.
+  // Shared editors may open a workorder elsewhere, but never count it as their own here.
+  let productionAssigneeUid_='', personalProductionOrders_=null;
+  window.getPersonalProductionOrders_ = () => {
+    const account=window.AiselAccess.session;
+    return account?.active && account.role==='designer' && account.uid===productionAssigneeUid_
+      ? personalProductionOrders_ : null;
+  };
   function acceptAuthorizedWorkorderIndex_(snapshot){
     authorizedIndexRecords_=snapshot.val()||{};
     allWorkOrders=window.AiselAccess.projectWorkorders(authorizedIndexRecords_,workorderAssignments_);
@@ -11965,6 +11973,13 @@
       if(expected!==accessIndexEpoch_)return;
       workorderAssignments_=result.assignments||{};assignmentRefreshedAt_=Date.now();
       if(!window.AiselAccess.ownOnly){acceptAuthorizedWorkorderIndex_({val:()=>liveIndexDelivered_?authorizedIndexRecords_:(result.items||{})});return;}
+      const account=window.AiselAccess.session;
+      if(account?.role==='designer' && account.uid && window.AiselAccess.ownOnly){
+        personalProductionOrders_=Object.fromEntries(Object.entries(result.items||{})
+          .filter(([code])=>workorderAssignments_[code]?.assigneeUid===account.uid)
+          .map(([code,item])=>[code,{...item,currentAssigneeName:workorderAssignments_[code].assigneeName||account.displayName||''}]));
+        productionAssigneeUid_=account.uid;
+      }
       acceptAuthorizedWorkorderIndex_({val:()=>result.items||{}});
       window.dispatchEvent(new CustomEvent('aisel-assigned-index-change',{detail:{codes:Object.keys(result.items||{})}}));
       if(currentCode&&!result.items?.[currentCode]&&!newOrderMode_&&!initialCreationWrite_&&!pendingSaveWrites_.size){
@@ -11977,6 +11992,7 @@
   window.AiselAccess.subscribe(session=>{
     const scope=session?session.uid+':'+!!session.permissions?.ownOnly+':'+!!session.legacy:'';
     if(scope===accessIndexScope_)return;accessIndexScope_=scope;
+    personalProductionOrders_=null;productionAssigneeUid_='';
     accessIndexEpoch_++;accessIndexFlight_=null;assignmentRefreshedAt_=0;liveIndexDelivered_=false;authorizedIndexRecords_={};workorderAssignments_={};
     document.body.dataset.aiselAccess=!session?'pending':session.permissions?.ownOnly?'restricted':'ready';
     allWorkOrders={};lastGallerySig_=null;window.AiselWorkorderListFilters?.set?.({});renderGallery();
@@ -18118,7 +18134,7 @@ window.AiselUnifiedAdapter={
 <link rel="stylesheet" href="erp-operations.css?v=20261108-1">
 <script src="erp-operations-domain.js?v=20261108-1"></script>
 <script src="erp-operations.js?v=leave-navigation-20261112"></script>
-<script src="unified-app.js?v=staff-menu-scope-20261118"></script>
+<script src="unified-app.js?v=personal-production-20261123"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-management-20261112" media="screen">
 <link rel="stylesheet" href="workorder-screen.css?v=20261112-cost-typography" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=title-navigation-20261112">
@@ -18189,7 +18205,7 @@ window.AiselUnifiedAdapter={
 
 <script src="company-workflow-domain.js?v=20261111-glowny1"></script>
 
-<script src="company-erp.js?v=monthly-production-20261123"></script>
+<script src="company-erp.js?v=personal-production-20261123"></script>
 <link rel="stylesheet" href="aisel-select.css?v=20261113" media="screen">
 <style media="screen">
  html:root body #editorView .editor-mobile-head .editor-mobile-title:has(#deleteBtn) {grid-template-columns:var(--aisel-identity-label-width,24px) minmax(0,1fr) auto;align-items:center}
