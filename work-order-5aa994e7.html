@@ -3685,7 +3685,7 @@
 
     <div class="tb-row">
       <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈와 수량을 확인해 발주">발주 요청</button>
-      <button type="button" class="btn ghost mfold" id="generateNameBtn" aria-haspopup="dialog">이름 생성</button>
+      <button type="button" class="btn ghost mfold" id="generateNameBtn" aria-controls="pumMyeong">이름 수정</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle" hidden>저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
       <!-- 2026-08-21 추가: 이 버튼을 누르는 순간이 작업지시서가 최종 확정되는 시점이라
@@ -6783,6 +6783,7 @@
       if(currentCode !== printCode || woRef !== printRef || loading) throw new Error("작업지시서가 바뀌었습니다. 현재 작업지시서에서 다시 눌러주세요.");
       // Export the acknowledged content and fold the history on screen.
       window.AiselEditorEnhancements?.collapseChanges?.();
+      document.body.classList.remove("factory-print-mode");
       window.print();
     }catch(err){
       registrationNotice_(err.message || "저장 상태를 확인한 뒤 다시 눌러주세요.", false);
@@ -7904,6 +7905,14 @@
       return result;
     }
     if(nameSaveFlight_){saveSoon();return nameSaveFlight_;}
+    if(newOrderMode_ && !editorContentBaseline_ && pumInput.dataset.auto !== '0'){
+      const initialName=window.initialWorkorderName_?.(pumInput.value,currentCat().name,allWorkOrders,currentCode);
+      if(initialName){
+        pumInput.value=initialName;
+        pumInput.dataset.auto='0';
+        renderMobileHeader_();
+      }
+    }
     const targetRef=woRef,targetCode=currentCode,st=collect();
     const expectedNameState=JSON.parse(JSON.stringify(lastSavedState_||{})),nameActor=nameActor_();
     let namePatch=null;
@@ -11084,7 +11093,7 @@
   const orderQuantityDrafts_ = new Map();
   function orderQuantityDraft_(){
     let draft=orderQuantityDrafts_.get(currentCode);
-    if(!draft){draft={preset:null,defaultQty:20,quantities:Object.create(null)};orderQuantityDrafts_.set(currentCode,draft);}
+    if(!draft){draft={preset:"numbered",defaultQty:20,quantities:Object.create(null)};orderQuantityDrafts_.set(currentCode,draft);}
     return draft;
   }
   function initialOrderLocked_(){return !!currentInitialOrder_||currentOrderCompleted_===true;}
@@ -12923,35 +12932,10 @@
   nameReviewPanel_=window.AiselNames.mount({document,container:document.getElementById('nameReviewPanel'),
     getDoc:()=>({pumMyeong:lastSavedState_?.pumMyeong||pumInput.value,nameReview:nameReviewState_}),
     getActor:nameActor_,act:changeReviewedName_});
-  const nameChoices=document.createElement('dialog');
-  nameChoices.id='workorderNameChoices';
-  nameChoices.setAttribute('aria-labelledby','nameChoicesTitle');
-  nameChoices.innerHTML='<h3 id="nameChoicesTitle">상품명 후보</h3><div class="name-options"></div><p role="status"></p><form method="dialog"><button class="btn" type="submit">닫기</button></form>';
-  document.body.append(nameChoices);
   document.getElementById('generateNameBtn').addEventListener('click',()=>{
-    if(loading||!currentCode||!woRef){alert('작업지시서를 먼저 저장해주세요.');return;}
-    const code=currentCode,ref=woRef,initialName=pumInput.value.trim();
-    const options=nameChoices.querySelector('.name-options'),message=nameChoices.querySelector('[role="status"]');
-    const names=window.workorderNameCandidates_?.(initialName,allWorkOrders,code)||[];
-    message.textContent=names.length?'':'품명이나 품목을 입력한 뒤 다시 눌러주세요.';
-    options.replaceChildren();
-    const initialReview=JSON.parse(JSON.stringify(lastSavedState_||{}));
-    for(const name of names){
-      const button=document.createElement('button');
-      button.type='button';button.className='btn';button.textContent=name;
-      button.addEventListener('click',async()=>{
-        if(currentCode!==code||woRef!==ref||initialName!==pumInput.value.trim()||
-          !window.AiselNames.sameVersion(initialReview,lastSavedState_||{})){
-          message.textContent='작지가 변경됐습니다. 창을 닫고 후보를 다시 확인해주세요.';return;
-        }
-        options.inert=true;
-        try{await changeReviewedName_('edit',name);nameChoices.close();}
-        catch(error){message.textContent=error.message;}
-        finally{options.inert=false;}
-      });
-      options.append(button);
-    }
-    nameChoices.showModal();
+    if(loading)return;
+    beginMobileNameEdit_();
+    pumInput.focus();
   });
   window.addEventListener('aisel-access-change',renderNameReview_);
   // Reuse the actual name input, including its IME/save listeners, only while editing.
@@ -13464,16 +13448,21 @@ let sel3 = null;
 // 셀링포인트·컬러·키워드와 같은 이유로 빠져 있었습니다. 작지를 저장한 적이 없으면
 // (그전에는 안 써서 몰랐다는 게 정확히 이 경우입니다) 화면에 남아 있던 이전 작지의
 // 고유명·원단·아이템명이 그대로 다음 작지 품명에 들어가 여러 작지 품명이 똑같아졌습니다.
-window.workorderNameCandidates_ = (current,index,code) => {
-  const roots=new Set(name1List);
-  const words=current.trim().split(/\s+/).filter(Boolean);
-  if(words.length>1&&(roots.has(words[0])||words[0]===sel1))words.shift();
-  const suffix=sel3 ? [...buildNameParts_(),sel3].filter(Boolean).join(' ') : words.join(' ');
-  if(!suffix)return [];
-  const used=new Set(Object.entries(index||{}).filter(([key])=>key!==code).map(([,item])=>String(item?.pumMyeong||'').trim().split(/\s+/)[0]));
-  const available=[...roots].filter(word=>word&&!used.has(word)&&word+' '+suffix!==current);
-  const offset=Math.floor(Math.random()*available.length);
-  return available.slice(offset).concat(available.slice(0,offset)).slice(0,3).map(word=>word+' '+suffix);
+window.initialWorkorderName_ = (current, category, index, code) => {
+  const title = String(current || '').trim();
+  const roots = new Set(name1List);
+  const firstWord = title.split(/\s+/)[0];
+  if (title.includes(' ') && (roots.has(firstWord) || firstWord === sel1)) return title;
+  const item = sel3 || (title === sel1 ? '' : title) || category;
+  if (!item) return '';
+  const used = new Set(Object.entries(index || {}).filter(([key]) => key !== code)
+    .map(([, record]) => String(record?.pumMyeong || '').trim().split(/\s+/)[0]));
+  const available = [...roots].filter(word => word && !used.has(word));
+  let seed = 0;
+  for (const letter of code || '') seed = (seed * 31 + letter.charCodeAt(0)) >>> 0;
+  const root = sel1 || available[seed % (available.length || 1)];
+  if (!root) return title || item;
+  return [root, ...(sel3 ? buildNameParts_(root) : []), item].join(' ');
 };
 window.getNameParts_ = () => ({ sel1, sel2: sel2.slice(), sel3 });
 window.setNameParts_ = (v) => {
@@ -13974,8 +13963,8 @@ function topOfGroup_(key){
 // 편안함은 항상 이 순서 뒤, 소재보다도 뒤(맨 끝)에 옵니다 — 구매를 결정짓는 건 날씬과
 // 반전 디테일이고 편안함은 늘 깔고 가는 기본값이기 때문입니다.
 // 자리가 4어절을 넘으면 "먼저 누른 것부터" 남기고 나중에 누른 것이 밀립니다.
-function buildNameParts_(){
-  const slots = Math.max(0, NAME_MAX_WORDS - (sel1 ? 1 : 0) - (sel3 ? wordCount_(sel3) : 0));
+function buildNameParts_(root = sel1){
+  const slots = Math.max(0, NAME_MAX_WORDS - (root ? 1 : 0) - (sel3 ? wordCount_(sel3) : 0));
 
   // 날씬(반전+날씬) 후보를 클릭 순서 그대로 담습니다.
   const slimSkip = w => SP_NAME_SKIP.includes(w);
@@ -18232,10 +18221,5 @@ window.AiselUnifiedAdapter={
  html:root body #editorView #deleteBtn svg {width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
  html:root body #editorView .editor-mobile-head #refPanel {width:max-content}
  html:root body #editorView .toolbar .tb-row #generateNameBtn {color:var(--aisel-ink);background:white;border-color:var(--aisel-line);padding:0 2px;font-size:12px!important;line-height:16px}
- #workorderNameChoices {width:min(340px,calc(100vw - 24px));box-sizing:border-box;padding:16px;border:1px solid #ddd;border-radius:6px;color:#34383c}
- #workorderNameChoices::backdrop {background:#0005}
- #workorderNameChoices h3 {font-size:16px;margin:0 0 10px}
- #workorderNameChoices button {margin:3px 0;min-height:34px}
- #workorderNameChoices .name-options {display:grid;gap:2px}
  </style>
 <script src="aisel-select.js?v=20261113"></script>
