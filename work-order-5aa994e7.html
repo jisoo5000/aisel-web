@@ -3602,6 +3602,19 @@
   max-height:var(--aisel-control-height,32px)!important;white-space:nowrap!important;overflow-wrap:normal;line-height:16px;
  }
  #orderSizeContext {min-width:0;}
+ html:root body #editorView .toolbar > #orderSubmitBar:not([hidden]) {
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;order:3;grid-column:1/-1;flex:1 0 100%;
+  box-sizing:border-box;width:100%;min-width:0;padding:8px;border:1px solid var(--aisel-line,#E3E5E7);
+  border-radius:var(--aisel-radius,4px);font-size:13px;
+ }
+ #orderSubmitBar .order-submit-summary {display:grid;flex:1 1 180px;min-width:0;gap:2px;overflow-wrap:anywhere;}
+ #orderSubmitBar #orderQuantityTotal {white-space:nowrap;font-variant-numeric:tabular-nums;}
+ html:root body #editorView #orderSubmitBar #orderQuantityConfirm {
+  min-height:36px;margin:0;padding:4px 12px;border:1px solid #34383c;border-radius:4px;background:#34383c;color:#fff;
+  font:inherit;font-weight:600;white-space:nowrap;
+ }
+ #orderQuantityConfirm:disabled {opacity:.6;}
+ html:root body #editorView #orderSubmitBar[hidden] {display:none!important;}
  #orderSizeContext .order-context-heading {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;margin:0 0 8px;font-size:12px;line-height:18px;}
  #orderSizeContext .order-context-heading strong {font-weight:600;}
  #orderSizeContext .order-context-total {font-variant-numeric:tabular-nums;white-space:nowrap;}
@@ -3684,7 +3697,7 @@
     </div>
 
     <div class="tb-row">
-      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSizeContext" title="사이즈와 수량을 확인해 발주">발주 요청</button>
+      <button class="btn ghost nav-btn mfold" id="newBtn" type="button" aria-pressed="false" aria-expanded="false" aria-controls="orderSizePanel" aria-describedby="orderSubmitQuantities" title="발주 사이즈와 수량 수정">수량 수정</button>
       <button type="button" class="btn ghost mfold" id="generateNameBtn" aria-controls="pumMyeong">이름 수정</button>
       <button class="btn ghost nav-btn" id="saveBtn" data-save-state="idle" hidden>저장</button>
       <button class="btn ghost nav-btn mfold" id="factorySaveBtn" aria-label="공장 저장" title="공장 저장"><span>공장 저장</span></button>
@@ -3709,9 +3722,16 @@
           <span>장</span><button id="orderQuantityApply" type="button">전체 적용</button>
         </div>
         <div id="orderQuantityRows"></div>
-        <div class="order-quantity-footer"><span id="orderQuantityTotal" aria-live="polite"></span><button id="orderQuantityConfirm" type="button">발주 저장</button></div>
       </div>
       <div id="orderSizeMessage" role="status" aria-live="polite"></div>
+    </div>
+    <div id="orderSubmitBar" class="noprint" hidden>
+      <div class="order-submit-summary">
+        <strong id="orderSubmitName"></strong>
+        <span id="orderSubmitQuantities"></span>
+      </div>
+      <span id="orderQuantityTotal" aria-live="polite"></span>
+      <button id="orderQuantityConfirm" class="btn" type="button" aria-describedby="orderSubmitName orderSubmitQuantities orderQuantityTotal" disabled>발주 확정</button>
     </div>
   </div>
 
@@ -6643,12 +6663,28 @@
     orderRegistrationAuthEpoch_++;orderRegistrationAttempts_.clear();clearRegistrationNotice_();
   });
   function registrationFingerprint_(source){
-    return JSON.stringify([source?.status,source?.pumMyeong,num(source?.targetThreshold),!!source?.priceConfirmed,source?.priceSource||'']);
+    return JSON.stringify([source?.status,source?.pumMyeong,num(source?.targetThreshold),!!source?.priceConfirmed,source?.priceSource||'',
+      source?.initialOrderReceiptRequired===true,source?.initialOrder?.transport||'',source?.initialOrder?.items?.[0]?.itemName||'']);
   }
   function clearRegistrationNotice_(id='cafe24RegistrationNotice'){
     document.getElementById(id)?.remove();
   }
   function registrationStage_(status){return status==="order" || status==="pdp";}
+  function registrationNeedsOrderReceipt_(source){
+    if(!source?.initialOrder && source?.initialOrderReceiptRequired!==true)return false;
+    return source.initialOrder?.transport!=='confirmed';
+  }
+  function resumeConfirmedOrderRegistration_(source,code,ref){
+    if(source?.initialOrder?.flow!=='confirm'||source.initialOrder.transport!=='confirmed'||
+      !registrationStage_(source.status)||source.cafe24Done||loading||currentCode!==code||woRef!==ref)return;
+    const fingerprint=registrationFingerprint_(source);
+    if(orderRegistrationAttempts_.get(code)===fingerprint){
+      registrationNotice_('공장 발주 완료 · 카페24 등록 대기',false,
+        ()=>requestOrderRegistration_(code,ref,{force:true}),{order:source.status==='order',pdp:source.status==='pdp',code,fingerprint});
+      return;
+    }
+    return requestOrderRegistration_(code,ref);
+  }
   function syncOrderRegistrationNotice_(source,code){
     const notice=document.getElementById('cafe24RegistrationNotice');
     if(notice&&(notice.dataset.code!==code||!registrationStage_(source?.status)||source?.cafe24Done||
@@ -6717,8 +6753,17 @@
         fingerprint=registrationFingerprint_(source);
         stage=source.status;
         const noticeOptions={order:stage==='order',pdp:stage==='pdp',code,fingerprint};
-        if(window.AiselUnifiedAdapter?.isOwner&&!window.AiselUnifiedAdapter.isOwner()){
-          registrationNotice_('카페24 등록은 대표자 계정에서 확인해주세요.',true,null,noticeOptions);return false;
+        if(registrationNeedsOrderReceipt_(source)){
+          const message=source.initialOrder?'공장 발주 결과 확인 후 카페24에 등록됩니다.':'카페24 등록 대기 · 공장 발주를 먼저 확정해주세요.';
+          registrationNotice_(message,false,null,noticeOptions);return false;
+        }
+        if(source.initialOrder?.flow==='confirm' &&
+          source.initialOrder.items?.[0]?.itemName!==source.pumMyeong){
+          registrationNotice_('공장에 보낸 품명과 현재 작지 품명이 다릅니다. 품명을 확인한 뒤 카페24에 등록해주세요.',false,null,noticeOptions);return false;
+        }
+        const isOwner=window.AiselUnifiedAdapter?.isOwner?.()??window.AiselAccess?.isOwner;
+        if(isOwner!==true){
+          registrationNotice_('카페24 등록 대기 · 대표 계정에서 확인해주세요.',false,null,noticeOptions);return false;
         }
         // One attempt per unchanged input in this session. Explicit retry remains available.
         if(!options.force&&orderRegistrationAttempts_.get(code)===fingerprint)return false;
@@ -7044,6 +7089,13 @@
         alert("작지를 불러오는 중이거나 품번이 겹쳐 상태를 저장할 수 없습니다. 잠시 후 다시 시도해주세요.");
         return;
       }
+      if(next==="order" && !["order","pdp","sale"].includes(currentStatus) && !currentOrderCompleted_ && currentInitialOrder_?.transport!=="confirmed"){
+        updateOrderQuantityTotal_();
+        const confirm=document.getElementById("orderQuantityConfirm");
+        if(!document.getElementById("orderSubmitBar").hidden && !confirm.disabled){confirm.focus();return;}
+        if(document.getElementById("newBtn").getAttribute("aria-expanded")!=="true")openOrderSizePanel_();
+        return;
+      }
       const code = currentCode;
       statusChanging_ = true;
       document.querySelectorAll(".status-btn").forEach(b=> b.disabled = true);
@@ -7065,6 +7117,9 @@
           ["workorderIndex/" + code + "/status"]: next,
           ["workorderIndex/" + code + "/updatedAt"]: now
         };
+        if(next==='pdp' && !['order','pdp','sale'].includes(currentStatus) && !currentInitialOrder_ && !currentOrderCompleted_){
+          updates["workorders/"+code+"/initialOrderReceiptRequired"]=true;
+        }
         const modifiedParts=modificationDateParts_(now);
         for(const [key,value] of Object.entries(modifiedParts))updates["workorders/"+code+"/"+key]=value;
         if(sharing){
@@ -7914,6 +7969,7 @@
       }
     }
     const targetRef=woRef,targetCode=currentCode,st=collect();
+    if(newOrderMode_&&!editorContentBaseline_)st.initialOrderReceiptRequired=true;
     const expectedNameState=JSON.parse(JSON.stringify(lastSavedState_||{})),nameActor=nameActor_();
     let namePatch=null;
     if(String(editorContentBaseline_?.pumMyeong||'').trim()!==String(st.pumMyeong||'').trim()){
@@ -8153,6 +8209,7 @@
     currentInitialOrder_ = st.initialOrder && typeof st.initialOrder === "object" ? JSON.parse(JSON.stringify(st.initialOrder)) : null;
     if(document.getElementById("orderSizePanel").dataset.code!==currentCode)closeOrderSizePanel_();
     currentOrderCompleted_ = st.orderCompleted === true;
+    if(currentInitialOrder_?.transport==="acknowledged")resumeInitialOrderReceipt_(currentCode,woRef,currentInitialOrder_);
     currentStatus = normalizeWorkOrderStatus_(st.status);
     syncOrderRegistrationNotice_(st,currentCode);
     if(st.status==='pdp'&&!st.cafe24Done&&!document.getElementById('cafe24RegistrationNotice')){
@@ -8236,6 +8293,7 @@
     if(!num($("#targetThreshold").value)) autoPrice_(false);
     showPriceReview_(num($("#totalView").textContent));
     editorContentBaseline_=collect();
+    if(typeof updateOrderQuantityTotal_==="function")updateOrderQuantityTotal_();
     // Keep requested repairs dirty until the existing field-level save confirms them.
     if(String(st.p1||"").startsWith("blob:")&&editorContentBaseline_.p1)editorContentBaseline_.p1=st.p1;
     if(st.lines)editorContentBaseline_.lines=editorContentBaseline_.lines.map((line,index)=>/^원단\s*\(\s*야드\s*\)$/.test(st.lines[index]?.nm)?{...line,nm:st.lines[index].nm}:line);
@@ -8873,7 +8931,10 @@
         return;
       }
       // 다른 도구나 예전 판에서 색인 없이 저장된 작지가 있을 수 있어 열 때 한 번 맞춰둡니다
-      if(isFirst) syncIndexFromFull_(code, st);
+      if(isFirst){
+        syncIndexFromFull_(code,st);
+        void resumeConfirmedOrderRegistration_(st,code,subscribedRef);
+      }
     };
     const onReadError=error=>{
       if(woRef!==subscribedRef||currentCode!==code)return;
@@ -11113,13 +11174,20 @@
     return quantities;
   }
   function updateOrderQuantityTotal_(){
-    const draft=orderQuantityDraft_(),total=document.getElementById("orderQuantityTotal"),confirm=document.getElementById("orderQuantityConfirm");
+    const bar=document.getElementById("orderSubmitBar"),confirm=document.getElementById("orderQuantityConfirm");
+    const colors=orderColors_();
+    bar.hidden=!currentCode||!woRef||loading||!editorContentBaseline_||initialOrderLocked_()||!colors.length;
+    confirm.disabled=true;
+    if(bar.hidden)return;
+    const name=$("#pumMyeong").value.trim(),draft=orderQuantityDraft_();
+    document.getElementById("orderSubmitName").textContent=name;
+    const details=document.getElementById("orderSubmitQuantities"),total=document.getElementById("orderQuantityTotal");
     try{
-      if(!draft.preset){total.textContent="사이즈를 선택해주세요.";confirm.disabled=true;return;}
-      const quantities=orderQuantitySnapshot_(draft.preset,orderColors_());
+      const sizes=ORDER_SIZE_PRESETS_[draft.preset].sizes,quantities=orderQuantitySnapshot_(draft.preset,colors);
+      details.textContent=colors.map(color=>color+" · "+sizes.map(size=>size+" "+quantities[orderQuantityKey_(color,size)]+"장").join(" / ")).join("　");
       total.textContent="총 "+Object.values(quantities).reduce((a,b)=>a+b,0)+"장";
-      confirm.disabled=statusChanging_||initialOrderLocked_();
-    }catch(_){total.textContent="수량을 확인해주세요.";confirm.disabled=true;}
+      confirm.disabled=statusChanging_||!name;
+    }catch(_){details.textContent="";total.textContent="수량을 확인해주세요.";}
   }
   function renderOrderQuantityEditor_(){
     const editor=document.getElementById("orderQuantityEditor"),draft=orderQuantityDraft_(),preset=ORDER_SIZE_PRESETS_[draft.preset],colors=orderColors_();
@@ -11182,6 +11250,7 @@
   function renderOrderContext_(order=currentInitialOrder_){
     const context=document.getElementById("orderSizeContext"),colors=Array.isArray(order?.colors)?order.colors:orderColors_();
     const signature=JSON.stringify([colors,order?.preset,order?.items,order?.totalQty]);
+    context.hidden=!order;
     context.dataset.orderState=order?"saved":"draft";
     if(context.dataset.signature===signature)return;
     context.dataset.signature=signature;
@@ -11206,6 +11275,7 @@
   function closeOrderSizePanel_(){
     const panel=document.getElementById("orderSizePanel");
     panel.hidden=true;
+    updateOrderQuantityTotal_();
     document.getElementById("orderSizeOptions").hidden=true;
     document.getElementById("newBtn").setAttribute("aria-expanded","false");
     if(currentInitialOrder_)renderOrderContext_();
@@ -11217,12 +11287,13 @@
     const order=currentInitialOrder_,complete=!!order||currentOrderCompleted_;
     // The button confirms the durable app record; transport confirmation remains separate.
     const colors=Array.isArray(order?.colors)?order.colors:[];
-    const text=complete?"발주완료":"발주 요청";
+    const text=complete?(order && order.transport!=="confirmed" && !currentOrderCompleted_ ? "전송 확인" : "발주완료"):"수량 수정";
     if(button.textContent!==text)button.textContent=text;
     button.classList.toggle("order-completed",!!complete);
     button.dataset.transport=order?.transport||"none";
     button.setAttribute("aria-pressed",String(!!complete));
-    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장"+(order?.transport!=="confirmed"?" · 발주 시트에서 확인해주세요.":""):"사이즈와 수량을 확인해 발주";
+    button.title=complete?colors.join(" · ")+" · "+(order?.sizes||[]).join(" / ")+" · 총 "+(order?.totalQty||0)+"장"+(order?.transport!=="confirmed"?" · 발주 시트에서 확인해주세요.":""):"발주 사이즈와 수량 수정";
+    updateOrderQuantityTotal_();
     if(order){
       renderOrderContext_();
       document.getElementById("orderQuantityEditor").hidden=true;
@@ -11255,6 +11326,47 @@
     }
     openOrderSizePanel_();
   });
+  async function finishInitialOrderReceipt_(code,ref,order,now){
+    const modified=modificationDateParts_(now);
+    const result=await ref.transaction(current=>{
+      const stored=current?.initialOrder;
+      if(!stored||stored.id!==order.id||stored.createdAt!==order.createdAt)return;
+      if(current.orderCompleted&&stored.transport==="confirmed")return;
+      const stage=normalizeWorkOrderStatus_(current.status);
+      return {...current,...modified,updatedAt:now,
+        status:stage==="sampling"||stage==="resampling"?"order":current.status,
+        orderCompleted:true,initialOrder:{...stored,transport:"confirmed",confirmedAt:now}};
+    },undefined,false);
+    const saved=result.snapshot.val();
+    if(!saved?.orderCompleted||saved.initialOrder?.id!==order.id||
+        saved.initialOrder?.createdAt!==order.createdAt||saved.initialOrder.transport!=="confirmed")
+      throw Error("발주 시트 반영 후 작지의 완료 상태를 확인하지 못했습니다.");
+    const same=()=>currentCode===code&&woRef===ref;
+    if(same()){
+      currentInitialOrder_=saved.initialOrder;currentOrderCompleted_=true;
+      currentStatus=normalizeWorkOrderStatus_(saved.status);
+      for(const baseline of [lastSavedState_,editorContentBaseline_]){
+        if(baseline)Object.assign(baseline,{initialOrder:JSON.parse(JSON.stringify(saved.initialOrder)),status:saved.status,
+          orderCompleted:true,updatedAt:saved.updatedAt,myy:saved.myy,mmm:saved.mmm,mdd:saved.mdd});
+      }
+      for(const key of Object.keys(modified))if(saved[key]!=null)document.getElementById(key).value=saved[key];
+      updateStatusButtons();refreshCafe24Bar_();
+      renderOrderCompletedButton_();closeOrderSizePanel_();openOrderSizePanel_();
+    }
+    if(await writeIndexIfChanged_(code,saved)===false)throw Error("발주는 완료됐습니다. 목록 갱신을 다시 확인해주세요.");
+    if(same()&&registrationStage_(saved.status)&&!saved.cafe24Done)
+      void requestOrderRegistration_(code,ref,{stage:saved.status});
+    return saved;
+  }
+  const initialReceiptRecoveries_=new Set();
+  function resumeInitialOrderReceipt_(code,ref,order){
+    if(!code||!ref||order?.flow!=="confirm"||order.transport!=="acknowledged"||
+        !Number.isFinite(order.confirmedAt)||initialReceiptRecoveries_.has(code))return;
+    initialReceiptRecoveries_.add(code);
+    void finishInitialOrderReceipt_(code,ref,order,order.confirmedAt).catch(error=>{
+      if(currentCode===code&&woRef===ref)setOrderSizeMessage_(error.message,true);
+    }).finally(()=>initialReceiptRecoveries_.delete(code));
+  }
   async function confirmOrderSize_(presetKey){
     if(statusChanging_ || initialOrderLocked_() || !ORDER_SIZE_PRESETS_[presetKey])return;
     if(loading || !woRef || !currentCode || codeConflictNow_())return;
@@ -11263,7 +11375,8 @@
     if(requirement){setOrderSizeMessage_(requirement,true);return;}
     const code=currentCode,ref=woRef,button=document.getElementById("newBtn");
     const same=()=>currentCode===code && woRef===ref;
-    let claimed=false,order=null,quantitySnapshot;
+    const visibleName=$("#pumMyeong").value.trim();
+    let claimed=false,receiptAt=0,order=null,quantitySnapshot;
     try{quantitySnapshot=orderQuantitySnapshot_(presetKey,colors);}catch(error){setOrderSizeMessage_(error.message,true);return;}
     statusChanging_=true;button.disabled=true;
     document.querySelectorAll(".status-btn,[data-order-preset]").forEach(b=>b.disabled=true);
@@ -11276,9 +11389,13 @@
       const saved=await save(null,{beforeStatusChange:true}),writes=await Promise.all([...pendingSaveWrites_]);
       if(saved===false || writes.includes(false))throw Error("최신 작지 저장을 확인하지 못했습니다. 다시 눌러주세요.");
       if(!same())return;
-      if(!nameOrderAllowed_('initialOrder'))throw Error('발주 전에 대표님이 품명 아래의 최종 이름 확정을 체크해주세요.');
+      const expectedName={pumMyeong:lastSavedState_?.pumMyeong,nameReview:lastSavedState_?.nameReview};
+      if(!visibleName||visibleName!==expectedName.pumMyeong||visibleName!==$("#pumMyeong").value.trim())
+        throw Error("품명이 변경됐습니다. 표시된 이름으로 다시 발주해주세요.");
+      const actor=nameActor_();
       // Claim this initial order once across tabs. A live snapshot avoids a cold-null transaction.
       order=buildInitialOrder_(presetKey,colors,code,Date.now(),quantitySnapshot);
+      order.flow="confirm";
       const orderRef=ref.child("initialOrder"),keep=()=>{};
       orderRef.on("value",keep);
       let result;
@@ -11286,7 +11403,25 @@
         await orderRef.once("value");
         if(!same())return;
         // Claim against the entire latest record so a legacy completion flag also blocks a duplicate.
-        result=await ref.transaction(current=>current&&!current.initialOrder&&!current.orderCompleted?{...current,initialOrder:order}:undefined,undefined,false);
+        result=await ref.transaction(current=>{
+          if(!current||current.initialOrder||current.orderCompleted)return;
+          if(!same()||actor.uid!==nameActor_().uid||actor.isOwner!==nameActor_().isOwner)
+            throw Error("작지 또는 로그인 계정이 변경됐습니다.");
+          if(!window.AiselNames.sameVersion(current,expectedName)||current.nameReview?.requestedName)
+            throw Error("품명 변경 내역을 먼저 확인해주세요.");
+          if(!["sampling","resampling","order","pdp","sale"].includes(normalizeWorkOrderStatus_(current.status)))
+            throw Error("현재 단계에서는 발주할 수 없습니다.");
+          const savedColors=[...new Set((window.colorNames_?window.colorNames_(current.selectedColors||[]):current.selectedColors||[])
+            .filter(v=>typeof v==="string").map(v=>v.trim()).filter(Boolean))];
+          if(JSON.stringify(savedColors)!==JSON.stringify(colors)||(String(current.factory||"").trim()||"공장 미지정")!==order.items[0].factory)
+            throw Error("공장 또는 컬러가 변경됐습니다. 최신 작지를 확인해주세요.");
+          let namePatch=null;
+          if(!window.AiselNames.final(current)){
+            if(!actor.isOwner)throw Error("대표님이 이 작지에서 발주 확정을 누르면 이름도 함께 확정됩니다.");
+            namePatch=window.AiselNames.change(current,"confirm","",actor,order.createdAt);
+          }
+          return {...current,...namePatch,initialOrder:order};
+        },undefined,false);
       }finally{orderRef.off("value",keep);}
       if(!result.committed){
         if(same()){
@@ -11301,12 +11436,16 @@
       }
       claimed=true;
       if(same()){
+        const claimedRecord=result.snapshot.val();
+        nameReviewState_=claimedRecord.nameReview||null;
+        for(const baseline of [lastSavedState_,editorContentBaseline_])if(baseline)
+          Object.assign(baseline,{pumMyeong:claimedRecord.pumMyeong,nameReview:nameReviewState_,pumAuto:claimedRecord.pumAuto});
+        renderNameReview_();
         currentInitialOrder_=order;
         if(lastSavedState_)lastSavedState_.initialOrder=JSON.parse(JSON.stringify(order));
         if(editorContentBaseline_)editorContentBaseline_.initialOrder=JSON.parse(JSON.stringify(order));
       }
-      // Do not send if the user navigated away during the claim.
-      if(!same())return;
+      // The deliberate confirmation belongs to the claimed record even if the operator navigates away.
       await orderRef.update({transport:"sending"});
       order.transport="sending";
       if(same())setOrderSizeMessage_("발주 전송 중…");
@@ -11321,37 +11460,35 @@
       if(!response.ok)throw Error("발주 전송 결과를 확인하지 못했습니다.");
       const receipt=await response.json();
       if(receipt.result!=="success" && receipt.ok!==true)throw Error(receipt.message||"발주 시트 반영을 확인하지 못했습니다.");
-      const now=Date.now(),modified=modificationDateParts_(now);
-      const updates={
-        ["workorders/"+code+"/initialOrder/transport"]:"confirmed",
-        ["workorders/"+code+"/initialOrder/confirmedAt"]:now,
-        ["workorders/"+code+"/orderCompleted"]:true,
-        ["workorders/"+code+"/updatedAt"]:now,
-        ["workorderIndex/"+code+"/updatedAt"]:now
-      };
-      for(const [key,value]of Object.entries(modified))updates["workorders/"+code+"/"+key]=value;
-      await workorderDatabase_.ref().update(updates);
-      if(!same())return;
-      currentInitialOrder_={...order,transport:"confirmed",confirmedAt:now};currentOrderCompleted_=true;
-      for(const baseline of [lastSavedState_,editorContentBaseline_]){
-        if(baseline)Object.assign(baseline,{initialOrder:JSON.parse(JSON.stringify(currentInitialOrder_)),orderCompleted:true,updatedAt:now,...modified});
-      }
-      for(const [key,value]of Object.entries(modified))document.getElementById(key).value=value;
-      renderOrderCompletedButton_();closeOrderSizePanel_();openOrderSizePanel_();
+      receiptAt=Date.now();
+      await finishInitialOrderReceipt_(code,ref,order,receiptAt);
     }catch(error){
       if(claimed){
-        // Delivery may already have reached the sheet. Retain the record and never auto-retry.
-        try{await ref.child("initialOrder").update({transport:"unconfirmed"});}catch(_){}
-        if(same()){
-          currentInitialOrder_={...order,transport:"unconfirmed"};currentOrderCompleted_=false;
-          for(const baseline of [lastSavedState_,editorContentBaseline_])if(baseline)Object.assign(baseline,{initialOrder:JSON.parse(JSON.stringify(currentInitialOrder_)),orderCompleted:false});
-          renderOrderCompletedButton_();
-        }
+        // An acknowledged sheet delivery must never be downgraded or sent twice.
+        const transport=receiptAt?"acknowledged":"unconfirmed";
+        try{
+          const marked=await ref.child("initialOrder").transaction(saved=>{
+            if(!saved||saved.id!==order.id||saved.createdAt!==order.createdAt||
+                saved.transport==="confirmed"||saved.transport==="acknowledged")return;
+            return {...saved,transport,...(receiptAt?{confirmedAt:receiptAt}:{})};
+          },undefined,false);
+          const stored=marked.snapshot.val();
+          if(stored?.id===order.id&&stored.createdAt===order.createdAt){
+            if(same()){
+              currentInitialOrder_=stored;currentOrderCompleted_=stored.transport==="confirmed";
+              for(const baseline of [lastSavedState_,editorContentBaseline_])if(baseline)
+                Object.assign(baseline,{initialOrder:JSON.parse(JSON.stringify(stored)),orderCompleted:currentOrderCompleted_});
+              renderOrderCompletedButton_();
+            }
+            if(receiptAt&&stored.transport==="acknowledged"){resumeInitialOrderReceipt_(code,ref,stored);return;}
+          }
+        }catch(_){}
       }
       if(same()){
         document.getElementById("orderSizePanel").hidden=false;
         button.setAttribute("aria-expanded","true");
-        setOrderSizeMessage_(claimed ? "발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요." : error.message||"발주 저장에 실패했습니다. 다시 눌러주세요.",!claimed,claimed);
+        setOrderSizeMessage_(receiptAt?"발주 시트 반영을 확인했습니다. "+(error.message||"작지 완료 상태를 확인해주세요."):
+          claimed?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":error.message||"발주 저장에 실패했습니다. 다시 눌러주세요.",!!receiptAt||!claimed,claimed&&!receiptAt);
       }
     }finally{
       statusChanging_=false;button.disabled=false;
@@ -11377,7 +11514,16 @@
   }
   document.getElementById("orderQuantityApply").addEventListener("click",applyOrderDefaultQuantity_);
   document.getElementById("orderQuantityDefault").addEventListener("input",applyOrderDefaultQuantity_);
-  document.getElementById("orderQuantityConfirm").addEventListener("click",()=>confirmOrderSize_(orderQuantityDraft_().preset));
+  document.getElementById("pumMyeong").addEventListener("input",updateOrderQuantityTotal_);
+  window.addEventListener("aisel-access-workorders-changed",updateOrderQuantityTotal_);
+  window.addEventListener("aisel-workorder-detached",()=>{document.getElementById("orderSubmitBar").hidden=true;});
+  document.getElementById("orderQuantityConfirm").addEventListener("click",async event=>{
+    const button=event.currentTarget;
+    button.disabled=true;
+    button.textContent="발주 처리 중";
+    try{await confirmOrderSize_(orderQuantityDraft_().preset);}
+    finally{button.textContent="발주 확정";updateOrderQuantityTotal_();}
+  });
   document.getElementById("orderSizePanel").addEventListener("keydown",event=>{
     if(event.key==="Escape" && !statusChanging_){closeOrderSizePanel_();document.getElementById("newBtn").focus();}
   });
@@ -15033,6 +15179,10 @@ function renderSelectedColors(){
     el.appendChild(chip);
   });
   $("colors").value = selectedColors.join(", ");
+  if(typeof updateOrderQuantityTotal_==="function"){
+    if(!document.getElementById("orderSizeOptions").hidden)renderOrderQuantityEditor_();
+    updateOrderQuantityTotal_();
+  }
 }
 
 $("newColorConfirm").addEventListener("click", () => {
