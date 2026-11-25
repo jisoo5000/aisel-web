@@ -11179,6 +11179,7 @@
     bar.hidden=!currentCode||!woRef||loading||!editorContentBaseline_||initialOrderLocked_()||!colors.length;
     confirm.disabled=true;
     if(bar.hidden)return;
+    bar.dataset.code=currentCode;
     const name=$("#pumMyeong").value.trim(),draft=orderQuantityDraft_();
     document.getElementById("orderSubmitName").textContent=name;
     const details=document.getElementById("orderSubmitQuantities"),total=document.getElementById("orderQuantityTotal");
@@ -11310,7 +11311,9 @@
       b.setAttribute("aria-pressed",String(order?.preset===b.dataset.orderPreset));
     });
     const requirement=initialOrderLocked_()?"":orderDraftRequirement_();
-    setOrderSizeMessage_(order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":initialOrderLocked_()?"이미 초두발주가 등록된 작지입니다. 발주 시트에서 기존 수량을 확인해주세요.":requirement,!!requirement,!!order);
+    const confirmed=order?.transport==="confirmed";
+    const message=confirmed?"공장 발주가 완료됐습니다.":order?"발주 내역은 저장됐습니다. 발주 시트에서 확인해주세요.":initialOrderLocked_()?"이미 초두발주가 등록된 작지입니다. 발주 시트에서 기존 수량을 확인해주세요.":requirement;
+    setOrderSizeMessage_(message,!!requirement,!!order&&!confirmed);
     document.getElementById("orderSizeOptions").hidden=initialOrderLocked_();
     renderOrderQuantityEditor_();
     panel.hidden=false;button.setAttribute("aria-expanded","true");
@@ -11518,7 +11521,13 @@
   window.addEventListener("aisel-access-workorders-changed",updateOrderQuantityTotal_);
   window.addEventListener("aisel-workorder-detached",()=>{document.getElementById("orderSubmitBar").hidden=true;});
   document.getElementById("orderQuantityConfirm").addEventListener("click",async event=>{
-    const button=event.currentTarget;
+    const button=event.currentTarget,bar=document.getElementById("orderSubmitBar");
+    const priorCode=bar.dataset.code,priorSummary=bar.querySelector(".order-submit-summary").textContent;
+    updateOrderQuantityTotal_();
+    if(bar.hidden||button.disabled)return;
+    if(priorCode!==currentCode||priorSummary!==bar.querySelector(".order-submit-summary").textContent){
+      button.focus();return;
+    }
     button.disabled=true;
     button.textContent="발주 처리 중";
     try{await confirmOrderSize_(orderQuantityDraft_().preset);}
