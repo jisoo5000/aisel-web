@@ -253,7 +253,7 @@
 <link rel="preload" as="script" href="unified-app.js?v=personal-production-20261123">
 <link rel="preload" as="script" href="design-meeting.js?v=app-speed-20261116">
 <link rel="preload" as="script" href="reference-collection.js?v=quick-save-mobile-261124">
-<link rel="preload" as="style" href="workorder-screen.css?v=20261124-final-sizes">
+<link rel="preload" as="style" href="workorder-screen.css?v=cafe24-toolbar-20261126">
 <link rel="preload" as="style" href="unified-app.css?v=title-navigation-20261112">
 <link rel="preload" as="style" href="aisel-list-controls.css?v=nav-lines-20261111b">
 <script id="aisel-ipad-layout-mode">
@@ -6730,14 +6730,14 @@
     if(!response.ok || result.ok !== true) throw new Error(result.message || "카페24 등록 결과를 확인하지 못했습니다.");
     return result;
   }
-  async function confirmRegistrationPrice_(code,ref,expectedPrice){
+  async function confirmRegistrationPrice_(code,ref,expectedPrice,manual=false){
     if(currentCode!==code||woRef!==ref||loading||!window.AiselUnifiedAdapter?.isOwner?.())return false;
     if(num($('#targetThreshold').value)!==expectedPrice){
       clearRegistrationNotice_();return false;
     }
     if(!selectRetailPrice_(expectedPrice)||!await settleEditorSave_())return false;
     if(currentCode!==code||woRef!==ref||loading)return false;
-    return requestOrderRegistration_(code,ref,{force:true});
+    return requestOrderRegistration_(code,ref,{force:true,manual});
   }
   function requestOrderRegistration_(code,ref,options={}){
     if(orderRegistrationFlights_.has(code))return orderRegistrationFlights_.get(code);
@@ -6749,11 +6749,16 @@
         const source=(await ref.once('value')).val();
         if(!same())return false;
         syncOrderRegistrationNotice_(source,code);
-        if(!registrationStage_(source?.status)||source.cafe24Done)return true;
+        if(!source)throw Error('작업지시서를 다시 열어주세요.');
+        if(!options.manual && (!registrationStage_(source.status)||source.cafe24Done))return true;
+        if(options.manual && !registrationStage_(source.status) && source.status!=='sale' && !source.cafe24Done){
+          registrationNotice_('발주·PDP·판매 단계의 작업지시서에서 등록할 수 있어요.',false,null,{pdp:true,code});
+          return false;
+        }
         fingerprint=registrationFingerprint_(source);
         stage=source.status;
-        const noticeOptions={order:stage==='order',pdp:stage==='pdp',code,fingerprint};
-        if(registrationNeedsOrderReceipt_(source)){
+        const noticeOptions={order:!options.manual&&stage==='order',pdp:options.manual||stage==='pdp',code,fingerprint};
+        if(!options.manual && registrationNeedsOrderReceipt_(source)){
           const message=source.initialOrder?'공장 발주 결과 확인 후 카페24에 등록됩니다.':'카페24 등록 대기 · 공장 발주를 먼저 확정해주세요.';
           registrationNotice_(message,false,null,noticeOptions);return false;
         }
@@ -6772,29 +6777,78 @@
         if(!price||!source.priceConfirmed||!['manual','auto'].includes(source.priceSource)){
           const canConfirm=price>0&&priceAllowed_(price,totalCost_())&&num($('#targetThreshold').value)===price;
           registrationNotice_('판매가 확인 필요 · '+(canConfirm?'판매가를 한 번 확인해주세요.':'확정 판매가를 입력해주세요.'),false,
-            canConfirm?()=>confirmRegistrationPrice_(code,ref,price):null,
+            canConfirm?()=>confirmRegistrationPrice_(code,ref,price,!!options.manual):null,
             {...noticeOptions,actionLabel:canConfirm?'판매가 '+price.toLocaleString('ko-KR')+'원 확인':undefined});
           return false;
         }
         registrationNotice_('카페24 기본 상품 등록 중…',true,null,noticeOptions);
         const result=await registerOrderedWorkorder_(code);
         // Commit only to the originating workorder, even when navigation occurred.
-        await ref.update({cafe24Done:true});
-        await woIndexRoot.child(code).update({cafe24Done:true});
+        const productNo=result.productNo;
+        if(result.code!==code||!Number.isSafeInteger(productNo)||productNo<1)
+          throw Error('카페24 상품번호를 확인하지 못했습니다. 같은 품번으로 다시 확인해주세요.');
+        await workorderDatabase_.ref().update({
+          ['workorders/'+code+'/cafe24Done']:true,
+          ['workorders/'+code+'/cafe24ProductNo']:productNo,
+          ['workorderIndex/'+code+'/cafe24Done']:true
+        });
         if(same()){
           $('#cafe24Done').checked=true;
           if(lastSavedState_)lastSavedState_.cafe24Done=true;
           if(editorContentBaseline_)editorContentBaseline_.cafe24Done=true;
-          registrationNotice_(result.message,true,null,noticeOptions);
+          renderCafe24Product_(code,productNo);
+          registrationNotice_((result.message||'카페24 등록 확인')+' · 상품번호 '+productNo,true,null,noticeOptions);
         }
         return true;
       }catch(error){
         if(same())registrationNotice_((error.message||'카페24 등록을 다시 확인해주세요.'),false,
-          ()=>requestOrderRegistration_(code,ref,{force:true,stage}),{order:stage!=='pdp',pdp:stage==='pdp',code,fingerprint});
+          ()=>requestOrderRegistration_(code,ref,{force:true,stage,manual:!!options.manual}),{order:!options.manual&&stage!=='pdp',pdp:options.manual||stage==='pdp',code,fingerprint});
         return false;
       }finally{orderRegistrationFlights_.delete(code);}
     })();orderRegistrationFlights_.set(code,task);return task;
   }
+  function renderCafe24Product_(code,productNo){
+    const button=document.getElementById('cafe24RegisterBtn');
+    if(!button)return;
+    const linked=Number.isSafeInteger(productNo)&&productNo>0;
+    button.dataset.code=code||'';
+    if(linked)button.dataset.productNo=String(productNo);
+    else delete button.dataset.productNo;
+    button.textContent=linked?'상품 보기':'카페24 등록';
+    button.title=linked?'카페24 상품 보기 · '+productNo:'품번으로 기존 상품을 확인하고 없으면 미진열로 등록';
+    button.setAttribute('aria-label',linked?button.title:'카페24 등록');
+    button.disabled=!!code && button.dataset.busyFor===code;
+  }
+  const cafe24RegisterButton=document.createElement('button');
+  cafe24RegisterButton.id='cafe24RegisterBtn';cafe24RegisterButton.type='button';
+  cafe24RegisterButton.className='btn ghost nav-btn';
+  document.getElementById('saveBtn').after(cafe24RegisterButton);
+  renderCafe24Product_('',null);
+  cafe24RegisterButton.addEventListener('click',async event=>{
+    const button=event.currentTarget,code=currentCode,ref=woRef,epoch=orderRegistrationAuthEpoch_;
+    const same=()=>code===currentCode&&ref===woRef&&epoch===orderRegistrationAuthEpoch_;
+    const notify=message=>registrationNotice_(message,false,null,{pdp:true,code});
+    if(!code||!ref||loading||codeConflictNow_()){notify('저장된 작업지시서를 연 뒤 다시 눌러주세요.');return;}
+    if(!(window.AiselUnifiedAdapter?.isOwner?.()??window.AiselAccess?.isOwner)){notify('카페24 상품은 대표 계정에서 확인해주세요.');return;}
+    const no=Number(button.dataset.productNo);
+    if(button.dataset.code===code&&Number.isSafeInteger(no)&&no>0){
+      window.open('https://loveu12141.cafe24.com/disp/admin/shop1/product/ProductRegister?product_no='+no,'_blank','noopener,noreferrer');
+      return;
+    }
+    if(button.dataset.busyFor===code)return;
+    button.dataset.busyFor=code;button.disabled=true;
+    try{
+      if(!await settleEditorSave_({isCurrent:same})||!same())return;
+      const pending=orderRegistrationFlights_.get(code);
+      if(pending)await pending;
+      if(!same()||(button.dataset.code===code&&button.dataset.productNo))return;
+      await requestOrderRegistration_(code,ref,{force:true,manual:true});
+    }catch(error){
+      if(same())notify(error.message||'카페24 등록을 확인해주세요.');
+    }finally{
+      if(button.dataset.busyFor===code){delete button.dataset.busyFor;button.disabled=false;}
+    }
+  });
   async function confirmLatestPrintSave_(){
     // Navigation's durable save barrier also rejects a newer keystroke or a
     // switched workorder while waiting. Retry only new edits, never failures.
@@ -7397,8 +7451,7 @@
   },true);
 
 
-  let workorderPlanning_ = null,workorderUspPanel_=null;
-  function renderWorkorderUsp_(){workorderUspPanel_?.update();}
+  let workorderPlanning_ = null;
   let manualModifiedDate_ = '', blendNormalizePending_ = false;
   function collect(){
     syncFabricFromMemo_();
@@ -8152,7 +8205,6 @@
   function applyState(st){
     nameReviewState_=st.nameReview?JSON.parse(JSON.stringify(st.nameReview)):null;
     workorderPlanning_=st.designMeetingPlanning?AiselDraftStorage.clone(st.designMeetingPlanning):null;
-    renderWorkorderUsp_();
     manualModifiedDate_=validDateInput_(st.modifiedDate);
     blendNormalizePending_=false;
     const resetSampleDraft=!sampleChangeBaseline_ || sampleChangeBaselineCode_ !== currentCode;
@@ -8237,6 +8289,7 @@
     if($("#keywords")) $("#keywords").value = st.copygenKeywords || "";
     if($("#note")) $("#note").value = st.copygenNote || "";
     $("#cafe24Done").checked = !!st.cafe24Done;
+    renderCafe24Product_(currentCode,st.cafe24ProductNo);
     editLog_ = Array.isArray(st.editLog) ? st.editLog : [];
     createdAt_ = st.createdAt || null;   // 기존 작지를 열면 저장된 생성 시각을 그대로 씁니다
     if(Array.isArray(st.lines)){
@@ -8270,7 +8323,6 @@
     }
 
     loading = false;
-    renderWorkorderUsp_();
     if(mobileUnifiedReady_)renderMobileSampleDate_();
     if(currentCode) $("#codeView").textContent = currentCode;
     applyCat();
@@ -11111,9 +11163,10 @@
     if($("#name1Search")) $("#name1Search").value = "";
     if(typeof renderName1 === "function") renderName1();
     $("#cafe24Done").checked = false;
+    renderCafe24Product_('',null);
     editLog_ = [];
     editorContentBaseline_ = null;
-    workorderPlanning_=null;renderWorkorderUsp_();
+    workorderPlanning_=null;
     createdAt_ = null;   // 새 작지는 처음 저장될 때 생성 시각이 새로 정해집니다
     manualModifiedDate_='';blendNormalizePending_=false;
     const outputEl = document.getElementById("output");
@@ -13197,19 +13250,6 @@
   // Keep the original desktop fields and records; mobile reuses the same IDs and save handlers.
   const mobileRecords=document.createElement('section');mobileRecords.id='mobileSampleRecords';mobileRecords.className='noprint';
   document.querySelector('#sheet > .detail2').before(mobileRecords);
-  const workorderUsp=document.createElement('section');workorderUsp.id='workorderUsp';workorderUsp.className='noprint';
-  workorderUsp.innerHTML='<div class="aisel-usp-heading"><span>USP</span><button type="button" id="workorderUspRefresh" hidden></button></div><div id="workorderUspKeywords"></div><p id="workorderUspLegacy" hidden></p><div id="workorderUspNotice" role="status" aria-live="polite"></div>';
-  const uspPanel=document.createElement('div');uspPanel.id='workorderUspPanel';uspPanel.className='noprint';uspPanel.hidden=true;
-  document.querySelector('#editorView .toolbar').after(uspPanel);uspPanel.append(workorderUsp);
-  const uspToggle=document.createElement('button');uspToggle.type='button';uspToggle.id='uspToggleBtn';uspToggle.className='btn ghost nav-btn';uspToggle.textContent='USP';uspToggle.setAttribute('aria-expanded','false');uspToggle.setAttribute('aria-controls','workorderUspPanel');document.getElementById('saveBtn').after(uspToggle);
-  uspToggle.addEventListener('click',()=>{uspPanel.hidden=!uspPanel.hidden;uspToggle.setAttribute('aria-expanded',String(!uspPanel.hidden));});
-  workorderUspPanel_=window.AiselWorkorderUsp.mount(workorderUsp,{
-    context:()=>({code:currentCode,ref:woRef,planning:workorderPlanning_,name:pumInput.value,output:document.getElementById('output')?.value,
-      editable:!loading&&!codeConflictNow_()&&!!window.AiselAccess?.allowed?.('editor')}),
-    change:(next,importing)=>{workorderPlanning_=next;if(importing)markEditorSavePending_();else saveSoon();},
-    waitComposition:waitForEditorComposition_,save
-  });
-  renderWorkorderUsp_();
   const finalSpec=document.getElementById('materials'),desktopSpecHint=finalSpec.placeholder;
   const finalTitle=finalSpec.closest('.cell.mat').querySelector('.sec-title'),desktopFinalTitle=finalTitle.textContent;
   const finalTip=finalSpec.closest('.cell.mat').querySelector('.tip'),desktopFinalTip=finalTip.textContent;
@@ -13409,7 +13449,6 @@
     if(screen){
       const fabric=document.getElementById('fabricSupplierField').closest('.cell');
       if(colorSection.parentElement!==fabric)fabric.append(colorSection);
-      if(workorderUsp.parentElement!==uspPanel)uspPanel.append(workorderUsp);
     }else{colorHome.after(colorSection);}
     finalSpec.placeholder=screen?'회의·재샘플 수정을 반영한 최종 제작 사양\n예) 총장 58cm / 소매통 22cm / 단추 3개 / 안감 없음':desktopSpecHint;
     finalTitle.textContent=screen?'봉제 재단 주의사항 / swatch / 라벨 (최종)':desktopFinalTitle;
@@ -18303,7 +18342,7 @@ window.AiselUnifiedAdapter={
 <script src="erp-operations.js?v=leave-navigation-20261112"></script>
 <script src="unified-app.js?v=personal-production-20261123"></script>
 <link rel="stylesheet" href="aisel-access-ui.css?v=staff-management-20261112" media="screen">
-<link rel="stylesheet" href="workorder-screen.css?v=20261124-final-sizes" media="screen">
+<link rel="stylesheet" href="workorder-screen.css?v=cafe24-toolbar-20261126" media="screen">
 <link rel="stylesheet" href="unified-app.css?v=title-navigation-20261112">
 <link rel="stylesheet" href="aisel-list-controls.css?v=nav-lines-20261111b" media="screen">
 
